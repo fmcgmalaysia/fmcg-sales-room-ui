@@ -43,6 +43,11 @@ const wixData = {
     rows(name).push(next);
     return { ...next };
   },
+  async remove(name, id) {
+    const index=rows(name).findIndex(row=>row._id===id);
+    if(index<0)throw new Error('Not found');
+    return rows(name).splice(index,1)[0];
+  },
   async update(name, item) {
     const index = rows(name).findIndex(row => row._id === item._id);
     if (index < 0) throw new Error('Not found');
@@ -104,7 +109,12 @@ test('history passes 1000 records and repeated submissions create one order', as
   const recovered = await api.submitBuyerOrder([{ itemId: 'selection-1', quantityCtn: 1 }], '', retryId);
   assert.equal(recovered.status, 'CONFIRMED');
   assert.equal(rows('WixBuyerOrderLines').length, 2);
-  assert.equal(rows('WixOrderAudit').length, 2);
+  assert.deepEqual(rows('WixOrderAudit').map(r=>JSON.parse(r.payload).action).sort(), ['BUYER_ADDED_ORDER_LINE','BUYER_CONFIRMED_ORDER','BUYER_CONFIRMED_ORDER']);
+  await api.submitBuyerOrder([{ itemId: 'selection-1', quantityCtn: 1 }], '', retryId);
+  assert.equal(rows('WixOrderAudit').length,3,'recovery retry adds no duplicate audit');
+  assert.equal(rows('WixBuyerOrderLines').length,2,'recovery retry adds no duplicate line');
+  assert(!rows('WixOrderAudit').some(r=>JSON.parse(r.payload).action==='BUYER_SUBMISSION_LOCK'),'submission lock is released');
+  assert.equal(new Set(rows('WixOrderAudit').map(r=>r._id)).size, rows('WixOrderAudit').length);
 
   for (let index = 0; index < 99; index++) rows('WixBuyerListItems').push({ _id: `active-${index}`, title: `CUS-1|active-${index}`, customerId: 'CUS-1', removed: false, payload: JSON.stringify({ customerId: 'CUS-1', removed: false }) });
   rows('WixBuyerListItems').push({ _id: 'removed-1', title: 'CUS-1|removed', customerId: 'CUS-1', removed: true, payload: JSON.stringify({ customerId: 'CUS-1', removed: true }) });

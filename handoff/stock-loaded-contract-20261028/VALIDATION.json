@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-28T15:51:40.819Z",
+  "suite": {
+    "tests": 195,
+    "passed": 194,
+    "failed": 1,
+    "knownUnchangedFailure": "purchase-quantity-projection: existing Sales/Buyer Awaiting balance versus Chinese wording assertion"
+  },
+  "contracts": {
+    "checks": 14,
+    "protections": 18,
+    "passed": true
+  },
+  "singleAuthorityTests": 12,
+  "packingBrowser": "PACKING_UI.json",
+  "publicWrites": 0,
+  "publicAcceptance": false
+}

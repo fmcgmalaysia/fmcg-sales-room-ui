@@ -1,0 +1,15 @@
+Track Orders display-only compact layout, 2026-10-07.
+Parent recovery: b3d908416c0d8d7f9f0fbce0e3f6e98b93cf05db (business state0404d09).
+Protected tags: verified/my-selection-sort-20261006, verified/buyer-quantity-arrows-20261006.
+Live inline JS and exact Wix page normalized-match repository before edit; exact before snapshots included.
+Changes: active row-count red badge; compact tabs and edit-record orange count; contact-salesperson note beside Active Item Progress; scoped 600 headers/reduced inner padding; requested column order; two-line description; Track-only 24-hour MYT timestamp and order.confirmedBy; customer currency headers.
+Qty Updated and Goods Exp are literal empty em-dash placeholders. Future MASTER data integration/field mapping and expiry format21 Oct2027 are not implemented; no schema or backend modification.
+Existing tracking calculations, stages, row inclusion/order, history entries, lock behavior and Completed Orders output remain exact. Existing CSS unchanged; added rules scoped to Track except its own sidebar count. Existing hover movement and edit scale unchanged.
+Syntax and regression checks pass. Simulated3 lines/1 edit count passes;1920 width fits,1280 horizontal scroll; midnight23:59 date cases pass.
+Production files: buyer-room.html, and one Wix frame.src cache version line. No Entry, auth, QTY, downloads, backend, Apps Script or CMS change. Unrelated dirty release.json excluded.
+Release state: code candidate only; GitHub Pages/Wix/public acceptance pending. Do not claim published. No main merge/new user-verified tag.
+Recovery reverse only this task diff, preserving the installed order sorting and gray-blue style. Do not deploy entire older baseline.
+
+2026-10-07 requested supplement: Goods Exp defaults to blank with small native hover-help question button (Chinese exact requested copy); Qty Updated remains em dash. Active committed qty>0 and displayed CBM0.0000 reuse Order Form cbm-zero-pill. Pending CBM remains em dash; nonzero CBM normal. Calculations and Completed Orders unchanged. Not deployed.
+
+Track Order On time: Today HH:MM / Yesterday HH:MM / DD-MM-YY HH:MM, MYT calendar. Invalid/empty em dash; future date full date. Global compactTime remains unchanged. Qty Updated has no MASTER data yet.

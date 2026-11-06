@@ -1,0 +1,46 @@
+{
+  "objective": "QTY Up/Down row navigation",
+  "commit": "e1177f69f6a4d5d149e607fde87fda5f7ad31d19",
+  "marker": "2026-10-06-buyer-quantity-arrows-room5-v1",
+  "recoveryTag": "verified/buyer-quantity-blur-20261006",
+  "testsPassed": 31,
+  "pages": {
+    "run": 37422845931,
+    "status": "success",
+    "sourceMatches": true
+  },
+  "wix": {
+    "pageCodeUnchanged": true,
+    "readbackMatches": true,
+    "publishedLive": true
+  },
+  "public": {
+    "account": "BERJAYA 06",
+    "forceRefreshed": true,
+    "markerVerified": true,
+    "upDown": true,
+    "blurLocksOriginal50": true,
+    "lockedQty100RemainsLocked": true,
+    "skipUnquoted": true,
+    "firstLastBoundary": true,
+    "errors": [],
+    "realQuantityChanged": false,
+    "orderSubmitted": false,
+    "newValueSaving": "verified in isolated mock browser; public used original quantity"
+  },
+  "temporaryPermissionRevoked": true,
+  "pullRequest": 13,
+  "userAcceptance": {
+    "quote": "完美，你可以收尾了",
+    "date": "2026-10-06",
+    "scope": "QTY Up/Down row navigation accepted; existing blur autosave, pencil locks and layout protected"
+  },
+  "verifiedTag": "verified/buyer-quantity-arrows-20261006",
+  "evidenceCommit": "36688619ab087260bb1ef87c9c9a41208ad07e19",
+  "snapshotProvenance": "Buyer HTML matches published source; Wix page release readback saved in release evidence. Backend unchanged and inherited from verified/buyer-quantity-blur-20261006; no fresh backend audit claimed.",
+  "exactFileHashes": {
+    "wix-catalogueAuth.web.js": "2A3193FE0E7978B27C04652F2B7128C349A1C73973E9DE23FD12A3165D91ECEC",
+    "wix-buyer-room-page.js": "AD1109F5A69D7B055F6B38110141F372FC1240C204B74BA2935AB4E9F1292C51",
+    "buyer-room.html": "9BF5F62581F281DE617B7AD218E1DA8F1D8870F05B49A22A2FA867A89085579B"
+  }
+}

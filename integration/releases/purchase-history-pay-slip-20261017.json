@@ -1,0 +1,35 @@
+{
+  "runtime": "13fd804a6379b677a921f96facfd0c1ec17b11fd",
+  "branch": "style/purchase-history-pay-slip-20261017",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/158",
+  "recovery": "6d524bce047f8db26fe4461ad9495a5c4a136176",
+  "scope": "Archive presentation only: existing Pay Slip action moved beside CN; scoped button CSS and column spacing.",
+  "tests": {
+    "existingPurchaseUIPassed": 110,
+    "failed": 0,
+    "chrome": {
+      "paySlipWidth": 64,
+      "paySlipHeight": 24,
+      "cnGap": 8,
+      "bottomAligned": true,
+      "minimumTableWidth": 1250,
+      "docsOverflow": false,
+      "originalProofPanelAndLinksVerified": true
+    }
+  },
+  "pages": {
+    "run": 38936930142,
+    "conclusion": "success",
+    "threeAssetsExact": true,
+    "marker": "2026-10-17-purchase-history-slip-v1",
+    "originalSevenPoliciesRestored": true
+  },
+  "wix": {
+    "fullReadbackExactOnlyPointerChanged": true,
+    "publishedLiveReceipt": true,
+    "beforeSHA256": "74755428ceb94ccbd02c7b19f5debae67e89e4872b7742a2c93ce947e5206b86",
+    "afterSHA256": "aeeae8d2368bf2bd8c0204bf5aeceab86d5bcb092595afeb21782afe2405a58a"
+  },
+  "public": "Independent formal tab51425724 refreshed once: iframe src has history-slip-v1, embedded body blank, no console errors. Actual public History rendering acceptance INCOMPLETE. User original allocation form untouched.",
+  "mainMerged": false
+}

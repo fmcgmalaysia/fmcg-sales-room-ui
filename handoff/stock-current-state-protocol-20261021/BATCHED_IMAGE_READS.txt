@@ -1,0 +1,42 @@
+2026-10-23 — bounded segmented verification reads, no protocol/quantity redesign
+
+Single objective: remove demonstrated repeated exact-row and fragment queries in
+BEFORE/VERIFY while preserving original frozen plan,20steps per invocation, common
+fence, pending barrier, per-row APPLY CAS/readback, RESULT/generation and replay.
+Recovery: protected production d447185/runtime32b812c; fresh Wix diagnostic before
+hash1c16c6f... matched retained source. Three isolated source replacements only.
+No original production backend/page path changed; candidate executor plus generated
+stockCurrentCommands/install hash and isolated diagnostic mirror updated.
+
+readImages uses existing server-owned readMany when present. Missing batch provider
+retains old exact-read provider path; a failed/malformed supplied batch NEVER falls
+back. Complete length, ordered exact IDs and company checked before use. Fragment
+codec hashes/counts remain authoritative. BEFORE/VERIFY span is bounded to remaining
+original invocation budget and grouped by exact collection; EVERY image still must
+equal its expected before/after. APPLY code unchanged; cursor moves only after all
+images in its current span verified. No persistent read cache or blind increment.
+
+New8tests cover mid-request old-provider->batch resume without preparing again,
+short/reordered/duplicate/foreign/error results and missing fragment; corruption
+in VERIFY cannot publish RESULT or clear pending. Existing31fence tests unchanged.
+Together with8native-harness tests47pass0fail13688.3144ms. Full first1190/1192:
+intake SDK fake lacked hasSome, receipt budget counted new batches as find rather
+than old per-row read. Updated test fake with complete totalCount/strong-read
+semantics and tightened overall round trips120->90, reads55->20; find category
+bound45->49, next invocation total<=12 instead of obsolete find==0. Affected17pass
+3650.7713ms; finalFULL1192pass0fail32174.7612ms. Generated checks pass.
+
+Mock full901scenario:4213executor queries vs7109old; max60vs70 per invocation.
+Mock752inserts/440patches/138conditional removals unchanged;915retained synthetic
+rows and once-only receipt unchanged. Not actual native whole-scenario counts.
+Actual BEFORE after fresh same-pending inspection:13calls,16queries each, elapsed
+2650..3259ms; old5comparable calls43queries6243..7327ms. UI automation time separate.
+No promised production speed ratio or production capacity acceptance.
+
+Native call20 lost UI response, then browser unavailable: STOPPED, no rerun. Final
+confirmed380/901 BEFORE; whole application/recovery unverified. Local gate restored
+false; Wix last authorized draft armed, manual closing action requested once.
+See NATIVE_300_COMMIT_REHEARSAL for exact scope/retention/budget and unknown outcome.
+Four release states: code candidate only; no new Pages release; Wix isolated draft
+only/no business Publish; real public inventory/borrow/split Loaded acceptance NOT
+performed. All production gates remain closed.

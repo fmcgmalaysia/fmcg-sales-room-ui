@@ -1,0 +1,119 @@
+{
+  "date": "2026-11-05",
+  "kind": "REAL_UI_STRESS_AND_READ_ONLY_CMS_AUDIT",
+  "businessTest": {
+    "customers": 2,
+    "sourceRequests": 4,
+    "taskLines": 8,
+    "receivedCTN": 441,
+    "loadedCTN": 441,
+    "invoices": 3,
+    "borrowedAndRepaidCTN": 10,
+    "shortLoadedCarriedAndLaterLoadedCTN": 5,
+    "finalNCTStockCTN": 0,
+    "finalGHRStockCTN": 0,
+    "supplierPaymentParts": 2,
+    "firstPaymentPriceLockVerified": true,
+    "customerReceiptsPosted": 0
+  },
+  "activity": {
+    "totalRows": 170,
+    "actions": {
+      "PURCHASE_PO_ASSIGNED": 8,
+      "PURCHASE_OPERATION_RESULT": 39,
+      "PURCHASE_PLAN_SAVED": 8,
+      "COST_CAPTURE": 8,
+      "PURCHASE_PRICE_SAVED": 8,
+      "INTAKE_PREPARED": 4,
+      "SUPPORT_INVOICE_PREPARED": 3,
+      "SUPPORT_DESK_SAVED": 17,
+      "SUPPORT_INVOICE_NUMBER_RESERVED": 3,
+      "PURCHASE_OPERATION_PREPARED": 42,
+      "SUPPORT_INVOICE_INPUT_SAVED": 3,
+      "PURCHASE_SOURCE_SHARES_SAVED": 8,
+      "CUSTOMER_SHIPMENT_CHANGED": 6,
+      "ORDER_RECEIVED": 4,
+      "SUPPORT_PACKING_LIST_CURRENT": 3,
+      "WAREHOUSE_RECEIPT_SAVED": 3,
+      "PLANNER_ALLOCATION_SAVED": 2,
+      "DESK_SHORTLOAD_RESOLVED": 1
+    },
+    "duplicateIds": 0,
+    "prepared": 42,
+    "result": 39,
+    "unmatchedPrepared": 3,
+    "detailsUtf8Bytes": 319725,
+    "largestDetailsBytes": 9699,
+    "linkedDeskComparisons": 14,
+    "identicalDeskStateNoops": 0,
+    "pureReadBefore": 170,
+    "pureReadAfter": 170
+  },
+  "pressure": {
+    "kind": "LOCAL_MEMORY_ONLY_NOT_WIX_LATENCY",
+    "fixture": "existing purchase-po-batch test legacy-priced tasks; real production PO writer",
+    "results": [
+      {
+        "tasks": 1,
+        "permanentActivityRows": 4,
+        "preparedDetailsBytes": 1654,
+        "maxConcurrentIO": 2,
+        "sameRequestReplayAddedRows": 0,
+        "localMemoryElapsedMs": 15
+      },
+      {
+        "tasks": 8,
+        "permanentActivityRows": 18,
+        "preparedDetailsBytes": 11132,
+        "maxConcurrentIO": 4,
+        "sameRequestReplayAddedRows": 0,
+        "localMemoryElapsedMs": 17
+      },
+      {
+        "tasks": 24,
+        "permanentActivityRows": 50,
+        "preparedDetailsBytes": 32810,
+        "maxConcurrentIO": 4,
+        "sameRequestReplayAddedRows": 0,
+        "localMemoryElapsedMs": 18
+      },
+      {
+        "tasks": 100,
+        "permanentActivityRows": 202,
+        "preparedDetailsBytes": 135790,
+        "maxConcurrentIO": 4,
+        "sameRequestReplayAddedRows": 0,
+        "localMemoryElapsedMs": 118
+      }
+    ],
+    "limitations": "Legacy-priced-task fixture, local memory store, not actual Wix latency, quotas, transactions or million-row capacity proof."
+  },
+  "implemented": {
+    "companyScopedPurchaseOrderRead": "ccf456a9 / PR346",
+    "supportNativeErrorDiagnostic": "e2297d7f / PR345",
+    "documentServiceDiagnostic": "c8de4029 / Apps Script existing deployment Version12"
+  },
+  "blocked": "Directory permission incident resolved under explicit approval: common parent and10 department roots private, same3 original customer PDF links directly preserved. Original failed uploads still incomplete because formal Support page no longer retains Retry Upload. Read-only Wix test identity denied by unchanged staff validation. Separate recovery scope approval pending; no new upload request or customer receipt posted.",
+  "pending": [
+    "Approve minimum own-employee original-upload recovery after page reload; preserve original request/file IDs",
+    "Recover original customer SI/payment-proof uploads; confirm customer receipts through Finance; actual download/back test",
+    "Full current-company history read dependency review",
+    "Buyer five-stage terminology and Desk-specific progress proof",
+    "Sales active badge and receiving/source display UX"
+  ],
+  "storageChanges": 0,
+  "newCollections": 0,
+  "newIndexes": 0,
+  "historyDeleted": 0,
+  "cacheOrProjectionIntroduced": false,
+  "boundaries": "No claim that all Activity is redundant; COST_CAPTURE is intake baseline, not GP recalculation. No monthly cutoff, backfill, R2 revival or automatic financial closure.",
+  "permissionRestoration": {
+    "completed": true,
+    "commonParentPrivate": true,
+    "departmentRootsPrivate": 10,
+    "originalCustomerPdfDirectLinksPreserved": 3,
+    "temporaryFunctionsRemoved": true,
+    "deploymentVersion": 12,
+    "endpointUnchanged": true
+  }
+}

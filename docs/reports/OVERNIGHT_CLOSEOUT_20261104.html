@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MASTER 后台优化与未完成事项 · 2026-11-04</title>
+<style>body{margin:0;background:#f3f6fa;color:#173750;font:16px/1.7 system-ui}main{max-width:1120px;margin:32px auto;padding:32px;background:#fff;border:1px solid #d1dce6;border-radius:8px}h1{font-size:28px}h2{font-size:21px;margin-top:30px}table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;border:1px solid #d1dce6;padding:12px}th{background:#e4edf5}.pending{color:#a75c00}.risk{color:#b61728}code{overflow-wrap:anywhere}a{color:#2563eb}small{color:#526f88}li{margin:8px 0}</style>
+<main><h1>后台优化与收尾记录</h1><section style="border:2px solid #2563eb;padding:16px"><h2>最新正式验收 · 2026-11-04（含 Support 接续）</h2><p>用户从原书签恢复页面后，只读核对完成：Warehouse 的 8 张完成 PO 全部显示原数量，合并 PO 1,300／1,300，另7张为30、200、90、170、100、150、500；GHR 读取完成后为0，返回 NCT 恢复8张。Purchase 的原付款申请保持财务锁定只读。Finance Supplier Accounts 显示测试7UP单 Payable 16,850、Net paid 16,850、Balance 0。三页捕获相关错误均为空。没有新增部署、交易或权限变化。</p><p><strong>Warehouse 列表计算优化 d806cf4 的正式只读验收已通过，可交用户测试。</strong>Support 接续核对已通过：LAW／NCT 客户列表正常，TESTING 801 的 5 张 SI 保留，D1与D2 Fully Paid／余额0，D2预览210箱、USD2,016；当前Desk1为空，旧SI留在Transactions。至此合并PO保护的四部门正常读取验收已补齐；中断／恢复仍仅由既有隔离测试验证，未在正式站制造故障。Purchase 的旧申请仍 Needs review，不代表财务仍有欠款；未自动结案。Buyer 下载返回和 CMS 长期读取／容量继续保留。下方原空白记录为本次恢复前的历史状态。</p><p>证据：handoff/warehouse-list-read-efficiency-20261104/PUBLIC_ACCEPTANCE_20261104.json、WAREHOUSE_PUBLIC_PASS.png、FINANCE_PUBLIC_PASS.png、PURCHASE_LOCK_PUBLIC.png。Support新增证据：handoff/purchase-merged-po-pending-20261104/SUPPORT_PUBLIC_ACCEPTANCE.json、SUPPORT_TRANSACTIONS_PUBLIC.png、SUPPORT_SI_PUBLIC.png。既有366项测试结果复用，代码无变化，不重跑。</p></section><p>2026-11-04 · 以正式观察、Wix 回执和已保存测试结果为准。当前仍有未完成验收，不能称所有工作已经完成。</p>
+<h2>本轮实际完成</h2>
+<table><tr><th>工作</th><th>改了什么／解决什么</th><th>证据与限制</th></tr>
+<tr><td>合并 PO 中断保护</td><td>保存尚未完整写入时，相关 PO 暂停后续业务；沿用原请求恢复，其他 PO 继续工作。只改共同判断和恢复调用，没有增加库存账或 CMS 集合。</td><td>运行提交 16e06f0，347 项检查通过；Wix 已有上线回执。Purchase／Warehouse 正常读取、合并收货 1,300 箱、付款锁定和 GHR 空状态已核对；Finance／Support 尚未通过正式验收。</td></tr>
+<tr><td>Warehouse 列表减少无用计算</td><td>列表接口不再计算最后被丢弃的旧 preparation 明细。收货保存和 CBM 补抓仍用原默认流程，返回内容不变。</td><td>运行提交 d806cf4，PR336，366 项检查通过；三个改动点完整同步，Wix 明确上线。发布后货仓页面空嵌入，最终功能验收未完成。</td></tr>
+<tr><td>后台量化比较</td><td>50／200 个合成任务加 5,000 条无关历史，新旧完整响应相同；逐任务 CBM 计算由 50／200 次降为 0。</td><td>查询仍为 11 次，读取条数仍为 5,108／5,408；写入为 0。证明减少重复计算，不代表降低 CMS 容量或解决百万行读取。</td></tr>
+<tr><td>付款跟进旧问题核实</td><td>正式 Purchase 显示申请 8,425、付款 16,850、Balance Needs review，申请弹窗仍锁定只读。未把它自动改成已完成。</td><td>11 月 3 日旧快照有两笔 8,425、最终 INV 16,850，以及 PI 申请后文件版本变化；代码也将这种申请标为 stale。旧快照与现象吻合，但不能代替当前 Finance 数据核对。</td></tr></table>
+<p>本轮没有新增假订单、重做付款或收货；没有删历史、初始化缓存、建立索引、迁移数据或改变权限。测试为离线合成场景，不向正式 CMS 灌入压力数据。本轮没有进行额外页面排版改造。</p>
+<h2>四阶段发布状态</h2>
+<table><tr><th>阶段</th><th>合并 PO 保护</th><th>Warehouse 列表优化</th></tr><tr><td>代码版本</td><td>16e06f0，已同步 GitHub，PR335 草稿</td><td>d806cf4，已同步 GitHub，PR336 草稿</td></tr><tr><td>GitHub Pages</td><td colspan="2">均为后台补丁，静态资源不变；沿用已核实入口。无新增 Pages 部署、无临时权限变化。</td></tr><tr><td>Wix Studio</td><td>两份后台草稿读回匹配，已取得上线回执</td><td>一份后台三处修改读回匹配，已取得上线回执</td></tr><tr><td>正式页</td><td class="pending">Purchase／Warehouse 部分通过；Finance／Support 未完成</td><td class="pending">发布后空嵌入，未完成</td></tr></table>
+<p>两轮测试集合有重叠，不能把 347 和 366 相加称为独立场景总数。分支仍保留草稿，没有合并 main 或建立用户验收标签。</p>
+<h2>CMS 长期问题：什么已改善，什么还没有</h2>
+<p>既有 D03 缩小部分查询、D04 排除 Purchase 不消费的客户账务事件，以及本轮去掉废弃计算，分别减少已证实的重复工作。它们都没有把整站变成固定读取量，也没有减少现存条目数量。</p>
+<table><tr><th>仍存在的问题</th><th>为什么不能简单处理</th><th>下一步可执行范围</th></tr>
+<tr><td class="risk">Activity 历史越多，部分页面读取和计算仍增长</td><td>按当月或当前客户截断会漏跨月借还、旧库存、合并 PO 和未完成保存。按根任务查询也必须覆盖共享 PO 和待恢复证据。</td><td>继续只读验证一个消费者的完整关联范围、真实索引与查询时延。不得将离线过滤结果称为已上线的有界查询。</td></tr>
+<tr><td>Finance 页面分页在完整计算之后</td><td>界面只显示一页，不等于后台只读取一页。直接截断会漏余额、付款和核对事项。</td><td>先证明列表依赖和排序／余额范围，再设计数据库查询；当前没有改变 Finance 账务读取。</td></tr>
+<tr><td>CMS 行数增长与重复保存载荷</td><td>PREPARED／RESULT 和部分重复内容承担幂等与恢复职责。离线删除看似重复的来源事件，已复现后续修订后无法恢复原请求。</td><td>只读按动作统计新增条目与载荷，再逐类证明无业务／恢复引用；不能按“重复文本”直接删除。</td></tr>
+<tr><td>NCT Activity 现有索引位置已满</td><td>现场有三个旧索引；旧快照字段为空、代码搜索无命中不足以证明所有线上消费者不用。GHR 及实际延迟尚未确认。</td><td>核实消费者和套餐限制，再提交精确替换／回填范围；当前没有删除或新建索引。</td></tr>
+<tr><td>容量和历史归档</td><td>拆成每月集合不减少同站总条目；外部归档涉及查账、下载、跨月责任和恢复的新依赖。</td><td>当前不做迁移／删除。需独立容量测量和可恢复的归档验收，不能用本次性能补丁代替。</td></tr></table>
+<h2>明确保留的待办</h2><ol>
+<li><strong>货仓新补丁正式验收：</strong>页面恢复后核对 Completed Tasks、合并 PO 和其他单据返回值；不重做业务。</li>
+<li><strong>合并 PO 保护其他消费者：</strong>Finance 超时、Support 空白恢复后，只读核对原锁定与历史；不在正式数据制造中断。</li>
+<li><strong>Buyer 实际下载及返回：</strong>Sales 下载已有用户成功确认；Buyer 当前标签 Entry 后的下载和返回历史页仍未完成。两者不能混为同一通过结论。</li>
+<li><strong>付款跟进：</strong>核对最终 INV、两笔付款与旧申请版本，分清“整张 PO 已付清”和“旧申请待核对”。不能把付款合计大于单次申请直接判为超付，也不能自动撤销财务核对。</li>
+<li><strong>CMS 长期读取／容量：</strong>以上有界读取、索引、回填及归档仍是独立未完成工作；当前生产只保留原权威和保护逻辑。</li>
+<li><strong>其他此前保留范围：</strong>Sales Management 仅 MASTER 页面设计，归属／佣金数据接入未获确定规则；成本管理迁移仍暂缓。实际月底结损不能用改日期或放宽权限代替验证。</li>
+</ol>
+<h2>恢复页面后可测试的步骤</h2><ol>
+<li>从原 Warehouse 入口查看 Completed Tasks。预期仍有既有完成单，合并 PO <code>NCT-PO-T3-MERGED-KOH-1102</code> 为 1,300／1,300；不得新增收货。</li>
+<li>Purchase 打开已付款 PO <code>NCT-PO-T3-801-7UP-1102</code>。预期仍显示 500 CTN／MYR 16,850，财务锁定仍有效；仅查看后关闭。</li>
+<li>切到 GHR 再返回 NCT。预期不出现 NCT 交易泄漏到 GHR，原 NCT 数据保持。</li>
+<li>Sales Entry 进入 Buyer，再从交易历史打开原 SI／付款证明，实际下载后返回。必须从业务入口完成才算通过，不用地址栏直开代替。</li>
+<li>合并 PO 中断恢复先沿用已通过的隔离测试；当前不要求用户故意断网或破坏正式单据。</li>
+</ol>
+<h2>证据入口</h2><ul>
+<li><a href="PURCHASE_MERGED_PO_PENDING_20261104.html">合并 PO 保护与正式核对</a></li>
+<li><a href="WAREHOUSE_LIST_READ_EFFICIENCY_20261104.html">Warehouse 最小改动、测试与上线状态</a></li>
+<li><a href="CMS_INDEX_RECEIPT_REVIEW_20261104.html">索引与关联查询现场审查</a></li>
+<li><a href="CMS_PENDING_QUERY_BOUNDARY_20261104.html">触发合并 PO 修补的故障证据</a></li>
+</ul><small>正式空白只说明本次无法验收；没有证据断言是旧 URL、身份、Wix 或此补丁所致。已保存目标 URL、嵌入地址、截图及错误日志，不重复刷新、部署或付款。</small></main></html>

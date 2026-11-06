@@ -1,0 +1,36 @@
+CURRENT after938fe50 — authenticated packing current read/save preparation candidate
+
+createPackingStockPreparation uses ORIGINAL requirePackingStaff/member/email/department
+binding, original fulfilment context/PO/packing projectors, original allocation/shipment/
+packing parsers, exact current product queries under shared control read barrier. Private
+read output is server context, NOT public response: gateway must retain original
+projectPackingWorkroom filtering so Warehouse never sees Support drafts.
+
+prepare uses the SAME current context/version as read, captures original non-photo
+prepare, rereads exact list record, checks its list against context and original stored
+list parser, selects complete old/current/pending line products and composes list plus
+current hold checkpoints. Browser staff/state ignored; pending/wrong-department rejects
+before private reads. PHOTOS refuses before member/context/file allocation: existing
+external retry protocol still needs fenced integration, cannot mark PACKING coverage done.
+
+Tests found an actual candidate read hole: product reviewRequired was ignored by the
+authority state builder although later save mapper rejected it. Shared mutation-path
+readCurrentProduct now refuses review-marked/code-bearing/unversioned/cross-company or
+wrong exact-ID rows, and orphaned rows without product checkpoint; no legacy fallback.
+Separate stock display query still can show Review Required; this does NOT zero unknowns.
+
+Evidence:5new tests166.2615ms use actual original auth/PO/packing projectors/parsers.
+Support SEND -> Warehouse START uses one current row through actual in-memory conditional
+protocol, each replay unchanged, product generation2, physical/reserved50/available0.
+Unknown/missing/foreign/review records refuse, pending barrier prevents context reads,
+changed current list refuses, original Warehouse draft filter still tested.
+Shared reader change justified whole current candidate suite:274pass0fail1286.9561ms,
+exact test paths rg-discovered. Prior full251/target38 are historical overlapping evidence.
+No actual Wix mutations, file upload, lock deletion or new permissions used.
+
+OPEN: real public gateways/client stock generation/admission and all writer integration;
+private current adapter still reads all active packing products to preserve original
+packingVersion, NOT production-capacity proof. Conservative legacy review can still block
+valid current borrowing and needs parity resolution. Photo protocol, new packing departure,
+all readers/other writers, capacity/lifecycle, operational recovery, migration/shadow/ACTIVE,
+UI and four-stage release incomplete. Production remains original32b812c; new stock OFF.

@@ -1,0 +1,270 @@
+import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
+import { operationId, createOperationJournal, canonical } from 'backend/purchaseOperationJournal.js';
+import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
+import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchaseShares, requireConfirmedProcurement, confirmedPurchaseState } from 'backend/purchasePlan.js';
+import { readWarehouseReceipts, readWarehouseTask } from 'backend/warehouseReceiving.js';
+import { checkPurchaseBatch } from 'backend/shipmentBatchAllocation.js';
+import { preparePurchaseDisplayOrder } from 'backend/purchaseDisplayOrder.js';
+import { procurementContentLock } from 'backend/paymentHandoff.js';
+const fields=['supplierId','lpPc','lpCtn','disc1','disc2','disc3','ourPoNumber','rowPosition','purchaseStage','purchaseQtyInCtn','specialPurchase','specialPurchaseReason','risk','riskReason','manualCostField'];
+const copy=value=>value==null?null:JSON.parse(JSON.stringify(value));
+const RECEIPT_QTY_LOCK='P.O. quantity is locked after the first physical receipt. Resolve the remaining cartons through the receiving issue.';
+const physicalReceipt=(id,activity)=>activity.some(e=>e.action==='WAREHOUSE_RECEIPT_SAVED'&&e.result==='SAVED'&&e.details?.lines?.some(line=>line.taskId===id&&(line.accepted>0||line.rejected>0)));
+const prices=['lpPc','lpCtn','disc1','disc2','disc3'];
+const commercialSnapshot=(task,plan,order)=>({poNumber:task.ourPoNumber||'',quantity:plan.totalCtn??null,costing:copy(plan.costing),prices:Object.fromEntries(prices.map(key=>[key,task[key]??null])),cbmPerCtn:Number.isFinite(order.cbmCtn)?order.cbmCtn:null,amountCents:plan.costing?.amountCents??(Number.isSafeInteger(plan.totalCtn)&&prices.slice(1).every(key=>Number.isFinite(task[key]))?Math.round(plan.totalCtn*(task.lpCtn*(1-task.disc1)*(1-task.disc2)-task.disc3)*100):null)});
+export function createPurchaseOperations({store,now=()=>new Date()}) {
+  const journal=createOperationJournal({store,now});
+  async function state(company,staff,recoveringPoRequestId='') {
+    const names=PURCHASE_COLLECTIONS[company];if(!names)throw Error('Select NCT or GHR.');
+    const [orders,tasks,activity,suppliers]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers')]);
+    const confirmedState=recoveringPoRequestId?confirmedPurchaseState({company,tasks,activity,recoveringPoRequestId,recoveringPoActorMemberId:staff.memberId}):undefined;
+    return {names,orders,tasks,activity,suppliers,workspace:projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff,confirmedState})};
+  }
+  async function requireEditablePurchaseChanges(company,updates){
+    const business=updates.filter(change=>change.planRevision!==undefined||Object.keys(change.patch).some(key=>key!=='rowPosition'));
+    if(!business.length)return;
+    const records=(await store.all('PurchaseOrders',{company})).filter(record=>record.company===company);
+    const destinationNumbers=new Set(business.map(change=>change.patch.ourPoNumber).filter(Boolean));
+    const tasks=destinationNumbers.size?await store.all(PURCHASE_COLLECTIONS[company].tasks):[];
+    const ids=new Set([...business.map(change=>change.id),...tasks.filter(task=>destinationNumbers.has(task.ourPoNumber)).map(task=>task.title)]);
+    for(const record of records.filter(record=>record.details?.taskIds?.some(id=>ids.has(id)))){
+      const permanentLock=procurementContentLock(record.details);if(permanentLock)throw Error(permanentLock);
+      const handoff=record.details.procurementHandoff;
+      if(handoff&&(handoff.schema!==1||!['WITHDRAWN','RETURNED'].includes(handoff.stage)))throw Error('Procurement handoff has locked this purchase order. Withdraw or request Finance return before editing.');
+    }
+  }
+  return async ({company,requestId,staff,operation,input})=>{
+    if(operation==='QTY'&&staff?.role!=='SUPER ADMIN')throw Error('Only Super Admin may change customer demand / 只有最高权限 Admin 可修改客户需求。');
+    if(!PURCHASE_COLLECTIONS[company] || !['EDIT','REORDER','PO','SPECIAL','QTY','AVERAGE_COST','PLAN'].includes(operation))throw Error('Unsupported purchase operation.');
+    const names=PURCHASE_COLLECTIONS[company];
+    // PO rows are independent under the existing company journal lock. Join every
+    // started worker before cleanup; other operation types retain their order.
+    async function each(items,work,cleanup=false){
+      if(operation!=='PO'){for(const item of items)await work(item);return;}
+      let next=0,failure;
+      await Promise.all(Array.from({length:Math.min(4,items.length)},async()=>{
+        while((cleanup||!failure)&&next<items.length){const item=items[next++];try{await work(item);}catch(error){failure=failure||error;}}
+      }));
+      if(failure)throw failure;
+    }
+    const recoverCompleted=operation==='PO'?async(plan,phase,assertClaim)=>{
+      if(plan.operation!=='PO'||!Array.isArray(plan.updates)||!plan.updates.length||plan.updates.length>100||!Array.isArray(plan.events)||plan.displayOrder)return null;
+      const ids=plan.updates.map(change=>change.id);
+      if(new Set(ids).size!==ids.length||new Set(input.taskIds).size!==ids.length||ids.some(id=>!input.taskIds.includes(id)))return null;
+      if(phase==='CLEANUP'){
+        await each(ids,async id=>{await assertClaim();const lockId=operationId(company,id,'COST_LOCK'),lock=await store.read(names.activity,lockId);if(!lock)return;if(lock.details?.requestId!==requestId||lock.details?.actorMemberId!==staff.memberId)throw Error('Original save recovery requires review. Retain this request.');await assertClaim();await store.remove(names.activity,lockId);},true);
+      }else{
+        const [tasks,orders,activity]=await Promise.all([store.all(names.tasks),store.all(names.orders),store.all(names.activity)]);
+        for(const change of plan.updates){
+          const task=tasks.find(row=>row._id===change.id),order=orders.find(row=>row.title===change.orderId&&row.sourceLineId===change.lineId),event=plan.events.find(row=>row.taskId===change.id&&row.action==='PURCHASE_PO_ASSIGNED');
+          if(!task||!order||order.salesInvoiceNumber||task.title!==change.id||task.description!==change.orderId||task.imageAltText!==change.lineId||!event||event.after!==String(input.poNumber||'').trim().toUpperCase()||Object.keys(change.patch).some(key=>!['ourPoNumber','purchaseStage'].includes(key))||Object.entries(change.patch).some(([key,value])=>task[key]!==value))return null;
+          if(!(event.before===''?['',null]:[event.before]).some(before=>[task.purchaseStage,'NEW_INCOMING','WAITING_FOR_PO'].some(stage=>taskEditVersion({...task,ourPoNumber:before,purchaseStage:stage})===change.expected)))return null;
+          const lock=activity.find(row=>row._id===operationId(company,change.id,'COST_LOCK'));
+          if(lock&&(lock.details?.requestId!==requestId||lock.details?.actorMemberId!==staff.memberId))return null;
+        }
+        for(const event of plan.events){
+          const change=plan.updates.find(row=>row.id===event.taskId),saved=activity.find(row=>row._id===operationId(company,requestId,staff.memberId,event.taskId,event.action));
+          if(!change||!['PURCHASE_PO_ASSIGNED','PURCHASE_PLAN_SAVED'].includes(event.action)||!saved||saved.action!==event.action||saved.result!=='SAVED'||saved.description!==change.orderId||saved.imageAltText!==change.id||saved.initiatedByStaffId!==staff.staffId||saved.details?.requestId!==requestId||Object.entries(event).some(([key,value])=>JSON.stringify(saved.details[key])!==JSON.stringify(value)))return null;
+        }
+      }
+      return {ok:true,company,requestId,operation,savedAt:plan.time,taskIds:ids};
+    }:undefined;
+    let preparedWorkspace;
+    return journal({collection:names.activity,scope:company+'/PURCHASE',requestId,staff,input:{operation,input},recoverCompleted,prepare:async()=>{
+      const s=await state(company,staff),updates=[],events=[];let displayOrder;preparedWorkspace=s.workspace;
+      const verified=id=>{requireConfirmedProcurement(s.workspace,[id]);const row=s.workspace.tasks.find(row=>row.id===id);if(!row||row.archived)throw Error('Active accepted task required.');
+        const task=s.tasks.find(task=>task.title===id);if(!task)throw Error('Task missing.');
+        const order=s.orders.find(order=>order.title===task.description&&order.sourceLineId===task.imageAltText);if(!order||order.salesInvoiceNumber)throw Error('Customer invoice has locked this transaction.');return {row,task,order};};
+      const edit=(task,patch)=>{const existing=updates.find(change=>change.id===task._id);if(existing)Object.assign(existing.patch,patch);else updates.push({id:task._id,expected:taskEditVersion(task),patch,orderId:task.description,lineId:task.imageAltText});};
+      if(operation==='EDIT') {
+        if(!Array.isArray(input.edits)||(!input.edits.length&&!input.taskIds)||input.edits.length>100||new Set(input.edits.map(row=>row.taskId)).size!==input.edits.length)throw Error('Select distinct task edits.');
+        for(const item of input.edits) {
+          const {task,order}=verified(item.taskId);if(taskEditVersion(task)!==item.version)throw Error('A task changed. Refresh before saving; your input is retained.');
+          if(readPurchasePlan(task,s.activity).costing&&Object.keys(item.changes||{}).some(key=>key==='supplierId'||prices.includes(key)))throw Error('Edit this supplier through the allocation calculator to preserve its costing inputs.');
+          const patch={};if(!item.changes||!Object.keys(item.changes).length||Object.keys(item.changes).some(key=>!['supplierId',...prices].includes(key)))throw Error('Unsupported task field.');
+          for(const [key,value] of Object.entries(item.changes)) {
+            if(key==='supplierId') {if(task.ourPoNumber&&value!==task.supplierId)throw Error('Supplier is locked after assigning a P.O.');
+              if(value!==task.supplierId&&readPurchasePlan(task,s.activity).revision)throw Error('Supplier is locked to the saved procurement plan.');
+              if(typeof value!=='string'||(value!==''&&!s.suppliers.some(row=>row.title===value&&row.supplierStatus!=='INACTIVE')))throw Error('Select an active supplier.');patch[key]=value;continue;}
+            if(typeof value!=='number'||!Number.isFinite(value)||value<0||(['disc1','disc2'].includes(key)&&value>1))throw Error('Check cost and discount values.');patch[key]=value;
+          }
+          if('lpPc' in patch && !('lpCtn' in patch)){if(!Number.isFinite(order.orderId)||order.orderId<=0)throw Error('EA is unavailable.');patch.lpCtn=Number((patch.lpPc*order.orderId).toFixed(2));}
+          const combined={...task,...patch};if(prices.every(key=>typeof combined[key]==='number')&&combined.lpCtn*(1-combined.disc1)*(1-combined.disc2)-combined.disc3<0)throw Error('Net cost cannot be negative.');
+          patch.manualCostField=[...new Set([...(task.manualCostField||[]),...Object.keys(patch).filter(key=>prices.includes(key))])];
+          edit(task,patch);events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch});
+        }
+        if(input.taskIds){const current=s.workspace.tasks.filter(row=>row.customerId===input.customerId&&!row.archived);
+          if(input.displayRows!==undefined)displayOrder=preparePurchaseDisplayOrder(s.workspace,input);
+          else if(s.workspace.purchaseDisplayOrder?.[input.customerId]?.revision)throw Error('Shipment rows use a newer order. Refresh before moving them.');
+          if(!Array.isArray(input.taskIds)||input.taskIds.length!==current.length||new Set(input.taskIds).size!==current.length||current.some(row=>!input.taskIds.includes(row.id)))throw Error('Row order must include every active task for this customer.');
+          input.taskIds.forEach((id,index)=>{const {task}=verified(id);if(input.versions?.[id]!==taskEditVersion(task))throw Error('Row order changed. Refresh before saving.');edit(task,{rowPosition:index+1});});}
+      } else if(operation==='REORDER') {
+        if(input.displayRows!==undefined)displayOrder=preparePurchaseDisplayOrder(s.workspace,input);
+        else if(s.workspace.purchaseDisplayOrder?.[input.customerId]?.revision)throw Error('Shipment rows use a newer order. Refresh before moving them.');
+        const current=s.workspace.tasks.filter(row=>row.customerId===input.customerId&&!row.archived);
+        if(!Array.isArray(input.taskIds)||input.taskIds.length!==current.length||new Set(input.taskIds).size!==current.length||current.some(row=>!input.taskIds.includes(row.id)))throw Error('Row order must include every active task for this customer.');
+        if(current.some(row=>input.versions?.[row.id]!==taskEditVersion(s.tasks.find(task=>task.title===row.id))))throw Error('Row order changed. Refresh before saving.');
+        input.taskIds.forEach((id,index)=>{const {task}=verified(id);edit(task,{rowPosition:index+1});});
+      } else if(operation==='AVERAGE_COST') {
+        const {task,order}=verified(input.taskId),note=String(input.note||'').trim();
+        if(readPurchasePlan(task,s.activity).costing)throw Error('Edit this supplier through the allocation calculator to preserve its costing inputs.');
+        if(taskEditVersion(task)!==input.version)throw Error('A task changed. Refresh before saving; your input is retained.');
+        if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before applying cost.');
+        if(typeof input.lineCost!=='number'||!Number.isFinite(input.lineCost)||input.lineCost<0||input.lineCost>999999999||Math.abs(input.lineCost*100-Math.round(input.lineCost*100))>0.00001)throw Error('Enter the actual line cost in MYR, with at most two decimal places.');
+        if(!Number.isSafeInteger(input.cartons)||input.cartons<1||input.cartons>9999)throw Error('Total cartons including free cartons must be between 1 and 9999.');
+        if(!Number.isSafeInteger(order.orderId)||order.orderId<=0)throw Error('EA is unavailable. Cost cannot be applied.');
+        if(note.length>2000)throw Error('Calculation note must be at most 2000 characters.');
+        const average=input.lineCost/input.cartons;
+        const patch={lpCtn:average,lpPc:average/order.orderId,disc1:0,disc2:0,disc3:0,manualCostField:[...new Set([...(task.manualCostField||[]),...prices])]};
+        edit(task,patch);
+        events.push({taskId:task.title,action:'PURCHASE_AVERAGE_COST_APPLIED',before:Object.fromEntries(prices.map(key=>[key,task[key]??null])),after:Object.fromEntries(prices.map(key=>[key,patch[key]])),calculation:{currency:'MYR',lineCost:input.lineCost,totalCtn:input.cartons,averageCostCtn:average,ea:order.orderId,note},supplierId:task.supplierId});
+      } else if(operation==='PLAN') {
+        const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim(),plan=readPurchasePlan(task,s.activity);
+        if(taskEditVersion(task)!==input.version||plan.revision!==input.planRevision)throw Error('Procurement plan changed. Refresh before saving; your input is retained.');
+        const supplierId=input.supplierId===undefined?task.supplierId:input.supplierId,patch={};
+        if(!['SUPPLIER_DELIVER','SELF_COLLECT'].includes(input.transportMode))throw Error('Select Supplier Deliver or Self Collect before saving.');
+        if(plan.costing&&!input.costing)throw Error('Retain the original procurement costing inputs when editing this plan.');
+        const costing=input.costing?calculatePlanCosting(input.costing,input.totalCtn,order.orderId):null;
+        if(!supplierId||!s.suppliers.some(row=>row.title===supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select an active supplier before saving the purchase plan.');
+        if(supplierId!==task.supplierId){if(task.ourPoNumber||plan.revision&&!plan.draftPlan)throw Error('Supplier is locked to the confirmed procurement source.');patch.supplierId=supplierId;}
+        if(costing){
+          const derived={lpPc:costing.averageCostCtn/costing.ea,lpCtn:costing.averageCostCtn,disc1:0,disc2:0,disc3:0,manualCostField:prices};
+          for(const [key,value] of Object.entries(derived))if(canonical(task[key]??null)!==canonical(value))patch[key]=value;
+        }
+        else if(input.prices!==undefined){
+          if(!input.prices||Object.keys(input.prices).length!==prices.length||prices.some(key=>typeof input.prices[key]!=='number'||!Number.isFinite(input.prices[key])||input.prices[key]<0)||input.prices.disc1>1||input.prices.disc2>1||input.prices.lpCtn*(1-input.prices.disc1)*(1-input.prices.disc2)-input.prices.disc3<0)throw Error('Check supplier costs and discounts.');
+          for(const key of prices)if(input.prices[key]!==task[key])patch[key]=input.prices[key];
+          if(prices.some(key=>key in patch))patch.manualCostField=[...new Set([...(Array.isArray(task.manualCostField)?task.manualCostField:[]),...prices])];
+        }
+        if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999)throw Error('Supplier quantity must be between 1 and 9999 cartons.');
+        const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
+        if(input.totalCtn!==plan.totalCtn&&physicalReceipt(task.title,s.activity))throw Error(RECEIPT_QTY_LOCK);
+        if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
+        if((!reason&&!task.ourPoNumber&&!costing)||reason.length>2000)throw Error('A procurement reason is required.');
+        if(input.totalCtn===plan.totalCtn&&input.transportMode===plan.transportMode&&!Object.keys(patch).length&&canonical(costing)===canonical(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
+        const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
+        const batchContext=checkPurchaseBatch(s.workspace,demandTask.title,input,input.totalCtn-(plan.totalCtn||0));
+        const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
+        const allocation=costing||readPurchaseShares(demandTask.title,s.activity).shares?planPurchaseShares(s.workspace,s.activity,demandTask.title,task.title,input.totalCtn):null;
+        const extra=allocation?allocation.extraCtn:input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
+        if(extra>0&&(!costing&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true)))throw Error('Confirm extra cartons and whether they are free goods or paid procurement; an additional purchase reason is required.');
+        if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
+        edit(task,patch);
+        if(Object.keys(patch).length)events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
+        updates[0].planRevision=plan.revision;
+        updates[0].receiptPoId=task.ourPoNumber?operationId(company,'PURCHASE_ORDER',s.tasks.filter(row=>row.ourPoNumber===task.ourPoNumber&&row.supplierId===task.supplierId).map(row=>row.title).sort()):null;
+        if(batchContext){updates[0].shipmentBatch=batchContext;updates[0].shipmentBatchRoot=demandTask.title;}
+        if(allocation){updates[0].sharesRevision=allocation.beforeRevision;updates[0].sharesRootId=demandTask.title;events.push({taskId:task.title,shareRootId:demandTask.title,action:'PURCHASE_SOURCE_SHARES_SAVED',beforeRevision:allocation.beforeRevision,shares:allocation.shares,reason});}
+        events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,transportMode:input.transportMode,...(batchContext||{}),...(costing?{costing}:{}),customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?(costing?'PROCUREMENT_SURPLUS':input.extraKind):'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
+      } else if(operation==='QTY') {
+        const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
+        if(s.workspace.tasks.find(row=>row.id===input.taskId)?.borrowingOutstanding>0)throw Error('Return unshipped borrowed stock or complete repayment before reducing this customer demand.');
+        if(task.procurementSource)throw Error('Customer demand can only be edited on the original customer line.');
+        if(task.specialPurchase)throw Error('Special Purchase quantity rules are not enabled.');
+        if(taskEditVersion(task)!==input.version)throw Error('A task changed. Refresh before saving; your input is retained.');
+        if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before editing quantity.');
+        if(!Number.isSafeInteger(input.quantity)||input.quantity<1||input.quantity>9999||!Number.isSafeInteger(task.purchaseQtyInCtn)||input.quantity>=task.purchaseQtyInCtn)throw Error('Quantity can only be reduced to a positive value. Zero requires cancellation.');
+        const fixedShares=readPurchaseShares(task.title,s.activity).shares;if(fixedShares&&fixedShares.reduce((sum,row)=>sum+row.customerCtn,0)>input.quantity)throw Error('Resolve the saved supplier customer shares before reducing demand.');
+        const received=readWarehouseTask(task,s.activity)?.customerReceived??task.receivedQtyInCtn;
+        if(Number.isFinite(received)&&input.quantity<received)throw Error('Quantity cannot be reduced below received cartons before warehouse allocation is resolved.');
+        if(task.ourPoNumber&&!readPurchasePlan(task,s.activity).revision)throw Error('Record the current supplier procurement quantity before reducing a task with a P.O.');
+        if(!reason||reason.length>2000)throw Error('A quantity change reason is required.');
+        let confirmed=order.orderQtyInCtn;
+        const prior=s.activity.filter(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED');
+        while(prior.length){const matches=prior.filter(event=>event.details?.before===confirmed);if(matches.length!==1)throw Error('Previous quantity save requires confirmation. Retry the original save.');const event=matches[0];if(!Number.isSafeInteger(event.details.after)||event.details.after<0||event.details.after>=confirmed)throw Error('Quantity history requires review.');confirmed=event.details.after;prior.splice(prior.indexOf(event),1);}
+        if(confirmed!==task.purchaseQtyInCtn)throw Error('Previous quantity save requires confirmation. Retry the original save.');
+        edit(task,{purchaseQtyInCtn:input.quantity});
+        events.push({taskId:task.title,action:'PURCHASE_QTY_REDUCED',before:task.purchaseQtyInCtn,after:input.quantity,reason,supplierId:task.supplierId,originalQty:order.orderQtyInCtn,authorizedRole:staff.role});
+      } else if(operation==='PO') {
+        const po=String(input.poNumber||'').trim().toUpperCase();if(!po||po.length>80||!Array.isArray(input.taskIds)||!input.taskIds.length||input.taskIds.length>100||new Set(input.taskIds).size!==input.taskIds.length)throw Error('P.O. number and distinct tasks are required.');
+        if(/^(NCT|GHR)-PO-?$/.test(po))throw Error('Enter the P.O. number after the company prefix.');
+        const chosen=input.taskIds.map(verified),first=chosen[0];
+        if(!first.task.supplierId||chosen.some(({task})=>task.supplierId!==first.task.supplierId))throw Error('One P.O. must belong to one supplier.');
+        if(!s.suppliers.some(row=>row.title===first.task.supplierId))throw Error('Supplier profile is missing. Select a registered supplier.');
+        if(chosen.every(({task})=>task.ourPoNumber===po&&!['NEW_INCOMING','WAITING_FOR_PO'].includes(task.purchaseStage)))throw Error('P.O. number has not changed.');
+        const used=s.workspace.tasks.filter(row=>row.po.trim().toUpperCase()===po);
+        if(used.some(row=>row.supplierId!==first.task.supplierId))throw Error('This P.O. is already assigned to another supplier.');
+        const savedOrders=(await store.all('PurchaseOrders')).filter(row=>row.company===company);
+        const proposed=s.workspace.tasks.map(row=>({...row,po:input.taskIds.includes(row.id)?po:row.po}));
+        for(const saved of savedOrders){
+          const members=proposed.filter(row=>saved.details?.taskIds?.includes(row.id));
+          if(members.length!==(saved.details?.taskIds?.length||0)||new Set(members.map(row=>row.po)).size>1)throw Error('This P.O. has saved records. Select all its tasks when changing its number.');
+        }
+        const destination=proposed.filter(row=>row.po===po).map(row=>row.id);
+        if(savedOrders.filter(row=>row.details?.taskIds?.some(id=>destination.includes(id))).length>1)throw Error('Two purchase orders with saved records cannot be merged.');
+        for(const {task} of chosen){if(input.versions?.[task.title]!==taskEditVersion(task))throw Error('A task changed. Refresh before saving.');
+          const patch={ourPoNumber:po,purchaseStage:['NEW_INCOMING','WAITING_FOR_PO'].includes(task.purchaseStage)?'WAITING_FOR_SUPPLIER_INV':task.purchaseStage};
+          edit(task,patch);events.push({taskId:task.title,action:'PURCHASE_PO_ASSIGNED',before:task.ourPoNumber||'',after:po});
+          if(!readPurchasePlan(task,s.activity).revision)events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:'',before:null,after:task.purchaseQtyInCtn,totalCtn:task.purchaseQtyInCtn,customerQty:task.purchaseQtyInCtn,extraKind:'',reason:'Quantity recorded when assigning P.O.',supplierId:task.supplierId,poNumber:po,supplierConfirmed:false});}
+      } else {
+        throw Error('Special Purchase quantity allocation is awaiting confirmation.');
+        const {task,row}=verified(input.parentTaskId),reason=String(input.reason||'').trim();
+        if(task.specialPurchase||taskEditVersion(task)!==input.version||!Number.isSafeInteger(input.extraQty)||input.extraQty<=0||input.extraQty>1000000||!reason||reason.length>2000)throw Error('Check Special Purchase source, Extra Qty and Reason.');
+        const childId=operationId(company,requestId,staff.memberId,'SPECIAL'),patch=Object.fromEntries(fields.filter(key=>!['ourPoNumber','purchaseQtyInCtn','specialPurchase','specialPurchaseReason','purchaseStage','risk','riskReason','rowPosition'].includes(key)).map(key=>[key,task[key]??null]));
+        Object.assign(patch,{title:childId,description:task.description,imageAltText:task.imageAltText,purchaseQtyInCtn:input.extraQty,receivedQtyInCtn:null,ourPoNumber:'',specialPurchase:true,specialPurchaseReason:reason,purchaseStage:'NEW_INCOMING',risk:false,riskReason:'',
+          originalCostSnapshot:copy(task.originalCostSnapshot),latestCostReference:copy(task.latestCostReference),costStatus:task.costStatus,costErrorReason:task.costErrorReason,lastCostCaptureTime:task.lastCostCaptureTime});
+        const sequence=s.workspace.tasks.filter(item=>item.customerId===row.customerId&&!item.archived).map(item=>item.id);sequence.splice(sequence.indexOf(task.title)+1,0,childId);
+        sequence.forEach((id,index)=>{if(id===childId)patch.rowPosition=index+1;else edit(verified(id).task,{rowPosition:index+1});});
+        updates.push({id:childId,expected:null,patch,orderId:task.description,lineId:task.imageAltText});
+        events.push({taskId:childId,action:'SPECIAL_PURCHASE_ADDED',parentTaskId:task.title,submissionId:s.orders.find(order=>order.title===task.description&&order.sourceLineId===task.imageAltText).submissionId,
+          extraQty:input.extraQty,reason,stockDestination:'AVATA',allocationPending:true});
+      }
+      for(const change of updates.filter(change=>change.sharesRevision!==undefined)){const original=s.tasks.find(task=>task._id===change.id);change.targetVersion=taskEditVersion({...original,...change.patch});}
+      // Capture exact saved inputs once on the existing journal, including legacy edit paths.
+      for(const event of events.filter(event=>['PURCHASE_PLAN_SAVED','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PO_ASSIGNED'].includes(event.action))){
+        const task=s.tasks.find(task=>task.title===event.taskId),change=updates.find(change=>change.id===event.taskId),order=s.orders.find(order=>order.title===task?.description&&order.sourceLineId===task?.imageAltText);
+        if(!task||!change||!order)continue;
+        const beforePlan=readPurchasePlan(task,s.activity),planEvent=events.find(item=>item.taskId===task.title&&item.action==='PURCHASE_PLAN_SAVED'),afterPlan=planEvent?{...beforePlan,totalCtn:planEvent.totalCtn,costing:planEvent.costing||null}:beforePlan;
+        event.commercialBefore=commercialSnapshot(task,beforePlan,order);event.commercialAfter=commercialSnapshot({...task,...change.patch},afterPlan,order);
+        event.commercialChanged=JSON.stringify(event.commercialBefore)!==JSON.stringify(event.commercialAfter);event.amendment=Boolean(task.ourPoNumber)&&event.commercialChanged;
+      }
+      await requireEditablePurchaseChanges(company,updates);
+      return {operation,updates,events,...(displayOrder?{displayOrder}:{}),time:now().toISOString()};
+    },apply:async plan=>{
+      const held=[],checkedEvents=new Map();
+      // Event IDs are immutable and request-specific. Reuse only this apply's
+      // existence checks; every recovery attempt starts with a fresh map.
+      const readEvent=async id=>{if(!checkedEvents.has(id))checkedEvents.set(id,await store.read(names.activity,id));return checkedEvents.get(id);};
+      if(plan.operation!=='PLAN')requireConfirmedProcurement(preparedWorkspace||(await state(company,staff,plan.operation==='PO'?requestId:'')).workspace,plan.updates.map(change=>change.id));
+      if(plan.displayOrder){const current=(await state(company,staff)).workspace.purchaseDisplayOrder?.[plan.displayOrder.customerId];if(current?.version!==plan.displayOrder.beforeVersion)throw Error('Shipment row order changed while this save was pending. Refresh and review the retained draft.');}
+      const started=now().getTime();
+      const stillOwned=async taskId=>{const id=operationId(company,taskId,'COST_LOCK'),lock=await store.read(names.activity,id);if(started+90000<=now().getTime()||lock?.details?.requestId!==requestId||lock.details.actorMemberId!==staff.memberId)throw Error('Save time limit reached. Refresh and retry this same save.');};
+      try {
+        await requireEditablePurchaseChanges(company,plan.updates);
+        await each([...plan.updates].sort((a,b)=>a.id.localeCompare(b.id)),async change=>{
+          const lockId=operationId(company,change.patch.title||change.id,'COST_LOCK');
+          if(await store.read(names.activity,lockId))throw Error('A task is busy. Retry this same save after refreshing.');
+          await store.insert(names.activity,{_id:lockId,title:lockId,description:change.orderId,activityTime:now(),details:{requestId,actorMemberId:staff.memberId}});held.push(lockId);
+        });
+        await each(plan.updates,async change=>{
+          await stillOwned(change.patch.title||change.id);
+          const [order,current]=await Promise.all([store.one(names.orders,{title:change.orderId,sourceLineId:change.lineId}),store.read(names.tasks,change.id)]);if(!order||order.salesInvoiceNumber)throw Error('Customer invoice has locked this transaction.');
+          const target={...current,...change.patch};
+          const validations=await Promise.allSettled([(async()=>{if(change.planRevision!==undefined){
+            const event=plan.events.find(event=>event.taskId===change.id&&event.action==='PURCHASE_PLAN_SAVED'),eventId=operationId(company,requestId,staff.memberId,change.id,event.action);
+            if(!await readEvent(eventId)){
+              if(event.totalCtn!==event.before){
+                const records=(await store.all('PurchaseOrders',{company})).filter(record=>record.company===company&&record.details?.taskIds?.includes(change.id)),poIds=[...new Set(records.map(record=>record._id).concat(change.receiptPoId||[]))];
+                for(const poId of poIds){const receipts=await store.all(names.activity,{action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',description:poId});readWarehouseReceipts(poId,receipts);if(physicalReceipt(change.id,receipts))throw Error(RECEIPT_QTY_LOCK);}
+              }
+              if(change.shipmentBatch)checkPurchaseBatch((await state(company,staff)).workspace,change.shipmentBatchRoot,change.shipmentBatch,event.totalCtn-(event.before||0));
+              if(!current||taskEditVersion(current)!==change.expected&&taskEditVersion(current)!==change.targetVersion||readPurchasePlan(current,await store.all(names.activity,{action:'PURCHASE_PLAN_SAVED',result:'SAVED',imageAltText:current.title})).revision!==change.planRevision)throw Error('Procurement plan changed while this save was pending.');
+            }
+          }})(),(async()=>{if(change.sharesRevision!==undefined){const shareId=operationId(company,requestId,staff.memberId,change.id,'PURCHASE_SOURCE_SHARES_SAVED');if(!await readEvent(shareId)&&readPurchaseShares(change.sharesRootId,await store.all(names.activity,{action:'PURCHASE_SOURCE_SHARES_SAVED',result:'SAVED',imageAltText:change.sharesRootId})).revision!==change.sharesRevision)throw Error('Supplier allocations changed while saving.');}})()]);
+          for(const validation of validations)if(validation.status==='rejected')throw validation.reason;
+          if(change.expected===null) {if(current){if(taskEditVersion(current)!==taskEditVersion(change.patch))throw Error('Special Purchase identity conflict.');}else {const record={_id:change.id,...change.patch};if(record.lastCostCaptureTime)record.lastCostCaptureTime=new Date(record.lastCostCaptureTime);await store.insert(names.tasks,record);}}
+          else if(!current)throw Error('Task missing.');
+          else if(taskEditVersion(current)!==taskEditVersion(target)){if(taskEditVersion(current)!==change.expected)throw Error('Task changed while this save was pending.');await store.update(names.tasks,target);}
+        });
+        await each(plan.events,async event=>{
+          const change=plan.updates.find(change=>change.id===event.taskId),id=operationId(company,requestId,staff.memberId,event.taskId,event.action);
+          const [,existing]=await Promise.all([stillOwned(event.taskId),readEvent(id)]);
+          if(!existing){const saved=await store.insert(names.activity,{_id:id,title:id,description:change.orderId,image:change.lineId,imageAltText:event.shareRootId||event.taskId,action:event.action,
+            activityTime:new Date(plan.time),actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,result:'SAVED',message:event.action.replaceAll('_',' '),details:{requestId,...event}});
+            checkedEvents.set(id,saved);}
+        });
+        return {ok:true,company,requestId,operation,savedAt:plan.time,taskIds:plan.updates.map(change=>change.id)};
+      } finally {await each(held,async id=>{const lock=await store.read(names.activity,id);if(lock?.details?.requestId===requestId&&lock.details.actorMemberId===staff.memberId)await store.remove(names.activity,id);},true);}
+    }});
+  };
+}

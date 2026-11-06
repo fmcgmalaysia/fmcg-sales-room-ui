@@ -1,0 +1,36 @@
+Selected -> QD automatic recovery, 2026-10-30. Scope: FMCGMALAYSIA only.
+
+Production baseline comparison and authorization:
+The freshly read catalogueSelection.web.js matches historical 3fe127d exactly (SHA256 923afbc6c6bd04789e0fe80c64edb02e8655a48dd0446bcff98db54c7bc7288c). Current repository had three additional customer-context return fields from bc4906b. The user explicitly approved preserving the online behavior and patching only QD recovery. These unrelated fields are therefore omitted from this patch's runtime baseline, not silently synchronized into Wix.
+Sales Room page code is semantically exact after CRLF normalization: SHA256 534b62526aeee797e1a9f5cba3cbaccbc98466a805c8a9a8abed546debb7a807. The raw UI clipboard CRLF hash differs only by line endings.
+Existing annotated recovery tag verified/catalogue-search-20261004 remains unchanged. Exact fresh online backend is preserved privately. Central QD writer is unchanged, active deployment v18; its RemoveSelection.gs matches integration/apps-script/verified-central-v16/RemoveSelection.gs exactly.
+
+Single recovery path:
+- All entry points use the existing routeQueuedSelections_ / routeOneSelection_ writer.
+- A failed selection does not prevent later eligible selections from running. Oldest attempts are processed first; elapsed request time is bounded.
+- Retry rereads the exact referenced source product after barcode validation failures. It does not edit POINTBASE, split a barcode, infer a replacement product, or create another selection ID. Invalid or colliding source identity remains a staff issue.
+- READY requires the matching customer ID, matching selection ID, and a valid QD row receipt.
+- Lost responses retry the same selection ID. Current quote fields, removed flags, and newer routing state are preserved on result writes.
+- Staff access and customer status boundaries remain enforced. Customer Selected feedback continues immediately after CMS persistence.
+- Sales Room retries saved work once per minute while work remains and coalesces overlapping requests. No page reload or customer retry control is added.
+- Wix scheduled jobs call the same internal queue hourly when no page is open, respecting standard-plan scheduling limits. This job uses existing records; it does not create diagnostic/test rows.
+
+Validation:
+29 focused selection, routing, quotation and brand-sync checks pass.
+Expanded affected regression: 125 tests, 111 pass, 14 fail. Unmodified HEAD baseline: 106 tests, 92 pass, the identical 14 fail; all 19 newly added tests pass and no existing failure was added. Existing failures concern stale download/layout/order/FX assertions, not repaired by this task. Private full TAP outputs are retained locally.
+git diff --check passes. POINTBASE, QD template, central Apps Script, Catalogue display, Buyer Room and MASTER source files are unchanged.
+
+Release state at preparation: code and tests complete locally; GitHub push, Wix minimum sync/publish and public acceptance pending. Static GitHub Pages interface files are unchanged; no full-site static upload is authorized or required for this backend/Wix bridge patch. Do not claim complete publication from this record.
+
+Release progress (supersedes preparation):
+Code 5f77e66 is pushed, draft PR245 attached; not merged into main.
+Wix: 21 isolated backend replacements, 3 Sales replacements, and new jobs.config. Complete LF readbacks match tests: backend 97d43cef91d4f0b30ba094bf7db901c5a769281c2de94beae19a35c8750f9096; Sales ac6e47970867a11a64ecc14a2bbeafcc8bb5db4a23bd357291008a073898685b; jobs 5b025f2771a57511814a07129c4068f7c9c2bbec7214aae6e2214251db60bf5d. Wix explicitly confirmed published/live; screenshot preserved privately.
+Pages was not redeployed. Public Sales index SHA256 728214cef727e6e86128a599474ee6e9e8b80fc1fe19af7ab0f065f098eec98c matches the frozen 20261030-po-document-states-v2 package (94 resources). The mutable checkout index was not synchronized over the public interface.
+Production evidence: an existing failed selection automatically retried at 13:01 UTC after publication, retained its identity/time/source barcode, remained FAILED, and received the new 15-minute backoff. No manual route click, source-data edit or customer reselection was performed. The existing customer QD still had the same 11 quoted rows, with no duplicate selection rows at the bounded read.
+Public visual acceptance is still incomplete: correct iframe src, empty Sales and Catalogue rendered frames, no captured relevant code exception, Wix suspense fallback messages. Native tab activation and force refresh did not yet establish a visible interface; a later frame-tree read timed out. The completed editor opened by this task was closed after preserving code and publish evidence, to reduce resource use. User purchase drafts and unrelated tabs were not changed. Do not infer a code regression or its cause from these symptoms alone.
+Successful backfill of the actual invalid-source selection remains dependent on source data correction by its owner. Full visible Selected -> QD acceptance is outstanding; no complete-publication or user-acceptance claim is made.
+
+Later public verification update:
+The bounded recovery check after closing the completed editor succeeded. Fresh public Sales Room visibly displayed the signed-in dashboard, four customer accounts and the expected pending-quotation count; My Customers and the affected customer's Open Workspace also worked. No manual QD-route retry was clicked.
+An existing public Catalogue session for the affected customer visibly showed 12 of 100 selections. Searching the reported product showed Selected and the disabled Selected control, with no customer reselection or data write. Screenshot preserved privately. Existing source barcode remains unchanged. No captured relevant application exception; preexisting Wix suspense fallback messages were still present. Recovery of display does not establish the iframe-blank root cause.
+Thus formal Sales/Catalogue visibility, preserved selection and real automatic failure retry are verified. Actual successful backfill after source correction is still unverified and must remain explicitly pending. The patch is available for user testing; no main merge or new verified tag.

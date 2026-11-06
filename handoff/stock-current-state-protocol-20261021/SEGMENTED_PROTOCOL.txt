@@ -1,0 +1,31 @@
+2026-10-22 Implemented first two Astra decision slices, candidate only
+
+New segmented-plan codec: canonical exact images, UTF8/escaped serialized record
+budget, ordered/hash/identity manifest, attempt-specific immutable fragment IDs.
+An oversized individual image may span fragments; no business line truncation.
+New segmented-fenced-proof: v1 common lock/control retained, all fragments durably
+confirmed before unique root, retry loads exact root plan only. Pending before
+BEFORE/APPLY/VERIFY; bounded row steps each invocation; exact-image CAS replays;
+RESULT/generation only after verification. Old late calls cannot overwrite newer
+state. Pre-root orphan fragments may finish late without acquiring authority.
+Current-save coordinator returns only validated pending counts, not private images.
+
+Tests: stock-current-segmented-plan + segmented-fence:37pass0fail1482.5217ms.
+Includes901images, large/escaped/surrogate content, corrupt/missing chunks, all nine
+write boundaries before/lost/delayed, role revocation, unknown lock acquisition.
+The first codec test run exposed an over-specific >10fragment assertion for a
+payload that correctly fit fewer fragments; corrected assertion to >1, no weakened
+byte/integrity assertions. That run5pass1fail938.1873ms retained as honest evidence.
+
+NOT production-ready: policy64k/8MB/10000writes/32staging fragments/20row steps is
+candidate server policy, not measured Wix capacity. Full prepare, staging, fragment
+reload and custom validation costs still require actual platform budgets. No staging
+progress protocol across invocations exists; over-budget staging refuses before
+any staged write. This is NOT permission to claim arbitrary original300line receipts
+already accepted by the whole business route: original plan mapper still has proof
+caps and whole-product historical reader. Next: lifecycle counters/scoped deltas,
+complete actual writer binding, recovery/migration/coverage and production acceptance.
+
+No live code change, CMS write, lock deletion, elevation, Pages dispatch or publication.
+ACTIVE OFF. v1 is unchanged and retained as regression baseline. Rebuild generated
+runtime after source changes and regress all affected candidate modules before sync.

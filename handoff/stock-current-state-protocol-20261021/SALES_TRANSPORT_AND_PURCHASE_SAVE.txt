@@ -1,0 +1,48 @@
+2026-10-22 Concrete original Sales transport + Purchase v2 saves
+
+Sales transport overlays are mechanically derived from original gateway/adjustment JS.
+Original bearer header/secret check remains byte-identical before any resolver call.
+No real secret was read; tests use SYNTHETIC-TEST-ONLY. Original source onboarding
+already forwards input untouched, so no source auth/HTTP token/route replacement.
+New PRIVATE dispatchCurrentSalesGateway after trusted source auth extracts only exact
+stockCurrent metadata into current save envelope; current input action/customer forced
+from original trusted gateway. READ and ADJUST can call current handlers. Only explicit
+LEGACY invokes old writer. MAINTENANCE/SHADOW/missing route errors, not silent legacy
+fallback. Remaining SELECT/CANCEL/DOCUMENT/PLAN/ORDER_DATE current handlers are still
+unconnected and deliberately blocked by this candidate, not falsely marked ready.
+Optional private resolver not yet installed: current production behavior unchanged.
+
+Actual original Sales order-adjustment candidate forwards READ stock metadata on ADJUST.
+Valid pending BEFORE/APPLY/VERIFY replies keep same UUID/input, show progress and continue
+after250ms. Only matching request with confirmed higher stock generation closes/refreshes.
+Malformed/foreign/stale-success receipts retain same request. Current errors do not clear
+pending via original English error-text regex. Original non-current response unchanged.
+VM exercises actual UI source with minimal DOM; not visual acceptance. Reload durability/
+authenticated real wiring and other Sales write flows still open.
+
+createCurrentPurchaseSave now connects original Purchase auth and preparation to common
+v2 save for EDIT/PO/AVERAGE_COST, PLAN, ADD_SOURCE only. No invented ARCHIVE/ASSIGN route;
+REORDER/SPECIAL/adminQTY intentionally require remaining dedicated adapters. Existing
+original core still determines input/price/supplier/PO/version/invoice/finance rights.
+Preparation takes exact scoped current rows and raw demand task cumulative counters;
+changed sources + current active closure only, not unrelated CLOSED history. Same current
+images build original before/after projections, procurement guard preserves borrowing
+replacement promises. Original task counter fields survive edits; new procurement source
+initializes schema2/dispatch0/generation in same domain plan, no receipt/customer duplicate.
+Missing product/task initialization blocks, never rebuilds stock from old history.
+Domain/combined v2 budgets use explicit server plan format and UTF8size with segmented
+scope; v1 proof bounds unchanged. Those budgets remain policy, NOT Wix capacity evidence.
+
+Tests actual original Purchase EDIT once-only replay under segmented protocol; original
+ADD_SOURCE becomes current unreceived source with zero stock and new raw task checkpoint.
+Unrelated CLOSED/unreceived parent source is omitted from this scope (not lost/modified).
+Original fixture first lacked ORDER_RECEIVED activity, then lacked schemaVersion in fake
+control; corrected fixtures, not production guards. Actual scope expectation changed from
+full2sources to loaded1source with explicit newsourceidentity assertion. All3v2tests pass.
+Final full496current candidate tests pass0fail5342.241ms; runtime45modules/15exports.
+
+NO original backend/frontend/Wix edits, CMS write/delete, ACTIVE switch, public permission,
+Pages dispatch or Wix publish. Still missing other real writer/read/file/callback binding,
+remaining UI and reload-safe resume, actual schema/SDK roundtrip, initialization apply,
+capacity staging/latency, shadow/quiescent cutover, focused release proof and4stages.
+Protected baseline d447185/runtime32b812c unchanged. Continue, not a completion checkpoint.

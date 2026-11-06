@@ -1,0 +1,33 @@
+CURRENT after4d1fa72 — original ADD_SOURCE composition candidate; ACTIVE OFF
+
+Added read-only original source prepare capture with private in-memory journal and
+complete company tables. Original supplier/transport/PO uniqueness/costing/share/version/
+customer batch/invoice checks run unchanged; original task/event IDs and details preserved.
+New source task gets company metadata, zero customer order quantity and no physical stock.
+Authenticated original Purchase role grants the same canAddPurchaseSource capability as
+the existing purchaseOperations.web.js gateway; browser role/flags are ignored.
+
+Private Purchase preparation now handles ADD_SOURCE through original before/after
+projectors and current source/share guard, same barrier and conditional plan contract.
+Confirmed source joins physical-source entitlement list but accepted/onHand stay zero.
+Draft with no PO stays OUT of eligible physical-source list; narrow unconfirmedSourceIds
+coverage requires matching original draft-plan event and source task, no fake receipt.
+FOC170 where customer remainder150 preserves source ownerShare150 and extra20; no demand
+increase. Arbitrary draft coverage cannot hide missing/foreign/unrelated product coverage.
+
+Evidence: actual original factory fixture, initial saved costing/share+PO, then second
+source; original domain untouched during candidate preparation. Tests include stale
+version, invalid transport/supplier, duplicate PO, invoice lock, draft and FOC. Initial
+test used old PLAN without explicit saved customer shares and correctly failed known-share
+guard; fixture changed to real saved calculator shares, NOT a guessed fallback in code.
+Final original Purchase operations + affected candidate74pass0fail961.9044ms. Earlier
+13pass374.5383ms is overlapping focused evidence, not additional independent coverage.
+One rg call mistakenly included Windows directory glob master*; error inspected and
+literal already-returned purchaseOperations.web.js evidence used, no blind retry.
+
+OPEN: actual production endpoints still unchanged. Original source apply-only batch/share/
+version checks require all co-writers fenced before adoption; mapper is not a substitute
+for that gate. Full stocked multi-source/borrowing source insertion+receipt migration parity,
+all other writers/reads, real SDK multi-table rehearsal, capacity/lifecycle/recovery tools,
+reserved exceptions, packing outflow, UI, schema/shadow/ACTIVE/four-stage release remain.
+No Wix edits/mutations/deletions, no new permissions, no Pages dispatch or main merge.

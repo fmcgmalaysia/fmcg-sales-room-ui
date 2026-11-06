@@ -1,0 +1,33 @@
+{
+ "schema":"R2_SDK_AUTHORITY_INSTALL_V1",
+ "scope":"MASTER only; original-authorized R2 SDK access; Packing unchanged",
+ "userDependencyApproval":"2026-10-25 explicit allow for @wix/essentials1.0.15 only; no existing dependency upgrades/removals or ACL changes",
+ "packagesBefore":{"@wix/data":"1.0.528"},
+ "packagesAfter":{"@wix/data":"1.0.528","@wix/essentials":"1.0.15"},
+ "directPackagesReadBack":true,
+ "transitiveLockfileParity":"UNKNOWN; not exposed by native package panel",
+ "nativeProbe":{"ok":true,"stage":"NATIVE_METHODS_CONFIRMED","elapsedMs":853,"operations":{"queries":3,"inserts":1,"bulkInserts":1,"patchAttempts":2},"fixedCollection":"StockProtocolTest","fixedPrefix":"SPT-R2AUTH-20261024-c281:","retainedRecords":3,"staleConditionRejected":true,"finalValue":17,"deletions":0,"permissionsChanged":false},
+ "closedInspection":{"ok":true,"elapsedMs":166,"queries":1,"mutations":0,"retainedRecords":3,"complete":true},
+ "diagnosticClosedSha256":"b3835bd681dc84d0def8a153b2b89740053640c25b559d761e66c264de1d58ef",
+ "originalDepartmentsAndActionChecksUnchanged":true,
+ "privilegedDeletionEnabled":false,
+ "physicalDispatchEnabled":false,
+ "ordinaryStaffNativeAcceptance":false,
+ "activationReady":false,
+ "localFinalRegression":{"pass":1586,"fail":0,"skip":0,"cancelled":0,"durationMs":50649.9044,"privateOutput":"C:/FMCG-WIX-LOCAL/tmp-r2-authority-final-stock-tests-20261025.txt","priorRun":"1584pass2fail: isolated VM omitted new sdkItems/auth bindings; only that test injection adapted; focused replay50pass before final full run"},
+ "nativeExactRoots":[
+  {"name":"r2stockCurrentOrderIntake.js","before":"0d0dd9d0d879d483b3b30f2a26a905f7307ebc2e5f34a1b95d97430b7cb47348","after":"e225c802010a1abaa5985b022f3b15237b2cccb90a0a73ddf4a2c4e380afd03f"},
+  {"name":"r2stockCurrentBorrow.web.js","before":"440c557f59338114862185fcf79981cd988bee419b8fdb4dd5817d3e27a2b379","after":"7c895eb3d4e2ca2acca8a0fdaeb67c58e8d0a6a2e972826f1bc572448ca2bd7b"},
+  {"name":"r2stockCurrentWarehouse.web.js","before":"497c98dbf260d121bc1f4807cb79a19efce842b5b9ee362e0d34ead75bdc8d79","after":"cc35f8d0965dcb1c85f9dd85a709114be6506233603020d15de496e0460fbde6"},
+  {"name":"r2stockCurrentSourceSales.js","before":"cdb6c5857addc183736dd9133fdca0da8050603be7da83d16fdcbca7987858c3","after":"c382171330a5120cd111398446a6945a7316f8383e5cff67c1312dedc08a88ac"},
+  {"name":"r2stockCurrentPurchaseOrders.js","before":"b8e8f2051ee8b582c3b619605dfba4152e45eedfa0b1cd07368f5cfc0c6e836b","after":"3f52d83010e8be472e7fc269841599e271fce0327e405e3c797c0dee6c183efc"},
+  {"name":"r2stockCurrentFulfilment.js","before":"364ba5fa33f1a5cbf893a070c3fb7d06618fdae5448839335f51f9f03ab18383","after":"bd9365579ef0e74974bbde834591eaca644382573020b9443f928ec6f1c24eb6","capability":"READ_ONLY"},
+  {"name":"r2stockCurrentQuantityRead.js","before":"5213f4cdc4b232cbdc1f99a9d76a2e8f163d96f4c035eb195142e9774afa476d","after":"5ee3f64d6f355140d422fcb2d4a930f8cd241eab59f11a28f31e373872404e06","capability":"READ_ONLY"},
+  {"name":"r2stockCurrentAccountPurchase.js","before":"217c7e45112644bce03d128e4574126d0e876b3fd8e81ec11a91dbd01e96a90f","after":"9a9da5c2fe48f550de13bb74de7e4bf91b569815b98f16b7aed93a06c2977db0"},
+  {"name":"r2stockCurrentCostReference.js","before":"c9ef08dc1c978577c0129e59eb888417ddf1caa29ea1025ce84139d6a70fb262","after":"bd4916782d193ade634ea70c7c0cdafecbcb96a2f55a74836c2621210a1e2854"},
+  {"name":"r2stockCurrentExceptions.js","before":"bf37afa161488ec6dfa758f48481a03dc8c4f3ea004a860ae04e6268f8a44ae3","after":"7eb693240ba682751d868e1f875a62158fc8c56d999bc240cafb6be88c1670f5"}
+ ],
+ "allNativeEntireBeforeAndAfterExact":true,
+ "privateScreenshots":["C:/FMCG-WIX-LOCAL/tmp-r2-sdk-installed-20261025.png","C:/FMCG-WIX-LOCAL/tmp-r2-sdk-authority-pass-20261025.png","C:/FMCG-WIX-LOCAL/tmp-r2-sdk-ten-roots-20261025.png"],
+ "release":{"code":"candidate only","pages":"UNCHANGED","wix":"SAVED_DRAFT_NOT_PUBLISHED","public":"NOT_ACCEPTED"}
+}

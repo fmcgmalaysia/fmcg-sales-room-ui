@@ -1,0 +1,64 @@
+2026-10-24 Asia/Kuala_Lumpur — Purchase native pre-install comparison
+Parent50212f4; current branch/checkout and unchanged framework/spec/ownership reused.
+Same computer-use skill/docs/confirmation rules from prior continuation; existing
+Chrome3/Master51427123. No new model, agent, browser session, login or permissions.
+
+First checked existing authorized Wix technical ticket tab51427275 once. Visible
+contact conversation still ends Request submitted! A Customer Care Expert will be
+in touch soon. Profile menu offered My Sites/Account Settings/Billing/Vouchers/
+language/signout, no reply/ticket inbox. Menu closed and existing submission receipt
+retained. No new question, submission, rating, login, external message or site change.
+This page does NOT establish that the email inbox has no reply. No email inbox
+accessed and no engineering answer observed. Do not repeatedly poll this static
+confirmation as a substitute for a real reply channel; wait for new evidence.
+No elapsed-time/drain assumption, no unsafe cutover change.
+
+Continued independent install preparation: selected actual backend files from Wix
+Backend & Public list. For each, rendered file tab and imports visually confirmed
+before click into editor/select-all/copy. Hashed COMPLETE clipboard string, not
+truncated AX value. No typing, edit, Run, save, Publish or CMS interaction.
+
+Complete normalized LF fingerprints all match repository originals:
+integration/backend/purchaseProjection.js
+18219native CRLFchars/18072LFchars
+eab2417c3d8e036f3234888fea33077a53a050f0437da4845f81994f7f8bd5cf
+integration/backend/purchaseWorkspace.web.js
+3040native CRLFchars/2999LFchars
+afe69bc077f8c072d2ce821a45d93ae0198f44f8a28e08d8e02092d0838d2059
+integration/backend/purchaseOperations.web.js
+10412native CRLFchars/10349LFchars
+4e86f5a0a0926dbac2e133aa9bfaca09499515485a08b66a55cd8b747e766ed2
+
+Each also equals exact MASTER target beforeSha256 in current-install-manifest.json.
+Candidate AFTER code differs and is NOT installed by this parity check. This adds
+3real backend preimages to the earlier3packing backend/bridge/3page comparisons,
+not complete native install or verified writer coverage. All20categories remain
+UNVERIFIED; other patched/shared dependencies still need fresh bounded checks.
+Consumers: original Purchase read/margin/name/progress/PO projection, PLAN/source/
+quantity/allocation/shortage/reference and save/replay routes, plus shared backend
+consumers. Preserve original financial locks, PO/receipt/source identity, old
+verified flows and Sales split calculations during later paired installation.
+
+Private exact LF images under:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/
+master-purchase-projection-live-readback-20261024-install.txt
+master-purchase-workspace-live-readback-20261024-install.txt
+master-purchase-operations-web-live-readback-20261024-install.txt
+Full original images copied with apply_patch ONLY after complete editor hash/repo/
+manifest-before equality, then exact content checked. Not exported or Git-staged.
+No app code changes this turn; existing final1337pass30538.2904ms reused, no
+unchanged-code test rerun or inferred native acceptance. Original production dirs
+unchanged. GitHub export rejection remains unresolved; no push/alternate route.
+
+No browser security/settings/credential/token access, new support ticket, CMS item/
+field/index/permission write, native install, diagnostic replay, publication,
+Pages dispatch, merge, delete or activation. Previous Source editor2fail stop and
+localhost/localfile stops retained. Master left on original purchaseOperations.web
+without edits; tab retained for future exact install checks.
+Four states: candidate50212f4local only / Pages unchanged / new Wix flow not
+synchronized or published-live / public new borrowing unavailable/unverified.
+Remaining exact native install/read/writer/schema/index/capacity/recovery/shadow,
+Source blocked path, unsafe old-request drain, specific export approval and actual
+UI/partial borrowing/repayment/Sales split/move/archive acceptance still incomplete.
+ACTIVE and this round's real invoice/physical dispatch remainOFF. Independent work
+continues; no required user action in this turn, heartbeat retained.

@@ -1,0 +1,21 @@
+User display override — 2026-10-22
+
+User explicitly replaced person+mini-triangle with existing system person+halo.
+Both borrower/lender display halo while any linked borrowing relation remains unresolved.
+Partial repayment does not remove halo. All relations resolved: remove halo and retain
+the existing orange/blue base-state calculation. Never choose colour from halo existence.
+Reference image is conceptual only: no 3D/gradient/redesigned person or large image asset.
+Existing self-collect red marker, click handlers and supplier text must remain intact.
+
+Isolated transfer-person.cjs copies current task-grid.js and supplier-allocation.js person
+circle/path exactly, adds a currentColor outline ellipse on an expanded canvas. Existing
+production CSS currently fixes svg size; integration must override ONLY halo element
+dimensions/baseline to retain original body scale and original row height. This helper is
+not production wiring, visual acceptance or a published page. No existing UI file changed.
+Need fresh live comparison before protected UI patch and Chrome candidate visual check.
+Test covers both sides, partial/all repayment, multiple relationships, exact existing SVG
+paths, colour inheritance, unrelated tasks and unknown quantity rejection.
+
+Previous triangle design in chat/history is superseded by this explicit user instruction.
+Future approved cancellation/reassignment must expose an explicit resolved status to this
+view-model; current calculation candidate only closes fully repaid relationships.

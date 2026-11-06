@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-07",
+  "timezone": "Asia/Kuala_Lumpur",
+  "scope": "User-accepted History quantity-path layout and Order Qty header icon only",
+  "userQuote": "效果不错，需要收尾吗",
+  "tag": "verified/history-quantity-path-ui-20261007",
+  "releaseRecordCommit": "a4a60ca",
+  "htmlCommit": "482f14d117fbae75a592d87aca0560ca10c5e1d9",
+  "htmlPath": "buyer-room.html",
+  "wixReferenceCommit": "09ac70c",
+  "wixPagePath": "buyer-room/wix/buyer-room-page.js",
+  "wixRawReadbackSha256": "6a3c0cf21c14d4ae2b01bc3fc10d53b7686d0c86c21f485ec4dc15b1a2e89048",
+  "pages": {"marker": "2026-10-07-history-quantity-path-room5-v1", "run": 37625435213, "job": 112805876158, "exactPublicScriptMatched": true},
+  "wixPublishedLiveReceipt": true,
+  "wixDeploymentId": null,
+  "unchangedDependencyCode": "a1f2b4973b813974c2ca2c1304401f680ae6a453",
+  "unchangedDependencyRawArchiveCommit": "1f310438d3fcc090093c0203a8bb327afe4eef0d",
+  "unchangedDependencyArchive": {
+    "catalogueAuth": {"path": "handoff/room5-day-closeout-20261007/live/catalogueAuth.web.js", "sha256": "27fd22c9388fb809f54f3db53858bc3f9d6f1c579b0bf426a691a401e6af640e"},
+    "onboarding": {"path": "handoff/room5-day-closeout-20261007/live/onboarding.web.js", "sha256": "864cef16d25ed044ce4816945e3783c88da45844219fa88f919e755d7d9b4fd5"},
+    "popup": {"path": "handoff/room5-day-closeout-20261007/live/order-received-lightbox.js", "sha256": "32d794a43211aec603d6c0d5e87eb464ff67cd7035370c290571cdc2aec8e29f"},
+    "globalCss": {"path": "handoff/room5-day-closeout-20261007/live/global.css", "sha256": "ca704b343437bface432d2c9ce2d316467384d37020218714c7c8c67d1322a44"}
+  },
+  "dependencySnapshotNote": "Exact previously captured live dependencies; UI task made no backend/popup/global CSS changes. No new dependency verification claimed during documentation-only closeout.",
+  "evidence": {"publicAccount": "BERJAYA 07 SDN BHD / LAW", "steps": "Refresh real Buyer Room, inspect History and Order Form; user subsequently confirmed the effect", "historyEvents": 5, "historyTaskRows": 2, "heightPx": 43, "horizontalOverflow": false, "activeTasksUnchanged": 16, "savedDraftUnchangedCtn": 50, "testsPassed": 52, "privateEvidenceLocation": "C:/FMCG-WIX-LOCAL/handoff/history-quantity-path-20261007/"},
+  "temporaryPermission": "revoked, main-only",
+  "mainMerged": false,
+  "recovery": "Restore only the scoped UI/version diff. Preserve receiptOnly/addedTo filtering, effective quantities, immutable receipts/audits and all other live behaviours. Never overwrite the entire site from old main.",
+  "paused": ["Excel", "Wix500 investigation", "Sales quotation publish investigation"],
+  "notCertifiedByThisAcceptance": ["MASTER or real NCT/GHR delivery", "intermittent identity loading root cause", "download delivery", "entire golden path"]
+}

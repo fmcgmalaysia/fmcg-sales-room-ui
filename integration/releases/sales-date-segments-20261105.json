@@ -1,0 +1,74 @@
+{
+  "runtime": "5a268f3f81791e899b51021f9ba2d881b60cafa8",
+  "branch": "fix/sales-date-segments-20261105",
+  "pr": 344,
+  "build": "20261105-sales-date-segments-v3",
+  "code": "complete;14/14 affected checks;inlineJavaScript unchanged;prior80 checks reused",
+  "pages": {
+    "run": 346,
+    "id": "41887958378",
+    "conclusion": "success",
+    "resources": 96,
+    "matched": 96,
+    "changed": [
+      "index.html"
+    ],
+    "unchanged": 95
+  },
+  "wix": {
+    "site": "FMCG MALAYSIA",
+    "page": "Sales Room",
+    "change": "one version token",
+    "exactReadback": true,
+    "publishedAndLive": true,
+    "sourceSha256": "dd26c0486d37c5fb0a8be49049d85a8ed37d5896ef9ff5313b6024b9c3abfdfe"
+  },
+  "permissions": {
+    "temporaryRuleRemoved": true,
+    "originalSevenNamesVerified": true
+  },
+  "public": {
+    "tab": "51431665",
+    "actualVersion": true,
+    "entry": "normal Chrome original Sales bookmark;no additional user reopen",
+    "headers": {
+      "count": 9,
+      "fontSize": "11px",
+      "weight": "600"
+    },
+    "relativeDay": {
+      "size": "11px",
+      "weight": "400"
+    },
+    "dateAndActor": {
+      "size": "10px",
+      "weight": "400",
+      "lineHeight": "14px"
+    },
+    "metadata": {
+      "display": "none",
+      "width": 0
+    },
+    "requestedQty": 201,
+    "requestedValue": "USD2613.60",
+    "requestedCbm": 4.3118,
+    "wixStartupFallbackLogs": 3,
+    "salesCodeExceptionsCaptured": 0
+  },
+  "userConfirmation": "pending;do not merge main or tag user-verified yet",
+  "backlog": "Buyer historical download/back and CMS long-term bounded reading/capacity remain separate",
+  "evidence": "root handoff/sales-streamline-20261105",
+  "previousRuntime": "c4fd714f",
+  "changes": [
+    "Order On normal weight limited to data rows",
+    "date/actor10px while relative day11px",
+    "redundant right-hand metadata hidden"
+  ],
+  "businessActionsSaved": {
+    "orders": 0,
+    "dates": 0,
+    "payments": 0,
+    "inventory": 0,
+    "loaded": 0
+  }
+}

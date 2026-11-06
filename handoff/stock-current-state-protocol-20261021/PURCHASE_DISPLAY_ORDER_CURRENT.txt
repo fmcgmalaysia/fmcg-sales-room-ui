@@ -1,0 +1,46 @@
+2026-10-22 — original split display ordering common-fence candidate
+
+Objective: preserve independent split-row ordering while avoiding a late whole-task
+ordering write overwriting current stock counters. Recoveryd447185/runtime32b812c,
+candidate9919b44. Original production directories remain exact; no live edits.
+
+Original evidence: purchaseOperations REORDER validates complete customer task set,
+task versions, independent display row/version, invoice/archive guards; updates only
+rowPosition. Original purchaseDisplayOrder reads completed legacy PREPARED/RESULT
+receipts. These IDs equal the current protocol reserved manifest/result IDs: writing
+fake old protocol receipts would collide and is forbidden. Do NOT relax reserved IDs.
+
+New PRIVATE createCurrentPurchaseReorderSave uses original Purchase auth/REORDER
+prepare and exact migrated task before-images, common company fence/coverage and
+original request. Only rowPosition patch accepted; stock task counters copied exactly,
+future/unknown migration counters and cost locks refuse. Only own freshly compared
+company lock is hidden from PRIVATE validation snapshot, never removed externally.
+No StockPositions/Claims/Products/transfer mutation or inventory reprojection is needed
+for display-only intent. One immutable PURCHASE_DISPLAY_ORDER_SAVED business event
+in the EXISTING company journal preserves validated displayOrder and task receipt.
+Successful response verifies actual exact event before returning original receipt fields.
+
+Minimal generated purchaseDisplayOrder.candidate.js appends one versioned event seam
+to ORIGINAL receipt recognition; existing identities, split reconciliation, legacy
+completed receipts, revision-chain/fork protections and version calculation unchanged.
+Original file untouched. New event shape/company/time/actor/identity validated, unknown
+or foreign current facts fail closed. Server factory requires explicit version2 paired
+projector capability. Candidate and actual live imports are NOT yet installed/connected.
+No new CMS collection, duplicate PO/task/demand/receiving records, invented cancellation,
+protocol root/result forgery or competing active writer.
+
+Tests: pure and two-company ordering, exact original legacy output, legacy->current
+revision chain, both split rows independently ordered with one task, stale/missing/
+duplicate/foreign rows, invoice/role/counter/cost guards, interruption after task before
+event + same-request recovery and next revision. Stock records byte-preserved and
+latest cumulative task count retained. Focused8pass0fail666.2066ms. Earlier focused
+18pass925.4749ms includes unchanged original display/split-save tests and runtime.
+Full current660pass0fail6283.3961ms;72modules30exports. Node fixtures, NOT real SDK,
+visual/public/native capacity acceptance. Generated runtime exact build checked.
+
+Remaining: combined EDIT price+display-order batch still fails closed in generic
+Purchase current save, not converted into separate business saves. Actual ordinary
+gateway/paired projector/client routing, current workspace ownership/progress/GP,
+all other writers/files/reload/schema/init/recovery/capacity/shadow/fourrelease OPEN.
+Original-disabled SPECIAL remains disabled. Empty all-writer coverage, ACTIVE OFF.
+No Pages/Wix sync or publication. No new test business data or lock deletes.

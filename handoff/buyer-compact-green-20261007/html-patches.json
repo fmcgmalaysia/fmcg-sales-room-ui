@@ -1,0 +1,38 @@
+[
+  {
+    "old": "2026-10-06-buyer-native-selection-download-room5-v1",
+    "new": "2026-10-07-buyer-compact-green-room5-v1"
+  },
+  {
+    "old": "box-shadow:inset 4px 0 #14835f,0 4px 12px rgba(20,83,65,.12);transform:translateY(-1px)",
+    "new": "box-shadow:none;transform:translateY(-1px)"
+  },
+  {
+    "old": "background:#eaf6f1!important;box-shadow:none;transform:translateY(-1px)",
+    "new": "background:#edf5f0!important;box-shadow:none;transform:translateY(-1px)"
+  },
+  {
+    "old": "box-shadow:0 3px 9px rgba(20,131,95,.24);transform:scale(1.05)",
+    "new": "box-shadow:none;transform:scale(1.05)"
+  },
+  {
+    "old": "<div class=\"inline-stat\"><b id=\"myCount\">0</b><span>Products</span></div>",
+    "new": "<div class=\"inline-stat product-count\" hidden><b id=\"myCount\">0</b><span>Products</span></div>"
+  },
+  {
+    "old": "<div class=\"admin-access-banner\" id=\"adminAccessBanner\" hidden><div><strong>Admin Access · 管理员访问</strong><span>You are operating this customer account with Admin authority. All changes are recorded under your Admin identity.</span></div><span class=\"admin-access-badge\">ADMIN</span></div>",
+    "new": ""
+  },
+  {
+    "old": "    </nav>\r\n  </aside>",
+    "new": "    </nav>\r\n    <div class=\"admin-access-banner\" id=\"adminAccessBanner\" hidden><span>您正以管理员身份访问客户目录。</span><span>Viewing the customer catalogue as Admin.</span></div>\r\n  </aside>"
+  },
+  {
+    "old": "function placeAdminBanner(name){const view=$(`${name}View`),header=view?.querySelector(':scope > .page-head, :scope > .top'),banner=$('adminAccessBanner');if(header&&banner)header.insertAdjacentElement('afterend',banner)}",
+    "new": "function placeAdminBanner(name){const side=document.querySelector('.side'),banner=$('adminAccessBanner');if(side&&banner&&banner.parentElement!==side)side.appendChild(banner)}"
+  },
+  {
+    "old": "</style></head>",
+    "new": "/* Buyer Room compact identity note, square thumbnails and shared product headers. */\r\n.side .admin-access-banner{display:block;margin:16px 10px 0;padding:10px;border:1px solid #cbded3;border-radius:6px;background:#f2f7f4;font-size:11px;line-height:1.5;overflow-wrap:anywhere}\r\n.side .admin-access-banner[hidden]{display:none}\r\n.side .admin-access-banner span{display:block;color:#527162}\r\n.side .admin-access-banner span+span{margin-top:4px}\r\n#myView .inline-stats .product-count{display:none}\r\n#myView .inline-stat.awaiting{border-left:0;padding-left:0}\r\n#currentPanel .thumb-shell,#currentPanel .thumb,#currentPanel .thumb-fallback,#orderView .thumb-shell,#orderView .thumb,#orderView .thumb-fallback{width:40px;height:40px}\r\n#orderView .order-product .thumb-shell{flex-basis:40px}\r\n#currentPanel .row:not(.head)>div:nth-child(2),#orderView .row:not(.head)>div:nth-child(2){padding-top:0;padding-bottom:0}\r\n#currentPanel .row.head,#removedPanel .row.head,#orderView .row.head,.content .tracking-row.tracking-head,.content .order-edit-history th{background:#dce7f1;color:#173557}\r\n.content .row:not(.head):hover,.completed-body .tracking-row:not(.tracking-head):hover{background:#edf5f0}\r\n</style></head>"
+  }
+]

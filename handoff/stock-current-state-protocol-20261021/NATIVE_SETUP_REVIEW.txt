@@ -1,0 +1,100 @@
+2026-10-23 — private native setup contract/reviewer prepared, NOT installation
+
+Single objective: turn the actual current reader/writer field/index dependencies
+into an explicit additive review plan before any native collection/ACL mutation.
+Recovery d447185; production runtime32b812c untouched. Reused same-version mandatory
+framework, implementation spec and Astra decision; no model/agent change.
+
+New pure files (not included in runtime or38target production installation):
+ integration/prototypes/stock-current-state/native-setup-review.cjs
+ integration/tests/stock-current-native-setup-review.test.cjs
+currentNativeSetupContract describes3NEW_PRIVATE StockPositions/Claims/Products
+and6EXISTING_AUGMENT journals/tasks/orders for NCT/GHR. No _version or system field
+creation, no renamed collection, no extra stock authority/unique index. All required
+fields are SEMANTIC types, NOT Wix wire enum values or an automatically installable
+schema. Native normalization/type/permission provenance still needs real evidence.
+
+Private proposed policy: newStock* direct read/insert/update/remove ADMIN only,
+original authorized backend roots retain departmental authorization. This document
+does NOT grant production @wix/data scope or change existing collection ACLs.
+Existing journal/task/order definitions, permissions, unrelated fields/indexes are
+preserved. Review reports conflict/missing; no write, overwrite, delete, repair or
+automatic install callback exists.
+
+Candidate REGULAR index fields, allASC and<=3fields (not native-performance proof):
+ StockPositions: company,stockKey,status
+ StockClaims: company,stockKey,status
+              company,positionId,dispatchedCumulative
+              company,taskId,status
+ StockProducts: company,status,barcode
+ Each company journal: company,stockKey,status
+                       company,replacementSourceId,repaidQuantity
+                       company,participantTaskIds,status
+Prefix/residual predicates and _id tie-break sorting remain separate native capacity
+questions; not every query is fully covered. Case-insensitive contains search is
+NOT certified accelerated by these indexes. No query or identity algorithm changed.
+
+reviewCurrentNativeSetup checks caller-owned NORMALIZED complete private readback:
+ exact known/distinct collection scope, complete fields/indexes/ACLs, semantic field
+ types,4private operations, complete index definitions/state/source, actual quota.
+ Failed/building USER indexes still occupy slots; system/automatic do not consume
+ manual slots. AUTO-only is not a durable user index. Equivalent fields/order with
+ a different existing name is accepted without rename; name conflicts refuse.
+ No assumed plan quota; unknown quota reports UNKNOWN. Unrelated definitions stay.
+ Optional captured-row audit checks indexed string UTF8bytes+collection against
+ documented982-byte scalar bound, not a new business/truncation limit. Values never
+ returned. Actual oversized business records NOT observed; standalone stockKey
+ accepting a long identity is only a boundary fixture, not a live defect claim.
+ Captured-row audit is NOT a full native row-type or business conservation check.
+ Results bounded100issues while counting all. Even metadataMatches=true leaves
+ nativeRoundtripsAccepted/deploymentAllowed/activationReady ALWAYS false.
+
+Actual source consumers exercised for field coverage (not source-regex assumptions):
+ readScopedCurrentProduct, createReceiptReadSnapshot, createCurrentQuery stock/
+ source/claim detail, createBorrowCurrentQuery per-task relation lookup. Covers
+ actual active stock sets, dispatched provenance, correction-source repaid range,
+ hasSome batching and participantTaskIds array selector. Mock/Node only.
+
+Verification:
+ New10tests10pass0fail174.3869ms; strengthened equivalent-index ordering and invalid
+ metadata checks, final10new+4existing install tests14pass0fail1366.8077ms.
+ Original38target/94module install manifest unchanged, coverage20categories false.
+ No full-suite rerun for unused offline reviewer; prior FULL1071 evidence retained,
+ NOT a new total. Original production path diff againstd447185 empty.
+
+Actual native READ-ONLY UI check, using computer-use skill:
+ Existing Chrome browser3 handle unavailable; fresh inventory4 selected, existing
+ MASTER CMS tab51426755 reused. No new tab, credentials, hidden state or API token.
+ CMS directory visibly13collections; no newStock* tables listed. It displays0 for
+ the6company orders/tasks/journals, but this directory count is NOT a fresh strong
+ whole-table snapshot or old-execution termination proof. No empty-company inference.
+ NCTActivity MoreActions>Indexes: only System index1 Created date Descending and
+ System index2 ID Ascending shown; GHR/NCTActivity1 same. No USER/AUTO row visible.
+ UI does NOT expose full underlying field paths/status/actual plan quota here;
+ retain UNKNOWN rather than synthesizing a complete normalized native readback.
+ Saved nct-activity-indexes-readonly.png, ghr-activity-indexes-readonly.png and
+ LIVE_EXISTING_INDEX_READBACK.json. No AddIndex/CreateCollection/Save/ACL/record
+ action. Initial collection settings was inspected then Cancel without edits.
+ End at GHR index list; Master editor never touched. No half-install/public release.
+
+Official sources checked, no third-party guarantees adopted:
+ https://dev.wix.com/docs/api-reference/business-solutions/cms/indexes/index-types
+ Plan-dependent manual regular/unique counts, ordinary compound<=3fields, system/
+ automatic distinct. Actual MASTER entitlement still UNKNOWN.
+ https://dev.wix.com/docs/sdk/backend-modules/data/indexes/introduction
+ Indexed scalar+collection byte constraint, failed index consumes slot, contains/
+ case-insensitive queries not proven accelerated.
+ https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/collections/indexes-and-wix-data-collections
+ Scalar array indexes supported; index prefix/range/sort behavior informs candidates.
+ https://dev.wix.com/docs/develop-websites-sdk/code-your-site/work-with-data/introduction/about-collection-fields
+ Schema fields are NOT strict stored-value enforcement. Therefore matching metadata
+ alone cannot replace native typed roundtrip or server business validation.
+
+NEXT: still need real typed-domain/compound/array/300line/recovery validation and
+ supported legacy admission drain/termination before initialization/cutover. New
+2retained-record native initialization test remains UNAUTHORIZED/NOT INSTALLED.
+ Consolidate actual additional platform grants only after remaining independent
+ preparation is reviewable. No repeated business-policy question for user.
+ Efficiency: two initially guessed plan filenames failed; actual inventory resolved
+ receipt-stock-plan/borrowing-stock-plan, no repeated scan. One generated read bundle
+ output was too broad; reused source modules afterward. Actual Credits UNKNOWN.

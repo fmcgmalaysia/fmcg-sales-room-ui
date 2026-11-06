@@ -1,0 +1,51 @@
+2026-10-22 — SOURCE SALES OWN-TAB ADJUSTMENT AND SHIPMENT RECOVERY
+Recovery584da18/PR220. Protected productiond447185/runtime32b812c unchanged.
+First user acceptance ends at Loaded. Real invoice/physical departure OFF; no native
+business writes, browser operation, permission change, live sync or publication.
+
+Candidate original-source line overlays add one own-tab request helper before original
+Sales adjustment/shipment scripts. Root HTML otherwise byte-equivalent after LF
+normalization and reversal of exactly two script seams. Original styles/fonts, element
+IDs, parent messages and bearer authority preserved. Source-ui directory is an overlay,
+NOT a standalone preview/deployment bundle; original relative assets still required.
+
+Current ADJUST/SELECT/CANCEL/PLAN retain full immutable request plus original view,
+original generation and expected employee identity BEFORE network, read-confirm cache
+write, refuse replacement request and prevent form editing while outcome unresolved.
+Own session key company+original staff/member, no storage enumeration/token/cookie/
+credentials/direct backend calls. Another widget/customer cannot submit a second save
+over retained same-company request. Restore routes to its original registered widget,
+restores quantities/reason, disables edits, awaits explicit retry. Local view routing
+is presentation, NOT authentication or a new backend permission.
+
+Reload first uses original parent READ/current identity, or existing auth-only READ
+behind a pending company fence. CACHED customer freshly reauthorized before old view
+returns; foreign employee key never read. Cache change, malformed content, quota,
+authorization mismatch, timeout, wrong final company/task/action, cleanup failure and
+unknown response preserve request/refuse new save. Final strict original receipt and
+advanced committed generation required before cache removal/close or next READ. Same
+UUID/input through bounded phases; attempt/phase timer ownership prevents stale callback
+from sending next request. Legacy successful adjustment/shipment result unchanged.
+
+Evidence (Node/VM synthetic DOM + in-memory, NOT Chrome/native SDK acceptance):
+- ALL stock-current832pass0fail17951.3699ms; includes all new recovery cases.
+- Runtime generator --check89scoped modules, unchanged private exports45.
+- Original independent adjustment/split/view/fulfilment25pass0fail317.8318ms.
+  These are preserved original tests, NOT real invoice/dispatch activation.
+- Source mechanical generator/build --check covered in tests; git diff --check pass.
+- Production root index/adjustment/shipment/onboarding exact diff againstd447185 empty.
+- Cross-widget test initially used a manually reordered cache UI object, unlike actual
+  serializer. Corrected fixture to original field order; did not loosen immutable
+  comparison or production validators. Other fixture added real details-child controls
+  before asserting restored PLAN quantities. No real protected workflow regressed.
+- Failed Windows path-glob and two guessed source-save filenames were diagnostic only;
+  corrected with scoped rg discovery. Credit UNKNOWN; no claimed savings percentage.
+
+NEXT original Source order-date parent transport and preserved DOCUMENT co-writer under
+same fence; other intake/order/native authority writers. Native CMS/schema/index/SDK,
+all20writer verification, cross-session/admin unknown-lock recovery, capacity/lifecycle,
+legacy quiescence/cutover/shadow parity, Loaded end-to-end and four release gates OPEN.
+Coverage EMPTY; ACTIVE OFF. No partial active inventory release.
+Four states: code incomplete candidate; Pages unchanged; Wix not installed/published;
+public current inventory/borrowing unavailable/unverified. Branch-specific temporary
+Pages grant still needed only at completed release, not inferred from computer access.
