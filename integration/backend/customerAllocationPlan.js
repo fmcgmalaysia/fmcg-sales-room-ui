@@ -31,10 +31,13 @@ function assignedToBatch(source,task,batchId){
 }
 function availableSources(context,task){return context.sources.filter(row=>row.received===true&&!row.blocked&&sum(row.targets)<=row.usableReceived&&matches(row,task));}
 function free(source){return Math.max(0,Math.min(source.availablePhysical,source.usableReceived-sum(source.targets)));}
-export function quoteCustomerAllocation(context,{taskId,batchId}){
+export function quoteCustomerAllocation(context,{taskId,batchId,fulfilNow=false}){
  checked(context);const {task,batch}=targetFor(context,taskId,batchId),sources=availableSources(context,task);
- const physicalAssigned=context.sources.reduce((n,source)=>n+assignedToBatch(source,task,batchId),0),waiting=batch.waiting||0,assigned=physicalAssigned+waiting;
- if(assigned>batch.quantity)throw Error('Batch allocation exceeds demand.');
+ const physicalAssigned=context.sources.reduce((n,source)=>n+assignedToBatch(source,task,batchId),0),waiting=batch.waiting||0;
+ if(physicalAssigned+waiting>batch.quantity)throw Error('Batch allocation exceeds demand.');
+ // Explicit early fulfilment replaces incoming coverage with received stock;
+ // it never changes the supplier receipt decision or creates physical stock.
+ const assigned=physicalAssigned+(fulfilNow===true?0:waiting);
  const freeQuantity=sources.reduce((n,source)=>n+free(source),0),useFree=Math.min(batch.quantity-assigned,freeQuantity),shortage=batch.quantity-assigned-useFree;
  const donors=context.tasks.filter(row=>row.id!==taskId&&row.customerId!==task.customerId&&!row.archived&&!row.invoiceLocked&&!row.held&&!row.returnLocked&&matches(row,task)&&!context.loans.some(loan=>(loan.borrowerTaskId===row.id||loan.lenderTaskId===row.id)&&loan.outstanding>0)).map(donor=>({taskId:donor.id,customerId:donor.customerId,quantity:sources.reduce((n,source)=>n+Math.min(source.availablePhysical,source.targets.find(row=>row.taskId===donor.id)?.quantity||0),0)})).filter(row=>row.quantity>0);
  return {version:context.version,taskId,batchId,demand:batch.quantity,assigned,physicalAssigned,waiting,freeQuantity,useFree,shortage,donors};
