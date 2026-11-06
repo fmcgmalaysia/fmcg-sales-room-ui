@@ -1,0 +1,6 @@
+<!doctype html><meta charset="utf-8"><title>Purchase save server timing</title><style>body{font:15px Arial;line-height:1.6;max-width:960px;margin:32px auto;color:#173653}td,th{padding:8px;border:1px solid #d5e1eb}table{border-collapse:collapse}</style>
+<h1>Purchase保存耗时诊断</h1><p>2026-11-06。恢复基准33bb9f2f，运行deb66e03/PR363，正式build20261106-purchase-quantity-save-v1。上一笔保存回执6571ms、读回2066ms、合计8637ms；不能由此推断服务端每步耗时或根因。</p>
+<p>唯一目标：分解PLAN保存的服务端数据操作，依据证据修补不必要的查询或等待。先诊断，后决定。沿用同一createPurchaseOperations工厂；不改变输入、回执、财务锁、收货锁、库存、借还货、权限或CMS记录。精确Wix web/core原件已读回一致，回执模块通过编辑器原生Download取得并比对一致。</p>
+<p>诊断只改purchaseOperations.web.js现有工厂绑定：每个请求独立观察原store调用，记录方法、集合、查询类别、起点、耗时、返回行数和失败标志，不记录输入值、价格、文件或员工资料；单条JSON控制台输出。没有新集合、字段、接口或业务分支；其他操作复用同一工厂且不输出PLAN诊断。日志失败不得改变保存结果。</p>
+<p>95项受影响检查通过，包含5项新增诊断检查、Finance并发锁、原请求恢复、保存中断与回执。当前为诊断候选；未修复业务性能、未发布。Pages96资源保持原状，不需要为后台计时重新部署。</p>
+<p>线上测量计划：仅用未开PO的现有WRIGLEY100测试来源，运输方式Supplier Deliver→Self Collect取得基线，再最小修复后恢复Supplier Deliver取得对照。数量、成本、PO、收货、付款和Loaded不变；每步原请求确认后才继续，禁止重试生成新请求。真实测试原件、后台日志仅保存在本地handoff/purchase-save-server-timing-20261106。</p>
