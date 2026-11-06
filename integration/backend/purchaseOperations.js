@@ -221,7 +221,10 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
       await requireEditablePurchaseChanges(company,updates);
       return {operation,updates,events,...(displayOrder?{displayOrder}:{}),time:now().toISOString()};
     },apply:async plan=>{
-      const held=[];
+      const held=[],checkedEvents=new Map();
+      // Event IDs are immutable and request-specific. Reuse only this apply's
+      // existence checks; every recovery attempt starts with a fresh map.
+      const readEvent=async id=>{if(!checkedEvents.has(id))checkedEvents.set(id,await store.read(names.activity,id));return checkedEvents.get(id);};
       if(plan.operation!=='PLAN')requireConfirmedProcurement(preparedWorkspace||(await state(company,staff,plan.operation==='PO'?requestId:'')).workspace,plan.updates.map(change=>change.id));
       if(plan.displayOrder){const current=(await state(company,staff)).workspace.purchaseDisplayOrder?.[plan.displayOrder.customerId];if(current?.version!==plan.displayOrder.beforeVersion)throw Error('Shipment row order changed while this save was pending. Refresh and review the retained draft.');}
       const started=now().getTime();
@@ -235,11 +238,11 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         });
         await each(plan.updates,async change=>{
           await stillOwned(change.patch.title||change.id);
-          const order=await store.one(names.orders,{title:change.orderId,sourceLineId:change.lineId});if(!order||order.salesInvoiceNumber)throw Error('Customer invoice has locked this transaction.');
-          const current=await store.read(names.tasks,change.id),target={...current,...change.patch};
-          if(change.planRevision!==undefined){
+          const [order,current]=await Promise.all([store.one(names.orders,{title:change.orderId,sourceLineId:change.lineId}),store.read(names.tasks,change.id)]);if(!order||order.salesInvoiceNumber)throw Error('Customer invoice has locked this transaction.');
+          const target={...current,...change.patch};
+          const validations=await Promise.allSettled([(async()=>{if(change.planRevision!==undefined){
             const event=plan.events.find(event=>event.taskId===change.id&&event.action==='PURCHASE_PLAN_SAVED'),eventId=operationId(company,requestId,staff.memberId,change.id,event.action);
-            if(!await store.read(names.activity,eventId)){
+            if(!await readEvent(eventId)){
               if(event.totalCtn!==event.before){
                 const records=(await store.all('PurchaseOrders',{company})).filter(record=>record.company===company&&record.details?.taskIds?.includes(change.id)),poIds=[...new Set(records.map(record=>record._id).concat(change.receiptPoId||[]))];
                 for(const poId of poIds){const receipts=await store.all(names.activity,{action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',description:poId});readWarehouseReceipts(poId,receipts);if(physicalReceipt(change.id,receipts))throw Error(RECEIPT_QTY_LOCK);}
@@ -247,17 +250,18 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
               if(change.shipmentBatch)checkPurchaseBatch((await state(company,staff)).workspace,change.shipmentBatchRoot,change.shipmentBatch,event.totalCtn-(event.before||0));
               if(!current||taskEditVersion(current)!==change.expected&&taskEditVersion(current)!==change.targetVersion||readPurchasePlan(current,await store.all(names.activity,{action:'PURCHASE_PLAN_SAVED',result:'SAVED',imageAltText:current.title})).revision!==change.planRevision)throw Error('Procurement plan changed while this save was pending.');
             }
-          }
-          if(change.sharesRevision!==undefined){const shareId=operationId(company,requestId,staff.memberId,change.id,'PURCHASE_SOURCE_SHARES_SAVED');if(!await store.read(names.activity,shareId)&&readPurchaseShares(change.sharesRootId,await store.all(names.activity,{action:'PURCHASE_SOURCE_SHARES_SAVED',result:'SAVED',imageAltText:change.sharesRootId})).revision!==change.sharesRevision)throw Error('Supplier allocations changed while saving.');}
+          }})(),(async()=>{if(change.sharesRevision!==undefined){const shareId=operationId(company,requestId,staff.memberId,change.id,'PURCHASE_SOURCE_SHARES_SAVED');if(!await readEvent(shareId)&&readPurchaseShares(change.sharesRootId,await store.all(names.activity,{action:'PURCHASE_SOURCE_SHARES_SAVED',result:'SAVED',imageAltText:change.sharesRootId})).revision!==change.sharesRevision)throw Error('Supplier allocations changed while saving.');}})()]);
+          for(const validation of validations)if(validation.status==='rejected')throw validation.reason;
           if(change.expected===null) {if(current){if(taskEditVersion(current)!==taskEditVersion(change.patch))throw Error('Special Purchase identity conflict.');}else {const record={_id:change.id,...change.patch};if(record.lastCostCaptureTime)record.lastCostCaptureTime=new Date(record.lastCostCaptureTime);await store.insert(names.tasks,record);}}
           else if(!current)throw Error('Task missing.');
           else if(taskEditVersion(current)!==taskEditVersion(target)){if(taskEditVersion(current)!==change.expected)throw Error('Task changed while this save was pending.');await store.update(names.tasks,target);}
         });
         await each(plan.events,async event=>{
-          await stillOwned(event.taskId);
           const change=plan.updates.find(change=>change.id===event.taskId),id=operationId(company,requestId,staff.memberId,event.taskId,event.action);
-          if(!await store.read(names.activity,id))await store.insert(names.activity,{_id:id,title:id,description:change.orderId,image:change.lineId,imageAltText:event.shareRootId||event.taskId,action:event.action,
+          const [,existing]=await Promise.all([stillOwned(event.taskId),readEvent(id)]);
+          if(!existing){const saved=await store.insert(names.activity,{_id:id,title:id,description:change.orderId,image:change.lineId,imageAltText:event.shareRootId||event.taskId,action:event.action,
             activityTime:new Date(plan.time),actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,result:'SAVED',message:event.action.replaceAll('_',' '),details:{requestId,...event}});
+            checkedEvents.set(id,saved);}
         });
         return {ok:true,company,requestId,operation,savedAt:plan.time,taskIds:plan.updates.map(change=>change.id)};
       } finally {await each(held,async id=>{const lock=await store.read(names.activity,id);if(lock?.details?.requestId===requestId&&lock.details.actorMemberId===staff.memberId)await store.remove(names.activity,id);},true);}
