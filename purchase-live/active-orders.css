@@ -130,3 +130,6 @@ body:has(#app>.active-order-heading) #taskSignals .task-signal:is(:hover,:focus-
 #app .active-order-table.draft-column-layout #taskRows tr.source-row:not(.selected):not(.highlight):not(.grip-down)>td{background:#fff!important}
 @media(max-width:760px){#app>.active-order-heading.compact-task-heading{flex-wrap:wrap;gap:8px}.compact-task-controls{flex:1}.task-customer-picker{min-width:210px;flex:1}#app>.compact-task-heading h1{font-size:18px}}
 @media(max-width:480px){.compact-task-controls{width:100%}.task-customer-picker{max-width:none}.task-customer-options{max-width:calc(100vw - 36px)}}
+/* Order quantities share the established 19px Rcv/Alloc capsule metrics. */
+#app .purchase-tasks.active-order-table .order-quantity>span.quantity-reference{background:transparent!important;border:0;padding:0}
+#app .purchase-tasks.active-order-table .order-quantity-slots>span.quantity-reference.purchase-info-total{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:19px;min-width:28px;padding:0 8px;border:0;border-radius:12px;font-family:var(--master-font);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:normal;line-height:19px;letter-spacing:normal;white-space:nowrap;justify-self:start;cursor:default}
