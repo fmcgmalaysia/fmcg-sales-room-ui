@@ -20,7 +20,8 @@ export function buildNctSubmission({ order, lines, staff, currentAdminRate, subm
         !Number.isFinite(pc) || pc <= 0) throw new Error('Order line requires its locked EA, selling price per piece and current carton quantity.');
     if (text(line.currency).toUpperCase() !== currency) throw new Error('Order line transaction currency mismatch.');
     return { sourceLineId: text(line.lineId), unitBarcode: text(line.barcode), itemName: text(line.itemName),
-      packingSize: text(line.packingSize), eaPerCtn: ea, qtyCtn: qty, sellingPricePc: pc };
+      packingSize: text(line.packingSize), eaPerCtn: ea, qtyCtn: qty, sellingPricePc: pc,
+      ...(/^https:\/\/[^\s<>"']+$/i.test(text(line.productImageUrl)) ? { productImageUrl: text(line.productImageUrl) } : {}) };
   }).filter(line => line.qtyCtn > 0);
   if (!mapped.length) throw new Error('All order lines have zero quantity.');
   return {

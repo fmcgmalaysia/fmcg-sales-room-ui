@@ -11,6 +11,50 @@ const options = { suppressAuth: true, consistentRead: true };
 const text = value => String(value == null ? '' : value).trim();
 const data = row => row ? JSON.parse(row.payload) : null;
 const lockId = id => 'ORDER-LOCK-' + id;
+// Optional display metadata is captured once, before the immutable Submit request.
+function submissionImage(value, depth = 0) {
+  if (depth > 5 || value == null) return '';
+  if (typeof value === 'object') {
+    for (const candidate of [value.url, value.src, value.id, value.fileName, value.image, value.imageInfo?.url, value.imageInfo?.id, value.media?.url, value.media?.id]) {
+      const resolved = submissionImage(candidate, depth + 1); if (resolved) return resolved;
+    }
+    return '';
+  }
+  const raw = text(value);
+  try {
+    if (raw.startsWith('{')) return submissionImage(JSON.parse(raw), depth + 1);
+    const media = /^(?:wix:)?image:\/\/v1\/([^/#?]+)/i.exec(raw);
+    if (media) return 'https://static.wixstatic.com/media/' + encodeURIComponent(decodeURIComponent(media[1]));
+    if (/^[A-Za-z0-9_.~-]+\.(?:avif|gif|jpeg|jpg|png|webp)$/i.test(raw)) return 'https://static.wixstatic.com/media/' + encodeURIComponent(raw);
+    const url = new URL(raw);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.href : '';
+  } catch (_) { return ''; }
+}
+async function withSubmissionImages(lines, customerId) {
+  // Order itemId is a selection-record ID, not the catalogue product ID.
+  const byIds = async (collection, ids) => {
+    const records = [];
+    for (let i = 0; i < ids.length; i += 100) {
+      const result = await wixData.query(collection).hasSome('_id', ids.slice(i, i + 100)).limit(100).find(options);
+      records.push(...result.items);
+    }
+    return records;
+  };
+  try {
+    const selections = await byIds('WixBuyerListItems', [...new Set(lines.map(line => text(line.itemId)).filter(Boolean))]);
+    const owned = new Map();
+    for (const record of selections) {
+      let selected; try { selected = typeof record.payload === 'object' ? record.payload : data(record); } catch (_) { continue; }
+      if (text(selected?.customerId) === text(customerId)) owned.set(record._id, selected);
+    }
+    const products = new Map((await byIds('FMCGMALAYSIA', [...new Set([...owned.values()].map(item => text(item.productId)).filter(Boolean))])).map(item => [item._id, item]));
+    return lines.map(line => {
+      const selected = owned.get(text(line.itemId)), product = products.get(text(selected?.productId));
+      const productImageUrl = product ? submissionImage(product.image || product.productImage || product.mainImage || product.wixImageUrl) : '';
+      return productImageUrl ? { ...line, productImageUrl } : line;
+    });
+  } catch (_) { return lines; } // Images never block an otherwise valid order.
+}
 async function one(collection, field, value) {
   const result = await wixData.query(collection).eq(field, value).limit(2).find(options);
   if (result.items.length > 1) throw new Error('Duplicate operational record. Admin review is required.');
@@ -119,8 +163,8 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
       ]);
       if (rateResult.items.length !== 1 || rateResult.items[0].active !== true) throw new Error('Current Admin FX rate is unavailable.');
       return { currentAdminRate: rateResult.items[0],
-        lines: lineRows.map(row => row.data).filter(line => text(line.orderId) === id && !line.addedToOrderId)
-          .sort((a, b) => text(a.lineId).localeCompare(text(b.lineId))),
+        lines: await withSubmissionImages(lineRows.map(row => row.data).filter(line => text(line.orderId) === id && !line.addedToOrderId)
+          .sort((a, b) => text(a.lineId).localeCompare(text(b.lineId))), order.customerId),
         history: auditRows.map(row => row.data).filter(event => text(event.orderId) === id && event.action !== 'ORDER_MUTATION_LOCK') };
     },
     async deliver(body) {
