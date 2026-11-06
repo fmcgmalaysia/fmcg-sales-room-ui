@@ -25,3 +25,10 @@ Code candidate tested; GitHub sync pending at this record creation. Pages new br
 
 ## Practical limits
 Automatic receipt visibility follows the existing10-second poll plus server response, not an instantaneous server push. Save improvements remove post-confirmation UI blockage; no measured reduction of Wix server commit duration is claimed. This task does not implement the separate long-term CMS capacity/read redesign.
+
+## Formal v1 acceptance and minimal v2 follow-up
+Pages42171431898 succeeded,96/96 hashes exact, temporary policy removed and original7 restored. Wix confirmed published/live; all5 drafts freshly matched before publish. Formal Purchase fresh user tab51431985 runs20261106-purchase-receipt-ux-v1 with LAW. Parent/source dividers, normal receipt date, PO date/actor, supplier no-reason layout and PO history confirmed. Real AVATA PO888888 history shows500→300 at06-11-26 09:12 by LAW with WAITING200. Received Beauty Mama PO7777 quantity300 readonly; exited without changing records. No relevant console errors.
+
+One requested display remains incomplete: existing active-layout.css hides source receipt case buttons. The red−50 button exists with original data-quantity-case but computes display:none. This hiding rule predates the patch. v2 adds one narrowly scoped style override for active source receipt cases, preserving resolved/zero-gap finance-review behavior; no business JS/backend change. v2 has2 static resources different from v1 (style plusindex),94 retained, all96 hashes/syntax pass.16 related checks pass. Local synthetic−50 now inline-flex/red#E51B2B/white, no errors.
+
+Automatic approval rejected writing the v2 Wix page token because the user-specific release approval covered v1 only. No v2 draft write occurred. Need explicit approval for the single page-token draft plus one additional scoped deployment permission; v1 remains live and original7 rules restored. Do not claim full requested publication until the red source action is visually verified publicly.
