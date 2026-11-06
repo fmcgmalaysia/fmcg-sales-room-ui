@@ -108,6 +108,7 @@ export function createNctIntake({ store, captureCosts, now = () => new Date() })
       await insertOnce(COLLECTIONS.orders, {
         _id: rowId, title: body.orderId, description: line.unitBarcode, image: line.itemName,
         imageAltText: line.packingSize, orderId: line.eaPerCtn, customerId: body.customerId,
+        ...(/^https:\/\/[^\s<>"']+$/i.test(line.productImageUrl || '') ? { productImageUrl: line.productImageUrl } : {}),
         customerCompanyName: body.customerCompanyName, customerPoNumber: body.customerPoNumber || '',
         transactionCurrency: body.transactionCurrency, buyerReceivedBy: body.buyerReceivedBy || '',
         submittedByStaffId: body.submittedByStaffId, submittedByStaffName: body.submittedByStaffName,

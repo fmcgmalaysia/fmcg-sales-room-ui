@@ -36,6 +36,8 @@ async function harness() {
 }
 function collection(h, name) { return [...h.rows].filter(([key]) => key.startsWith(name + '/')).map(([, row]) => row); }
 
+test('image metadata persists once in both companies and survives interrupted intake without extra records',async()=>{for(const company of ['NCT','GHR']){const h=await harness(),input=body();input.destination=company;input.lines[0].productImageUrl='https://static.wixstatic.com/media/test.jpg';h.fail(company==='NCT'?'NCTTasks':'NCTTasks1');await assert.rejects(h.receive(input));h.fail('');const first=await h.receive(input);assert.deepEqual(await h.receive(input),first);assert.equal(collection(h,company==='NCT'?'NCTOrders':'NCTOrders1')[0].productImageUrl,input.lines[0].productImageUrl);assert.equal(h.rows.size,5);assert.equal(h.count(),1);}});
+
 test('GHR intake writes only its company collections and survives partial-write retry', async () => {
   const h = await harness(), input = { ...body(), destination: 'GHR', submissionId: 'GHR-ORDER-TEST' };
   h.fail('NCTTasks1'); await assert.rejects(h.receive(input), /Database write failed/);

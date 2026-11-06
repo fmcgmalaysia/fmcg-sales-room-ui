@@ -739,3 +739,17 @@ body #app>.active-order-heading{min-height:0;margin-bottom:12px}
 
 .po-review-changes{margin-top:14px;border-top:1px solid #d9e4ef;padding-top:10px}.po-review-changes summary{cursor:pointer;color:#2563eb;font-weight:600}.po-review-changes section{margin-top:12px;overflow:auto}.po-review-changes small{display:block;font-size:11px;color:#62788d}
 .po-doc-badge.pending{background:#F58A00;border-color:#F58A00;color:#fff}
+
+/* Purchase PO presentation only; original request and document handlers remain intact. */
+#app .po-submission-workspace .po-ledger :is(th,td):nth-child(4){text-align:right;padding-right:36px}
+.po-submission-workspace .po-ledger :is(th,td):nth-child(5){text-align:left;padding-left:14px;padding-right:6px}
+.po-submission-workspace .po-created-age{display:block;font-size:11px;font-weight:600;line-height:14px}
+.po-submission-workspace .po-request-payment.po-requested-capsule{width:auto;min-width:78px;height:22px;padding:0 10px;border-radius:11px;font:600 10px/22px var(--master-font);vertical-align:middle}
+.po-submission-workspace .po-ledger .po-requested-time{display:block;white-space:nowrap;margin-top:3px;font-size:10px;line-height:13px;color:var(--master-muted);cursor:default}
+
+/* Supplier drafts, saved PO text and optional submitted product image. */
+.supplier-allocation-dialog .allocation-required{color:#b85c00;border-color:#ffb35c;background:#fffaf3}
+.supplier-allocation-dialog .allocation-product-image{width:64px;height:64px;object-fit:contain;flex:none;background:#fff;border-radius:4px}
+.supplier-allocation-dialog .allocation-readonly{display:block;padding:5px 0;line-height:18px}
+.supplier-allocation-dialog .allocation-locked td{vertical-align:middle}
+.supplier-allocation-dialog .allocation-lock-notice{margin:6px 0;color:#52677b}
