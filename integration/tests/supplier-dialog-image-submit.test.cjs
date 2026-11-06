@@ -17,3 +17,24 @@ function imageFixture(records={},fail=false){let reads=[];const wixData={query(c
 test('Submit resolves selection ID to its own product ID in batches, never by barcode',async()=>{const f=imageFixture({WixBuyerListItems:[{_id:'SEL',payload:JSON.stringify({customerId:'C',productId:'PRODUCT'})}],FMCGMALAYSIA:[{_id:'PRODUCT',image:'wix:image://v1/a~mv2.jpg/name.jpg'},{_id:'OTHER',image:'https://example.com/wrong.png'}]});const result=await f.enrich([{itemId:'SEL',barcode:'DUP'}],'C');assert.equal(result[0].productImageUrl,'https://static.wixstatic.com/media/a~mv2.jpg');assert.equal(f.reads.length,2);assert.equal(f.reads[1][1][0],'PRODUCT');});
 test('wrong customer, missing identity and unavailable image service cannot attach another product or block Submit',async()=>{for(const fail of [false,true]){const f=imageFixture({WixBuyerListItems:[{_id:'SEL',payload:JSON.stringify({customerId:'OTHER',productId:'PRODUCT'})}],FMCGMALAYSIA:[{_id:'PRODUCT',image:'https://example.com/wrong.png'}]},fail);const lines=[{itemId:'SEL'},{itemId:'MISSING'}];assert.deepEqual(await f.enrich(lines,'C'),lines);}});
 test('image normalization refuses unsafe URLs and malformed Wix image IDs',()=>{const f=imageFixture();for(const input of ['javascript:alert(1)','http://example.com/a.png','https://user:pass@example.com/a.png','wix:image://v1/%ZZ/a.png'])assert.equal(f.image(input),'');assert.equal(f.image({imageInfo:{url:'https://static.wixstatic.com/media/test.png'}}),'https://static.wixstatic.com/media/test.png');});
+
+test('250 distinct images use bounded batches and preserve order and business values',async()=>{
+ const lines=Array.from({length:250},(_,i)=>({itemId:'S'+i,quantity:i+1,price:12.34}));
+ const records={WixBuyerListItems:lines.map((line,i)=>({_id:line.itemId,payload:{customerId:'C',productId:'P'+i}})),FMCGMALAYSIA:lines.map((_,i)=>({_id:'P'+i,image:'https://static.wixstatic.com/media/p'+i+'.jpg'}))};
+ const original=JSON.stringify(lines),f=imageFixture(records),result=await f.enrich(lines,'C');
+ assert.equal(JSON.stringify(lines),original);assert.equal(result.length,250);assert.equal(f.reads.length,6);
+ assert.deepEqual(f.reads.map(([,ids])=>ids.length),[100,100,50,100,100,50]);
+ result.forEach((line,i)=>{const {productImageUrl,...business}=line;assert.equal(JSON.stringify(business),JSON.stringify(lines[i]));assert.equal(productImageUrl,records.FMCGMALAYSIA[i].image);});
+});
+
+test('repeated selections and shared products are queried once without collapsing order lines',async()=>{
+ const lines=Array.from({length:300},(_,i)=>({itemId:i%2?'S1':'S2',quantity:1}));
+ const f=imageFixture({WixBuyerListItems:['S1','S2'].map(_id=>({_id,payload:{customerId:'C',productId:'P'}})),FMCGMALAYSIA:[{_id:'P',image:'https://static.wixstatic.com/media/p.jpg'}]});
+ const result=await f.enrich(lines,'C');assert.equal(result.length,300);assert.equal(f.reads.length,2);assert.equal(f.reads[0][1].length,2);assert.equal(f.reads[1][1].length,1);assert(result.every(line=>line.productImageUrl==='https://static.wixstatic.com/media/p.jpg'));
+});
+
+test('malformed and foreign selections do not prevent valid owned images or mutate input',async()=>{
+ const lines=[{itemId:'GOOD'},{itemId:'BAD'},{itemId:'FOREIGN'},{itemId:'MISSING'}],original=JSON.stringify(lines);
+ const f=imageFixture({WixBuyerListItems:[{_id:'GOOD',payload:{customerId:'C',productId:'P'}},{_id:'BAD',payload:'{invalid'},{_id:'FOREIGN',payload:{customerId:'OTHER',productId:'SECRET'}}],FMCGMALAYSIA:[{_id:'P',image:'https://static.wixstatic.com/media/p.jpg'},{_id:'SECRET',image:'https://static.wixstatic.com/media/secret.jpg'}]});
+ const result=await f.enrich(lines,'C');assert.equal(result[0].productImageUrl,'https://static.wixstatic.com/media/p.jpg');assert.equal(JSON.stringify(result.slice(1)),JSON.stringify(lines.slice(1)));assert.equal(JSON.stringify(lines),original);assert.equal(JSON.stringify(f.reads[1][1]),'["P"]');
+});
