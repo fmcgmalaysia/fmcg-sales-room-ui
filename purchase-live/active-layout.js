@@ -81,7 +81,7 @@
    if(!Number.isSafeInteger(requested)||!Number.isSafeInteger(actual))continue;
    allocated.replaceChildren();
    const gap=Number(row.dataset.layoutGap||0);
-   if(actual===requested&&!gap&&!Number(row.dataset.layoutWaiting||0)){allocated.textContent=String(actual);}
+   if(!gap&&actual<=requested&&row.dataset.layoutAction==='none'||actual===requested&&!gap&&!Number(row.dataset.layoutWaiting||0)){allocated.textContent=String(actual);}
    else{
     const warning=document.createElement('button');warning.type='button';warning.className='draft-allocation-warning';
     warning.style.color=actual>requested?'#E51B2B':'#F58A00';
@@ -102,10 +102,10 @@
   }
   // Fixed three-part slots keep each parent and its source quantities on the same divider.
   for(const row of table.tBodies[0]?.rows||[]){const cell=row.querySelector('.order-quantity');if(!cell||cell.dataset.quantityAligned)continue;
-    const parent=row.matches('[data-id],[data-split-parent]'),source=row.matches('[data-source-id],[data-receipt-source-id],.ready-stock-row');
+    const parent=row.matches('[data-id],[data-split-parent]'),source=row.matches('[data-source-id],[data-receipt-source-id],.ready-stock-row,.waiting-row');
     if(parent){let next=row.nextElementSibling,children=false;while(next&&!next.matches('[data-id],[data-split-parent]')){if(next.matches('[data-source-id],.ready-stock-row'))children=true;next=next.nextElementSibling;}
-      const pair=cell.querySelector('.quantity-aligned,.qty-pair');if(pair&&pair.children.length===3){pair.className='order-quantity-slots';if(children){pair.lastElementChild.replaceChildren();pair.lastElementChild.className='';}}
-    }else if(source){const value=cell.textContent.trim();if(/^\d+$/.test(value)){const nodes=[...cell.childNodes],slots=document.createElement('span'),left=document.createElement('span'),divider=document.createElement('span'),right=document.createElement('span');slots.className='order-quantity-slots';divider.textContent='|';right.append(...nodes);slots.append(left,divider,right);cell.replaceChildren(slots);}}
+      const pair=cell.querySelector('.quantity-aligned,.qty-pair');if(pair&&pair.children.length===3){pair.className='order-quantity-slots';const planned=count(pair.lastElementChild),requested=count(pair.firstElementChild);pair.lastElementChild.className=planned===null?'':'quantity-reference purchase-info-total'+(requested!==null&&planned<requested?' purchase-info-pending':' receipt-complete');}
+    }else if(source){const value=cell.textContent.trim();if(/^\d+$/.test(value)){const nodes=[...cell.childNodes],slots=document.createElement('span'),left=document.createElement('span'),divider=document.createElement('span'),right=document.createElement('span');slots.className='order-quantity-slots';divider.textContent='|';right.append(...nodes);if(row.matches('.waiting-row'))right.className='quantity-reference purchase-info-total purchase-info-pending';slots.append(left,divider,right);cell.replaceChildren(slots);}}
     cell.dataset.quantityAligned='true';
   }
   const scroll=table.parentElement;scroll.classList.add('active-task-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label','Active customer tasks');

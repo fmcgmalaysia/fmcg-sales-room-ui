@@ -91,7 +91,7 @@
       if(row.procurementSavePending)product+='<small class="procurement-save-pending" role="status">Save pending 保存待恢复</small>';
       const fixedShares=group.some(item=>Number.isSafeInteger(item.procurement?.customerCtn)),customerReceived=fixedShares?group.reduce((n,item)=>n+Math.min(item.warehouse?.stock?.usableReceived??item.warehouse?.accepted??0,item.procurement?.customerCtn??Math.max(0,(item.procurement?.totalCtn||0)-(item.procurement?.expectedExtra||0))),0):received;
       const shownReceived=!child&&Number.isSafeInteger(row.ord)&&Number.isFinite(received)?Math.min(customerReceived,row.ord,fixedShares?sum.customerQty:sum.ordered):received;const stockIssues=group.flatMap(item=>item.warehouse?.stock?.cases||[]).filter(item=>item.status!=='RESOLVED'),stockQty=stockIssues.reduce((n,item)=>n+item.quantity,0);
-      let qtyMarkup=quantityCells({...row,procurementSource:child||row.procurementSource,quantityCases:child?row.quantityCases:group.some(item=>Array.isArray(item.quantityCases))?group.flatMap(item=>item.quantityCases||[]):undefined,sourcing:child?null:{orderedCtn:active&&sum.ordered>row.ord?sum.ordered:Math.min(row.ord,coverage(original).covered),hasReceipt,receivedCtn:shownReceived,sourceIds:group.map(item=>item.id)},warehouse:!child&&(hasReceipt||problem)?{...(row.warehouse||{}),issue:problem}:row.warehouse}).replace('</td>',(!active&&!child&&remaining>0?'<small class="waiting-demand">WAITING '+quantity(remaining)+' CTN</small>':'')+(!child&&sum.ordered>row.ord?active?extraBadge(sum.ordered-row.ord):'<small class="extra-stock">Stock 库存 +'+(sum.ordered-row.ord)+'</small>':'')+'</td>').replace(/<small>(?:This P.O. (?:\/ )?本单|Extra P.O. (?:\/ )?补采购|本单)[^<]*<\/small>/g,'').replace(/<\/td>$/,(stockQty?'<button class="quantity-case pending" data-stock-task="'+escape(row.id)+'" aria-label="Stock issues 库存异常 '+stockQty+'">−'+stockQty+'</button>':'')+(!child&&Number.isFinite(received)&&received>shownReceived?'<small class="extra-stock">Stock rcv 库存实收 +'+(received-shownReceived)+'</small>':'')+'</td>');
+      let qtyMarkup=quantityCells({...row,procurementSource:child||row.procurementSource,quantityCases:child?row.quantityCases:group.some(item=>Array.isArray(item.quantityCases))?group.flatMap(item=>item.quantityCases||[]):undefined,sourcing:child?null:{orderedCtn:active&&sum.ordered>row.ord?sum.ordered:Math.min(row.ord,coverage(original).covered),hasReceipt,receivedCtn:shownReceived,sourceIds:group.map(item=>item.id)},warehouse:!child&&(hasReceipt||problem)?{...(row.warehouse||{}),issue:problem}:row.warehouse}).replace('</td>',(!active&&!child&&remaining>0?'<small class="waiting-demand">WAITING '+quantity(remaining)+' CTN</small>':'')+(!child&&sum.ordered>row.ord?active?'<small class="extra-stock">库存 +'+(sum.ordered-row.ord)+'</small>':'<small class="extra-stock">Stock 库存 +'+(sum.ordered-row.ord)+'</small>':'')+'</td>').replace(/<small>(?:This P.O. (?:\/ )?本单|Extra P.O. (?:\/ )?补采购|本单)[^<]*<\/small>/g,'').replace(/<\/td>$/,(stockQty?'<button class="quantity-case pending" data-stock-task="'+escape(row.id)+'" aria-label="Stock issues 库存异常 '+stockQty+'">−'+stockQty+'</button>':'')+(!child&&Number.isFinite(received)&&received>shownReceived?'<small class="extra-stock">Stock rcv 库存实收 +'+(received-shownReceived)+'</small>':'')+'</td>');
       if(child){const actual=coverage(parent).sourceAssigned[original.id],ordered=totals([original]).customerQty;if(Number.isSafeInteger(actual)&&actual!==ordered){qtyMarkup=qtyMarkup.replace(/(<td class="order-quantity">)([\s\S]*?)(<\/td>)/,(_,open,value,close)=>open+'<span class="source-actual" aria-label="Customer source 本客户来源 '+quantity(actual)+' CTN">'+quantity(actual)+'</span>'+close);}}
       if(active)qtyMarkup=qtyMarkup.replace(/<button class="quantity-case [^"]*" data-quantity-case="[^"]*" aria-label="Unplaced \/ 未采购 [^"]*"[^>]*>[\s\S]*?<\/button>/g,'');
       if(active&&!child)qtyMarkup=qtyMarkup.replace(/<button class="(quantity-reference[^"]*)" data-sources="[^"]*" aria-label="Supplier sources \/ 采购来源">([\s\S]*?)<\/button>/,'<span class="$1" aria-description="Demand / Planned · 需求 / 已安排">$2</span>');
@@ -136,6 +136,7 @@
       }).join('');
     }
     let markup=roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(coverage(row).stock>0||sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).filter(source=>!coverage(row).stock||source.procurement?.totalCtn>0).map((source,i)=>line(source,index,row,i)).join('')+stockRows(row)+waiting(row):'');}).join('').replace(/>—</g,'><');
+    const physicalProducts=new Set((allocationContext?.sources||[]).filter(source=>source.received===true&&source.availablePhysical>0).map(source=>JSON.stringify([source.barcode,source.packing,source.ea])));
     if(active)markup=markup.replace(/<tr\b([^>]*)>/g,(all,attrs)=>{
       const id=(attrs.match(/data-id="([^"]+)"/)||attrs.match(/data-split-parent="([^"]+)"/))?.[1];
       const row=tasks.find(task=>escape(task.id)===id);if(!row)return all;
@@ -143,7 +144,16 @@
       const supply=batchId?row.supplyAllocation?.batches?.find(batch=>escape(batch.id)===batchId):row.supplyAllocation;
       const allocated=supply?.planned??(batchId?row.batchEntitlements?.find(batch=>escape(batch.id)===batchId)?.metrics?.received:row.inc);
       const intent=batchId?null:(row.requested??row.ord);
-      return '<tr'+attrs+(Number.isSafeInteger(allocated)&&allocated>=0?' data-layout-allocation="'+allocated+'"':'')
+      let action='none';
+      if(allocationContext&&window.customerAllocationPlan&&physicalProducts.has(JSON.stringify([row.barcode,row.packing,row.ea]))){try{
+        const input={taskId:row.id,batchId:batchId||'WHOLE',version:allocationContext.version,fulfilNow:true};
+        const quote=window.customerAllocationPlan.quoteCustomerAllocation(allocationContext,input);
+        const donor=quote.shortage>0&&quote.donors.find(donor=>donor.quantity>=quote.shortage);
+        const candidate=quote.useFree>0?input:donor?{...input,borrow:true,donorTaskId:donor.taskId}:input;
+        try{window.customerAllocationPlan.planCustomerAllocation(allocationContext,candidate);action='ready';}catch{action='none';}
+      }catch{action='none';}}
+
+      return '<tr'+attrs+' data-layout-action="'+action+'"'+(Number.isSafeInteger(allocated)&&allocated>=0?' data-layout-allocation="'+allocated+'"':'')
         +(supply?' data-layout-gap="'+Math.max(0,supply.gap??(supply.planned-supply.received-supply.waiting))+'" data-layout-waiting="'+supply.waiting+'"':'')
         +(Number.isSafeInteger(intent)&&intent>=0?' data-layout-intent="'+intent+'"':'')+'>';
     });

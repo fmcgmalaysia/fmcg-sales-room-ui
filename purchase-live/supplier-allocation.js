@@ -98,7 +98,7 @@
       if(readOnly){document.querySelector('#applySupplierAllocation').hidden=true;document.querySelector('#discardSupplierAllocation').textContent='Close 关闭';}
     }
     function rowMarkup(row,index){
-      const saved=workspace().tasks.find(item=>item.id===row.taskId),locked=state.running&&(!state.allowDraftInput||row.status==='saved')||rowLocked(row);
+      const saved=workspace().tasks.find(item=>item.id===row.taskId),locked=state.running&&(!state.allowDraftInput||row.key===state.current||row.status==='saved')||rowLocked(row);
       if(saved?.po&&(sourceLocked(row)||!row.amending)){
         const supplier=workspace().suppliers.find(item=>item.id===row.supplierId),calc=calculation(row);
         const fixed=sourceLocked(row),revisionCount=saved.procurement?.amendmentCount;
@@ -176,13 +176,13 @@
       document.querySelector('#allocationSummary').innerHTML=(state.batchId?'<span>本批草稿 · 待采购 <b>'+pendingBatch()+' CTN</b> · 新增安排 <b>'+batchAdded+' CTN</b> · 尚待安排 <b>'+Math.max(0,pendingBatch()-batchAdded)+' CTN</b></span>':'<span>已保存 <b>'+savedTotal+' CTN</b> · 当前方案（含草稿） <b>'+assigned+' CTN</b> · 待安排 <b>'+Math.max(0,rootTask().ord-customerAssigned)+' CTN</b></span>')+'<span class="allocation-summary-amount">'+(state.batchId?'全部来源合计':'方案合计')+' MYR <strong>'+esc(known?money(amount):'—')+'</strong></span>';
     }
     function edit(event){
-      if(!state||state.running&&!state.allowDraftInput||state.current||api.savePending()||!api.modal().classList.contains('supplier-allocation-dialog'))return false;
+      if(!state||state.running&&!state.allowDraftInput||(state.current||api.savePending())&&!state.allowDraftInput||!api.modal().classList.contains('supplier-allocation-dialog'))return false;
       const field=event.target;
       if(field.id==='allocationReason'){state.reason=field.value;state.dirty=true;api.cache();return true;}
       const rowKey=field.closest?.('[data-allocation-row]')?.dataset.allocationRow;
       const key=rowKey||field.dataset.allocationConfirm||field.dataset.allocationExtraKind||field.dataset.allocationExtraConfirm;
       const row=state.rows.find(item=>item.key===key);if(!row)return false;
-      if(state.running&&row.status==='saved')return true;
+      if(state.running&&(row.status==='saved'||row.key===state.current))return true;
       if(rowLocked(row))return true;
       const name=field.dataset.allocationField;if(['qty','paid','free','mode'].includes(name)&&receiptQuantityLocked(workspace().tasks.find(item=>item.id===row.taskId)))return true;if(name)row.pendingReference=null;
       if(name==='supplierId'){const retainInitial=row.taskId===state.rootId&&!row.supplierId&&!workspace().tasks.find(task=>task.id===row.taskId)?.procurement?.revision;row.supplierId=field.value;if(!retainInitial){row.reference=null;row.manual=[];row.edited=[];for(const price of priceKeys){row.raw[price]=price.startsWith('disc')?'0.00':'';row.originalRaw[price]=row.raw[price];row.originalPrices[price]=price.startsWith('disc')?0:null;}}row.mode='NORMAL';row.moneySource='PRICES';row.free='0';row.amount='';}
@@ -227,7 +227,7 @@
       const saved=workspace().tasks.find(item=>item.id===row.taskId)||(initializeRoot?root:null),taskId=row.taskId||(initializeRoot?root.id:null),input=taskId?{taskId,version:initializeRoot?root.editVersion:row.version,planRevision:saved.procurement?.revision||'',totalCtn:Number(row.qty),reason:state.reason||(saved?.po&&row.amending?'PO amendment':''),extraKind:row.extraKind,supplierId:row.supplierId,prices:values(row),draftPlan:!saved.po}:{parentTaskId:state.rootId,version:workspace().sourcesVersion,supplierId:row.supplierId,poNumber:'',draftPlan:true,quantity:Number(row.qty),prices:values(row),reason:state.reason};
       input.costing=calculation(row);input.transportMode=row.transportMode;if(!taskId&&row.supplyPurpose)input.supplyPurpose=row.supplyPurpose;
       if(state.batchId){input.shipmentBatchId=state.batchId;input.shipmentBatchVersion=state.batchVersion;}
-      state.allowDraftInput=false;state.current=row.key;state.issue='正在保存 '+(state.rows.indexOf(row)+1)+'…';api.cache();if(api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog'))render();api.mutate('PURCHASE_SAVE_REQUEST',{operation:taskId?'PLAN':'ADD_SOURCE',input,allocationRowKey:row.key,allocationRootId:state.rootId,...(initializeRoot?{allocationInitializeRoot:true}:{})});
+      state.allowDraftInput=Boolean(state.saveKey);state.current=row.key;state.issue='正在保存 '+(state.rows.indexOf(row)+1)+'…';api.cache();if(api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog'))render();api.mutate('PURCHASE_SAVE_REQUEST',{operation:taskId?'PLAN':'ADD_SOURCE',input,allocationRowKey:row.key,allocationRootId:state.rootId,...(initializeRoot?{allocationInitializeRoot:true}:{})});
     }
     function pause(message){state.issueTone='problem';state.running=false;state.current=null;state.issue=message;state.reopen=true;api.cache();if(api.modal().classList.contains('supplier-allocation-dialog'))render();api.status(message,true);}
     function receipt(completed,result){
@@ -255,7 +255,7 @@
       if(state.running){next();return;}
       if(state.reopen&&!api.savePending()){state.reopen=false;if(api.modal().classList.contains('supplier-allocation-dialog'))render();}
     }
-    function rejected(current,message,definite){if(state&&current?.allocationRootId===state.rootId){state.running=false;state.issueTone=definite?'problem':'pending';state.issue=message;state.reopen=true;if(definite)state.current=null;api.cache();if(definite&&api.modal().classList.contains('supplier-allocation-dialog'))render();}}
+    function rejected(current,message,definite){if(state&&current?.allocationRootId===state.rootId){state.running=false;state.allowDraftInput=false;state.issueTone=definite?'problem':'pending';state.issue=message;state.reopen=true;if(definite)state.current=null;api.cache();if(definite&&api.modal().classList.contains('supplier-allocation-dialog'))render();}}
     const referenceContext=row=>JSON.stringify([row.supplierId,row.raw,row.version,row.mode,row.moneySource,row.qty,row.paid,row.free,row.amount]);
     function paintReferences(){
       if(!state||!api.modal().open||!api.modal().classList.contains('supplier-allocation-dialog'))return;
