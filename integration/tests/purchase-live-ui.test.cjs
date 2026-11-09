@@ -114,12 +114,28 @@ test('Dashboard Entry preserves another customer price draft and saves it with i
  h.click({controlId:'saveEdits'});const sent=h.messages.at(-1);assert.equal(sent.operation,'EDIT');assert.equal(sent.input.edits[0].taskId,'TASK');assert.equal(sent.input.edits[0].version,'REV-C');assert.equal(sent.input.edits[0].changes.disc3,3);
 });
 
+test('unmarked customer and old room entries render only current customer-filtered Active Orders',()=>{
+ const h=harness(),w=workspace();w.customers.push({id:'D',name:'SECOND CUSTOMER'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',name:'SECOND PRODUCT'});h.reply(w);
+ for(const entry of [{customer:'C'},{view:'room'}]){h.click(entry);const html=h.node('#app').innerHTML;assert.match(html,/active-order-heading/);assert.match(html,/<option value="C" selected/);assert.doesNotMatch(html,/class="roomhead"|<th>Progress<\/th>|SECOND PRODUCT/);}
+ assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+});
+
+test('dashboard task action opens current layout and the same task editor without a business write',()=>{
+ let open;const signals={mount(_host,_department,_data,handler){open=handler;}},h=harness(undefined,[],signals),w=workspace();h.reply(w);open({id:'TASK',action:'edit'});
+ assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.match(h.node('#app').innerHTML,/<option value="C" selected/);assert.doesNotMatch(h.node('#app').innerHTML,/class="roomhead"/);assert.equal(h.node('#modal').open,true);assert.match(h.node('#dialogContent').innerHTML,/00123/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+});
+
+test('pre-upgrade pending room draft restores and returns through current layout with the identical save payload',()=>{
+ const pending={type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'original-request',operation:'EDIT',input:{edits:[{taskId:'TASK',version:'REV',changes:{disc3:5}}]}},cached={customerId:'C',drafts:[['TASK',{version:'REV',changes:{disc3:5}}]],savePending:pending,saveOrigin:{view:'room',customerId:'C',activeCustomer:''}},cache=new Map([['fmcg-purchase-draft-v1/NCT/STAFF/MEMBER',JSON.stringify(cached)]]),storage={getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v),removeItem:k=>cache.delete(k)},h=harness(storage),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);
+ assert.equal(h.messages.at(-1).saveRequestId,pending.requestId);assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.match(h.node('#app').innerHTML,/<option value="C" selected/);h.click({view:'payments'});h.click({controlId:'viewPendingSave'});assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.doesNotMatch(h.node('#app').innerHTML,/class="roomhead"/);h.click({controlId:'retryPendingSave'});assert.deepEqual(JSON.parse(JSON.stringify(h.messages.at(-1))),pending);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,1);
+});
+
 test('stock-only supplier receipts cannot satisfy another supplier customer shortage',()=>{
  const h=harness(),w=workspace();
  Object.assign(w.tasks[0],{ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:100,customerCtn:100,expectedExtra:0},warehouse:{accepted:60,hasPhysicalReceipt:true}});
  w.tasks.push({...w.tasks[0],id:'STOCK',customerDemandTaskId:'TASK',procurementSource:true,ord:0,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:50,customerCtn:0,expectedExtra:50},warehouse:{accepted:50,hasPhysicalReceipt:true}});
  h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;
- assert.match(html,/received-quantity[\s\S]*?>60<\/button>/);
+ assert.match(html,/received-quantity[\s\S]*?>60<\/span>/);
  assert.match(html,/Stock rcv 库存实收 \+50/);
 });
 
@@ -141,7 +157,7 @@ test('Active priorities count saved sources and locate their task rows without w
  assert.equal((html.match(/<th>/g)||[]).length,11);assert.equal(h.node('#taskSignals').hidden,true);
  h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="B">Row 001 →/);assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="UNPLANNED"/);assert.match(h.node('#dialogContent').innerHTML,/Unassigned 待分配/);assert.match(h.node('#dialogContent').innerHTML,/10 CTN/);assert.match(h.node('#dialogContent').innerHTML,/100 CTN/);
  h.click({activeNotice:'incoming'});assert.match(h.node('#dialogContent').innerHTML,/Short received/);assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="B">Row 001 →/);h.click({activeNoticeRow:'B'});assert.equal(h.node('#modal').open,false);assert.match(h.node('#app').innerHTML,/data-source-id="B"/);assert.equal(h.messages.length,before);
- h.click({customer:'C'});assert.equal(h.node('#taskSignals').hidden,false);assert.doesNotMatch(h.node('#app').innerHTML,/ao-priorities|customer-shipment/);
+ h.click({customer:'C'});assert.equal(h.node('#taskSignals').hidden,true);assert.match(h.node('#app').innerHTML,/ao-priorities|customer-shipment/);
 });
 
 test('Active demand summary is display-only and omits duplicate waiting text while retaining remainder and source actions',()=>{
@@ -150,22 +166,22 @@ test('Active demand summary is display-only and omits duplicate waiting text whi
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;const mother=html.match(/<tr data-id="TASK"[\s\S]*?<\/tr>/)[0],order=mother.match(/<td class="order-quantity">[\s\S]*?<\/td>/)[0];
  assert.match(order,/<span class="quantity-reference/);assert.match(order.replace(/<[^>]*>/g,''),/100\s*\|\s*90/);assert.match(order,/class="qty-mismatch">90<\/span>/);assert.doesNotMatch(order,/<button|data-sources|WAITING/);
  for(const cell of html.match(/<td class="order-quantity">[\s\S]*?<\/td>/g)||[])assert.doesNotMatch(cell,/This P\.O\.|Extra P\.O\.|本单|补采购/);assert.doesNotMatch(html,/waiting-demand/);assert.match(html,/data-waiting-for="TASK"/);assert.match(html,/class="order-quantity">10<\/td>/);assert.match(html,/data-plan-task="TASK"/);assert.match(html,/data-plan-source="SOURCE"/);
- h.click({customer:'C'});html=h.node('#app').innerHTML;assert.match(html,/waiting-demand">WAITING 10 CTN/);assert.match(html,/data-sources="TASK" aria-label="Supplier sources/);
+ h.click({customer:'C'});html=h.node('#app').innerHTML;assert.doesNotMatch(html,/waiting-demand/);assert.match(html,/data-waiting-for="TASK"/);assert.match(html,/data-plan-source="SOURCE"/);
 });
 
 test('Active actual receipts never open supplier costing while receipt exception actions remain available',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:90,revision:'P'},supplierId:'A',warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'RECEIPT-CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH'],owner:'WAREHOUSE'}]});
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML,receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];
  assert.match(receipt,/<span class="quantity-reference receipt-problem" aria-description="Received 实收">80<\/span>/);assert.doesNotMatch(receipt,/data-sources/);assert.match(receipt,/data-quantity-case="RECEIPT-CASE"/);assert.match(receipt,/>−10<\/button>/);
- h.click({customer:'C'});html=h.node('#app').innerHTML;receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];assert.match(receipt,/<button class="quantity-reference receipt-problem" data-sources="TASK">80<\/button>/);
+ h.click({customer:'C'});html=h.node('#app').innerHTML;receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];assert.match(receipt,/<span class="quantity-reference receipt-problem" aria-description="Received 实收">80<\/span>/);assert.doesNotMatch(receipt,/data-sources/);
 });
 
-test('Active removes progress chrome and ignores the hidden room stage filter without changing room behavior',()=>{
+test('all task entries omit retired progress chrome and ignore the obsolete hidden stage filter',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:90,revision:'P'},warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true}});
- h.reply(w);h.click({customer:'C'});h.change({id:'stageFilter',value:'999',dataset:{}});assert.match(h.node('#app').innerHTML,/No matching tasks/);
+ h.reply(w);h.click({customer:'C'});h.change({id:'stageFilter',value:'999',dataset:{}});assert.match(h.node('#app').innerHTML,/data-id="TASK"/);
  h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
  assert.doesNotMatch(html,/ao-progress-overview|data-active-progress|row-progress|progress-node|<th>Progress<\/th>/);assert.match(html,/<select id="stageFilter" hidden>/);assert.match(html,/data-id="TASK"/);
- h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/row-progress/);assert.equal(h.messages.length,before);
+ h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/row-progress/);assert.equal(h.messages.length,before);
 });
 
 test('Active reordered columns retain source actions and show green or red GP beside the barcode instead of a separate column',()=>{
@@ -175,7 +191,7 @@ test('Active reordered columns retain source actions and show green or red GP be
  assert.match(html,/<th>Order Qty<\/th><th>Supplier<\/th><th>Net Cost<\/th><th>Rcv Qty<\/th><th>Line Cost<\/th><th>Our P.O.<\/th>/);assert.doesNotMatch(html,/<th>GP<\/th>|risk-deal/);assert.ok(html.includes('ITEM $&amp; &amp; $1'));
  assert.match(rows[0],/class="barcode">00123<span class="gp gp-badge gp-good"[^>]*>12\.00%<\/span>/);assert.match(html,/class="gp gp-badge gp-low"[^>]*><svg[^]*?<\/svg>3\.00%<\/span>/);
  for(const row of rows){const cells=row.match(/<td\b[\s\S]*?<\/td>/g);assert.equal(cells.length,11);assert.match(cells[5],/order-quantity/);assert.match(cells[6],/supplier-cell/);assert.match(cells[7],/net-cost-cell/);assert.match(cells[8],/received-quantity/);assert.doesNotMatch(row,/row-progress|progress-node/);}
- h.change({id:'supplierFilter',value:'MISSING',dataset:{}});assert.match(h.node('#app').innerHTML,/<td colspan="11" class="empty">/);h.change({id:'supplierFilter',value:'',dataset:{}}); h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/<th>GP<\/th>/);assert.doesNotMatch(h.node('#app').innerHTML,/gp-badge/);
+ h.change({id:'supplierFilter',value:'MISSING',dataset:{}});assert.match(h.node('#app').innerHTML,/<td colspan="11" class="empty">/);h.change({id:'supplierFilter',value:'',dataset:{}}); h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/<th>GP<\/th>/);assert.match(h.node('#app').innerHTML,/gp-badge/);
 });
 
 test('Active child rows are always visible with a noninteractive branch marker in each customer cell',()=>{
@@ -184,7 +200,7 @@ test('Active child rows are always visible with a noninteractive branch marker i
  h.reply(w);h.click({view:'active'});const before=h.messages.length;let html=h.node('#app').innerHTML;assert.doesNotMatch(html,/ao-source-toggle|data-toggle-sources|aria-expanded/);
  const rows=html.match(/<tr\b[\s\S]*?<\/tr>/g);for(const row of rows.filter(row=>/data-source-id|data-waiting-for/.test(row))){assert.match(row,/<span class="ao-child-marker" role="img"/);const cell=row.match(/<td\b[\s\S]*?<\/td>/g)[3];assert.match(cell,/ao-child-marker/);assert.doesNotMatch(cell,/<button/);}
  h.change({dataset:{select:'SOURCE',selectKind:'source'},checked:true});html=h.node('#app').innerHTML;assert.match(html,/data-source-id="SOURCE"[^]*?data-select-kind="source"[^>]*checked/);assert.match(html,/data-waiting-for="TASK"/);assert.match(html,/data-source-id="OTHER-SOURCE"/);assert.match(html,/1 selected/);assert.equal(h.messages.length,before);
- h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/ao-child-marker/);
+ h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/ao-child-marker/);
 });
 
 test('Active move entry selects a customer and preserves the original grouped move and cancel without saving',()=>{
@@ -309,12 +325,12 @@ test('quiet refresh retains the PO list until the new receipt and does not erase
 test('GP is a read-only two-decimal percentage; missing and unsaved values never pretend to be zero',()=>{
  for(const [gp,shown] of [[.125,'12.50%'],[-.2,'-20.00%'],[0,'0.00%'],[null,''],[undefined,'']]){
   const h=harness(),w=workspace();w.tasks[0].gp=gp;w.tasks[0].procurement={totalCtn:w.tasks[0].ord,revision:'SAVED-COST'};h.reply(w);h.click({customer:'C'});
-  assert.equal(h.node('#app').innerHTML.match(/<b class="gp">([^<]*)<\/b>/)[1],shown);
+  assert.equal(h.node('#app').innerHTML.match(/aria-label="GP ([^"]*)"/)?.[1]||'',shown);
   assert.equal(h.messages.length,1);
  }
  const h=harness(),w=workspace();w.tasks[0].gp=.125;h.reply(w);h.click({customer:'C'});
  h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({customer:'C'});
- assert.equal(h.node('#app').innerHTML.match(/<b class="gp">([^<]*)<\/b>/)[1],'');
+ assert.doesNotMatch(h.node('#app').innerHTML,/aria-label="GP /);
 });
 
 test('P.O. dialog hides system IDs, places an obvious input first and keeps original association payload',()=>{
@@ -412,14 +428,15 @@ test('compact Dashboard keeps both directories and supplier entry while replacin
   assert.match(html,/<th>Edit<\/th>/);assert.doesNotMatch(html,/Add Customer|id="addCustomer"/);
 });
 
-test('compact Purchase Room keeps track, drag controls and new read-only columns without business writes',()=>{
+test('former customer Room entry retains current drag controls and read-only columns without business writes',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});const html=h.node('#app').innerHTML;
-  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','allocationFilter','supplier-plan-link','row-progress','unified-save','Move selected','row-controls','order-quantity','received-quantity'])assert.ok(html.includes(marker),marker);
+  for(const marker of ['active-order-heading','supplierFilter','stageFilter','allocationFilter','supplier-plan-link','unified-save','Move selected','row-controls','order-quantity','received-quantity'])assert.ok(html.includes(marker),marker);
+  assert.doesNotMatch(html,/Pending workload|row-progress|class="roomhead"/);
   const header=html.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)[1];
   const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1].includes('history-heading')?'History':match[1]);
-  assert.deepEqual(labels.slice(1),['Row','Since','Description','Order Qty','Rcv Qty','Supplier','Net Cost','Line Cost','Our P.O.','GP','Progress']);
-  assert.equal(labels.length,12);
-  assert.match(html,/width:29%/);
+  assert.deepEqual(labels.slice(1),['Row','Since','Customer','Description','Order Qty','Supplier','Net Cost','Rcv Qty','Line Cost','Our P.O.']);
+  assert.equal(labels.length,11);
+  assert.match(html,/width:128px/);
   assert.doesNotMatch(html,/data-cost="TASK"/);
   assert.match(html,/250/);
   assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
@@ -518,21 +535,20 @@ test('cost calculator sends source amounts and internal note, not a client calcu
  h.click({controlId:'applyAverageCost'});const request=h.messages.at(-1);assert.equal(request.operation,'AVERAGE_COST');assert.equal(request.input.lineCost,921.5);assert.equal(request.input.cartons,11);assert.equal(request.input.note,'Buy ten get one');assert.equal(request.input.quantity,undefined);assert.equal(request.input.lpCtn,undefined);
 });
 
-test('history icon keeps the actual history dialog and progress capsules keep existing counts without writes',()=>{
+test('original task history dialog remains available without retired progress capsules or writes',()=>{
  const h=harness(),w=workspace();w.tasks[0].history=[{id:'E1',action:'PURCHASE_QTY_REDUCED',time:'2026-10-10T12:00:00Z',actor:'LAW',message:'Supplier only 90 cartons'}];
  h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;
- assert.match(html,/data-progress-task="TASK"/);
+ assert.match(html,/active-order-heading/);
  assert.doesNotMatch(html,/PURCHASE_QTY_REDUCED/);
- assert.equal((html.match(/class="stage-count">1<\/span>/g)||[]).length,7);
- assert.match(html,/class="circle stage-capsule [^"]*" data-stage="0"/);
+ assert.doesNotMatch(html,/stage-count|stage-capsule/);
  h.click({path:'TASK'});assert.equal(h.node('#modal').open,true);
  assert.match(h.node('#dialogContent').innerHTML,/Supplier only 90 cartons/);
  assert.match(h.node('#dialogContent').innerHTML,/LAW/);assert.equal(h.messages.length,1);
 });
 
 test('cost metadata never creates an independent Cost Error badge or triggers a write',()=>{for(const [reason,lpCtn] of [['UNAVAILABLE_CBMPERCTN',16],['UNAVAILABLE_CBMPERCTN',null],['UNAVAILABLE_CBMPERCTN; UNAVAILABLE_LPCTN',16],['POINTBASE_SERVICE_UNAVAILABLE',16]]){const h=harness(),w=workspace();Object.assign(w.tasks[0],{costErrorReason:reason,lpCtn});h.reply(w);h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/data-cost=|Cost Error/);assert.equal(h.messages.length,1);}});
-test('Risk Deal threshold uses valid saved GP; six percent and unknown GP are not flagged',()=>{for(const [gp,shown] of [[.0599,true],[.06,false],[-.1,true],[0,true],[null,false],[undefined,false]]){const h=harness(),w=workspace();w.tasks[0].gp=gp;h.reply(w);h.click({customer:'C'});assert.equal(h.node('#app').innerHTML.includes('class="risk-deal"'),shown);assert.doesNotMatch(h.node('#app').innerHTML,/id="riskFilter"/);}});
-test('Save is hidden when clean and allocation is a same-room read-only filter',()=>{const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:10};h.reply(w);h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/id="saveEdits" hidden/);h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});assert.equal(h.node('#saveEdits').hidden,false);h.change({id:'allocationFilter',dataset:{},value:'allocation'});assert.match(h.node('#app').innerHTML,/Awaiting warehouse/);assert.match(h.node('#app').innerHTML,/disabled>Allocate/);assert.match(h.node('#app').innerHTML,/class="roomhead"/);assert.equal(h.messages.length,1);});
+test('current GP warning uses valid saved GP; six percent and unknown GP are not flagged',()=>{for(const [gp,shown] of [[.0599,true],[.06,false],[-.1,true],[0,true],[null,false],[undefined,false]]){const h=harness(),w=workspace();Object.assign(w.tasks[0],{gp,procurement:{totalCtn:250,revision:'SAVED-COST'}});h.reply(w);h.click({customer:'C'});assert.equal(h.node('#app').innerHTML.includes('gp-badge gp-low'),shown);assert.doesNotMatch(h.node('#app').innerHTML,/id="riskFilter"|class="risk-deal"/);}});
+test('Save is hidden when clean and allocation stays within the current task layout',()=>{const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:10};h.reply(w);h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/id="saveEdits" hidden/);h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});assert.equal(h.node('#saveEdits').hidden,false);h.change({id:'allocationFilter',dataset:{},value:'allocation'});assert.match(h.node('#app').innerHTML,/Awaiting warehouse/);assert.match(h.node('#app').innerHTML,/disabled>Allocate/);assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.equal(h.messages.length,1);});
 
 test('negative net cost is explained before a write and known failed save frees editing without losing input',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{lpPc:.4652777778,lpCtn:7.4444444444,disc1:.15,disc2:0,disc3:0});h.reply(w);h.click({customer:'C'});
