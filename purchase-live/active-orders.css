@@ -139,5 +139,5 @@ body:has(#app>.active-order-heading) #taskSignals .task-signal:is(:hover,:focus-
 #app .active-order-table .order-quantity-source .ao-child-marker{margin:0;flex:none}
 #app .purchase-tasks.active-order-table .order-quantity-source>span.quantity-reference.purchase-info-total{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:19px;min-width:28px;padding:0 8px;border:0;border-radius:12px;font-family:var(--master-font);font-size:11px;font-weight:600;line-height:19px;letter-spacing:normal}
 /* Keep the established PO/date/actor typography, with a compact three-line stack. */
-#app .active-order-table #taskRows .po-reference.complete{padding-top:0;padding-bottom:0;line-height:14px}
+#app .active-order-table #taskRows .po-reference.complete{padding:0;line-height:14px}
 #app .active-order-table #taskRows :is(.po-entered-time,.po-entered-actor){margin-top:0;line-height:12px}

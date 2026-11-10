@@ -90,8 +90,7 @@
       return {task,cases,receipt,stage:receipt?3:6};
     }).filter(item=>item.receipt||item.cases.length);
   }
-  const bell='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2v1"/><path d="M2 6 1 9m21-3 1 3"/></svg>';
-  function supplierAlertBadge(tasks,supplierId){const count=supplierAlertSources(tasks).length;return count?'<button class="pd-shipment-alert" data-supplier-shipment-alert="'+esc(supplierId)+'" aria-label="'+count+' shipment alerts" aria-description="Shipment alerts 发货风险">'+bell+'<b>'+count+'</b></button>':'<span class="zero-risk">—</span>';}
+  function supplierAlertBadge(tasks,supplierId){const count=supplierAlertSources(tasks).length;return count?'<button class="task-total pd-danger-count pd-shipment-alert" data-supplier-shipment-alert="'+esc(supplierId)+'" aria-label="'+count+' shipment alerts" aria-description="Shipment alerts 发货风险">'+count+'</button>':'<span class="zero-risk">—</span>';}
   function supplierAlertReasons(task){
     const reasons=[],qty=value=>Number.isSafeInteger(value)&&value>=0,add=(en,zh,n)=>{const suffix=qty(n)?' · '+n+' CTN':'';reasons.push(en+suffix+' / '+zh+suffix);};
     const open=(task.quantityCases||[]).filter(item=>item.status!=='RESOLVED'),receipt=open.find(item=>item.kind==='RECEIPT'),physical=task.warehouse?.hasPhysicalReceipt===true,planned=task.procurement?.totalCtn,accepted=task.warehouse?.accepted;

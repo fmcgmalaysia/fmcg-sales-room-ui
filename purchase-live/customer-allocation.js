@@ -5,6 +5,17 @@
   const card=(en,zh,value,kind)=>'<div class="alloc-source '+kind+'"><span>'+en+'<small>'+zh+'</small></span><strong>'+quantity(value)+' CTN</strong></div>';
   return '<section class="alloc-summary"><div class="alloc-product"><b>'+esc(row?.name||'')+'</b><span>'+esc(row?.packing||'')+'</span></div><div class="alloc-demand"><span aria-label="Demand 需求">Customer demand<small>客户需求</small></span><strong>'+quantity(quote.demand)+' CTN</strong></div><div class="alloc-sources '+(borrowed?'with-borrow':'')+'">'+card('Covered','已覆盖',quote.assigned,'reserved')+card('Use stock','本次调用库存',quote.useFree,'free')+(borrowed?card('Borrow plan','本次拟借货',borrowed,'borrow'):'')+'</div><div class="alloc-total"><span>After change<small>调整后覆盖</small></span><strong>'+quantity(total)+' CTN</strong></div><div class="alloc-meter" role="img" aria-label="'+quantity(total)+' of '+quantity(quote.demand)+' CTN"><span class="reserved" style="flex:'+quote.assigned+'"></span><span class="free" style="flex:'+quote.useFree+'"></span><span class="borrow" style="flex:'+borrowed+'"></span><span class="remaining" style="flex:'+remaining+'"></span></div><details class="alloc-stock-details"><summary>Stock details 库存详情</summary><p>Incoming 待到货 <strong>'+quantity(quote.waiting||0)+' CTN</strong></p><p>Free stock 可调用库存 <strong>'+quantity(quote.freeQuantity)+' CTN</strong></p></details></section>';
  }
+ function borrowQuote(context,taskId){
+  if(!context||!window.customerAllocationPlan)return null;
+  try{
+   const input={taskId,batchId:"WHOLE",version:context.version,fulfilNow:true};
+   const quote=window.customerAllocationPlan.quoteCustomerAllocation(context,input);
+   const donor=!quote.waiting&&quote.shortage>0&&quote.donors.find(item=>item.quantity>=quote.shortage);
+   if(!donor)return null;
+   window.customerAllocationPlan.planCustomerAllocation(context,{...input,borrow:true,donorTaskId:donor.taskId});
+   return quote;
+  }catch{return null;}
+ }
  function create(hooks){
   let selection=null;
   const {workspace,dialog,esc,quantity,mutate,status,blocked}=hooks;
@@ -20,8 +31,10 @@
     const early=quote.waiting>0?(fulfilNow?'<p>Use received stock now 提前配货；原采购仍待到货，借货需补回。</p>':'<p>Waiting for '+quantity(quote.waiting)+' CTN 等待到货 <button class="btn" id="chooseEarlyAllocation">Use stock now 提前配货</button></p>'):'';
     const summary=allocationSummary(row,quote,esc,quantity)+early+debts.map(loan=>'<p>待补回 '+esc(name(context,loan.lenderTaskId))+'：<strong>'+quantity(loan.outstanding)+' CTN</strong> <button class="btn" data-repay-loan="'+esc(loan.id)+'">Repay 补回</button> <button class="btn" data-return-loan="'+esc(loan.id)+'">Return unshipped 退回未出货</button></p>').join('');
     if(borrowing){
-     const donors=quote.donors.filter(donor=>donor.quantity>=quote.shortage);
-     dialog('Borrow Stock 借货',name(context,taskId),allocationSummary(row,quote,esc,quantity,donors.length?quote.shortage:0)+'<label class="alloc-lender">Borrow from 向客户借货<select id="borrowCustomer">'+donors.map(donor=>'<option value="'+esc(donor.taskId)+'">'+esc(name(context,donor.taskId))+' · 可借 '+quantity(donor.quantity)+' CTN</option>').join('')+'</select></label><p>'+(donors.length?'本次借货 <strong>'+quantity(quote.shortage)+' CTN</strong>，将保留补回责任。':'目前没有足够的已实收、未占用客户库存可借，请先补货或完成收货。')+'</p>',donors.length?'<button class="btn primary" id="confirmCustomerBorrow">Confirm 确认分配 '+quantity(quote.demand)+' 箱</button>':'','task');
+     const donors=quote.shortage>0?quote.donors.filter(donor=>donor.quantity>=quote.shortage):[];
+     dialog('Borrow Stock 借货',name(context,taskId),allocationSummary(row,quote,esc,quantity,donors.length?quote.shortage:0)+'<label class="alloc-lender">Borrow from 向客户借货<select id="borrowCustomer" required><option value="">Select a customer 请选择客户</option>'+donors.map(donor=>'<option value="'+esc(donor.taskId)+'">'+esc(name(context,donor.taskId))+' · 可借 '+quantity(donor.quantity)+' CTN</option>').join('')+'</select></label><p>'+(donors.length?'本次借货 <strong>'+quantity(quote.shortage)+' CTN</strong>，将保留补回责任。':'目前没有足够的已实收、未占用客户库存可借，请先补货或完成收货。')+'</p>',donors.length?'<button class="btn primary" id="confirmCustomerBorrow" disabled>Confirm borrowing 确认借货 '+quantity(quote.shortage)+' 箱</button>':'','task');
+     const borrower=document.querySelector('#borrowCustomer'),confirm=document.querySelector('#confirmCustomerBorrow');
+     if(confirm)borrower.addEventListener('change',()=>{confirm.disabled=!borrower.value;});
     }else{
      const receivable=debts.some(loan=>loan.lenderTaskId===taskId),canSave=!receivable&&quote.useFree>0;
      dialog('Allocate Stock 库存分配',name(context,taskId),summary+'<div class="alloc-outcome '+(quote.shortage>0?'has-gap':'covered')+'"><div><span>Still short<small>尚缺</small></span><strong>'+quantity(quote.shortage)+' CTN</strong></div>'+(quote.shortage>0&&!receivable?'<button class="btn alloc-borrow" id="chooseCustomerBorrow">Choose borrowing 选择借货 →</button>':'')+'</div>'+(receivable?'<p>请通过 Repay 补回处理本次缺货，使分配与欠货同时结清。</p>':''),(canSave?'<button class="btn primary" id="confirmCustomerAllocation">Confirm 分配 '+quantity(quote.assigned+quote.useFree)+' 箱</button>':''),'task');
@@ -64,6 +77,7 @@
     if(!source||!Number.isSafeInteger(source.usableReceived)||source.targets.reduce((n,row)=>n+row.quantity,0)<=source.usableReceived){status('分配资料已更新，请核对最新库存。',true);return true;}
     correction(source.id);return true;
    }
+   if(control.dataset.customerBorrow){open(control.dataset.customerBorrow,"WHOLE",true,true);return true;}
    if(control.dataset.customerAllocate){open(control.dataset.customerAllocate,control.dataset.allocationBatch||'WHOLE');return true;}
    if(control.dataset.repayLoan){repayment(control.dataset.repayLoan);return true;}
    if(control.dataset.returnLoan){repayment(control.dataset.returnLoan,true);return true;}
@@ -93,5 +107,5 @@
   const review=issues.length?'<section class="panel reallocation-panel"><h3>Allocation Review 分配异常</h3><div class="tablewrap"><table class="rowlist"><thead><tr><th>Product 产品</th><th>Source P.O. 来源采购单</th><th>Usable 可用实物</th><th>Assigned 已分配</th><th>Excess 超出</th><th></th></tr></thead><tbody>'+issues.map(source=>{const task=workspace.tasks.find(row=>row.id===source.id),assigned=source.targets.reduce((n,target)=>n+target.quantity,0);return '<tr><td><b>'+esc(task?.name||source.barcode)+'</b><small>'+esc(source.barcode)+' · '+esc(source.packing)+'</small></td><td>'+esc(task?.po||'—')+'</td><td>'+quantity(source.usableReceived)+'</td><td>'+quantity(assigned)+'</td><td>'+quantity(assigned-source.usableReceived)+'</td><td><button class="btn" data-reconcile-source="'+esc(source.id)+'">Review 处理</button></td></tr>';}).join('')+'</tbody></table></div></section>':'';
   return '<p class="reallocation-note">Use ALLOC on the customer task to allocate stock. 请从客户任务 ALLOC 分配库存。</p>'+loans+review+(!loans&&!review?'<section class="panel reallocation-panel"><p>No outstanding borrowing or allocation review. 暂无待补回借货或分配异常。</p></section>':'');
  }
- window.purchaseCustomerAllocation={create,outstanding,actions};
+ window.purchaseCustomerAllocation={create,outstanding,actions,borrowQuote};
 })();
