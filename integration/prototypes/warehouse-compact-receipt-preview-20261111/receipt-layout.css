@@ -4,8 +4,18 @@
   width: min(680px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
 }
-#entry .dialog-header { padding: 10px 16px; }
-#entry .dialog-header p { margin: 2px 0 0; }
+#entry .dialog-header { align-items: center; padding: 5px 14px; }
+#entry .dialog-header > div:has(#entrySupplier) {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 1px 10px;
+  min-width: 0;
+}
+#entry .dialog-header strong { margin: 0; font-size: 15px; line-height: 19px; overflow-wrap: anywhere; }
+#entry .dialog-header p { margin: 0; font-size: 11px; line-height: 15px; overflow-wrap: anywhere; }
+#entry #closeEntry { flex: none; width: 30px; height: 30px; }
 #entry .dialog-body { padding: 8px 16px 0; overflow-y: auto; }
 #entry .receipt-columns,
 #entry .receive-line {

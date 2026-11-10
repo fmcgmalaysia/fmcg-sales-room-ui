@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const previousBuild = '20261111-warehouse-receipt-evidence-v1';
-const build = '20261111-warehouse-compact-receipt-preview-v1';
+const build = '20261111-warehouse-compact-receipt-v1';
 const hash = content => crypto.createHash('sha256').update(content).digest('hex');
 
 function replace(source, before, after) {
@@ -87,7 +87,7 @@ function stage(previous, destination) {
   const changed = resources.filter((item, index) => item.sha256 !== baseline.resources[index].sha256).map(item => item.path);
   assert.deepEqual(changed.slice().sort(), [...changes.keys()].sort());
   const manifest = { build, base: previousBuild, changed, resources };
-  fs.writeFileSync(path.join(destination, 'warehouse-compact-receipt-preview-release.json'), JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(path.join(destination, 'warehouse-compact-receipt-release.json'), JSON.stringify(manifest, null, 2));
   return manifest;
 }
 
