@@ -1,0 +1,164 @@
+/* Receipt entry only. A single grid aligns the column labels and the product rows. */
+#entry {
+  --receipt-columns: minmax(0, 1fr) 68px 82px 66px 80px;
+  width: min(680px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+}
+#entry .dialog-header { padding: 10px 16px; }
+#entry .dialog-header p { margin: 2px 0 0; }
+#entry .dialog-body { padding: 8px 16px 0; overflow-y: auto; }
+#entry .receipt-columns,
+#entry .receive-line {
+  display: grid;
+  grid-template-columns: var(--receipt-columns);
+  align-items: center;
+  gap: 6px 8px;
+  padding-inline: 8px;
+}
+#entry .receipt-columns {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-block: 5px;
+  background: #edf3f9;
+  color: #203047;
+  font-size: 11px;
+  font-weight: 700;
+}
+#entry .receipt-columns small {
+  display: block;
+  color: #5b7188;
+  font-size: 10px;
+  font-weight: 400;
+}
+#entry .receipt-columns > :not(:first-child) { text-align: center; }
+#entry .receive-line { padding-block: 7px; border-bottom: 1px solid #e3ebf2; }
+#entry .receipt-product { grid-column: 1; display: flex; gap: 8px; align-items: center; min-width: 0; }
+#entry .receipt-product > div { min-width: 0; overflow-wrap: anywhere; }
+#entry .receipt-thumb {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+#entry .receipt-thumb svg { width: 17px; height: 17px; fill: none; stroke: #6b849e; stroke-width: 1.5; }
+#entry .receipt-quantities { display: contents; }
+#entry .receipt-quantities > :nth-child(1) { grid-column: 2; }
+#entry .receipt-quantities > :nth-child(2) { grid-column: 3; }
+#entry .receipt-quantities > :nth-child(3) { grid-column: 4; }
+#entry .receipt-quantities [data-rejected-label] { grid-column: 2 / span 2; }
+#entry .receipt-quantities .readonly,
+#entry .receipt-quantities label {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  min-width: 0;
+  min-height: 34px;
+  gap: 2px;
+  margin: 0;
+}
+#entry .receipt-quantities .readonly b { font-size: 14px; line-height: 20px; }
+#entry .receipt-quantities input { width: 100%; height: 34px; min-height: 0; padding: 3px 5px; font-size: 16px; }
+#entry .receipt-qty-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+#entry .receipt-qty-saved,
+#entry .receive-line:has([data-rejected-label]:not([hidden])) .receipt-qty-label {
+  position: static;
+  width: auto;
+  height: auto;
+  clip-path: none;
+  white-space: normal;
+  color: #5b7188;
+  font-size: 10px;
+  font-weight: 400;
+  text-align: center;
+}
+#entry .receipt-evidence { grid-column: 5; display: grid; justify-items: center; }
+#entry .receipt-camera,
+#entry .receipt-preview-button,
+#entry .receipt-remove {
+  display: inline-grid;
+  place-items: center;
+  min-height: 32px;
+  padding: 0 7px;
+  border: 1px solid #b9cbe0;
+  border-radius: 5px;
+  background: white;
+  color: #235890;
+  font: 600 11px var(--master-font, Arial, sans-serif);
+  cursor: pointer;
+}
+#entry .receipt-camera { position: relative; }
+#entry .receipt-camera input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+#entry .receipt-camera:focus-within,
+#entry .receipt-preview-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+#entry [data-receipt-preview]:not(:empty) { display: flex; gap: 4px; align-items: center; }
+#entry .receipt-preview-button { padding: 0; overflow: hidden; cursor: zoom-in; }
+#entry .receipt-preview-button img { display: block; width: 42px; height: 34px; object-fit: cover; }
+#entry .receipt-remove { min-width: 24px; padding: 0; font-size: 16px; }
+#entry .receipt-remove:disabled { opacity: .5; cursor: default; }
+#entry .receipt-reason { grid-column: 2 / -1; margin: 0; }
+#entry .receipt-reason select { min-height: 32px; }
+#entry .receipt-stopped-note,
+#entry .resolve { grid-column: 1 / -1; }
+#entry .receipt-row-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+#entry .receipt-row-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 2px 7px;
+  border: 1px solid #b9cbe0;
+  border-radius: 4px;
+  background: white;
+  color: #235890;
+  font: 600 11px var(--master-font, Arial, sans-serif);
+  cursor: pointer;
+}
+#entry .receipt-row-actions button:disabled { opacity: .5; cursor: default; }
+#entry .receipt-pencil svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+
+#receiptPhotoViewer {
+  width: fit-content;
+  max-width: min(900px, calc(100vw - 24px));
+  max-height: 88dvh;
+  padding: 0;
+  border: 1px solid #b9cbe0;
+  border-radius: 8px;
+  color: #203047;
+  background: #fff;
+}
+#receiptPhotoViewer::backdrop { background: #10243bd9; }
+#receiptPhotoViewer header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 12px; }
+#receiptPhotoViewer strong { min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
+#receiptPhotoViewer button { width: 36px; height: 36px; font-size: 20px; }
+#receiptPhotoViewer img { display: block; width: auto; max-width: 100%; height: auto; max-height: min(74dvh, calc(88dvh - 60px)); margin-inline: auto; object-fit: contain; }
+
+@media (max-width: 560px) {
+  #entry { --receipt-columns: repeat(3, minmax(0, 1fr)) 72px; }
+  #entry .dialog-header { padding-inline: 12px; }
+  #entry .dialog-body { padding-inline: 12px; }
+  #entry .receipt-columns { display: none; }
+  #entry .receive-line { padding-inline: 0; }
+  #entry .receipt-product { grid-column: 1 / -1; }
+  #entry .receipt-quantities > :nth-child(1) { grid-column: 1; }
+  #entry .receipt-quantities > :nth-child(2) { grid-column: 2; }
+  #entry .receipt-quantities > :nth-child(3) { grid-column: 3; }
+  #entry .receipt-quantities [data-rejected-label] { grid-column: 1 / span 2; }
+  #entry .receipt-qty-label { position: static; width: auto; height: auto; clip-path: none; white-space: normal; color: #5b7188; font-size: 10px; font-weight: 400; text-align: center; }
+  #entry .receipt-quantities input { height: 40px; }
+  #entry .receipt-evidence { grid-column: 4; align-self: end; min-height: 40px; align-content: center; }
+  #entry .receipt-camera, #entry .receipt-preview-button, #entry .receipt-remove { min-height: 40px; }
+  #entry .receipt-preview-button img { height: 38px; }
+  #entry .receipt-reason { grid-column: 1 / -1; }
+}
