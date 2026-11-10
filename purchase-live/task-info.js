@@ -56,7 +56,7 @@
     const awaiting=m.supply?.waiting>0&&m.supply.received===0&&!m.sources.length&&!(m.received>0);
     const physical=m.supply?.received??((m.received>0||m.sources.length)?m.allocated:0);
     const sourceMismatch=!awaiting&&!defaultZero&&physical>0&&(m.sources.reduce((sum,source)=>sum+source.quantity,0)!==physical||m.sources.some(source=>source.kind==='Source'));
-    return {value:defaultZero?'0':qty(displayed),defaultZero,awaiting,sourceMismatch,info:sourceMismatch||outstanding,settled:delivery?.confirmed===true&&Number.isSafeInteger(displayed)&&delivery.loadedQty===displayed&&!delivery.issue&&!delivery.pending};
+    return {value:defaultZero?'0':qty(displayed),defaultZero,sourceMismatch,info:sourceMismatch||outstanding,settled:delivery?.confirmed===true&&Number.isSafeInteger(displayed)&&delivery.loadedQty===displayed&&!delivery.issue&&!delivery.pending};
   }
   function sourceSummary(m){
     if(!m.consistent)return '';
@@ -109,7 +109,6 @@
         if(view.info&&!allocated.querySelector('.purchase-info-pending,.purchase-quantity-zero')){const line=document.createElement('small');line.className='purchase-info-note';const button=infoButton('allocation',m);
           button.textContent=view.sourceMismatch?'Review source 核对来源':'View source 查看来源';
           button.setAttribute('aria-label',button.textContent+' '+m.task.barcode);line.append(button);allocated.append(line);}
-        else if(view.awaiting){const line=document.createElement('small');line.className='purchase-info-note';line.textContent='Awaiting receipt 待收货';allocated.append(line);}
       }
       row.dataset.purchaseInfoReady='true';
     }
