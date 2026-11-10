@@ -81,7 +81,7 @@
    if(!Number.isSafeInteger(requested)||!Number.isSafeInteger(actual))continue;
    allocated.replaceChildren();
    const gap=Number(row.dataset.layoutGap||0);
-   if(!gap&&actual<=requested&&row.dataset.layoutAction==='none'||actual===requested&&!gap&&!Number(row.dataset.layoutWaiting||0)){allocated.textContent=String(actual);}
+   if(row.dataset.layoutBorrowOnly==='true'&&actual<=requested||!gap&&actual<=requested&&row.dataset.layoutAction==='none'||actual===requested&&!gap&&!Number(row.dataset.layoutWaiting||0)){allocated.textContent=String(actual);}
    else{
     const warning=document.createElement('button');warning.type='button';warning.className='draft-allocation-warning';
     warning.style.color=actual>requested?'#E51B2B':'#F58A00';

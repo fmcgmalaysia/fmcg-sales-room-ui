@@ -53,7 +53,10 @@
   function allocationView(m,data=context){
     const delivery=data?.deskDeliveries?.find(row=>row.taskId===m.task.id),outstanding=m.sources.some(row=>row.loans.some(loan=>loan.outstanding>0));
     const displayed=m.supply?.planned??m.allocated,defaultZero=displayed==null&&m.sources.length===0;
-    return {value:defaultZero?'0':qty(displayed),defaultZero,info:!m.consistent&&!defaultZero||outstanding,settled:delivery?.confirmed===true&&Number.isSafeInteger(displayed)&&delivery.loadedQty===displayed&&!delivery.issue&&!delivery.pending};
+    const awaiting=m.supply?.waiting>0&&m.supply.received===0&&!m.sources.length&&!(m.received>0);
+    const physical=m.supply?.received??((m.received>0||m.sources.length)?m.allocated:0);
+    const sourceMismatch=!awaiting&&!defaultZero&&physical>0&&(m.sources.reduce((sum,source)=>sum+source.quantity,0)!==physical||m.sources.some(source=>source.kind==='Source'));
+    return {value:defaultZero?'0':qty(displayed),defaultZero,awaiting,sourceMismatch,info:sourceMismatch||outstanding,settled:delivery?.confirmed===true&&Number.isSafeInteger(displayed)&&delivery.loadedQty===displayed&&!delivery.issue&&!delivery.pending};
   }
   function sourceSummary(m){
     if(!m.consistent)return '';
@@ -103,7 +106,10 @@
         for(const node of [...allocated.childNodes])if(node.nodeType===3&&/^\s*\d[\d,]*\s*$/.test(node.textContent)){const value=document.createElement('span');value.className='quantity-reference receipt-complete purchase-info-total';value.textContent=node.textContent.trim();node.replaceWith(value);}
         if(!allocated.querySelector('.purchase-info-total')&&view.value!==''){const value=document.createElement('span');value.className='quantity-reference purchase-info-total purchase-info-pending';value.textContent=view.value;allocated.prepend(value);}
         allocated.querySelectorAll('span.purchase-info-total').forEach(value=>{value.textContent=view.value;value.classList.toggle('purchase-quantity-zero',view.value==='0');value.dataset.purchaseQuantityEmpty=String(view.defaultZero);});allocated.toggleAttribute('data-purchase-info-settled',view.settled);
-        if(view.info&&!allocated.querySelector('.purchase-info-pending,.purchase-quantity-zero')){const line=document.createElement('small');line.className='purchase-info-note';line.append(infoButton('allocation',m));allocated.append(line);}
+        if(view.info&&!allocated.querySelector('.purchase-info-pending,.purchase-quantity-zero')){const line=document.createElement('small');line.className='purchase-info-note';const button=infoButton('allocation',m);
+          button.textContent=view.sourceMismatch?'Review source 核对来源':'View source 查看来源';
+          button.setAttribute('aria-label',button.textContent+' '+m.task.barcode);line.append(button);allocated.append(line);}
+        else if(view.awaiting){const line=document.createElement('small');line.className='purchase-info-note';line.textContent='Awaiting receipt 待收货';allocated.append(line);}
       }
       row.dataset.purchaseInfoReady='true';
     }
@@ -117,7 +123,7 @@
       body=m.receipts.length?'<table class="rowlist"><thead><tr><th>P.O.</th><th>Received</th>'+(rejected?'<th>Rejected</th>':'')+'<th>Date</th><th>By</th></tr></thead><tbody>'+m.receipts.map(row=>'<tr><td>'+esc(row.po)+'</td><td>'+qty(row.received)+(row.kind==='CORRECTION'?'<small>Correction</small>':'')+'</td>'+(rejected?'<td>'+qty(row.rejected)+'</td>':'')+'<td>'+esc(date(row.at))+'</td><td>'+esc(row.by)+'</td></tr>').join('')+'</tbody></table>':'<p>'+(m.received===null?'No receipts.':'Receipt details unavailable. Refresh to check.')+'</p>';
     }else{
       const name=id=>context.customers?.find(row=>row.id===id)?.shortName||context.customers?.find(row=>row.id===id)?.name||id;
-      body=m.sources.length?'<table class="rowlist"><thead><tr><th>Source</th><th>P.O.</th><th>Qty</th><th>From</th><th>Recorded</th></tr></thead><tbody>'+m.sources.map(row=>'<tr><td>'+esc(row.kind)+(row.repaid?' · Repaid':'')+'</td><td>'+esc(row.po)+'</td><td>'+qty(row.quantity)+'</td><td>'+esc(name(row.customerId))+'</td><td>'+esc(date(row.at))+'<small>'+esc(row.by||'—')+'</small></td></tr>').join('')+'</tbody></table>':'<p>'+(m.allocated===0?'Not allocated.':'Source details unavailable. Refresh to check.')+'</p>';
+      body=m.sources.length?'<table class="rowlist"><thead><tr><th>Source</th><th>P.O.</th><th>Qty</th><th>From</th><th>Recorded</th></tr></thead><tbody>'+m.sources.map(row=>'<tr><td>'+esc(row.kind)+(row.repaid?' · Repaid':'')+'</td><td>'+esc(row.po)+'</td><td>'+qty(row.quantity)+'</td><td>'+esc(name(row.customerId))+'</td><td>'+esc(date(row.at))+'<small>'+esc(row.by||'—')+'</small></td></tr>').join('')+'</tbody></table>':'<p>'+(m.allocated===0?'Not allocated.':'Physical allocation is recorded, but its source is not available for review.')+'</p>';
       const loans=[...new Map(m.sources.flatMap(row=>row.loans).map(loan=>[loan.id||JSON.stringify([loan.borrowerTaskId,loan.lenderTaskId]),loan])).values()];
       body+=loans.map(loan=>'<p class="purchase-info-balance">Outstanding '+qty(loan.outstanding)+' CTN · '+esc(name(context.tasks.find(task=>task.id===loan.lenderTaskId)?.customerId||''))+'</p>').join('');
       if(!m.consistent&&m.sources.length)body+='<p>Source total differs. Review allocation.</p>';
