@@ -46,7 +46,7 @@ $w.onReady(()=>{
     if(['FULFILMENT_READ_REQUEST','FULFILMENT_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string')return;room.postMessage({type:message.type.replace('_REQUEST','_RESULT'),company:message.company,requestId:message.requestId,ok:false,error:'Use the Desk-authorized Delivery Task. The old Dispatch entry is retired.'});return;
     }
-    if(!['WAREHOUSE_ORDERS_REQUEST','WAREHOUSE_RECEIPT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
+    if(!['WAREHOUSE_ORDERS_REQUEST','WAREHOUSE_RECEIPT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>(message.type==='WAREHOUSE_RECEIPT_REQUEST'?3100000:200000))return;
     const type=message.type==='WAREHOUSE_ORDERS_REQUEST'?'WAREHOUSE_ORDERS_RESULT':'WAREHOUSE_RECEIPT_RESULT';
     try{let result;if(message.type==='WAREHOUSE_ORDERS_REQUEST'){if(receivingRead?.company!==message.company||receivingRead?.requestId!==message.requestId)receivingRead={company:message.company,requestId:message.requestId,promise:getWarehouseOrders(message.company)};result=await receivingRead.promise;}else result=await saveWarehouseReceipt(message.company,message.requestId,message.input);room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});}
     catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'});}
