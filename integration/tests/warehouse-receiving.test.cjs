@@ -1,16 +1,41 @@
-const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
+const test=require('node:test'),assert=require('node:assert/strict'),{createHash}=require('node:crypto'),load=require('./load-master-module.cjs');
 const {projectWarehouseOrders,createWarehouseOperations,requireWarehouseStaff,readWarehouseReceipts}=load('warehouseReceiving.js');
 const clone=value=>JSON.parse(JSON.stringify(value));
-function fixture(){
+function fixture(documentService){
  const records=new Map(),tasks=[{id:'T',orderId:'O',sourceLineId:'L',barcode:'001',name:'PRODUCT',packing:'12 x 1',ord:90,procurement:{totalCtn:100}}];
  const po={id:'PO',version:'V',taskIds:['T'],company:'NCT',number:'NCT-PO-01',customerId:'C',customerName:'CUSTOMER',documents:[]};let fail=false;
  const store={all:async c=>[...records].filter(([key])=>key.startsWith(c+'/')).map(([,v])=>clone(v)),read:async(c,id)=>clone(records.get(c+'/'+id)||null),insert:async(c,row)=>{if(records.has(c+'/'+row._id))throw Error('duplicate');records.set(c+'/'+row._id,clone(row));if(row.action==='WAREHOUSE_RECEIPT_SAVED'&&fail){fail=false;throw Error('response lost');}return clone(row);},remove:async(c,id)=>records.delete(c+'/'+id)};
  const readOrders=async company=>projectWarehouseOrders({company,purchaseOrders:company==='NCT'?[po]:[],tasks,activity:await store.all(company+'Activity')});
- const operations=createWarehouseOperations({store,names:{NCT:{activity:'NCTActivity'},GHR:{activity:'GHRActivity'}},readOrders,now:()=>new Date('2026-10-11T02:00:00Z')});
+ const operations=createWarehouseOperations({store,names:{NCT:{activity:'NCTActivity'},GHR:{activity:'GHRActivity'}},readOrders,documentService,now:()=>new Date('2026-10-11T02:00:00Z')});
  const base={company:'NCT',staff:{memberId:'M',staffId:'S',staffName:'HIA'},requestId:'11111111-1111-4111-8111-111111111111'};
  const input=async(accepted,kind='PARTIAL')=>({id:'PO',version:(await readOrders('NCT'))[0].version,action:'RECEIVE',lines:[{taskId:'T',accepted,rejected:0,kind,reason:'Two deliveries agreed'}]});
  return {records,store,readOrders,operations,base,input,tasks,po,fail:()=>fail=true};
 }
+test('receiving evidence retries the same file, then records the receipt once without image bytes in CMS',async()=>{
+ const attempts=[];
+ const f=fixture(async packet=>{
+  attempts.push(packet);
+  if(packet.action==='ALLOCATE')return {fileId:'warehouse-photo-1'};
+  if(attempts.length===2)throw Error('Upload response lost');
+  return {...packet,ok:true};
+ });
+ const input=await f.input(100,'DELIVERY');
+ const bytes=Buffer.from([255,216,255,0,0,0,0,0,0,0,0,0]);
+ input.lines[0].photo={mimeType:'image/jpeg',base64:bytes.toString('base64'),sha256:createHash('sha256').update(bytes).digest('hex')};
+ const command={...f.base,input};
+ await assert.rejects(f.operations.save(command),/response lost/);
+ assert.equal((await f.readOrders('NCT'))[0].lines[0].accepted,0);
+ const saved=await f.operations.save(command);
+ assert.deepEqual(await f.operations.save(command),saved);
+ assert.deepEqual(attempts.map(packet=>packet.action),['ALLOCATE','PHOTO_UPLOAD','PHOTO_UPLOAD']);
+ assert.equal(attempts[1].fileId,attempts[2].fileId);
+ assert.equal(attempts[1].type,'RECEIVING');
+ const row=(await f.readOrders('NCT'))[0];
+ assert.equal(row.lines[0].accepted,100);
+ assert.equal(row.history.length,1);
+ assert.equal(row.history[0].lines[0].photo.fileId,'warehouse-photo-1');
+ assert.doesNotMatch(JSON.stringify([...f.records.values()]),/"base64"/);
+});
 test('two deliveries accumulate once; customer allocation remains pending and physical excess stays separate',async()=>{
  const f=fixture();await f.operations.save({...f.base,input:await f.input(80)});
  let row=(await f.readOrders('NCT'))[0];assert.equal(row.status,'PARTIAL');assert.equal(row.lines[0].customerReceived,0);assert.equal(row.lines[0].extraReceived,0);

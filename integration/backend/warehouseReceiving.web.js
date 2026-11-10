@@ -27,7 +27,7 @@ async function readWarehouseData(company,staff,includePreparation=true){
   return {orders:projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity}),customerLines:projectWarehouseCustomerReadiness(workspace),deliveryTasks:includePreparation?projectPreparation({...workspace,activity}).map(item=>{const task=workspace.tasks.find(t=>t.id===item.taskId);return {...item,sourceLineId:task?.sourceLineId,cbmPerCtn:task?warehouseCbm(company,task,activity):null};}):[]};
 }
 async function readOrders(company,staff){return (await readWarehouseData(company,staff)).orders;}
-const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders});
+const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders,documentService:requestPurchaseDocument});
 export const getWarehouseOrders=webMethod(Permissions.SiteMember,async company=>{
   const staff=await staffContext(),{orders,customerLines}=await readWarehouseData(company,staff,false);let names=[];
   try{names=await readCustomerShortNames([...new Set([...orders.flatMap(row=>row.customerIds||[row.customerId]),...customerLines.map(row=>row.customerId)])]);}catch(_){}
@@ -36,7 +36,7 @@ export const getWarehouseOrders=webMethod(Permissions.SiteMember,async company=>
 export const saveWarehouseReceipt=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await staffContext();
   try{return await operations.save({company,staff,requestId,input});}
-  catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};const message=String(error?.message||'');const safe=/^(Select a |Purchase order or receipts changed|A receipt line|Enter whole cartons|Accepted cartons|Enter a reason|Confirm that|Rejected carton|A save is still processing|Warehouse )/.test(message);return {ok:false,requestId,retryable:!safe||message.startsWith('A save is still processing'),error:safe?message:'Receipt save could not be confirmed. Retry the same save. 收货保存尚未确认，请重试同一次保存。'};}
+  catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};const message=String(error?.message||'');const safe=/^(Select a |Purchase order or receipts changed|A receipt line|Enter whole cartons|Accepted cartons|Enter a reason|Confirm that|Rejected carton|A save is still processing|Warehouse )/.test(message);return {ok:false,requestId,retryable:!safe||message.startsWith('A save is still processing')||/^Warehouse photo (allocation|upload) is unconfirmed\./.test(message),error:safe?message:'Receipt save could not be confirmed. Retry the same save. 收货保存尚未确认，请重试同一次保存。'};}
 });
 
 

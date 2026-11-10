@@ -2,6 +2,7 @@ import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { allocatedTo, readAllocations } from 'backend/plannerAllocation.js';
 import { stockPosition } from 'backend/inventoryExceptions.js';
+import { validatePackingPhotos } from 'backend/packingListPhotos.js';
 
 const text=value=>String(value??'').trim();
 const quantity=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
@@ -48,6 +49,7 @@ export function readWarehouseTask(task,activity,allocations){
 }
 
 export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
+  const images=new Map(tasks.filter(task=>task.productImageUrl).map(task=>[task.id,task.productImageUrl]));
   return purchaseOrders.map(po=>{
     if(po.company!==company)throw Error('Warehouse purchase company mismatch.');
     const receipt=readWarehouseReceipts(po.id,activity);
@@ -69,16 +71,19 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
     const receivingTaskComplete=lines.length>0&&lines.every(line=>line.remaining===0&&!line.issue||stopped(line));
     const completionTimes=receivingTaskComplete?lines.map(line=>stopped(line)?.decision.at||receipt.lines.find(saved=>saved.taskId===line.taskId)?.at).filter(Boolean).sort():[];
     return {id:po.id,company,number:po.number,...(po.procurementSavePending?{procurementSavePending:true}:{}),correctionAllowed:!po.invoiceChecked&&!po.supplierAccount?.closed,selfCollect:po.selfCollect===true,shortageIssues:po.shortageIssues||[],shipmentDates:po.shipmentDates,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,customerIds:po.customerIds,customers:po.customers,createdAt:po.createdAt,createdBy:po.createdBy,
-      version:operationId(po.id,po.contentVersion||po.version,po.supplierId,po.selfCollect===true,po.invoiceChecked===true,po.supplierAccount?.closed===true,receipt.revision,lines),revision:receipt.revision,lines,history:receipt.history.map(event=>({id:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,lines:event.details.lines})),
+      version:operationId(po.id,po.contentVersion||po.version,po.supplierId,po.selfCollect===true,po.invoiceChecked===true,po.supplierAccount?.closed===true,receipt.revision,lines),revision:receipt.revision,lines:lines.map(line=>images.has(line.taskId)?{...line,productImageUrl:images.get(line.taskId)}:line),history:receipt.history.map(event=>({id:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,lines:event.details.lines})),
       status:issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',itemCount:new Set(lines.map(line=>JSON.stringify([line.barcode,line.packing]))).size,pendingItems:new Set(lines.filter(line=>line.remaining>0||line.issue).map(line=>JSON.stringify([line.barcode,line.packing]))).size,
-      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,workroomCompletedAt:completionTimes.at(-1)||null,receivingStoppedWaiting:receivingTaskComplete&&lines.some(line=>Boolean(stopped(line))),workroomStatus:po.invoiceChecked&&po.finance?.receiptResolved||receivingTaskComplete?'COMPLETE':issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',approvedReceiptTarget:po.invoiceChecked&&po.finance?.receiptResolved?lines.reduce((n,line)=>n+line.accepted,0):null,documents:po.documents,stockCases:po.stockCases||[]};
+      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,workroomCompletedAt:completionTimes.at(-1)||null,receivingStoppedWaiting:receivingTaskComplete&&lines.some(line=>Boolean(stopped(line))),workroomStatus:po.invoiceChecked&&po.finance?.receiptResolved||receivingTaskComplete?'COMPLETE':issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',approvedReceiptTarget:po.invoiceChecked&&po.finance?.receiptResolved?lines.reduce((n,line)=>n+line.accepted,0):null,documents:po.documents,documentState:po.documentStates?.DO?.state,stockCases:po.stockCases||[]};
   });
 }
 
-export function createWarehouseOperations({store,names,readOrders,now=()=>new Date()}){
+export function createWarehouseOperations({store,names,readOrders,documentService,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return {save:async({company,staff,requestId,input})=>{
     if(!names[company]||!['RECEIVE','CORRECT'].includes(input?.action)||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>300)throw Error('Select a purchase order and enter this delivery.');
+    const photoLines=input.lines.filter(line=>line?.photo!==undefined);
+    const verified=photoLines.length?validatePackingPhotos(photoLines.map(line=>line.photo)):[];
+    if(verified.length&&(input.action!=='RECEIVE'||typeof documentService!=='function'))throw Error('Warehouse photos are only available for new receipts.');
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{warehouse:input},prepare:async()=>{
       const po=(await readOrders(company,staff)).find(row=>row.id===input.id);
       requireConfirmedProcurement(po);
@@ -106,14 +111,31 @@ export function createWarehouseOperations({store,names,readOrders,now=()=>new Da
         return {taskId:line.taskId,orderId:line.orderId,sourceLineId:line.sourceLineId,planned:line.planned,beforeAccepted:line.accepted,beforeRejected:line.rejected,accepted:line.accepted+entry.accepted,rejected:line.rejected+entry.rejected,kind,issue,reason};
       });
       const id=operationId(company,requestId,staff.memberId,'WAREHOUSE_RECEIPT'),at=now().toISOString();
-      return {expectedVersion:po.version,event:{_id:id,title:id,description:po.id,image:po.customerId,action:RECEIPT_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:'Warehouse delivery received',details:{company,beforeRevision:po.revision,lines:changes}}};
+      const uploads=[];
+      for(let index=0;index<verified.length;index++){
+        const {sha256,mimeType,size}=verified[index],taskId=photoLines[index].taskId;
+        const allocated=await documentService({action:'ALLOCATE',company});
+        if(!/^[A-Za-z0-9_-]{10,200}$/.test(allocated?.fileId||''))throw Error('Warehouse photo allocation is unconfirmed. Retry the same save.');
+        const extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[mimeType],name=`${company}-${id}-RECEIVING-${index+1}.${extension}`;
+        uploads.push({action:'PHOTO_UPLOAD',type:'RECEIVING',department:'WAREHOUSE',company,poId:operationId(company,po.id,taskId,'RECEIVING_PHOTO'),fileId:allocated.fileId,name,sha256,mimeType,size});
+        changes.find(line=>line.taskId===taskId).photo={fileId:allocated.fileId,name,sha256,mimeType,size};
+      }
+      return {expectedVersion:po.version,...(uploads.length?{uploads}:{}),event:{_id:id,title:id,description:po.id,image:po.customerId,action:RECEIPT_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:'Warehouse delivery received',details:{company,beforeRevision:po.revision,lines:changes}}};
     },apply:async plan=>{
       const existing=await store.read(names[company].activity,plan.event._id);
       if(existing&&operationId(existing.details)!==operationId(plan.event.details))throw Error('Warehouse receipt identity conflict.');
       if(!existing){
-        const current=(await readOrders(company,staff)).find(row=>row.id===plan.event.description);
-        requireConfirmedProcurement(current);
-        if(current?.version!==plan.expectedVersion)throw Error('Purchase order or receipts changed. Refresh before saving; your input is retained.');
+        const assertCurrent=async()=>{
+          const current=(await readOrders(company,staff)).find(row=>row.id===plan.event.description);
+          requireConfirmedProcurement(current);
+          if(current?.version!==plan.expectedVersion)throw Error('Purchase order or receipts changed. Refresh before saving; your input is retained.');
+        };
+        await assertCurrent();
+        for(const [index,upload] of (plan.uploads||[]).entries()){
+          const receipt=await documentService({...upload,base64:verified[index].base64});
+          if(receipt?.ok!==true||['fileId','company','poId','name','sha256','mimeType','size'].some(key=>receipt[key]!==upload[key]))throw Error('Warehouse photo upload is unconfirmed. Retry the same save.');
+        }
+        if(plan.uploads?.length)await assertCurrent();
         await store.insert(names[company].activity,{...plan.event,activityTime:new Date(plan.event.activityTime)});
       }
       return {ok:true,company,requestId,poId:plan.event.description,receiptId:plan.event.title,savedAt:plan.event.activityTime};
