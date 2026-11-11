@@ -31,6 +31,7 @@ function planLines(input,list,context){
 function checkSupply(list,context,lines=list.lines){
  const available=packingAvailability(context,list.id);
  for(const line of lines){const task=available.find(task=>task.taskId===line.taskId);
+  if(list.desk?.taskScope==='ALL'&&line.quantity===line.loaded)continue;
   const capacity=list.desk?Math.min(task?.unarranged??0,Math.max(0,(task?.planned??task?.ready??0)-(task?.held||0))):task?.readyToArrange;
   if(!task||task.review||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency||line.quantity-(list.lines.find(row=>row.taskId===line.taskId)?.loaded||0)>capacity)fail('Usable customer stock changed. Review allocation before proceeding.');
  }
@@ -54,7 +55,7 @@ export function changePackingList({list,input,context,actor,id,revision,at}){
   if(!['DRAFT','SENT'].includes(next.status))fail('Warehouse has started. Submit a change for acknowledgement.');
   next.lines=planLines(input.lines,next,context);checkExecuted(next.lines);if(next.status==='SENT')checkSupply(next,context);
  }else if(input.action==='SEND'){
-  if(next.status!=='DRAFT')fail('Only a draft can be sent.');checkSupply(next,context);next.status='SENT';next.sentAt=at;
+  if(next.status!=='DRAFT')fail('Only a draft can be sent.');if(next.desk?.taskScope!=='ALL')checkSupply(next,context);next.status='SENT';next.sentAt=at;
  }else if(input.action==='START'){
   if(next.status!=='SENT')fail('Only a sent list can be started.');checkSupply(next,context);next.status='PROCESSING';next.startedAt=at;
  }else if(input.action==='CHANGE'){

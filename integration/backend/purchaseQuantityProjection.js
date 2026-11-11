@@ -5,8 +5,8 @@ import { readSalesShipmentDate, shipmentDateLocked, readShipmentPlans } from 'ba
 import { readShortage } from 'backend/purchaseShortage.js';
 import { preparationSummary } from 'backend/warehousePreparation.js';
 import { resolveBatchEntitlements } from 'backend/shipmentBatchAllocation.js';
-import { readDeskCommitments, deskTaskPortions, shortloadStatus } from 'backend/shortloadResolutionModel.js';
-import { readSupportDesks } from 'backend/supportDesk.js';
+import { readDeskCommitments, deskTaskPortions, shortloadStatus, deskExpiryDates } from 'backend/shortloadResolutionModel.js';
+import { readSupportDesks, currentSupportDeskState } from 'backend/supportDesk.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 import { projectPackingContext } from 'backend/packingListContext.js';
 import { currentDeskDeliveries } from 'backend/warehouseDeliveryView.js';
@@ -43,9 +43,9 @@ export function projectPurchaseQuantities({customerId,requests,orders,tasks,acti
       const adjusted=workspace?.tasks.find(row=>row.id===task.title),demandAdjustment=adjusted?.salesDemandRevision?{quantity:adjusted.requested,revision:adjusted.salesDemandRevision,original:order.orderQtyInCtn}:null;
       if(demandAdjustment)quantity=adjusted.requested;
       const warehouse=readWarehouseTask(task,activity),received=adjusted?.inc??warehouse?.customerReceived??0,decision=workspace?.tasks.find(row=>row.id===task.title)?.shortage||readShortage(task.title,activity),completion=customerCompletion(task.title,activity,purchaseOrders);if(completion&&(completion.invoicedQty>quantity||completion.invoicedQty>received))throw Error('Invoice quantities require review.');
-      const desk=workspace?readDeskCommitments(activity,workspace.company,task.title):null;
-      const deskState=desk?readSupportDesks(activity,workspace.company).find(state=>state.customerId===customerId):null;
-      const portions=desk&&adjusted?deskTaskPortions(activity,deskState,adjusted,readPhysicalOutflows(activity)):[],deskPhysical=[];let uncommittedReceived=0;
+      const storedDesk=workspace?readSupportDesks(activity,workspace.company).find(state=>state.customerId===customerId):null,deskState=storedDesk?currentSupportDeskState({...workspace,activity},storedDesk):null,flows=readPhysicalOutflows(activity);
+      const desk=workspace?readDeskCommitments(activity,workspace.company,task.title,adjusted,deskState,flows):null;
+      const portions=desk&&adjusted?deskTaskPortions(activity,deskState,adjusted,flows):[],deskPhysical=[];let uncommittedReceived=0;
       for(const part of portions){const confirmed=desk.batches.filter(batch=>batch.desk===part.desk).reduce((n,batch)=>n+batch.quantity,0),count=part.desk?Math.min(part.allocated,confirmed):0;if(count)deskPhysical.push({desk:part.desk,receivedQtyCtn:count});uncommittedReceived+=part.allocated-count;}
       if(uncommittedReceived)deskPhysical.push({desk:0,receivedQtyCtn:uncommittedReceived});
       const commitment=desk?Math.max(desk.quantity,completion?.loadedQty||0,completion?.invoicedQty||0):quantity;
@@ -54,7 +54,7 @@ export function projectPurchaseQuantities({customerId,requests,orders,tasks,acti
       const shipmentPlan=readShipmentPlans(activity).find(plan=>plan.customerId===customerId&&plan.orderId===request.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===task.title)));
       const entitlements=adjusted?.batchEntitlements||(shipmentPlan?resolveBatchEntitlements(shipmentPlan,task.title,{committed:quantity,received:warehouse?.customerReceived||0}):[]);
       const shipmentBatches=entitlements.map(row=>({id:row.id,label:row.label,quantity:row.quantity,metrics:row.metrics,at:shipmentPlan.at,by:shipmentPlan.by}));
-      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:commitment,...(desk?{purchaseStarted:Boolean(adjusted?.po),deskReadiness:readyFor(task.title),quantityContract:2,orderedQtyCtn:quantity,deskCommitments:desk.batches,deskPhysical,loadedQtyCtn:Math.max(desk.loaded,completion?.loadedQty||0),uncommittedQtyCtn:quantity-commitment}:{}),...(demandAdjustment?{demandAdjustment}:{}),shipmentBatches:desk?[]:shipmentBatches,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(preparation?{preparation}:{}),...(completion?{completion:{...completion,closedUnfulfilledQty:decision?.customerDecision==='STOP'&&completion.completedQty===received?Math.max(0,quantity-completion.completedQty):0}}:{}),...(decision?{fulfilment:{decision:decision.customerDecision,message:decision.customerMessage,expectedDate:decision.expectedDate,at:decision.at}}:{}),...(warehouse||adjusted?{receivedQtyCtn:received,receivedUpdatedAt:warehouse?.allocationAt||warehouse?.at||order.masterReceivedTime||receipt.activityTime}:{})});
+      lines.push({lineId:task.imageAltText,barcode:order.description,expiryDates:deskExpiryDates(activity,task.title),committedQtyCtn:commitment,...(desk?{purchaseStarted:Boolean(adjusted?.po),deskReadiness:readyFor(task.title),quantityContract:2,orderedQtyCtn:quantity,deskCommitments:desk.batches,deskPhysical,loadedQtyCtn:Math.max(desk.loaded,completion?.loadedQty||0),uncommittedQtyCtn:quantity-commitment}:{}),...(demandAdjustment?{demandAdjustment}:{}),shipmentBatches:desk?[]:shipmentBatches,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(preparation?{preparation}:{}),...(completion?{completion:{...completion,closedUnfulfilledQty:decision?.customerDecision==='STOP'&&completion.completedQty===received?Math.max(0,quantity-completion.completedQty):0}}:{}),...(decision?{fulfilment:{decision:decision.customerDecision,message:decision.customerMessage,expectedDate:decision.expectedDate,at:decision.at}}:{}),...(warehouse||adjusted?{receivedQtyCtn:received,receivedUpdatedAt:warehouse?.allocationAt||warehouse?.at||order.masterReceivedTime||receipt.activityTime}:{})});
     }
     const ownedOrders=orders.filter(row=>row.title===request.orderId&&row.customerId===customerId&&row.submissionId===request.submissionId);const date=readSalesShipmentDate(request.orderId,customerId,request.submissionId,ownedOrders[0]?.estimatedShipmentDate,activity);
     output.push({orderId:request.orderId,submissionId:request.submissionId,lines,shipmentDate:{...date,locked:workspace?shipmentDateLocked(workspace.tasks.filter(row=>row.orderId===request.orderId&&row.customerId===customerId)):false}});
