@@ -1,6 +1,8 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const warehouseBuild = '20261111-warehouse-desk-workflow-history-v2';
+const supportSplitBuild = '20261111-support-split-quantity-v1';
 
 function one(source, before, after) {
   assert.equal(source.split(before).length, 2, before.slice(0, 160));
@@ -47,7 +49,8 @@ function receivingIndex(source, build) {
     '<div class="receipt-columns" aria-hidden="true"><span>No.</span><span>Product');
   source = one(source, '<span>Waiting <small>待收</small></span>', '<span>Pending <small>待收</small></span>');
   source=one(source,'<button data-view="history">History</button>','<details class="wh-history-menu"><summary>History</summary><div><button data-view="history">Incoming 入库历史</button><button data-delivery-history>Delivery 发货历史</button></div></details>');
-  return versions(source,build);
+  return one(one(versions(source,build), 'name="build" content="'+build+'"',
+    'name="build" content="'+warehouseBuild+'"'), 'src="app.js?v='+build+'"', 'src="app.js?v='+warehouseBuild+'"');
 }
 
 function receivingWorkroom(source) {
@@ -73,7 +76,18 @@ function deliveryClient(source){
 function deliveryNavigation(source){
   source=one(source,"view=button.dataset.view;window.warehouseWorkroom?.resetFilter();","view=button.dataset.view;if(view==='customers')window.warehousePackingTab?.openActive();window.warehouseWorkroom?.resetFilter();");
   const end=source.lastIndexOf('})();');assert.ok(end>0);
-  return source.slice(0,end)+`document.querySelector('[data-delivery-history]').onclick=()=>{if(saving||pending||document.querySelector('dialog[open]')||window.warehousePackingTab?.isBusy())return;document.querySelector('nav [data-view="customers"]').click();window.warehousePackingTab?.openHistory();document.querySelector('.wh-history-menu').open=false;};\ndocument.querySelector('nav [data-view="history"]').addEventListener('click',()=>{document.querySelector('.wh-history-menu').open=false;});\n`+source.slice(end);
+  return source.slice(0,end)+`const historyMenu=document.querySelector('.wh-history-menu');
+document.querySelector('[data-delivery-history]').onclick=()=>{if(saving||pending||document.querySelector('dialog[open]')||window.warehousePackingTab?.isBusy())return;document.querySelector('nav [data-view="customers"]').click();window.warehousePackingTab?.openHistory();historyMenu.open=false;};
+document.querySelector('nav [data-view="history"]').addEventListener('click',()=>{historyMenu.open=false;});
+document.addEventListener('click',event=>{
+  if(historyMenu.open&&!historyMenu.contains(event.target))historyMenu.open=false;
+});
+document.addEventListener('keydown',event=>{
+  if(event.key!=='Escape'||!historyMenu.open||document.querySelector('dialog[open]'))return;
+  historyMenu.open=false;
+  if(historyMenu.contains(event.target))historyMenu.querySelector('summary').focus();
+});
+`+source.slice(end);
 }
 function supportSplit(source){
   const start=source.indexOf('  function openDeskSplit(taskId){'),end=source.indexOf('  async function saveDeskChange(',start);assert.ok(start>=0&&end>start);
@@ -89,6 +103,9 @@ function customerExpiry(source,kind,build){
 
 module.exports = {
   one,
+  deliveryNavigation,
+  warehouseBuild,
+  supportSplitBuild,
   transforms: {
     'purchase-live/supplier-allocation.js': purchaseAllocation,
     'purchase-live/index.html': versions,
@@ -100,7 +117,21 @@ module.exports = {
     'master-shared/desk-delivery.js':deliveryClient,
     'master-shared/desk-delivery.css':source=>source+'\n'+fs.readFileSync(path.join(__dirname,'delivery-layout.css'),'utf8'),
     'support-room/workroom.js':supportSplit,
-    'support-room/workroom.html':versions,
+    'support-room/workroom.html':(source,build)=>versions(source,build)
+      .replace('name="build" content="'+build+'"','name="build" content="'+supportSplitBuild+'"')
+      .replace('href="workroom.css?v='+build+'"','href="workroom.css?v='+supportSplitBuild+'"')
+      .replace('src="workroom.js?v='+build+'"','src="workroom.js?v='+supportSplitBuild+'"'),
+    'support-room/workroom.css':source=>source+`
+.desk-split-dialog .split-quantities{margin-top:12px}
+.desk-split-dialog .split-quantity-row{display:grid;grid-template-columns:minmax(45px,1fr) repeat(2,minmax(0,1.5fr));align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #dce8f2}
+.desk-split-dialog .split-quantity-row>:not(:first-child){justify-self:end;text-align:right}
+.desk-split-dialog .split-quantity-head{font-size:12px;font-weight:600}
+.desk-split-dialog :is(.split-quantity-head,.split-pending) small{display:block;color:#536c85;font-size:11px;font-weight:400}
+.desk-split-dialog .split-quantity-row input{box-sizing:border-box;max-width:100%}
+.desk-split-dialog .split-pending{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;padding:9px 10px;background:#edf4fa;border-radius:4px}
+.desk-split-dialog #split-status{margin:8px 0 0}
+.desk-split-dialog #split-status:empty{display:none}
+`,
     'index.html':(source,build)=>customerExpiry(source,'SALES',build),
     'buyer-room.html':(source,build)=>customerExpiry(source,'BUYER',build)
   }
