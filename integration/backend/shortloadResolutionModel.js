@@ -4,14 +4,21 @@ const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
 const desk=value=>Number.isSafeInteger(value)&&value>=1&&value<=3;
 // Customer commitment is the confirmed Desk instruction, not a procurement quote
 // or an unconfirmed Desk draft. Transfer removals count once at their origin.
-export function readDeskCommitments(activity,company,taskId){
+export function readDeskCommitments(activity,company,taskId,task=null,state=null,flows=[]){
  if(!['NCT','GHR'].includes(company)||!taskId)throw Error('Desk commitment identity requires review.');
  const lists=activity.filter(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT').map(row=>row.details?.list).filter(list=>list?.company===company&&list.desk&&list.status!=='CANCELLED'&&list.status!=='DRAFT'&&list.lines?.some(line=>line.taskId===taskId));
  if(new Set(lists.map(list=>list.id)).size!==lists.length)throw Error('Duplicate Desk commitment requires review.');
+ const portions=task&&state?deskTaskPortions(activity,state,task,flows):null;
  const batches=lists.map(list=>{
   const line=list.lines.find(line=>line.taskId===taskId),status=shortloadStatus(activity,list,line);
   if(!desk(list.desk.number)||!qty(status.maximum)||!qty(line.loaded)||line.loaded>status.maximum||!Number.isFinite(Date.parse(list.sentAt)))throw Error('Confirmed Desk quantity requires review.');
-  return {id:list.id,desk:list.desk.number,quantity:status.maximum,loaded:line.loaded,remaining:status.maximum-line.loaded,at:list.sentAt};
+  let quantity=status.maximum;
+  if(portions&&list.desk.taskScope==='ALL'&&state.deliveryHolds?.some(hold=>hold.listId===list.id)&&!status.revision&&!(line.loadedConfirmedAt&&line.loaded<status.maximum)){
+   const planned=portions.find(part=>part.desk===list.desk.number)?.planned||0;
+   const prior=lists.filter(other=>other.id!==list.id&&other.desk.number===list.desk.number).reduce((sum,other)=>sum+shortloadStatus(activity,other,other.lines.find(row=>row.taskId===taskId)).maximum,0);
+   quantity=Math.max(line.loaded,Math.min(line.requestedQuantity,Math.max(0,planned-prior)));
+  }
+  return {id:list.id,desk:list.desk.number,quantity,loaded:line.loaded,remaining:quantity-line.loaded,at:list.sentAt};
  }).filter(row=>row.quantity>0);
  return {quantity:batches.reduce((n,row)=>n+row.quantity,0),loaded:batches.reduce((n,row)=>n+row.loaded,0),batches};
 }
@@ -19,6 +26,11 @@ export function shipmentQuantityMetrics(quantity,spec){
  if(!qty(quantity))throw Error('Shipment metric quantity requires review.');
  const valid=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
  return {quantity,amountCents:valid(spec?.priceCtn)?Math.round(quantity*spec.priceCtn*100):null,cbm:valid(spec?.cbmPerCtn)?quantity*spec.cbmPerCtn:null,netKg:valid(spec?.netKgPerCtn)?quantity*spec.netKgPerCtn:null,grossKg:valid(spec?.grossKgPerCtn)?quantity*spec.grossKgPerCtn:null,weightBasis:'PRODUCT_SPECIFICATION'};
+}
+export function deskExpiryDates(activity,taskId){
+ const dates=activity.filter(event=>event.action==='SUPPORT_PACKING_LIST_CURRENT'&&event.details?.list?.status!=='CANCELLED')
+  .flatMap(event=>event.details.list.lines.filter(line=>line.taskId===taskId&&line.expiryDate).map(line=>line.expiryDate));
+ return [...new Set(dates)].sort();
 }
 export function readShortloadResolutions(activity){
  const pending=activity.filter(row=>row.action===SHORTLOAD_ACTION&&row.result==='SAVED'),states=new Map(),result=[];
@@ -48,7 +60,8 @@ export function deskTaskPortions(activity,state,task,flows=[]){
  const records=anchor?history.slice(history.findIndex(row=>row.revision===anchor)+1):history;
  const cancelled=records.flatMap(row=>row.parts).filter(part=>part.mode==='CANCEL').reduce((n,part)=>n+part.quantity,0);
  const quantities=assignment?.parts?new Map(assignment.parts.map(part=>[part.desk,part.quantity])):new Map([[assigned,(task.requested??task.ord??0)+cancelled]]);
- if(!assignment?.parts&&!records.length&&['NCT','GHR'].includes(state?.company||task.company)){const confirmed=readDeskCommitments(activity,state?.company||task.company,task.id);if(confirmed.quantity>0&&confirmed.quantity<(task.requested??task.ord??0)){quantities.clear();for(const batch of confirmed.batches)quantities.set(batch.desk,(quantities.get(batch.desk)||0)+batch.quantity);quantities.set(0,(task.requested??task.ord)-confirmed.quantity);}}
+ const wholeDeskOpen=activity.some(event=>event.action==='SUPPORT_PACKING_LIST_CURRENT'&&event.details?.list?.desk?.taskScope==='ALL'&&event.details.list.status!=='CANCELLED'&&state?.deliveryHolds?.some(hold=>hold.listId===event.details.list.id)&&event.details.list.lines.some(line=>line.taskId===task.id));
+ if(!assignment?.parts&&!records.length&&!wholeDeskOpen&&['NCT','GHR'].includes(state?.company||task.company)){const confirmed=readDeskCommitments(activity,state?.company||task.company,task.id);if(confirmed.quantity>0&&confirmed.quantity<(task.requested??task.ord??0)){quantities.clear();for(const batch of confirmed.batches)quantities.set(batch.desk,(quantities.get(batch.desk)||0)+batch.quantity);quantities.set(0,(task.requested??task.ord)-confirmed.quantity);}}
  for(const record of records)for(const part of record.parts){if(part.mode==='CONTINUE')continue;quantities.set(record.desk,(quantities.get(record.desk)||0)-part.quantity);if(part.mode==='TRANSFER')quantities.set(part.desk,(quantities.get(part.desk)||0)+part.quantity);}
  // A later Sales demand change never silently rewrites a confirmed Desk. Keep
  // its commitment and place the new unconfirmed balance back in awaiting arrangement.

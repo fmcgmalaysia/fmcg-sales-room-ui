@@ -14,9 +14,9 @@ export function readPackingLists(activity,company){
  const records=activity.filter(row=>row.action===PACKING_CURRENT);
  const ids=new Set();
  return records.map(row=>{const list=row.details?.list;
-  if(!list||row._id!==operationId(company,list.id,'PACKING_CURRENT')||row.description!==list.id||list.company!==company||ids.has(list.id)||!list.revision||!list.customerId||!list.currency||!['DRAFT','SENT','PROCESSING','COMPLETED','CANCELLED'].includes(list.status)||!Array.isArray(list.lines)||list.lines.length<1||list.lines.length>300||new Set(list.lines.map(line=>line.taskId)).size!==list.lines.length||list.lines.some(line=>!line.taskId||![line.quantity,line.packed,line.loaded].every(value=>Number.isSafeInteger(value)&&value>=0&&value<=9999)||line.quantity===0||line.loaded>line.packed||line.packed>line.quantity))throw Error('Packing list identity requires review.');
+  if(!list||row._id!==operationId(company,list.id,'PACKING_CURRENT')||row.description!==list.id||list.company!==company||ids.has(list.id)||!list.revision||!list.customerId||!list.currency||!['DRAFT','SENT','PROCESSING','COMPLETED','CANCELLED'].includes(list.status)||!Array.isArray(list.lines)||list.lines.length<1||list.lines.length>300||new Set(list.lines.map(line=>line.taskId)).size!==list.lines.length||list.lines.some(line=>!line.taskId||![line.quantity,line.packed,line.loaded].every(value=>Number.isSafeInteger(value)&&value>=0&&value<=9999)||line.quantity===0&&list.desk?.taskScope!=='ALL'||list.desk?.taskScope==='ALL'&&(!Number.isSafeInteger(line.requestedQuantity)||line.requestedQuantity<line.quantity||line.requestedQuantity>9999)||line.loaded>line.packed||line.packed>line.quantity))throw Error('Packing list identity requires review.');
   if(list.change&&(!Array.isArray(list.change.lines)||!list.change.lines.length||list.change.lines.length>300||new Set(list.change.lines.map(line=>line.taskId)).size!==list.change.lines.length||list.change.lines.some(line=>!line.taskId||!Number.isSafeInteger(line.quantity)||line.quantity<=0||line.quantity>9999)))throw Error('Packing change requires review.');
-  if(Buffer.byteLength(JSON.stringify(list),'utf8')>200000||!list.lines.every(validEvidence)||list.change&&!list.change.lines.every(validEvidence)||list.retiredLines!==undefined&&(!Array.isArray(list.retiredLines)||list.retiredLines.length>300||!list.retiredLines.every(line=>line&&line.taskId&&line.retiredAt&&validEvidence(line))))throw Error('Packing evidence requires review.');
+  if(Buffer.byteLength(JSON.stringify(list),'utf8')>200000||!validEvidence(list)||!list.lines.every(validEvidence)||list.change&&!list.change.lines.every(validEvidence)||list.retiredLines!==undefined&&(!Array.isArray(list.retiredLines)||list.retiredLines.length>300||!list.retiredLines.every(line=>line&&line.taskId&&line.retiredAt&&validEvidence(line))))throw Error('Packing evidence requires review.');
   ids.add(list.id);const result=JSON.parse(JSON.stringify(list));if(result.desk)result.lines=result.lines.map(line=>({...line,resolution:shortloadStatus(activity,result,line)}));return result;
  });
 }
@@ -31,7 +31,7 @@ export function createPackingListOperations({store,names,readContext,documentSer
  return async({company,staff,requestId,input})=>{
   const department=staff?.packingDepartment;
   if(!names[company]||!['SUPPORT','WAREHOUSE'].includes(department)||!input)throw Error('Packing access is not authorized.');
-  const deskLoad=input.action==='DESK_LOAD',deskAction=['DESK_SEND','DESK_LOAD','DESK_RECALL'].includes(input.action),photoSave=input.action==='PHOTOS'||deskLoad&&input.photos?.length>0;
+  const deskLoad=input.action==='DESK_LOAD',deskPhotos=input.action==='DESK_PHOTOS',deskAction=['DESK_SEND','DESK_LOAD','DESK_RECALL','DESK_EXPIRY','DESK_PHOTOS'].includes(input.action),photoSave=deskPhotos||input.action==='PHOTOS'||deskLoad&&input.photos?.length>0;
   if(deskLoad&&input.photos!==undefined&&!Array.isArray(input.photos))throw Error('Warehouse photo format is invalid.');
   if(photoSave&&(department!=='WAREHOUSE'||!documentService))throw Error('Warehouse photo upload is not authorized.');
   const verified=photoSave?validatePackingPhotos(input.photos):[];
@@ -45,18 +45,21 @@ export function createPackingListOperations({store,names,readContext,documentSer
    if(!creating&&!current)throw Error('Packing list is unavailable.');
    const revision=operationId(company,requestId,staff.memberId,'PACKING_REVISION'),at=now().toISOString();
    requireConfirmedProcurement(context,[...(current?.lines||[]),...(input.lines||[])].map(line=>line.taskId));
-   const uploads=[],photoStage=deskLoad?'LOADING':input.photoStage,deskNext=deskAction?(input.action==='DESK_SEND'?planDeskDelivery({context,input,actor:department,id,revision,at}):changeDeskDelivery({context,list:current,input,actor:department,id,revision,at})):null;
+   const uploads=[],photoStage=deskLoad||deskPhotos?'LOADING':input.photoStage,deskInput=deskPhotos?{...input,attachments:verified.map(photo=>({fileId:'VALIDATION_ONLY',sha256:photo.sha256,stage:photoStage}))}:input,deskNext=deskAction?(input.action==='DESK_SEND'?planDeskDelivery({context,input,actor:department,id,revision,at}):changeDeskDelivery({context,list:current,input:deskInput,actor:department,id,revision,at})):null;
    if(photoSave){
-    if(!current?.lines.some(line=>line.taskId===input.taskId)||!['PACKING','LOADING'].includes(photoStage))throw Error('Warehouse photo task or stage requires review.');
+    if(!current||!deskPhotos&&!current.lines.some(line=>line.taskId===input.taskId)||!['PACKING','LOADING'].includes(photoStage))throw Error('Warehouse photo task or stage requires review.');
     // Reject invalid state/revision/history before allocating external file IDs.
-    if(!deskLoad)changePackingList({list:current,input:{...input,attachments:verified.map(photo=>({fileId:'VALIDATION_ONLY',sha256:photo.sha256,stage:photoStage}))},context,actor:department,id,revision,at});
-    for(let index=0;index<verified.length;index++){const photo=verified[index],allocated=await documentService({action:'ALLOCATE',company}),extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[photo.mimeType];if(!allocated?.fileId)throw Error('Warehouse photo allocation is unconfirmed.');uploads.push({action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:operationId(company,id,input.taskId,'PACKING_PHOTO'),fileId:allocated.fileId,type:photoStage,mimeType:photo.mimeType,sha256:photo.sha256,size:photo.size,name:company+'-'+id+'-'+photoStage+'-'+requestId+'-'+index+'.'+extension});}
+    if(!deskLoad&&!deskPhotos)changePackingList({list:current,input:{...input,attachments:verified.map(photo=>({fileId:'VALIDATION_ONLY',sha256:photo.sha256,stage:photoStage}))},context,actor:department,id,revision,at});
+    for(let index=0;index<verified.length;index++){const photo=verified[index],allocated=await documentService({action:'ALLOCATE',company}),extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[photo.mimeType];if(!allocated?.fileId)throw Error('Warehouse photo allocation is unconfirmed.');uploads.push({action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:operationId(company,id,deskPhotos?'DESK':input.taskId,'PACKING_PHOTO'),fileId:allocated.fileId,type:photoStage,mimeType:photo.mimeType,sha256:photo.sha256,size:photo.size,name:company+'-'+id+'-'+photoStage+'-'+requestId+'-'+index+'.'+extension});}
    }
    const attachments=uploads.map(upload=>({fileId:upload.fileId,name:upload.name,sha256:upload.sha256,mimeType:upload.mimeType,size:upload.size,stage:upload.type,at,by:staff.staffName}));
    const next=deskNext||changePackingList({list:current,input:{...input,company,attachments},context,actor:department,id,revision,at});
    requireConfirmedProcurement(context,next.lines.map(line=>line.taskId));
    for(const line of next.lines)delete line.resolution;
    if(deskLoad&&attachments.length)next.lines=next.lines.map(line=>line.taskId===input.taskId?{...line,photos:[...(line.photos||[]),...attachments]}:line);
+   if(deskPhotos)next.photos=[...(current.photos||[]),...attachments];
+   if(deskLoad)next.lines=next.lines.map(line=>line.taskId===input.taskId?{...line,loadedConfirmedBy:staff.staffName}:line);
+   if(input.action==='DESK_SEND')next.sentBy=staff.staffName;
    if(deskLoad&&next.lines.some(line=>line.photos?.length>30))throw Error('Warehouse photo history is full.');
    if(input.action==='PROGRESS'||deskLoad)for(const line of next.lines){
     if(!context.physicalContext)throw Error('Packing physical stock context is unavailable.');

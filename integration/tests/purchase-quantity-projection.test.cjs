@@ -7,6 +7,15 @@ test('foreign customer, missing accepted receipt and partial quantity save rejec
 test('same barcode on unrelated tasks cannot cross customer or source line boundaries',()=>{const f=fixture();f.tasks.push({title:'OTHER',description:'O',imageAltText:'L',purchaseQtyInCtn:500,specialPurchase:true});const reply=projectPurchaseQuantities(f);assert.equal(reply.orders[0].lines.length,1);});
 test('source projection keeps original ordered qty and quote while both views receive current committed qty and reason',()=>{const order={orderId:'O',customerId:'C',masterReceipt:{submissionId:'S'},submittedAt:'2026-10-10T00:00:00Z',lines:[{lineId:'L',barcode:'001',quantityCtn:100,lockedPriceCtn:234.56,receivedQtyCtn:7}]};const [result]=apply('C',[order],projectPurchaseQuantities(fixture()));assert.equal(result.lines[0].committedQtyCtn,80);assert.equal(result.lines[0].quantityCtn,100);assert.equal(result.lines[0].lockedPriceCtn,234.56);assert.equal(result.lines[0].receivedQtyCtn,7);assert.equal(result.masterQuantityHistory.length,2);assert.equal(order.lines[0].committedQtyCtn,undefined);const bad=projectPurchaseQuantities(fixture());bad.orders[0].lines[0].barcode='OTHER';assert.throws(()=>apply('C',[order],bad),/identity/);});
 
+test('Desk expiry feedback is scoped to the customer line and never includes evidence files',()=>{
+ const f=fixture(),order={orderId:'O',masterReceipt:{submissionId:'S'},lines:[{lineId:'L',barcode:'001',quantityCtn:100,lockedPriceCtn:23}]};
+ const id='TEST-DESK',_id=load('purchaseOperationJournal.js').operationId('NCT',id,'PACKING_CURRENT');
+ f.activity.push({_id,action:'SUPPORT_PACKING_LIST_CURRENT',details:{list:{id,company:'NCT',customerId:'C',status:'PROCESSING',lines:[{taskId:'T',loaded:0,expiryDate:'2027-11-01',photos:[{fileId:'PRIVATE'}]},{taskId:'OTHER',loaded:0,expiryDate:'2027-12-01'}]}}});
+ const reply=projectPurchaseQuantities(f),line=apply('C',[order],reply)[0].lines[0];
+ assert.deepEqual(Array.from(line.expiryDates),['2027-11-01']);assert.equal(line.lockedPriceCtn,23);assert.doesNotMatch(JSON.stringify(reply),/PRIVATE|2027-12-01/);
+ reply.orders[0].lines[0].expiryDates=['2027-02-30'];assert.throws(()=>apply('C',[order],reply),/expiry dates/);
+});
+
 test('warehouse reply exposes only allocated customer cartons and source displays completion without changing price',()=>{
  const f=fixture();f.activity.push({title:'R',description:'PO',image:'C',action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',activityTime:'2026-10-11T02:00:00Z',initiatedByStaffName:'PRIVATE WAREHOUSE',details:{beforeRevision:'',lines:[{taskId:'T',orderId:'O',sourceLineId:'L',beforeAccepted:0,beforeRejected:0,accepted:100,rejected:3,issue:false,reason:'PRIVATE SUPPLIER'}]}});
  assert.equal(projectPurchaseQuantities(f).orders[0].lines[0].receivedQtyCtn,0);

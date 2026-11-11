@@ -1,0 +1,39 @@
+#entry { --receipt-columns: 26px minmax(0, 1fr) 52px 58px 50px 54px; }
+#entry .receipt-line-number { grid-column: 1; color: #6a7e92; font-size: 10px; }
+#entry .receipt-product { grid-column: 2; }
+#entry .receipt-columns > :nth-child(2) { text-align: left; }
+#entry .receipt-quantities > :nth-child(1) { grid-column: 3; }
+#entry .receipt-quantities > :nth-child(2) { grid-column: 4; }
+#entry .receipt-quantities > :nth-child(3) { grid-column: 5; }
+#entry .receipt-quantities [data-rejected-label] { grid-column: 3 / span 2; }
+#entry .receipt-evidence { grid-column: 6; }
+#entry .receipt-quantities input[type="number"] {
+  appearance: textfield;
+  box-sizing: border-box;
+  width: 54px;
+  max-width: 100%;
+  height: 28px;
+  margin-inline: auto;
+  font-size: 14px;
+}
+#entry .receipt-quantities input[type="number"]::-webkit-inner-spin-button,
+#entry .receipt-quantities input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
+#entry .receipt-camera { width: 30px; padding: 0; line-height: 1; }
+#entry .receipt-camera svg { width: 17px; height: 17px; }
+#entry .receipt-reason { grid-column: 3 / -1; }
+#entry .receipt-preview-button img { width: 32px; }
+#entry .receipt-remove { min-width: 20px; }
+.wh-incoming .wh-do-status { display: inline-flex; align-items: center; justify-content: center; cursor: default; }
+.wh-incoming .wh-do-status.blue { background: #fff0d6; color: #9a5700; }
+@media (max-width: 560px) {
+  #entry { --receipt-columns: repeat(3, minmax(0, 1fr)) 58px; }
+  #entry .receipt-line-number { grid-column: 1; grid-row: 1; align-self: start; padding-top: 5px; }
+  #entry .receipt-product { grid-column: 1 / -1; grid-row: 1; padding-left: 26px; }
+  #entry .receipt-quantities > :nth-child(1) { grid-column: 1; }
+  #entry .receipt-quantities > :nth-child(2) { grid-column: 2; }
+  #entry .receipt-quantities > :nth-child(3) { grid-column: 3; }
+  #entry .receipt-quantities [data-rejected-label] { grid-column: 1 / span 2; }
+  #entry .receipt-quantities input[type="number"] { height: 32px; font-size: 16px; }
+  #entry .receipt-evidence { grid-column: 4; }
+  #entry .receipt-reason { grid-column: 1 / -1; }
+}

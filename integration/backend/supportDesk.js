@@ -85,7 +85,7 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
    if(input.action==='DESK_SPLIT'){
     const task=tasks.find(row=>row.id===input.taskId);
     if(normalized.parts.reduce((n,part)=>n+part.quantity,0)!==(task.requested??task.ord))throw Error('Desk quantities must preserve the whole customer demand.');
-    const committed=readDeskCommitments(context.activity,company,task.id),flows=readPhysicalOutflows(context.activity).filter(flow=>flow.taskId===task.id),portions=deskTaskPortions(context.activity,before,task,flows);
+    const flows=readPhysicalOutflows(context.activity).filter(flow=>flow.taskId===task.id),committed=readDeskCommitments(context.activity,company,task.id,task,before,flows),portions=deskTaskPortions(context.activity,before,task,flows);
     for(const desk of [1,2,3]){
      const wanted=normalized.parts.find(part=>part.desk===desk)?.quantity||0,fixed=committed.batches.filter(batch=>batch.desk===desk).reduce((n,batch)=>n+batch.quantity,0),loaded=flows.filter(flow=>(flow.desk??supportDeskForTask(before,task.id))===desk).reduce((n,flow)=>n+flow.quantity,0);
      if(wanted<Math.max(fixed,loaded)||locks.some(lock=>lock.desk===desk)&&wanted!==(portions.find(part=>part.desk===desk)?.quantity||0))throw Error('Confirmed, loaded or invoiced Desk quantities cannot be moved. Resolve its delivery remainder first.');
