@@ -32,7 +32,13 @@ function receivingApp(source) {
   source = one(source, 'Waiting 待收</span><b data-waiting>', 'Pending 待收</span><b data-waiting>');
   source = source.replaceAll('Waiting reason','Pending reason');
   source = one(source, 'class="receipt-camera" title="Camera 拍照">拍照<input',
-    'class="receipt-camera" title="Add photo 添加照片"><span aria-hidden="true">+</span><input');
+    'class="receipt-camera" title="Camera 拍照"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h4l2-3h4l2 3h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></svg><input');
+  source = source.replace(/(data-field="(?:accepted|rejected)"[^>]+type="number")/g, '$1 inputmode="numeric"');
+  source = one(source, "$('entryLines').addEventListener('input',receiptHints);",
+    `$('entryLines').addEventListener('keydown',event=>{
+      if((event.key==='ArrowUp'||event.key==='ArrowDown')&&event.target.matches('.receipt-quantities input[type="number"]'))event.preventDefault();
+    });
+    $('entryLines').addEventListener('input',receiptHints);`);
   return source;
 }
 
