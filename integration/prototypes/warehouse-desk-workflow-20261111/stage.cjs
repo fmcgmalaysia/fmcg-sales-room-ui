@@ -19,7 +19,7 @@ function stage(previous, destination) {
     fs.writeFileSync(file, next);
     return {path: item.path, sha256: hash(next)};
   });
-  const result = {build, base: baseline.build, changed: resources.filter((row, index) => row.sha256 !== baseline.resources[index].sha256).map(row => row.path), resources};
+  const result = {build: clients.warehouseBuild, base: baseline.build, changed: resources.filter((row, index) => row.sha256 !== baseline.resources[index].sha256).map(row => row.path), resources};
   fs.writeFileSync(path.join(destination, 'warehouse-desk-workflow-release.json'), JSON.stringify(result, null, 2));
   return result;
 }

@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const warehouseBuild = '20261111-warehouse-desk-workflow-history-v2';
 
 function one(source, before, after) {
   assert.equal(source.split(before).length, 2, before.slice(0, 160));
@@ -47,7 +48,8 @@ function receivingIndex(source, build) {
     '<div class="receipt-columns" aria-hidden="true"><span>No.</span><span>Product');
   source = one(source, '<span>Waiting <small>待收</small></span>', '<span>Pending <small>待收</small></span>');
   source=one(source,'<button data-view="history">History</button>','<details class="wh-history-menu"><summary>History</summary><div><button data-view="history">Incoming 入库历史</button><button data-delivery-history>Delivery 发货历史</button></div></details>');
-  return versions(source,build);
+  return one(one(versions(source,build), 'name="build" content="'+build+'"',
+    'name="build" content="'+warehouseBuild+'"'), 'src="app.js?v='+build+'"', 'src="app.js?v='+warehouseBuild+'"');
 }
 
 function receivingWorkroom(source) {
@@ -73,7 +75,18 @@ function deliveryClient(source){
 function deliveryNavigation(source){
   source=one(source,"view=button.dataset.view;window.warehouseWorkroom?.resetFilter();","view=button.dataset.view;if(view==='customers')window.warehousePackingTab?.openActive();window.warehouseWorkroom?.resetFilter();");
   const end=source.lastIndexOf('})();');assert.ok(end>0);
-  return source.slice(0,end)+`document.querySelector('[data-delivery-history]').onclick=()=>{if(saving||pending||document.querySelector('dialog[open]')||window.warehousePackingTab?.isBusy())return;document.querySelector('nav [data-view="customers"]').click();window.warehousePackingTab?.openHistory();document.querySelector('.wh-history-menu').open=false;};\ndocument.querySelector('nav [data-view="history"]').addEventListener('click',()=>{document.querySelector('.wh-history-menu').open=false;});\n`+source.slice(end);
+  return source.slice(0,end)+`const historyMenu=document.querySelector('.wh-history-menu');
+document.querySelector('[data-delivery-history]').onclick=()=>{if(saving||pending||document.querySelector('dialog[open]')||window.warehousePackingTab?.isBusy())return;document.querySelector('nav [data-view="customers"]').click();window.warehousePackingTab?.openHistory();historyMenu.open=false;};
+document.querySelector('nav [data-view="history"]').addEventListener('click',()=>{historyMenu.open=false;});
+document.addEventListener('click',event=>{
+  if(historyMenu.open&&!historyMenu.contains(event.target))historyMenu.open=false;
+});
+document.addEventListener('keydown',event=>{
+  if(event.key!=='Escape'||!historyMenu.open||document.querySelector('dialog[open]'))return;
+  historyMenu.open=false;
+  if(historyMenu.contains(event.target))historyMenu.querySelector('summary').focus();
+});
+`+source.slice(end);
 }
 function supportSplit(source){
   const start=source.indexOf('  function openDeskSplit(taskId){'),end=source.indexOf('  async function saveDeskChange(',start);assert.ok(start>=0&&end>start);
@@ -89,6 +102,8 @@ function customerExpiry(source,kind,build){
 
 module.exports = {
   one,
+  deliveryNavigation,
+  warehouseBuild,
   transforms: {
     'purchase-live/supplier-allocation.js': purchaseAllocation,
     'purchase-live/index.html': versions,
