@@ -48,8 +48,8 @@
   <main>
     <h1>The future is ours to build.</h1>
     <p class="zh" lang="zh">未来，由我们一起创造。</p>
-    <p class="mission">Together, we’re building Malaysia’s most successful FMCG exporter. We aim to lead the way in using AI to make better decisions, serve our customers better, and grow across borders.</p>
-    <p class="mission" lang="zh">我们要一起成为马来西亚最成功的 FMCG 出口企业，率先把 AI 用进日常工作，让团队做出更好的决定、服务好客户，把生意做到更多国家。</p>
+    <p class="mission">Together, we’re building a leader in Malaysia’s FMCG export industry. We’ll pioneer working with AI to achieve extraordinary things in business.</p>
+    <p class="mission" lang="zh">我们的团队携手打造马来西亚 FMCG 出口行业的领导者，率先协作 AI，以创造商业奇迹！</p>
     <section class="actions" aria-label="Staff access 员工入口">
       <button id="signin" type="button" hidden>Sign in with Google</button>
       <div id="workspaces" hidden>
@@ -63,7 +63,7 @@
     const host = 'https://fmcg999.wixstudio.com';
     const id = key => document.getElementById(key);
     const labels = new Map([
-      ['purchase', 'Purchase 采购'], ['support', 'Support 客服'],
+      ['purchase', 'Purchase 采购'], ['support', 'Support 后勤'],
       ['warehouse', 'Warehouse 货仓'], ['finance', 'Finance 财务']
     ]);
     const post = (type, details = {}) => window.parent.postMessage({ type, ...details }, host);
