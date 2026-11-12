@@ -10,7 +10,8 @@ const source = fs.readFileSync(path.join(__dirname, '../wix/ltpos-staff-portal-p
 function openPortal(workspaceIds, initiallyLoggedIn = true) {
   let loggedIn = initiallyLoggedIn;
   let receive;
-  const links = { html: '' };
+  const classes = new Set();
+  const links = { html: '', customClassList: classes };
   const section = {
     visible: false,
     collapse() { this.visible = false; },
@@ -28,13 +29,14 @@ function openPortal(workspaceIds, initiallyLoggedIn = true) {
     logout: () => { loggedIn = false; }
   };
   vm.runInNewContext(source, { $w, authentication, getLtposWorkspaces: async () => ({ name: 'LAW', workspaceIds }) });
-  return { links, section, frame, messages, receive: type => receive({ data: { type } }) };
+  return { links, classes, section, frame, messages, receive: type => receive({ data: { type } }) };
 }
 
 test('only granted workspaces get real links with a new-tab target', async () => {
   const portal = openPortal(['purchase', 'support', 'unrecognized']);
   await portal.receive('LTPOS_READY');
   assert.equal(portal.section.visible, true);
+  assert.ok(portal.classes.has('ltpos-workspace-links'));
   assert.match(portal.links.html, /href="https:\/\/fmcg999\.wixstudio\.com\/master" target="_blank"/);
   assert.match(portal.links.html, /href="https:\/\/fmcg999\.wixstudio\.com\/master\/support-department" target="_blank"/);
   assert.equal((portal.links.html.match(/<a /g) || []).length, 2);

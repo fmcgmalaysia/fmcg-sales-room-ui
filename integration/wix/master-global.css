@@ -1,0 +1,35 @@
+.ltpos-workspace-links a {
+  color: #174c83;
+  white-space: nowrap;
+  text-underline-offset: 3px;
+}
+
+.ltpos-workspace-links a::after {
+  content: "\2197";
+  display: inline-block;
+  margin-inline: 5px 3px;
+  font-weight: 700;
+  transition: transform 150ms ease-out;
+}
+
+.ltpos-workspace-links a:hover,
+.ltpos-workspace-links a:focus-visible {
+  color: #0b2e57;
+}
+
+.ltpos-workspace-links a:hover span,
+.ltpos-workspace-links a:focus-visible span {
+  color: #0b2e57 !important;
+}
+
+.ltpos-workspace-links a:focus-visible {
+  outline: 2px solid #174c83;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ltpos-workspace-links a:hover::after,
+  .ltpos-workspace-links a:focus-visible::after {
+    transform: translate(3px, -2px);
+  }
+}
