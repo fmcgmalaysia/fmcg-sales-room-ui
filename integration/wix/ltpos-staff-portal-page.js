@@ -12,21 +12,22 @@ const workspaces = new Map([
 
 $w.onReady(() => {
   const frame = $w('#html1');
-  const links = $w('#text4');
+  const workspaceSection = $w('#section5');
+  const links = $w('#text5');
   let busy = false;
   const send = (state, details = {}) => frame.postMessage({ type: 'LTPOS_SESSION', state, ...details });
   function clearLinks() {
     links.html = '<p>&nbsp;</p>';
-    return links.hide();
+    return workspaceSection.collapse();
   }
   async function renderLinks(ids) {
     const authorized = [...workspaces].filter(([id]) => ids.includes(id));
     if (!authorized.length) { await clearLinks(); return false; }
     const anchors = authorized.map(([, [label, url]]) =>
-      '<a href="' + url + '" target="_blank" rel="noopener noreferrer"><span style="color:#ffffff;background-color:#143654;font-size:16px;font-weight:bold;">&nbsp;' + label + '&nbsp;↗&nbsp;</span></a>');
-    links.html = '<p><span style="color:#e2edfa;font-size:14px;font-weight:bold;">My Workspaces 我的工作室</span></p>' +
+      '<a href="' + url + '" target="_blank" rel="noopener noreferrer"><span style="color:#174c83;font-size:16px;font-weight:bold;">' + label.replace(' ', '&nbsp;') + '&nbsp;↗</span></a>');
+    links.html = '<p><span style="color:#143654;font-size:16px;font-weight:bold;">My Workspaces 我的工作室</span></p>' +
       '<p>' + anchors.join(' &nbsp; ') + '</p>';
-    await links.show();
+    await workspaceSection.expand();
     return true;
   }
   async function load() {
