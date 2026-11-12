@@ -5,6 +5,10 @@ on:
     branches: ["main"]
   workflow_dispatch:
     inputs:
+      ltpos_portal:
+        description: Add only the LTPOS employee portal to the verified Warehouse Desk artifact
+        type: boolean
+        default: false
       static_ui:
         description: Static interface installation only; does not activate current-stock writes
         type: choice
@@ -993,6 +997,10 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/warehouse-compact-receipt-site', runner.temp) }}
+
+      - name: Add LTPOS staff portal
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only' && inputs.ltpos_portal
+        run: node integration/releases/stage-ltpos-portal.cjs "$RUNNER_TEMP/warehouse-desk-workflow-site"
 
       - name: Upload Warehouse Desk workflow
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only'
