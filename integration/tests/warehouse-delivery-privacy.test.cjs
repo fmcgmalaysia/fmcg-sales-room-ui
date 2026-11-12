@@ -37,6 +37,36 @@ test('issued batch moves to redacted Completed and retains its shipment when the
  const later=await api.readPackingWorkroom('NCT',warehouse);assertOperational(later);assert.equal(later.completedLists[0].currentDesk.shipment.date,'2026-11-04');assert.equal(later.completedLists[0].currentDesk.shipment.transport,'LAND');assert.equal((await f.stock()).onHand,50);assert.equal((await api.readPackingWorkroom('GHR',warehouse)).completedLists.length,0);
 });
 
+test('an already-open Warehouse Desk reads its missing order image by task ID without updating the delivery',async()=>{
+ const f=fixture();
+ const staff={...f.staff,packingDepartment:'SUPPORT'},warehouse={...f.staff,packingDepartment:'WAREHOUSE'};
+ const saveDesk=createSupportDeskOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context});
+ const assigned=await saveDesk({company:'NCT',staff,requestId:f.nextId(),input:{action:'DESK_ASSIGN',customerId:'CUSTOMER-A',taskId:'A',desk:1,revision:''}});
+ let image='';
+ const api=service({...f,context:async(...args)=>{
+  const context=await f.context(...args);
+  return {...context,tasks:context.tasks.map(task=>task.id==='A'?{...task,productImageUrl:image}:task)};
+ }});
+ const sent=await api.savePackingOperation({company:'NCT',staff,requestId:f.nextId(),input:{action:'DESK_SEND',customerId:'CUSTOMER-A',desk:1,deskRevision:assigned.deskState.revision,lines:[{taskId:'A',quantity:100}]}});
+ const saved=await api.savePackingOperation({company:'NCT',staff:warehouse,requestId:f.nextId(),input:{action:'DESK_LOAD',id:sent.id,revision:sent.revision,taskId:'A',loaded:80,reasonCodes:['INSUFFICIENT']}});
+ const before=JSON.stringify(await f.context());
+ const empty=await api.readPackingWorkroom('NCT',warehouse);
+ assert.equal(empty.lists[0].lines[0].productImageUrl,undefined);
+ image='https://static.wixstatic.com/media/original.jpg';
+ const read=await api.readPackingWorkroom('NCT',warehouse);
+ const [list]=read.lists;
+ assert.equal(list.id,saved.id);
+ assert.equal(list.revision,saved.revision);
+ assert.equal(list.lines[0].productImageUrl,image);
+ assert.equal(list.lines[0].loaded,80);
+ assert.equal(list.lines[0].quantity,empty.lists[0].lines[0].quantity);
+ assert.equal(list.lines[0].readyQuantity,empty.lists[0].lines[0].readyQuantity);
+ assertOperational(read);
+ assert.equal((await api.readPackingWorkroom('NCT',staff)).lists[0].lines[0].productImageUrl,undefined);
+ assert.equal((await api.readPackingWorkroom('GHR',warehouse)).lists.length,0);
+ assert.equal(JSON.stringify(await f.context()),before);
+});
+
 test('initial Receiving and stock issue views contain no costs or financial documents',()=>{
  const result=views.projectWarehouseReceivingOrder({id:'PO',company:'NCT',version:'V',lines:[{taskId:'T',planned:100,accepted:50,costing:{amountCents:500},shortage:{customerDecision:'WAIT',amountCents:9}}],documents:[{type:'DO',fileId:'SAFE'},{type:'INV',fileId:'INVOICE'},{type:'CN',fileId:'CREDIT'}],stockCases:[{id:'CASE',quantity:5,referenceCostCents:500,finance:{amountCents:1},resolution:{decision:{value:'REPLACE',amountCents:2},replacements:[{quantity:2,priceCtn:2}]}}]});assertOperational(result);assert.equal(result.documents.length,1);assert.equal(result.documents[0].fileId,'SAFE');assert.equal(result.stockCases[0].quantity,5);
  const stock=views.projectWarehouseStockWorkspace({company:'NCT',cases:result.stockCases,permissions:{approve:true,close:true},sources:[]});assertOperational(stock);assert.equal(stock.permissions.report,true);assert.equal(stock.permissions.close,false);assert(!JSON.stringify(stock).includes('INVOICE'));
