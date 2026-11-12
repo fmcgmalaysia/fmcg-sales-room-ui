@@ -10,7 +10,7 @@ export function requireStockStaff(member,records){
  return {memberId:member._id,staffId:row.title,staffName:row.staffName,role,...permissions};
 }
 export function projectStockWorkspace(context,orders,staff){
- const financial=staff.canCloseStockException||staff.canApproveStockLoss;
+ const financial=staff.readStockFinancial===true||staff.canCloseStockException||staff.canApproveStockLoss;
  const sources=context.tasks.filter(row=>row.warehouse?.hasPhysicalReceipt&&row.po).map(row=>({id:row.id,barcode:row.barcode,name:row.name,packing:row.packing,po:row.po,supplierName:context.suppliers.find(supplier=>supplier.id===row.supplierId)?.name||row.supplierId,availablePhysical:row.warehouse.stock?.availablePhysical??Math.max(0,row.warehouse.accepted),received:row.warehouse.accepted}));
  const cases=readStockExceptions(context.activity).filter(row=>row.company===context.company).map(item=>{
   const source=sources.find(row=>row.id===item.sourceTaskId),po=orders.find(row=>row.taskIds.includes(item.sourceTaskId));

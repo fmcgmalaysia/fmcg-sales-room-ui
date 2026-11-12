@@ -2,13 +2,20 @@ import { createHash, randomUUID } from 'crypto';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
-import { prepareStaffRegistration, projectManagedStaff, requireStaffManager } from 'backend/staffManagementPolicy.js';
+import { prepareStaffRegistration, prepareStaffUpdate, projectManagedStaff, requireStaffManager } from 'backend/staffManagementPolicy.js';
+import { writeStaffManagement } from 'backend/staffManagementWrite.js';
+import { requestSupportCustomers } from 'backend/supportCustomerClient.js';
 
 const collection = 'StaffMasterAccess';
 const readOptions = { suppressAuth: true, consistentRead: true };
 
 async function directoryForManager() {
   const member = await currentMember.getMember({ fieldsets: ['FULL'] });
+  if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') {
+    throw Error('Sign in with your approved staff account.');
+  }
+  const identity = await wixData.query(collection).eq('description', member._id).limit(2).find(readOptions);
+  requireStaffManager(member, identity.items);
   let page = await wixData.query(collection).limit(1000).find(readOptions);
   const rows = [...page.items];
   while (page.hasNext()) {
@@ -16,7 +23,7 @@ async function directoryForManager() {
     rows.push(...page.items);
   }
   requireStaffManager(member, rows);
-  return rows;
+  return rows.filter(row => row.staffStatus !== 'CONTROL');
 }
 
 export const getManagedStaffDirectory = webMethod(Permissions.SiteMember, async () => {
@@ -26,11 +33,35 @@ export const getManagedStaffDirectory = webMethod(Permissions.SiteMember, async 
 
 export const registerPendingStaff = webMethod(Permissions.SiteMember, async input => {
   const rows = await directoryForManager();
+  const member = await currentMember.getMember({ fieldsets: ['FULL'] });
+  const actor = requireStaffManager(member, rows);
   const email = String(input?.email ?? '').trim().toLowerCase();
   const key = createHash('sha256').update(email).digest('hex').slice(0, 32);
-  const row = prepareStaffRegistration(input, rows, randomUUID());
-  // Deterministic document IDs stop simultaneous registrations of one email
-  // from both succeeding. The employee ID stays fixed after registration.
-  const saved = await wixData.insert(collection, { ...row, _id: key }, { suppressAuth: true });
-  return projectManagedStaff(saved);
+  return writeStaffManagement({ requestId: input?.requestId, actorId: actor.title,
+    fingerprint: createHash('sha256').update(JSON.stringify(['REGISTER', input])).digest('hex'),
+    prepare: async () => {
+      const currentRows = await directoryForManager();
+      const row = prepareStaffRegistration(input, currentRows, randomUUID());
+      return { row: { ...row, _id: key }, insert: true };
+    }, project: projectManagedStaff });
+});
+
+export const updateManagedStaff = webMethod(Permissions.SiteMember, async input => {
+  const rows = await directoryForManager();
+  const member = await currentMember.getMember({ fieldsets: ['FULL'] });
+  const actor = requireStaffManager(member, rows);
+  return writeStaffManagement({ requestId: input?.requestId, actorId: actor.title,
+    fingerprint: createHash('sha256').update(JSON.stringify(['UPDATE', input])).digest('hex'),
+    prepare: async () => ({ row: prepareStaffUpdate(input, await directoryForManager(), actor.title) }),
+    project: projectManagedStaff });
+});
+
+export const getManagedCustomerDirectory = webMethod(Permissions.SiteMember, async () => {
+  const rows = await directoryForManager();
+  const member = await currentMember.getMember({ fieldsets: ['FULL'] });
+  const actor = requireStaffManager(member, rows);
+  const result = await requestSupportCustomers({ company: 'NCT', staff: {
+    memberId: member._id, staffId: actor.title, staffName: actor.staffName, packingDepartment: 'SUPPORT'
+  }});
+  return result.customers.map(row => ({ id: row.id, name: row.companyName || row.name || row.shortName || row.id }));
 });

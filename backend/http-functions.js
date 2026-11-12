@@ -10,12 +10,12 @@ import { verifyBuyerSelectionExportToken } from 'backend/buyerSelectionExportTok
 import { buildBuyerSelectionDownload } from 'backend/buyerSelectionDownload.js';
 import { verifyBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
+import { getMasterStaffScope, staffMayAccessCustomer } from 'backend/masterStaffAccessClient.js';
 
 const SITE_BASE = 'https://fmcg999.wixstudio.com/fmcgmalaysia';
 const CALLBACK_URL = SITE_BASE + '/_functions/googleStaffAuth';
 const LOGIN_URL = SITE_BASE + '/sales-room-login';
 const BUYER_LOGIN_URL = SITE_BASE + '/buyer-room-login';
-const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const ACTIVE_STATUS = 'ACTIVE';
@@ -43,13 +43,6 @@ async function oauthSecrets() {
   const [clientId, clientSecret] = await Promise.all([getSecret('GOOGLE_OAUTH_CLIENT_ID'), getSecret('GOOGLE_OAUTH_CLIENT_SECRET')]);
   if (!clientId || !clientSecret) throw new Error('OAUTH_SECRETS_MISSING');
   return { clientId, clientSecret };
-}
-async function findAuthorizedStaff(email) {
-  const matches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items;
-  if (matches.length !== 1) return { authorized: false, reason: matches.length > 1 ? 'DUPLICATE_STAFF_EMAIL' : 'STAFF_NOT_REGISTERED' };
-  const staff = matches[0];
-  if (normalize(staff.status).toUpperCase() !== ACTIVE_STATUS) return { authorized: false, reason: 'STAFF_INACTIVE' };
-  return { authorized: true, staff };
 }
 async function findAuthorizedBuyer(email) {
   const users = (await wixData.query(CUSTOMER_USER_COLLECTION).eq('email', email).limit(2).find({ suppressAuth: true, consistentRead: true })).items;
@@ -118,9 +111,9 @@ export async function get_googleStaffAuth(request) {
     const email = normalizeEmail(user.email);
     if (!email || user.email_verified !== true) return oauthRedirect('unverified_email', state);
     const isBuyer = state.startsWith('B_');
-    const access = isBuyer ? await findAuthorizedBuyer(email) : await findAuthorizedStaff(email);
-    if (!access.authorized) {
-      console.warn(isBuyer ? 'Buyer Room access denied' : 'Sales Room access denied', { reason: access.reason });
+    const access = isBuyer ? await findAuthorizedBuyer(email) : await getMasterStaffScope(email, true);
+    if (isBuyer ? !access.authorized : !access) {
+      console.warn(isBuyer ? 'Buyer Room access denied' : 'Sales Room access denied');
       return oauthRedirect('not_authorized', state);
     }
     const sessionToken = await authentication.generateSessionToken(email);
@@ -174,11 +167,11 @@ async function authorizeQuotationSync(request, body) {
     const user = await userResponse.json();
     const email = normalizeEmail(user?.email);
     if (!email || user?.email_verified !== true) return null;
-    const access = await findAuthorizedStaff(email);
-    if (!access.authorized) return null;
     const claimedActor = normalizeEmail(body?.actorEmail);
     if (claimedActor && claimedActor !== email) return null;
-    return { actorEmail: email, staff: access.staff, mode: 'google' };
+    const staff = await getMasterStaffScope(email, true);
+    if (!staff || !staffMayAccessCustomer({ ...staff, authorized: true }, 'PUBLISH_QUOTATION', body?.customerId)) return null;
+    return { actorEmail: email, mode: 'google' };
   } catch (_) {
     return null;
   }

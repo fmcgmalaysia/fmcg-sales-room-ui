@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="build" content="ltpos-staff-portal-v2">
+  <title>LTPOS · Staff Portal</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;color:#fff;background:#07182c}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;min-height:100svh;display:grid;grid-template-rows:auto 1fr;
+      background:linear-gradient(90deg,#061527fa 0%,#061527e6 25%,#0615278f 49%,#06152700 78%),url("ltpos-team.jpg") center right/cover no-repeat}
+    header{padding:25px clamp(24px,5vw,76px);display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{font-size:clamp(27px,3vw,44px);font-weight:820;letter-spacing:.035em}
+    .account{display:flex;align-items:center;gap:13px;color:#e1edfa}
+    #welcome{display:grid;gap:3px;line-height:1.15}
+    #staff{font-weight:700}
+    main{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:48px clamp(24px,5vw,76px) 72px;max-width:850px}
+    h1{font-size:clamp(40px,6vw,86px);line-height:1.02;letter-spacing:-.048em;margin:0 0 13px;max-width:12ch;text-wrap:balance}
+    .zh{font-size:clamp(24px,3vw,38px);font-weight:720;margin:0 0 23px;line-height:1.25}
+    .mission{font-size:clamp(15px,1.28vw,19px);line-height:1.55;color:#e6eef9;max-width:560px;margin:0}
+    .mission + .mission{margin-top:7px}
+    .actions{margin-top:26px}
+    .actions h2{font-size:15px;color:#e2edfa;margin:0 0 10px}
+    .links{display:flex;flex-wrap:wrap;gap:9px}
+    button{font:inherit;border:1px solid #b4cce6b0;border-radius:8px;padding:10px 16px;min-height:44px;background:#0e2844b5;color:white;cursor:pointer}
+    button:hover{background:#234e7d}
+    button:focus-visible{outline:3px solid #a7d5ff;outline-offset:3px}
+    button[disabled]{opacity:.6;cursor:wait}
+    #signin{color:#172b42;background:#fff;border-color:white;font-weight:650}
+    #signout{font-size:13px}
+    #status{color:#e2edfa;font-size:14px;max-width:48ch;margin:10px 0 0}
+    [hidden]{display:none!important}
+    @media(max-width:680px){
+      body{background:linear-gradient(180deg,#06152722 3%,#06152742 32%,#061527ef 58%,#061527 81%),url("ltpos-team.jpg") 64% top/auto 52svh no-repeat,#061527}
+      header{padding-top:17px}
+      main{padding-top:clamp(120px,27vh,255px);padding-bottom:34px}
+      h1{font-size:clamp(39px,10vw,58px)}
+      .account{font-size:13px}
+      .native-workspaces main{padding-top:clamp(50px,13vh,105px);padding-bottom:24px}
+    }
+    @media(max-height:630px) and (min-width:681px){
+      .native-workspaces h1{font-size:clamp(40px,8vh,64px)}
+      .native-workspaces .zh{margin-bottom:13px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">LTP Operating System</div>
+    <div class="account"><span id="welcome" hidden><span>Welcome Back!</span><strong id="staff"></strong></span><button id="signout" type="button" hidden>Sign out 退出</button></div>
+  </header>
+  <main>
+    <h1>The future is ours to build.</h1>
+    <p class="zh" lang="zh">未来，由我们一起创造。</p>
+    <p class="mission">Together, we’re building a leader in Malaysia’s FMCG export industry. We’ll pioneer working with AI to achieve extraordinary things in business.</p>
+    <p class="mission" lang="zh">我们的团队携手打造马来西亚 FMCG 出口行业的领导者，率先协作 AI，以创造商业奇迹！</p>
+    <section class="actions" aria-label="Staff access 员工入口">
+      <button id="signin" type="button" hidden>Sign in with Google</button>
+      <div id="workspaces" hidden>
+        <h2>My Workspaces 我的工作室</h2>
+        <div class="links" id="links"></div>
+      </div>
+      <p id="status" role="status">Checking staff access… 正在核对员工权限…</p>
+    </section>
+  </main>
+  <script type="module">
+    const host = 'https://fmcg999.wixstudio.com';
+    const id = key => document.getElementById(key);
+    const labels = new Map([
+      ['purchase', 'Purchase 采购'], ['support', 'Support 后勤'],
+      ['warehouse', 'Warehouse 货仓'], ['finance', 'Finance 财务']
+    ]);
+    const post = (type, details = {}) => window.parent.postMessage({ type, ...details }, host);
+    let timer;
+    function show(state, details = {}) {
+      clearTimeout(timer);
+      const ready = state === 'ready';
+      const nativeLinks = ready && details.nativeLinks === true;
+      document.body.classList.toggle('native-workspaces', nativeLinks);
+      const workspaces = new Set(Array.isArray(details.workspaceIds) ? details.workspaceIds : []);
+      const name = typeof details.name === 'string' ? details.name.trim() : '';
+      id('welcome').hidden = !ready || !name;
+      id('staff').textContent = ready ? name : '';
+      id('signout').hidden = !ready && state !== 'no-access';
+      id('signin').hidden = state !== 'signed-out';
+      id('signin').disabled = false;
+      id('signout').disabled = false;
+      id('workspaces').hidden = !ready || nativeLinks;
+      id('links').replaceChildren();
+      if (ready && !nativeLinks) for (const [key, label] of labels) {
+        if (!workspaces.has(key)) continue;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label + ' →';
+        button.addEventListener('click', () => post('LTPOS_OPEN', { id: key }));
+        id('links').append(button);
+      }
+      id('status').textContent = ({
+        'signed-out': 'Use your approved work Google account. 请使用获授权的工作 Google 账号。',
+        'no-access': 'No workspaces are assigned to this account. 此账号尚无工作室权限。',
+        'unavailable': 'Staff access could not be checked. Reload to try again. 无法核对权限，请重新载入。',
+        'standalone': 'Staff access is available from the LTPOS site. 请从 LTPOS 员工网站进入。'
+      })[state] ?? '';
+      id('status').hidden = !id('status').textContent;
+    }
+    window.addEventListener('message', event => {
+      if (event.source !== window.parent || event.origin !== host || event.data?.type !== 'LTPOS_SESSION') return;
+      show(event.data.state, event.data);
+    });
+    id('signin').addEventListener('click', () => {
+      id('signin').disabled = true;
+      post('LTPOS_SIGN_IN');
+    });
+    id('signout').addEventListener('click', () => {
+      id('signout').disabled = true;
+      post('LTPOS_SIGN_OUT');
+    });
+    if (window.parent === window) show('standalone');
+    else {
+      timer = setTimeout(() => show('unavailable'), 12000);
+      post('LTPOS_READY');
+    }
+  </script>
+</body>
+</html>

@@ -8,6 +8,8 @@ import { request as httpsRequest } from 'https';
 import { getSecret } from 'wix-secrets-backend';
 import wixRealtimeBackend from 'wix-realtime-backend';
 import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
+import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
+import { requireStaffCustomerAccess, staffMayAccessCustomer } from 'backend/masterStaffAccessClient.js';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
@@ -192,7 +194,7 @@ export const verifySalesRoomCustomerQd = webMethod(
   Permissions.SiteMember,
   async (customerId) => {
     const staff = await requireAuthorizedStaffContext();
-    let customerRecord = await findAuthorizedCustomer(customerId, staff);
+    let customerRecord = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
     const qdFileId = normalize(customerRecord.qdFileId);
     if (!qdFileId) throw new Error('This customer has no Quotation Desk file.');
 
@@ -271,7 +273,9 @@ async function loadSalesRoomCustomers() {
     let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
 
     if (!staff.canViewAllCustomers) {
-      query = query.eq('assignedStaffId', upper(staff.staffId));
+      const ids = staff.customerScope.customerActions.VIEW;
+      if (!ids.length) return Object.freeze({ ok: true, summary: { customerCount: 0, qdReadyCount: 0 }, customers: [] });
+      query = query.hasSome('customerId', ids);
     }
 
     const [customerResult, userResult, memberResult] = await Promise.all([
@@ -323,14 +327,14 @@ async function loadSalesRoomCustomers() {
       }
     }
 
-    const customers = customerResult.items
+    const customers = customerResult.items.filter(item => staffMayAccessCustomer(staff, 'VIEW', item.customerId))
       .map((item) => ({
         customerId: normalize(item.customerId),
         companyName: normalize(item.title),
         customerShortName: upper(item.customerShortName),
         country: normalize(item.country),
         qdStatus: upper(item.qdStatus),
-        qdFileId: normalize(item.qdFileId),
+        qdFileId: staffMayAccessCustomer(staff, 'EDIT_QUOTATION', item.customerId) ? normalize(item.qdFileId) : '',
         customerStatus: upper(item.customerStatus),
         lifecycleStatus: upper(item.lifecycleStatus || 'ACTIVE'),
         accessStatus: upper(item.accessStatus || (upper(item.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
@@ -410,7 +414,7 @@ export const publishSalesRoomQuotations = webMethod(
     console.info('[quote-publish-timing]', { stage: 'start', elapsedMs: 0 });
     try {
       const staff = await requireAuthorizedStaffContext();
-      const customer = await findAuthorizedCustomer(customerId, staff);
+      const customer = await findAuthorizedCustomer(customerId, staff, 'PUBLISH_QUOTATION');
       const qdFileId = normalize(customer.qdFileId);
       if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('This customer does not have a valid Quotation Desk.');
       const sharedSecret = await getSecret(SECRET_NAME);
@@ -645,7 +649,7 @@ export const confirmSalesRoomOrderForm = webMethod(
   Permissions.SiteMember,
   async (customerId, requestedLines) => {
     const staff = await requireAuthorizedStaffContext();
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'SEND_ORDER_REQUEST');
     const requests = Array.isArray(requestedLines) ? requestedLines : [];
     if (!requests.length) throw new Error('Enter at least one order quantity.');
     const listRows = (await readPayloadRows(BUYER_LIST_COLLECTION))
@@ -786,7 +790,7 @@ async function withSalesOrderMutation(orderId, staff, action) {
   const id = normalize(orderId);
   const initial = (await readAllPayloadRows(BUYER_ORDER_COLLECTION)).find(entry => normalize(entry.data.orderId) === id);
   if (!initial) throw new Error('Order was not found.');
-  await findAuthorizedCustomer(initial.data.customerId, staff);
+  await findAuthorizedCustomer(initial.data.customerId, staff, 'EDIT_REVIEW_QTY');
   if (initial.data.receiptOnly) throw new Error('This submission is a receipt. Open its active order task instead.');
   const lockId = 'ORDER-LOCK-' + id;
   try { await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: lockId, title: lockId, payload: JSON.stringify({ action: 'ORDER_MUTATION_LOCK', orderId: id, customerId: initial.data.customerId, at: new Date().toISOString() }) }, { suppressAuth: true }); }
@@ -814,7 +818,7 @@ export const submitSalesRoomOrder = webMethod(
     if (!['NCT', 'GHR'].includes(target)) throw new Error('Select a valid receiving company.');
     if (['NCT', 'GHR'].includes(target)) {
       const input = { orderId: normalize(orderId), staff, destination: target,
-        authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff),
+        authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff, 'SUBMIT_ORDER'),
         readPayloadRows: readAllPayloadRows, putPayload };
       let receipt, entered = false;
       try {
@@ -889,7 +893,7 @@ export const getSalesRoomCustomerDetail = webMethod(
         companyWebsite: normalize(customer.companyWebsite),
         assignedStaffId: upper(customer.assignedStaffId),
         qdOwnerStaffId: upper(customer.qdOwnerStaffId),
-        qdFileId: normalize(customer.qdFileId),
+        qdFileId: staffMayAccessCustomer(staff, 'EDIT_QUOTATION', customer.customerId) ? normalize(customer.qdFileId) : '',
         qdFileLabel: normalize(customer.qdFileLabel),
         qdSheetId: normalize(customer.qdSheetId),
         qdSheetName: normalize(customer.qdSheetName),
@@ -928,7 +932,7 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
     if (normalizedAction !== 'REQUEST_REACTIVATION' && !staff.canViewAllCustomers) {
       throw new Error('Admin access is required for this customer account action.');
     }
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
     const reason = normalize(payload?.reason);
     if (!reason) throw new Error('A reason is required for every customer account action.');
     const beforeLifecycle = upper(customer.lifecycleStatus || 'ACTIVE');
@@ -1072,7 +1076,7 @@ export const updateSalesRoomSelectionLimit = webMethod(
     if (![100, 300, 500, 700].includes(limit) || String(requestedLimit).trim() !== String(limit)) {
       throw new Error('Choose an allowance of 100, 300, 500 or 700 products.');
     }
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
     const before = [100, 300, 500, 700].includes(Number(customer.selectionLimit)) ? Number(customer.selectionLimit) : 100;
     if (before === limit) return Object.freeze({ ok: true, customerId: normalize(customer.customerId), selectionLimit: limit, changed: false });
     await wixData.update(CUSTOMER_COLLECTION, { ...customer, selectionLimit: limit }, { suppressAuth: true });
@@ -1087,7 +1091,7 @@ export const updateSalesRoomCustomerProfile = webMethod(
   Permissions.SiteMember,
   async (customerId, payload) => {
     const staff = await requireAuthorizedStaffContext();
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
     const input = payload && typeof payload === 'object' ? payload : {};
 
     for (const key of LOCKED_CUSTOMER_FIELDS) {
@@ -1154,7 +1158,7 @@ export const saveSalesRoomCustomerUser = webMethod(
   Permissions.SiteMember,
   async (customerId, slotNumber, payload) => {
     const staff = await requireAuthorizedStaffContext();
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
     const slot = Number(slotNumber);
 
     if (!Number.isInteger(slot) || slot < 1 || slot > 5) {
@@ -1283,7 +1287,7 @@ function primaryUserFrom(customer, users) {
 
 export const addSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async (customerId, payload = {}, requestId = '') => {
   const staff = await requireAuthorizedStaffContext();
-  const customer = await findAuthorizedCustomer(customerId, staff);
+  const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
   const lifecycle = upper(customer.lifecycleStatus || 'ACTIVE');
   const access = upper(customer.accessStatus || customer.customerStatus);
   if (lifecycle === 'ARCHIVED' || access !== 'ACTIVE') throw new Error('Users can only be added to an active customer account.');
@@ -1322,7 +1326,7 @@ export const addSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async 
 
 export const reviewSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async (customerId, userId, action, payload = {}) => {
   const staff = await requireAuthorizedStaffContext();
-  const customer = await findAuthorizedCustomer(customerId, staff);
+  const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
   const normalizedAction = upper(action);
   const users = await allCustomerUsers(customer.customerId);
   const target = users.find(user => normalize(user.userId || user._id) === normalize(userId));
@@ -1580,9 +1584,13 @@ async function putAccountNotification({ eventId, customerId, recipientUserId = '
 
 async function authorizedCustomerIdSet(staff) {
   let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
-  if (!staff.canViewAllCustomers) query = query.eq('assignedStaffId', upper(staff.staffId));
+  if (!staff.canViewAllCustomers) {
+    const ids = staff.customerScope.customerActions.VIEW;
+    if (!ids.length) return new Set();
+    query = query.hasSome('customerId', ids);
+  }
   const result = await query.find({ suppressAuth: true });
-  return new Set(result.items.map((item) => normalize(item.customerId)));
+  return new Set(result.items.filter(item => staffMayAccessCustomer(staff, 'VIEW', item.customerId)).map((item) => normalize(item.customerId)));
 }
 
 function quantity(value) {
@@ -1767,108 +1775,7 @@ function deniedStaffContext(reason) {
 }
 
 async function resolveCurrentStaffContext() {
-  let member;
-
-  try {
-    member = await currentMember.getMember({ fieldsets: ['FULL'] });
-  } catch (error) {
-    return deniedStaffContext('MEMBER_LOOKUP_ERROR');
-  }
-
-  if (!member) {
-    return deniedStaffContext('NOT_LOGGED_IN');
-  }
-
-  const memberId = normalize(member._id);
-  const email = memberEmail(member);
-
-  if (!memberId) {
-    return deniedStaffContext('MEMBER_ID_MISSING');
-  }
-
-  let items;
-  try {
-    const result = await wixData
-      .query(STAFF_COLLECTION)
-      .limit(1000)
-      .find({ suppressAuth: true });
-    items = result.items;
-  } catch (error) {
-    return deniedStaffContext('STAFF_CMS_QUERY_ERROR');
-  }
-
-  const memberIdMatches = items.filter(
-    (item) => normalize(item.wixMemberId) === memberId
-  );
-  if (memberIdMatches.length > 1) {
-    return deniedStaffContext('DUPLICATE_WIX_MEMBER_ID');
-  }
-
-  let staff = memberIdMatches[0];
-  let identitySource = 'WIX_MEMBER_ID';
-
-  if (!staff) {
-    if (!email) {
-      return deniedStaffContext('MEMBER_EMAIL_MISSING');
-    }
-
-    const emailMatches = items.filter(
-      (item) => normalizeEmail(item.staffEmail) === email
-    );
-    if (emailMatches.length !== 1) {
-      return deniedStaffContext(
-        emailMatches.length > 1
-          ? 'DUPLICATE_STAFF_EMAIL'
-          : 'STAFF_NOT_REGISTERED'
-      );
-    }
-
-    staff = emailMatches[0];
-    identitySource = 'EMAIL_FALLBACK';
-
-    const linkedMemberId = normalize(staff.wixMemberId);
-    if (linkedMemberId && linkedMemberId !== memberId) {
-      return deniedStaffContext('STAFF_MEMBER_MISMATCH');
-    }
-
-    if (!linkedMemberId) {
-      try {
-        staff = await wixData.update(
-          STAFF_COLLECTION,
-          { ...staff, wixMemberId: memberId },
-          { suppressAuth: true }
-        );
-        identitySource = 'WIX_MEMBER_ID_LINKED';
-      } catch (error) {
-        return deniedStaffContext('MEMBER_LINK_FAILED');
-      }
-    }
-  }
-
-  const status = upper(staff.status);
-  if (status !== 'ACTIVE') {
-    return deniedStaffContext('STAFF_INACTIVE');
-  }
-
-  const role = upper(staff.role);
-  const staffId = normalize(staff.staffId);
-  const staffName = normalize(staff.title);
-  const quotationDeskFileId = normalize(staff.quotationDeskFileId);
-
-  if (!staffId || !staffName || !role) {
-    return deniedStaffContext('STAFF_RECORD_INCOMPLETE');
-  }
-
-  return Object.freeze({
-    authorized: true,
-    staffId,
-    staffName,
-    loginEmail: email,
-    role,
-    quotationDeskFileId,
-    identitySource,
-    canViewAllCustomers: role === 'SUPER ADMIN' || role === 'ADMIN'
-  });
+  return getCurrentStaffContext();
 }
 
 async function requireAuthorizedStaffContext() {
@@ -1887,7 +1794,7 @@ async function requireAdminStaffContext() {
   return context;
 }
 
-async function findAuthorizedCustomer(customerId, staff) {
+async function findAuthorizedCustomer(customerId, staff, action = 'VIEW') {
   const normalizedCustomerId = normalize(customerId);
   if (!normalizedCustomerId) {
     throw new Error('CUSTOMER ID is required.');
@@ -1899,10 +1806,8 @@ async function findAuthorizedCustomer(customerId, staff) {
   // assisted Catalogue together.  Filtering the bounded customer directory
   // in code keeps authorization deterministic and removes that shared point
   // of failure.
-  let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
-  if (!staff.canViewAllCustomers) {
-    query = query.eq('assignedStaffId', upper(staff.staffId));
-  }
+  requireStaffCustomerAccess(staff, action, normalizedCustomerId);
+  const query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
   const result = await query.find({ suppressAuth: true });
   const matches = result.items.filter(
     (item) => normalize(item.customerId) === normalizedCustomerId
@@ -1917,12 +1822,6 @@ async function findAuthorizedCustomer(customerId, staff) {
   }
 
   const customer = matches[0];
-  if (
-    !staff.canViewAllCustomers &&
-    upper(customer.assignedStaffId) !== upper(staff.staffId)
-  ) {
-    throw new Error('This customer is assigned to another salesperson.');
-  }
 
   return customer;
 }
@@ -1936,6 +1835,9 @@ async function resolveCustomerRouting(requestedAssignedStaffId) {
   const currentStaffId = upper(context.staffId);
   const requestedStaffId = upper(requestedAssignedStaffId);
   const canAssignCustomers = Boolean(context.canViewAllCustomers);
+  if (!canAssignCustomers && context.customerScope?.canCreateCustomers !== true) {
+    throw new Error('Customer setup requires Sales edit access.');
+  }
   const targetStaffId = canAssignCustomers
     ? requestedStaffId
     : currentStaffId;
@@ -2319,9 +2221,7 @@ async function resolveActivityCustomer(customerId, staff) {
     .find({ suppressAuth: true });
   const customer = result.items[0];
   if (!customer) throw new Error('Customer record was not found.');
-  if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== upper(staff.staffId)) {
-    throw new Error('This customer is not assigned to the current staff member.');
-  }
+  requireStaffCustomerAccess(staff, 'VIEW', normalizedCustomerId);
   return customer;
 }
 
@@ -2346,6 +2246,7 @@ export const recordSalesRoomActivity = webMethod(
 
     const customer = await resolveActivityCustomer(payload?.customerId, staff);
     if (action !== 'SALES_ROOM_ENTER' && !customer) throw new Error('Customer is required for this activity.');
+    if (action === 'QD_OPENED') requireStaffCustomerAccess(staff, 'EDIT_QUOTATION', customer.customerId);
 
     const customerId = customer ? normalize(customer.customerId) : '';
     const dedupeSeconds = action === 'SALES_ROOM_ENTER' ? 1800 : (action === 'QD_OPENED' ? 60 : 10);
@@ -2441,4 +2342,4 @@ export const getSalesRoomActivityForAdmin = webMethod(
   }
 );
 
-export const salesRoomShipment = webMethod(Permissions.SiteMember,async(customerId,company,action,requestId,input)=>{if(['CHAT_LIST','CHAT_PAGE','CHAT_SAVE','DOCUMENT'].includes(action))throw Error('Use Support for customer documents and department communication.');const staff=await requireAuthorizedStaffContext();const customer=await findAuthorizedCustomer(customerId,staff);return requestMasterFulfilment({customerId:normalize(customer.customerId),customerName:normalize(customer.companyName)||normalize(customer.customerId),company,staff,action,requestId,input});});
+export const salesRoomShipment = webMethod(Permissions.SiteMember,async(customerId,company,action,requestId,input)=>{if(['CHAT_LIST','CHAT_PAGE','CHAT_SAVE','DOCUMENT'].includes(action))throw Error('Use Support for customer documents and department communication.');const staff=await requireAuthorizedStaffContext();const customer=await findAuthorizedCustomer(customerId,staff,['HISTORY','READ'].includes(action)?'VIEW':'EDIT_REVIEW_QTY');return requestMasterFulfilment({customerId:normalize(customer.customerId),customerName:normalize(customer.companyName)||normalize(customer.customerId),company,staff,action,requestId,input});});

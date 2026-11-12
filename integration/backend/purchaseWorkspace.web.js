@@ -25,7 +25,7 @@ async function purchaseActivity(collection) {
 }
 export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async company => {
   if (!PURCHASE_COLLECTIONS[company]) throw Error('Select NCT or GHR.');
-  const staff = await getPurchaseStaffContext();
+  const staff = await getPurchaseStaffContext(company);
   const ids = PURCHASE_COLLECTIONS[company];
   const [orders, tasks, activity, suppliers, purchaseRecords] = await Promise.all([
     all(wixData.query(ids.orders)), all(wixData.query(ids.tasks)), purchaseActivity(ids.activity),

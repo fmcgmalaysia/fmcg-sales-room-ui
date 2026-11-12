@@ -4,6 +4,8 @@ import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import wixRealtimeBackend from 'wix-realtime-backend';
 import { request as httpsRequest } from 'https';
+import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
+import { requireStaffCustomerAccess, staffMayAccessCustomer } from 'backend/masterStaffAccessClient.js';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
@@ -55,7 +57,7 @@ export const getCatalogueSelectionState = webMethod(
 export const addCatalogueSelection = webMethod(
   Permissions.SiteMember,
   async (productId, assistCustomerId = '') => {
-    const context = await resolveSelectionContext_(assistCustomerId);
+    const context = await resolveSelectionContext_(assistCustomerId, 'ASSIST_SELECTION');
     const product = await getActiveProduct_(productId);
     const unitBarcode = normalizeBarcode_(product.barcode);
     if (!unitBarcode) throw new Error('This product is missing its Unit Barcode.');
@@ -168,8 +170,12 @@ export const getSalesRoomQuoteSignals = webMethod(
   async () => {
     const staff = await requireStaff_();
     let customerQuery = wixData.query(CUSTOMER_COLLECTION).limit(1000);
-    if (!staff.canViewAllCustomers) customerQuery = customerQuery.eq('assignedStaffId', staff.staffId);
-    const customers = await allQueryItems_(customerQuery);
+    if (!staff.canViewAllCustomers) {
+      const ids = staff.customerScope.customerActions.VIEW;
+      if (!ids.length) return Object.freeze({ ok: true, byCustomer: {}, summary: { awaitingQuoteItemCount: 0, quotedItemCount: 0, failedQuoteItemCount: 0 } });
+      customerQuery = customerQuery.hasSome('customerId', ids);
+    }
+    const customers = (await allQueryItems_(customerQuery)).filter(customer => staffMayAccessCustomer(staff, 'VIEW', customer.customerId));
     const allowed = new Set(customers.map((item) => normalize(item.customerId)));
     const rows = await allQueryItems_(wixData.query(SELECTION_COLLECTION).eq('removed', false).limit(1000));
     const byCustomer = Object.create(null);
@@ -186,7 +192,7 @@ export const getSalesRoomQuoteSignals = webMethod(
         readyRouteItemCount: 0,
         routeStatus: 'READY',
         routeError: '',
-        qdFileId: normalize(customer.qdFileId)
+        qdFileId: staffMayAccessCustomer(staff, 'EDIT_QUOTATION', customerId) ? normalize(customer.qdFileId) : ''
       };
     });
     rows.forEach((item) => {
@@ -235,7 +241,7 @@ export const getSalesRoomQuoteSignals = webMethod(
 export const routeCatalogueSelection = webMethod(
   Permissions.SiteMember,
   async (selectionId, assistCustomerId = '') => {
-    const context = await resolveSelectionContext_(assistCustomerId);
+    const context = await resolveSelectionContext_(assistCustomerId, 'ASSIST_SELECTION');
     const item = await getSelectionById_(normalize(selectionId));
     if (!item) throw new Error('Selection was not found.');
     const payload = selectionPayload_(item);
@@ -253,8 +259,12 @@ export const processSalesRoomSelectionQueue = webMethod(
   async () => {
     const staff = await requireStaff_();
     let customerQuery = wixData.query(CUSTOMER_COLLECTION).limit(1000);
-    if (!staff.canViewAllCustomers) customerQuery = customerQuery.eq('assignedStaffId', staff.staffId);
-    const customers = await allQueryItems_(customerQuery);
+    if (!staff.canViewAllCustomers) {
+      const ids = staff.customerScope.customerActions.ASSIST_SELECTION;
+      if (!ids.length) return Object.freeze({ ok: true, processed: 0, results: [] });
+      customerQuery = customerQuery.hasSome('customerId', ids);
+    }
+    const customers = (await allQueryItems_(customerQuery)).filter(customer => staffMayAccessCustomer(staff, 'ASSIST_SELECTION', customer.customerId));
     const allowed = new Set(customers.map((item) => normalize(item.customerId)));
     const rows = await allQueryItems_(wixData.query(SELECTION_COLLECTION).eq('removed', false).hasSome('qdSyncStatus', ['PENDING', 'FAILED', 'ROUTING']).limit(1000));
     return routeQueuedSelections_(rows, customers, allowed);
@@ -286,9 +296,7 @@ export const routeSalesRoomCustomerSelections = webMethod(
       .find({ suppressAuth: true, consistentRead: true });
     if (customerResult.items.length !== 1) throw new Error('Customer was not found.');
     const customer = customerResult.items[0];
-    if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== staff.staffId) {
-      throw new Error('This customer is not assigned to you.');
-    }
+    requireStaffCustomerAccess(staff, 'ASSIST_SELECTION', normalizedCustomerId);
     const rows = await allQueryItems_(wixData.query(SELECTION_COLLECTION).eq('customerId', normalizedCustomerId).limit(1000));
     const routing = rows.filter((item) => {
       const payload = selectionPayload_(item);
@@ -511,7 +519,7 @@ async function notifySalesRoomSelectionChanged_() {
   }
 }
 
-async function resolveSelectionContext_(assistCustomerId) {
+async function resolveSelectionContext_(assistCustomerId, staffAction = 'VIEW') {
   const member = await currentMember.getMember({ fieldsets: ['FULL'] });
   if (!member) throw new Error('Please sign in before selecting products.');
   const memberId = normalize(member._id);
@@ -527,9 +535,7 @@ async function resolveSelectionContext_(assistCustomerId) {
     const result = await wixData.query(CUSTOMER_COLLECTION).eq('customerId', requestedCustomerId).limit(2).find({ suppressAuth: true });
     if (result.items.length !== 1) throw new Error('Customer was not found.');
     customer = result.items[0];
-    if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== staff.staffId) {
-      throw new Error('This customer is assigned to another salesperson.');
-    }
+    requireStaffCustomerAccess(staff, staffAction, requestedCustomerId);
     actorType = staff.canViewAllCustomers ? 'ADMIN' : 'STAFF';
     actorId = staff.staffId;
     actorName = staff.staffName;
@@ -577,19 +583,9 @@ async function getActiveProduct_(productId) {
 }
 
 async function requireStaff_(knownMember) {
-  const member = knownMember || await currentMember.getMember({ fieldsets: ['FULL'] });
-  if (!member) throw new Error('Staff sign-in is required.');
-  const memberId = normalize(member._id);
-  const email = memberEmail_(member);
-  let matches = memberId ? (await wixData.query(STAFF_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items : [];
-  if (!matches.length && email) matches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items;
-  if (matches.length !== 1 || upper(matches[0].status) !== 'ACTIVE') throw new Error('This member is not authorized in STAFF MASTER.');
-  const staff = matches[0];
-  return {
-    staffId: upper(staff.staffId),
-    staffName: normalize(staff.title || staff.staffName || staff.staffId),
-    canViewAllCustomers: ['SUPER ADMIN', 'ADMIN'].includes(upper(staff.role))
-  };
+  const staff = await getCurrentStaffContext();
+  if (!staff?.authorized || (knownMember && normalize(knownMember._id) !== normalize(staff.memberId))) throw new Error('Staff sign-in is required.');
+  return staff;
 }
 
 async function selectionItemsForCustomer_(customerId) {

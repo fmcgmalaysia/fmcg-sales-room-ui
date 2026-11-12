@@ -1,8 +1,8 @@
 import { PROCUREMENT_SAVE_PENDING } from 'backend/purchasePlan.js';
 import { webMethod, Permissions } from 'wix-web-module';
-import { currentMember } from 'wix-members-backend';
+import { getManagedDepartmentContext } from 'backend/staffManagementAccess.js';
 import wixData from 'wix-data';
-import { requireWarehouseStaff, projectWarehouseOrders, createWarehouseOperations } from 'backend/warehouseReceiving.js';
+import { projectWarehouseOrders, createWarehouseOperations } from 'backend/warehouseReceiving.js';
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
@@ -19,7 +19,7 @@ const store={
   insert:(collection,row)=>wixData.insert(collection,row,{suppressAuth:true}),
   remove:(collection,id)=>wixData.remove(collection,id,{suppressAuth:true})
 };
-async function staffContext(){return requireWarehouseStaff(await currentMember.getMember({fieldsets:['FULL']}),await store.all('StaffMasterAccess'));}
+async function staffContext(company,action='VIEW'){return getManagedDepartmentContext('WAREHOUSE',company,action);}
 async function readWarehouseData(company,staff,includePreparation=true){
   const names=PURCHASE_COLLECTIONS[company];if(!names)throw Error('Select NCT or GHR.');
   const [orders,tasks,activity,suppliers,records]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers'),store.all('PurchaseOrders')]);
@@ -29,12 +29,12 @@ async function readWarehouseData(company,staff,includePreparation=true){
 async function readOrders(company,staff){return (await readWarehouseData(company,staff)).orders;}
 const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders,documentService:requestPurchaseDocument});
 export const getWarehouseOrders=webMethod(Permissions.SiteMember,async company=>{
-  const staff=await staffContext(),{orders,customerLines}=await readWarehouseData(company,staff,false);let names=[];
+  const staff=await staffContext(company),{orders,customerLines}=await readWarehouseData(company,staff,false);let names=[];
   try{names=await readCustomerShortNames([...new Set([...orders.flatMap(row=>row.customerIds||[row.customerId]),...customerLines.map(row=>row.customerId)])]);}catch(_){}
   return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},deliveryTasks:[],customerLines:[],orders:orders.map(row=>projectWarehouseReceivingOrder({...row,fullCustomerName:row.customerName,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),readAt:new Date().toISOString()};
 });
 export const saveWarehouseReceipt=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
-  const staff=await staffContext();
+  const staff=await staffContext(company,'EDIT');
   try{return await operations.save({company,staff,requestId,input});}
   catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};const message=String(error?.message||'');const safe=/^(Select a |Purchase order or receipts changed|A receipt line|Enter whole cartons|Accepted cartons|Enter a reason|Confirm that|Rejected carton|A save is still processing|Warehouse )/.test(message);return {ok:false,requestId,retryable:!safe||message.startsWith('A save is still processing')||/^Warehouse photo (allocation|upload) is unconfirmed\./.test(message),error:safe?message:'Receipt save could not be confirmed. Retry the same save. 收货保存尚未确认，请重试同一次保存。'};}
 });
@@ -46,11 +46,11 @@ const savePreparation=createPreparationOperations({store,names:PURCHASE_COLLECTI
  return {...projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff}),activity};
 },documentService:requestPurchaseDocument});
 export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
- const staff=await staffContext();
+ const staff=await staffContext(company,'EDIT');
  if(['PACK','LOAD'].includes(input?.action))return {ok:false,requestId,retryable:false,error:'Warehouse use Delivery Task authorized by Support Desk. The old preparation entry is retired.'};
  try{return await savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input});}
  catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};const message=String(error?.message||''),safe=message.startsWith('Warehouse ');return {ok:false,requestId,retryable:!safe||/unconfirmed|processing/.test(message),error:safe?message:'Warehouse save is unconfirmed. Retry the same save.'};}
 });
 
 const captureCbm=createWarehouseCbmCapture({store,names:PURCHASE_COLLECTIONS,readData:readWarehouseData,captureCosts:capturePointbaseCosts});
-export const captureWarehouseCbm=webMethod(Permissions.SiteMember,async(company,requestId,taskId)=>captureCbm({company,requestId,taskId,staff:await staffContext()}));
+export const captureWarehouseCbm=webMethod(Permissions.SiteMember,async(company,requestId,taskId)=>captureCbm({company,requestId,taskId,staff:await staffContext(company,'EDIT')}));

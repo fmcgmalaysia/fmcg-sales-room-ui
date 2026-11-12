@@ -9,6 +9,8 @@ import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportTok
 import { createBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
 import { createBuyerSelectionMediaDownload } from 'backend/buyerSelectionDownload.js';
+import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
+import { requireStaffCustomerAccess } from 'backend/masterStaffAccessClient.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -154,14 +156,9 @@ async function signedInMember() {
   try { return await currentMember.getMember({ fieldsets: ['FULL'] }); } catch (_) { return null; }
 }
 async function requireStaff(member) {
-  const memberId = normalize(member?._id);
-  const email = memberEmail(member);
-  let matches = memberId ? (await wixData.query(STAFF_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items : [];
-  if (!matches.length && email) matches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items;
-  if (matches.length !== 1 || upper(matches[0].status) !== 'ACTIVE') throw new Error('Active staff authorization is required.');
-  const staff = matches[0];
-  const role = upper(staff.role);
-  return { staffId: upper(staff.staffId), staffName: normalize(staff.title || staff.staffName || staff.staffId), email, role, canViewAllCustomers: ['ADMIN', 'SUPER ADMIN'].includes(role) };
+  const staff = await getCurrentStaffContext();
+  if (!staff?.authorized || normalize(staff.memberId) !== normalize(member?._id)) throw new Error('Active staff authorization is required.');
+  return { ...staff, email: staff.loginEmail };
 }
 async function customerById(customerId) {
   const result = await wixData.query(CUSTOMER_COLLECTION).eq('customerId', normalize(customerId)).limit(2).find({ suppressAuth: true });
@@ -213,14 +210,14 @@ async function routeQdAction(action, buyer, row) {
   if (response.status < 200 || response.status >= 300 || !body.ok) throw new Error(body.error || 'Quotation Desk update failed.');
   return body.result || {};
 }
-async function resolveBuyerContext(assistCustomerId = '') {
+async function resolveBuyerContext(assistCustomerId = '', staffAction = 'VIEW') {
   const member = await signedInMember();
   if (!member?._id) throw new Error('Sign in is required.');
   const requestedId = normalize(assistCustomerId);
   if (requestedId) {
     const staff = await requireStaff(member);
     const customer = await customerById(requestedId);
-    if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== staff.staffId) throw new Error('This customer is assigned to another salesperson.');
+    requireStaffCustomerAccess(staff, staffAction, requestedId);
     ensureActive(customer);
     return {
       ...contextFromCustomer(customer, { email: staff.email, name: staff.staffName, type: staff.canViewAllCustomers ? 'ADMIN' : 'STAFF' }),
@@ -396,8 +393,14 @@ async function writeBuyerUserAudit(action, customerId, userId, beforeStatus, aft
   }, { suppressAuth: true });
 }
 
+function buyerPageContext(buyer) {
+  if (buyer.actorType === 'CUSTOMER_USER') return buyer;
+  const { qdFileId, ...context } = buyer;
+  return context;
+}
+
 export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
-  try { return { ok: true, buyer: await resolveBuyerContext(assistCustomerId) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
+  try { return { ok: true, buyer: buyerPageContext(await resolveBuyerContext(assistCustomerId)) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
 });
 // Reuse existing member/customer authorization. This entry is read-only and cannot post payments.
 export const getBuyerTransactionHistory = webMethod(Permissions.SiteMember, async (company, assistCustomerId = '') => {
@@ -443,7 +446,7 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
       targetGp, ...withoutPrices } = item;
     return withoutPrices;
   });
-  return { ok: true, context: buyer, account, notifications, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
+  return { ok: true, context: buyerPageContext(buyer), account, notifications, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
 });
 
 export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async (payload = {}, requestId = '', assistCustomerId = '') => {
@@ -606,7 +609,7 @@ function releasedOrderPrice(data) {
   return money(data.vipPriceCtn || data.quotePerCtn) || (money(data.vipPriceEa || data.quotePerPc) * money(data.ea));
 }
 export const saveBuyerQuantity = webMethod(Permissions.SiteMember, async (itemId, quantityCtn, assistCustomerId = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
+  const buyer = await resolveBuyerContext(assistCustomerId, 'ASSIST_SELECTION');
   const row = await findOwnedItem(buyer, itemId);
   if (row.data.removed) throw new Error('Recover this item before entering an order quantity.');
   const requestedQuantity = quantity(quantityCtn);
@@ -682,7 +685,7 @@ export const reduceBuyerOrderLine = webMethod(Permissions.SiteMember, async (ord
   return { ok: true, orderId: id, lineId: lineKey, quantityCtn: nextQty, reductionQtyCtn: reductionQty, message: nextQty === 0 ? 'Item cancelled before NCT / GHR submission.' : 'Reduction request recorded.' };
 });
 export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, assistCustomerId = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
+  const buyer = await resolveBuyerContext(assistCustomerId, 'ASSIST_SELECTION');
   const row = await findOwnedItem(buyer, itemId);
   const now = new Date().toISOString();
   let next = { ...row.data, removed: true, removedTime: now, orderQtyCtn: 0, quoteStatus: 'REMOVED', quoteActive: false,
@@ -702,7 +705,7 @@ export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, 
   }
 });
 export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId, assistCustomerId = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
+  const buyer = await resolveBuyerContext(assistCustomerId, 'ASSIST_SELECTION');
   const row = await findOwnedItem(buyer, itemId);
   if (row.data.removed && (await activeBuyerSelectionCount(buyer.customerId, buyer.selectionLimit)) >= buyer.selectionLimit) throw new Error(`My Selection is at its ${buyer.selectionLimit}-product limit. Remove an item before restoring this one.`);
   const now = new Date().toISOString();
@@ -721,7 +724,7 @@ export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId,
 });
 function nextOrderId(customerId, requestId) { return 'ORD-' + normalize(customerId).replace(/[^A-Z0-9-]/gi, '').toUpperCase() + '-' + requestId.replace(/-/g, '').toUpperCase(); }
 export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (requestedLines, assistCustomerId = '', requestId = '', customerPoNumber = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
+  const buyer = await resolveBuyerContext(assistCustomerId, 'SEND_ORDER_REQUEST');
   if (typeof customerPoNumber !== 'string' || /[\r\n\x00-\x1f]/.test(customerPoNumber) || customerPoNumber.trim().length > 100) throw new Error('Enter a P.O. number of up to 100 characters.');
   const buyerPo = customerPoNumber.trim();
   const submissionId = normalize(requestId);

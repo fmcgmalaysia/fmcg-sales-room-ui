@@ -1,11 +1,12 @@
 import { webMethod, Permissions } from 'wix-web-module';
-import { currentMember } from 'wix-members-backend';
-import { fulfilmentStore, readFulfilmentContext } from 'backend/customerFulfilmentService.js';
-import { createStockControlReader } from 'backend/stockControlService.js';
+import { getManagedDepartmentContext } from 'backend/staffManagementAccess.js';
+import { readFulfilmentContext } from 'backend/customerFulfilmentService.js';
+import { projectStockControlPage, validateStockListInput } from 'backend/stockControlService.js';
 
-const read = createStockControlReader({
-  readMember: () => currentMember.getMember({ fieldsets: ['FULL'] }),
-  readStaffRecords: () => fulfilmentStore.all('StaffMasterAccess'),
-  readContext: readFulfilmentContext
+export const getWarehouseStockControl = webMethod(Permissions.SiteMember, async (company, input = {}) => {
+  const staff = await getManagedDepartmentContext('WAREHOUSE', company);
+  validateStockListInput(input);
+  const context = await readFulfilmentContext(company, staff);
+  if (context.company !== company) throw Error('Stock company mismatch.');
+  return { ...projectStockControlPage(context, input, new Date().toISOString()), staff: { staffName: staff.staffName } };
 });
-export const getWarehouseStockControl = webMethod(Permissions.SiteMember, (company, input) => read(company, input));

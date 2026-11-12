@@ -91,6 +91,10 @@ on:
           - warehouse-receipt-evidence-only
           - warehouse-compact-receipt-only
           - warehouse-desk-workflow-only
+      master_staff_management:
+        description: Add the approved MASTER staff pages to the Warehouse Desk package
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -993,6 +997,10 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/warehouse-compact-receipt-site', runner.temp) }}
+
+      - name: Add MASTER staff management pages
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only' && inputs.master_staff_management
+        run: node integration/releases/stage-master-staff.cjs "$RUNNER_TEMP/warehouse-desk-workflow-site"
 
       - name: Upload Warehouse Desk workflow
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only'

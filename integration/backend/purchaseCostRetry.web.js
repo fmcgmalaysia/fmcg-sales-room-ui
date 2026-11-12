@@ -16,5 +16,5 @@ const store = {
 };
 const retry=createPurchaseCostRetry({store,captureCosts:capturePointbaseCosts});
 export const retryPurchaseTaskCost=webMethod(Permissions.SiteMember,async(company,taskId,requestId)=>{
-  const staff=await getPurchaseStaffContext();return retry({company,taskId,requestId,staff});
+  const staff=await getPurchaseStaffContext(company,'EDIT');return retry({company,taskId,requestId,staff});
 });

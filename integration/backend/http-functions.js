@@ -6,6 +6,7 @@ import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import { capturePointbaseCosts } from 'backend/pointbaseCostClient.js';
 import { createNctReceiver } from 'backend/nctReceiver.js';
+import { checkFmcgStaffAccess } from 'backend/staffAccessGateway.js';
 
 const COST_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const store = {
@@ -37,3 +38,10 @@ export async function post_purchaseQuantities(request) {
 }
 
 export async function post_salesFulfilment(request){try{const result=await handleSalesFulfilment(request);return response({status:result.status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify(result.body)});}catch(_){return response({status:503,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({ok:false,error:'Shipment request could not be confirmed.'})});}}
+
+export async function post_staffAccess(request) {
+  const { status, body } = await checkFmcgStaffAccess(request);
+  return response({ status, headers: {
+    'Content-Type': 'application/json', 'Cache-Control': 'no-store'
+  }, body: JSON.stringify(body) });
+}

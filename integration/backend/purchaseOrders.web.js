@@ -20,14 +20,14 @@ const orders=createPurchaseOrderOperations({store,names:PURCHASE_COLLECTIONS,doc
   return projectPurchaseWorkspace({company,orders:orderRows,tasks,activity,suppliers,staff});
 }});
 export const getPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
-  const staff=await getPurchaseStaffContext(),rows=await orders.list(company,staff);
+  const staff=await getPurchaseStaffContext(company),rows=await orders.list(company,staff);
   let names=[],customerNamesError='';
   try {names=await readCustomerShortNames([...new Set(rows.flatMap(row=>row.customerIds||[row.customerId]))]);if(names.some(row=>!row.shortName))customerNamesError='客户 Short Name 尚未填写；该客户暂显示已保存名称。';}
   catch (_){customerNamesError='客户 Short Name 暂时无法读取，采购单保留已保存名称。';}
   return purchaseOrderReadResult({company,rows,names,customerNamesError});
 });
 export const savePurchaseOrder=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
-  const staff=await getPurchaseStaffContext();
+  const staff=await getPurchaseStaffContext(company,'EDIT');
   try{return await orders.save({company,requestId,input,staff});}
   catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};
     const message=String(error?.message||'');

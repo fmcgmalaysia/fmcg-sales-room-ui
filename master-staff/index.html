@@ -2,6 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="build" content="master-staff-management-v1">
 <title>Staff Management · MASTER</title>
 <style>
   *{box-sizing:border-box}
@@ -11,27 +12,43 @@
   header strong{font-size:22px;border-right:1px solid #496176;padding-right:16px}
   main{max-width:1380px;margin:auto;padding:24px}
   .heading,.toolbar,footer{display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .heading{margin-bottom:16px}
+  .heading{margin-bottom:16px;flex-wrap:wrap}
   h1{font-size:26px}
   .panel,dialog{background:white;border:1px solid #c7d7e6;border-radius:7px}
   .toolbar,footer{padding:10px 12px}
-  .toolbar{justify-content:flex-start}
+  .toolbar input{width:100%;min-width:0}
   .table{overflow-x:auto}
-  table{width:100%;min-width:630px;border-collapse:collapse;text-align:left}
+  table{width:100%;min-width:660px;table-layout:fixed;border-collapse:collapse;text-align:left}
+  .col-name{width:16%}.col-email{width:28%}.col-department{width:23%}.col-sales{width:17%}.col-status{width:16%}
   th{background:#d4e1ed;font-size:12px}
-  th,td{padding:10px 13px;border-bottom:1px solid #e1e9f1}
-  input,button{font:inherit;border:1px solid #b9cde0;border-radius:4px;padding:7px 10px;background:white;color:inherit}
+  th,td{padding:10px 13px;border-bottom:1px solid #e1e9f1;vertical-align:middle;overflow-wrap:anywhere}
+  td:first-child{font-weight:650}
+  input,select,button{font:inherit;border:1px solid #b9cde0;border-radius:4px;padding:7px 10px;background:white;color:inherit}
   button{font-weight:650;cursor:pointer}
   .primary{background:#285e9e;color:white;border-color:#285e9e}
   button:disabled{opacity:.5;cursor:default}
   label{display:grid;gap:4px;font-weight:650}
-  dialog{width:min(460px,calc(100vw - 24px));padding:0;color:inherit}
+  dialog{width:min(520px,calc(100vw - 24px));padding:0;color:inherit;box-shadow:0 20px 58px #102a4840}
   dialog::backdrop{background:#16324d66}
-  dialog h2{padding:12px;background:#eaf2fa;font-size:18px}
-  dialog section{padding:13px;display:grid;gap:12px}
-  dialog footer{justify-content:flex-end;background:#f7f9fc}
+  dialog h2{padding:12px 18px;background:#eaf2fa;font-size:18px}
+  dialog section{padding:16px 18px;display:grid;gap:12px}
+  dialog input:not([type=checkbox]),dialog select{width:100%;min-width:0}
+  .access-options summary{cursor:pointer;color:#285e9e;font-weight:650}
+  .access-options fieldset{margin-top:8px}
+  fieldset{border:1px solid #d8e3ee;border-radius:4px;margin:0;padding:8px 10px}
+  .scope-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .check{display:flex;align-items:center;gap:6px}
+  dialog footer{padding:11px 18px;justify-content:flex-end;background:#f7f9fc;border-top:1px solid #d8e3ee}
+  dialog p{font-size:13px;color:#4e6680}
   output{color:#4e6680;font-size:13px}
   .error{color:#a22134}
+  .employee-link{border:0;padding:0;background:transparent;color:#285e9e;text-align:left}
+  dialog{width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 32px)}
+  dialog section{max-height:calc(100vh - 190px);overflow:auto}
+  .customer-access{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid #e1e9f1}
+  .customer-access label{font-weight:400}
+  #customer-options{max-height:250px;overflow:auto}
+  @media(max-width:540px){main{padding:16px 12px}h1{font-size:22px}.heading{gap:8px}}
 </style>
 <header><strong>MASTER</strong><span>Administration 管理</span></header>
 <main>
@@ -39,22 +56,52 @@
   <section class="panel" aria-label="Staff directory">
     <div class="toolbar"><input type="search" id="search" aria-label="Find staff" placeholder="Search name or work email"></div>
     <div class="table"><table>
-      <thead><tr><th>Employee</th><th>Work Email</th><th>Status</th><th>Department Access</th><th>Sales Room</th></tr></thead>
+      <colgroup><col class="col-name"><col class="col-email"><col class="col-department"><col class="col-sales"><col class="col-status"></colgroup>
+      <thead><tr><th scope="col">Employee</th><th scope="col">Work Email</th><th scope="col">MASTER Access</th><th scope="col">FMCG Sales Room</th><th scope="col">Status</th></tr></thead>
       <tbody id="employees"></tbody>
     </table></div>
-    <footer><output id="status" aria-live="polite">Opening MASTER staff directory…</output></footer>
+    <footer><output id="status" aria-live="polite">Opening MASTER staff directory…</output><button id="sign-in" class="primary" hidden>Sign in 登录</button></footer>
   </section>
 </main>
 <dialog id="add-dialog" aria-labelledby="add-title">
   <form id="add-form">
     <h2 id="add-title">Add Employee</h2>
     <section>
-      <label>Employee name<input name="name" maxlength="80" required></label>
-      <label>Work Email<input name="email" type="email" maxlength="254" required></label>
-      <p>New employees are recorded as pending until their login is verified.</p>
-      <output id="save-status" aria-live="polite"></output>
+      <label>Employee name<input name="name" maxlength="80" autofocus required></label>
+      <label>Work Email<input name="email" type="email" maxlength="254" autocapitalize="none" spellcheck="false" required></label>
+      <label id="employee-status" hidden>Status<select name="status"><option value="PENDING">Pending</option><option value="ACTIVE">Active</option><option value="DISABLED">Disabled</option></select></label>
+      <p>Use the employee’s Google work email. No invitation is needed. An active employee must verify this email when first signing in.</p>
+      <details class="access-options">
+      <summary>Set access now (optional)</summary>
+      <fieldset>
+        <legend>Companies 公司</legend>
+        <div class="scope-grid">
+          <label class="check"><input type="checkbox" name="company" value="NCT">NCT</label>
+          <label class="check"><input type="checkbox" name="company" value="GHR">GHR</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Department access 部门权限</legend>
+        <div id="department-options" class="scope-grid"></div>
+        <label class="check"><input type="checkbox" name="supportViewAll">Support can view all customers</label>
+      </fieldset>
+      <fieldset>
+        <legend>Sales Room</legend>
+        <div class="scope-grid">
+          <label>Function<select name="salesFunction"><option value="">None</option><option>SALES</option><option>SUPPORT</option></select></label>
+          <label>Access<select name="salesRoom"><option value="">None</option><option value="VIEW">View</option><option value="EDIT">Edit</option></select></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Customer access 客户权限</legend>
+        <p>View permits browsing. Edit permits customer work; Support cannot edit or publish quotations.</p>
+        <div id="customer-options"></div>
+        <output id="customer-status" aria-live="polite"></output>
+      </fieldset>
+      </details>
+      <output id="save-status" aria-live="polite" hidden></output>
     </section>
-    <footer><button id="cancel" type="button">Cancel</button><button id="save" class="primary">Add Pending Employee</button></footer>
+    <footer><button id="cancel" type="button">Cancel</button><button id="save" class="primary">Add Employee</button></footer>
   </form>
 </dialog>
 <script type="module">
@@ -62,6 +109,8 @@
   const parentOrigin = 'https://fmcg999.wixstudio.com';
   const requests = new Map();
   const employees = [];
+  let editing = null, pendingSave = null, customers = [];
+  let customerLoad = 0;
 
   function send(action, fields = {}) {
     if (window.parent === window) return Promise.reject(Error('Open this page from the MASTER website.'));
@@ -83,7 +132,11 @@
     requests.delete(event.data.requestId);
     clearTimeout(request.timer);
     if (event.data.ok) request.resolve(event.data);
-    else request.reject(Error(event.data.error || 'The request was rejected.'));
+    else if (event.data.signInRequired) {
+      const error = Error('Sign in with your MASTER staff account.');
+      error.signInRequired = true;
+      request.reject(error);
+    } else request.reject(Error(event.data.error || 'The request was rejected.'));
   });
 
   function render() {
@@ -94,7 +147,14 @@
       const access = Object.entries(employee.access.departmentAccess)
         .map(([department, level]) => department + ' · ' + level).join(', ');
       const status = employee.status === 'PENDING' ? 'Pending verification' : employee.status;
-      for (const value of [employee.name, employee.email, status, access || '—', employee.access.salesRoom ? 'Planned' : '—']) {
+      const nameCell = row.insertCell();
+      if (employee.role === 'SUPER ADMIN') nameCell.textContent = employee.name;
+      else {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'employee-link'; button.textContent = employee.name;
+        button.addEventListener('click', () => openEmployee(employee)); nameCell.append(button);
+      }
+      for (const value of [employee.email, access || '—', employee.access.salesRoom ? employee.access.salesFunction + ' · ' + employee.access.salesRoom : '—', status]) {
         row.insertCell().textContent = value;
       }
       return row;
@@ -105,40 +165,143 @@
 
   const dialog = id('add-dialog');
   const form = id('add-form');
+  const departments = [
+    ['PURCHASE', 'Purchase'], ['SUPPORT', 'Support'], ['WAREHOUSE', 'Warehouse'],
+    ['ACCOUNT', 'Finance'], ['SALES MANAGEMENT', 'Sales Management']
+  ];
+  for (const [department, labelText] of departments) {
+    const label = document.createElement('label');
+    label.textContent = labelText;
+    const select = document.createElement('select');
+    select.name = department;
+    select.add(new Option('None', ''));
+    select.add(new Option('View', 'VIEW'));
+    select.add(new Option('Edit', 'EDIT'));
+    label.append(select);
+    id('department-options').append(label);
+  }
+  function registration() {
+    const data = new FormData(form);
+    return {
+      name: data.get('name'),
+      email: data.get('email'),
+      access: {
+        departmentAccess: Object.fromEntries(departments.map(([department]) =>
+          [department, data.get(department)]).filter(([, level]) => level)),
+        companyIds: data.getAll('company'),
+        supportViewAll: data.has('supportViewAll'),
+        salesRoom: data.get('salesRoom'),
+        salesFunction: data.get('salesFunction'),
+        customerAccess: Object.fromEntries([...id('customer-options').querySelectorAll('select')]
+          .filter(select=>select.value).map(select=>[select.dataset.customerId,select.value]))
+      }
+    };
+  }
   id('search').addEventListener('input', render);
-  id('add').addEventListener('click', () => dialog.showModal());
+  function renderCustomerAccess(access) {
+    const known = new Map(customers.map(customer=>[customer.id,customer.name]));
+    for (const customerId of Object.keys(access ?? {})) if (!known.has(customerId)) known.set(customerId,customerId);
+    id('customer-options').replaceChildren(...[...known].map(([customerId,name],index)=>{
+      const row=document.createElement('div'); row.className='customer-access';
+      const label=document.createElement('label'); label.textContent=name; label.htmlFor='grant-'+index;
+      const select=document.createElement('select'); select.id=label.htmlFor; select.dataset.customerId=customerId;
+      select.add(new Option('No access',''));select.add(new Option('View','VIEW'));select.add(new Option('Edit','EDIT'));
+      select.value=access?.[customerId] ?? '';row.append(label,select);return row;
+    }));
+  }
+  async function openEmployee(employee=null) {
+    const load = ++customerLoad;
+    editing=employee;pendingSave=null;form.reset();
+    form.querySelectorAll('input,select').forEach(element=>element.disabled=false);
+    id('add-title').textContent=employee?'Employee access 员工权限':'Add Employee';
+    id('save').textContent=employee?'Save':'Add Employee';
+    id('employee-status').hidden=!employee;
+    id('save-status').hidden=true;
+    const access=employee?.access ?? {};
+    form.elements.namedItem('name').value=employee?.name ?? '';
+    form.elements.namedItem('email').value=employee?.email ?? '';
+    form.elements.namedItem('status').value=employee?.status ?? 'PENDING';
+    for(const [department] of departments) form.elements.namedItem(department).value=access.departmentAccess?.[department] ?? '';
+    form.querySelectorAll('[name=company]').forEach(box=>box.checked=access.companyIds?.includes(box.value)===true);
+    form.elements.namedItem('supportViewAll').checked=access.supportViewAll===true;
+    form.elements.namedItem('salesRoom').value=access.salesRoom ?? '';
+    form.elements.namedItem('salesFunction').value=access.salesFunction ?? '';
+    form.querySelector('details').open=Boolean(employee);
+    id('customer-options').replaceChildren();
+    id('save').disabled=true;id('customer-status').textContent='Loading customers…';dialog.showModal();
+    try{
+      const result=await send('LIST_CUSTOMERS');
+      if (!dialog.open || load !== customerLoad) return;
+      customers=result.customers;
+      renderCustomerAccess(access.customerAccess);id('customer-status').textContent='';id('save').disabled=false;
+    }catch(error){if (dialog.open && load === customerLoad) id('customer-status').textContent=error.message;}
+  }
+  id('add').addEventListener('click', () => openEmployee());
   id('cancel').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('cancel', event => { if (id('cancel').disabled) event.preventDefault(); });
   form.addEventListener('submit', async event => {
     event.preventDefault();
     id('save').disabled = true;
     id('cancel').disabled = true;
+    id('save-status').hidden = false;
     id('save-status').className = '';
     id('save-status').textContent = 'Saving…';
     try {
-      const result = await send('REGISTER_STAFF', Object.fromEntries(new FormData(form)));
-      employees.push(result.employee);
+      if(!pendingSave) pendingSave={...registration(),saveRequestId:crypto.randomUUID(),
+        ...(editing?{staffId:editing.staffId,revision:editing.revision,status:form.elements.namedItem('status').value}:{})};
+      const result = await send(editing?'UPDATE_STAFF':'REGISTER_STAFF', pendingSave);
+      const index=employees.findIndex(employee=>employee.staffId===result.employee.staffId);
+      if(index>=0)employees[index]=result.employee;else employees.push(result.employee);
+      pendingSave=null;
       form.reset();
+      form.querySelector('details').open = false;
       id('save-status').textContent = '';
+      id('save-status').hidden = true;
       dialog.close();
       render();
     } catch (error) {
       id('save-status').className = 'error';
       id('save-status').textContent = error.message;
+      const uncertain=/awaiting confirmation|did not confirm/i.test(error.message);
+      if(!uncertain)pendingSave=null;
+      form.querySelectorAll('input,select').forEach(element=>element.disabled=uncertain);
+      id('save').textContent=uncertain?'Check same save':editing?'Save':'Add Employee';
     } finally {
       id('save').disabled = false;
       id('cancel').disabled = false;
     }
   });
 
-  try {
-    const result = await send('LIST_STAFF');
-    employees.push(...result.rows);
-    id('add').disabled = false;
-    render();
-  } catch (error) {
-    id('status').className = 'error';
-    id('status').textContent = error.message;
-    id('search').disabled = true;
+  async function loadDirectory() {
+    try {
+      const result = await send('LIST_STAFF');
+      employees.splice(0, employees.length, ...result.rows);
+      id('add').disabled = false;
+      id('search').disabled = false;
+      id('sign-in').hidden = true;
+      id('status').className = '';
+      render();
+    } catch (error) {
+      employees.length = 0;
+      id('employees').replaceChildren();
+      id('status').className = 'error';
+      id('status').textContent = error.message;
+      id('add').disabled = true;
+      id('search').disabled = true;
+      id('sign-in').hidden = !error.signInRequired;
+    }
   }
+  id('sign-in').addEventListener('click', async () => {
+    id('sign-in').disabled = true;
+    try {
+      await send('SIGN_IN');
+      await loadDirectory();
+    } catch (error) {
+      id('status').textContent = error.message;
+    } finally {
+      id('sign-in').disabled = false;
+    }
+  });
+  await loadDirectory();
 </script>
 </html>
