@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Staff Management · MASTER</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#f2f6fa;color:#162e48;font:14px/1.5 "Segoe UI","Microsoft YaHei",sans-serif}
+  h1,h2,p{margin:0}
+  header{background:#143654;color:white;padding:12px 24px;display:flex;align-items:center;gap:16px}
+  header strong{font-size:22px;border-right:1px solid #496176;padding-right:16px}
+  main{max-width:1380px;margin:auto;padding:24px}
+  .heading,.toolbar,footer{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .heading{margin-bottom:16px}
+  h1{font-size:26px}
+  .panel,dialog{background:white;border:1px solid #c7d7e6;border-radius:7px}
+  .toolbar,footer{padding:10px 12px}
+  .toolbar{justify-content:flex-start}
+  .table{overflow-x:auto}
+  table{width:100%;min-width:630px;border-collapse:collapse;text-align:left}
+  th{background:#d4e1ed;font-size:12px}
+  th,td{padding:10px 13px;border-bottom:1px solid #e1e9f1}
+  input,button{font:inherit;border:1px solid #b9cde0;border-radius:4px;padding:7px 10px;background:white;color:inherit}
+  button{font-weight:650;cursor:pointer}
+  .primary{background:#285e9e;color:white;border-color:#285e9e}
+  button:disabled{opacity:.5;cursor:default}
+  label{display:grid;gap:4px;font-weight:650}
+  dialog{width:min(460px,calc(100vw - 24px));padding:0;color:inherit}
+  dialog::backdrop{background:#16324d66}
+  dialog h2{padding:12px;background:#eaf2fa;font-size:18px}
+  dialog section{padding:13px;display:grid;gap:12px}
+  dialog footer{justify-content:flex-end;background:#f7f9fc}
+  output{color:#4e6680;font-size:13px}
+  .error{color:#a22134}
+</style>
+<header><strong>MASTER</strong><span>Administration 管理</span></header>
+<main>
+  <div class="heading"><h1>Staff Management 员工管理</h1><button id="add" class="primary" type="button" disabled>＋ Add Employee</button></div>
+  <section class="panel" aria-label="Staff directory">
+    <div class="toolbar"><input type="search" id="search" aria-label="Find staff" placeholder="Search name or work email"></div>
+    <div class="table"><table>
+      <thead><tr><th>Employee</th><th>Work Email</th><th>Status</th><th>Department Access</th><th>Sales Room</th></tr></thead>
+      <tbody id="employees"></tbody>
+    </table></div>
+    <footer><output id="status" aria-live="polite">Opening MASTER staff directory…</output></footer>
+  </section>
+</main>
+<dialog id="add-dialog" aria-labelledby="add-title">
+  <form id="add-form">
+    <h2 id="add-title">Add Employee</h2>
+    <section>
+      <label>Employee name<input name="name" maxlength="80" required></label>
+      <label>Work Email<input name="email" type="email" maxlength="254" required></label>
+      <p>New employees are recorded as pending until their login is verified.</p>
+      <output id="save-status" aria-live="polite"></output>
+    </section>
+    <footer><button id="cancel" type="button">Cancel</button><button id="save" class="primary">Add Pending Employee</button></footer>
+  </form>
+</dialog>
+<script type="module">
+  const id = name => document.getElementById(name);
+  const parentOrigin = 'https://fmcg999.wixstudio.com';
+  const requests = new Map();
+  const employees = [];
+
+  function send(action, fields = {}) {
+    if (window.parent === window) return Promise.reject(Error('Open this page from the MASTER website.'));
+    return new Promise((resolve, reject) => {
+      const requestId = crypto.randomUUID();
+      const timer = setTimeout(() => {
+        requests.delete(requestId);
+        reject(Error('MASTER did not confirm the request. Reload the directory to check its status.'));
+      }, 15000);
+      requests.set(requestId, { resolve, reject, timer });
+      window.parent.postMessage({ action, requestId, ...fields }, parentOrigin);
+    });
+  }
+
+  window.addEventListener('message', event => {
+    if (event.origin !== parentOrigin || event.source !== window.parent || event.data?.type !== 'MASTER_STAFF_RESULT') return;
+    const request = requests.get(event.data.requestId);
+    if (!request) return;
+    requests.delete(event.data.requestId);
+    clearTimeout(request.timer);
+    if (event.data.ok) request.resolve(event.data);
+    else request.reject(Error(event.data.error || 'The request was rejected.'));
+  });
+
+  function render() {
+    const term = id('search').value.trim().toLowerCase();
+    const visible = employees.filter(employee => [employee.name, employee.email].some(value => value.toLowerCase().includes(term)));
+    const rows = visible.map(employee => {
+      const row = document.createElement('tr');
+      const access = Object.entries(employee.access.departmentAccess)
+        .map(([department, level]) => department + ' · ' + level).join(', ');
+      const status = employee.status === 'PENDING' ? 'Pending verification' : employee.status;
+      for (const value of [employee.name, employee.email, status, access || '—', employee.access.salesRoom ? 'Planned' : '—']) {
+        row.insertCell().textContent = value;
+      }
+      return row;
+    });
+    id('employees').replaceChildren(...rows);
+    id('status').textContent = visible.length + (visible.length === 1 ? ' employee' : ' employees');
+  }
+
+  const dialog = id('add-dialog');
+  const form = id('add-form');
+  id('search').addEventListener('input', render);
+  id('add').addEventListener('click', () => dialog.showModal());
+  id('cancel').addEventListener('click', () => dialog.close());
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    id('save').disabled = true;
+    id('cancel').disabled = true;
+    id('save-status').className = '';
+    id('save-status').textContent = 'Saving…';
+    try {
+      const result = await send('REGISTER_STAFF', Object.fromEntries(new FormData(form)));
+      employees.push(result.employee);
+      form.reset();
+      id('save-status').textContent = '';
+      dialog.close();
+      render();
+    } catch (error) {
+      id('save-status').className = 'error';
+      id('save-status').textContent = error.message;
+    } finally {
+      id('save').disabled = false;
+      id('cancel').disabled = false;
+    }
+  });
+
+  try {
+    const result = await send('LIST_STAFF');
+    employees.push(...result.rows);
+    id('add').disabled = false;
+    render();
+  } catch (error) {
+    id('status').className = 'error';
+    id('status').textContent = error.message;
+    id('search').disabled = true;
+  }
+</script>
+</html>
