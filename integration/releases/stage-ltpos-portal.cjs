@@ -19,7 +19,7 @@ const files = ['index.html', 'ltpos-team.jpg'].map(name => ({
   name,
   bytes: fs.readFileSync(path.join(source, name))
 }));
-assert.match(files[0].bytes.toString('utf8'), /name="build" content="ltpos-staff-portal-v1"/);
+assert.match(files[0].bytes.toString('utf8'), /name="build" content="ltpos-staff-portal-v2"/);
 assert.equal(files[1].bytes.readUInt16BE(0), 0xffd8);
 fs.mkdirSync(directory);
 for (const { name, bytes } of files) {
