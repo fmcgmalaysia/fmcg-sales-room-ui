@@ -5,6 +5,10 @@ on:
     branches: ["main"]
   workflow_dispatch:
     inputs:
+      buyer_password_reset:
+        description: Replace only Buyer login in the published Warehouse Desk and LTPOS package
+        type: boolean
+        default: false
       static_ui:
         description: Static interface installation only; does not activate current-stock writes
         type: choice
@@ -993,6 +997,10 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/warehouse-compact-receipt-site', runner.temp) }}
+
+      - name: Stage Buyer password reset
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only' && inputs.buyer_password_reset
+        run: node integration/releases/stage-buyer-password-reset.cjs "$RUNNER_TEMP/warehouse-desk-workflow-site"
 
       - name: Upload Warehouse Desk workflow
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only'

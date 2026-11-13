@@ -5,6 +5,7 @@ import { session } from 'wix-storage-frontend';
 import { getCurrentBuyerContext } from 'backend/catalogueAuth.web';
 
 const FRAME_ID = '#html1';
+const LOGIN_FRAME_URL = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-login-20261113.html';
 const SITE_BASE = 'https://fmcg999.wixstudio.com/fmcgmalaysia';
 const GOOGLE_START_URL = SITE_BASE + '/_functions/googleBuyerAuthStart';
 const BUYER_DESTINATION = '/catalogue';
@@ -203,6 +204,7 @@ $w.onReady(async function () {
     }
   });
 
+  frame.src = LOGIN_FRAME_URL;
   $w('#imageX38').alt = 'Malaysian FMCG sourcing specialists reviewing export-ready food and consumer products in the FMCG Malaysia Buyer Room';
   wixSeoFrontend.setTitle('Buyer Room Login | Malaysian FMCG Sourcing Platform');
   wixSeoFrontend.setMetaTags([
