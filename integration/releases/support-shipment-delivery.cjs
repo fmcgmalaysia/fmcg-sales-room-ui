@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 
 const build = '20261113-shipment-delivery-v1';
-const warehouseTableBuild = '20261113-warehouse-delivery-compact-v2';
+const warehouseTableBuild = '20261114-warehouse-desk-selector-v1';
+const warehouseCompactBuild = '20261113-warehouse-delivery-compact-v2';
 const previousSupport = '20261113-support-standalone-dn-v3';
 const previousWarehouse = '20261111-warehouse-desk-workflow-history-v2';
 const previousDelivery = '20261111-warehouse-desk-workflow-v1';
@@ -134,8 +135,8 @@ function stage(site) {
     'support-room/workroom.html': supportHtml(read('support-room/workroom.html')).replaceAll(previousSupport,build),
     'support-room/workroom.js': supportDetails(supportScript(read('support-room/workroom.js'))),
     'support-room/workroom.css': read('support-room/workroom.css')+supportCss,
-    'warehouse-room/index.html': read('warehouse-room/index.html').replace('name="build" content="'+previousWarehouse+'"','name="build" content="'+warehouseTableBuild+'"').replace('href="style.css?v='+previousDelivery,'href="style.css?v='+build).replaceAll('desk-delivery.css?v='+previousDelivery,'desk-delivery.css?v='+warehouseTableBuild).replaceAll('desk-delivery.js?v='+previousDelivery,'desk-delivery.js?v='+build),
-    'warehouse-room/style.css': read('warehouse-room/style.css')+'\n.department-header #company{border-color:#e6aa63;background-color:#fff2df}\n',
+    'warehouse-room/index.html': read('warehouse-room/index.html').replace('name="build" content="'+previousWarehouse+'"','name="build" content="'+warehouseTableBuild+'"').replace('href="style.css?v='+previousDelivery,'href="style.css?v='+warehouseTableBuild).replaceAll('desk-delivery.css?v='+previousDelivery,'desk-delivery.css?v='+warehouseCompactBuild).replaceAll('desk-delivery.js?v='+previousDelivery,'desk-delivery.js?v='+build),
+    'warehouse-room/style.css': read('warehouse-room/style.css')+'\n.dd-heading select[data-dd-select]{border-color:#e6aa63;background-color:#fff2df}\n',
     'master-shared/desk-delivery.css': read('master-shared/desk-delivery.css')+deliveryCss,
     'master-shared/desk-delivery.js': warehouseScript(read('master-shared/desk-delivery.js')),
   };
