@@ -1,7 +1,7 @@
 import { authentication } from 'wix-members-frontend';
 import { getLtposWorkspaces } from 'backend/ltposWorkspaces.web';
 
-const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/?v=ltpos-staff-portal-v2';
+const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/managed.html?v=ltpos-staff-portal-v2';
 const SITE = 'https://fmcg999.wixstudio.com/master';
 const workspaces = new Map([
   ['purchase', ['Purchase 采购', SITE]],
@@ -29,7 +29,7 @@ $w.onReady(() => {
     const anchors = authorized.map(([, [label, url]]) =>
       '<a href="' + url + '" target="_blank" rel="noopener noreferrer"><span style="color:#174c83;font-size:16px;font-weight:bold;">' + label.replace(' ', '&nbsp;') + '</span></a>');
     links.html = '<p><span style="color:#143654;font-size:16px;font-weight:bold;">My Workspaces 我的工作室</span></p>' +
-      '<p>' + anchors.join(' &nbsp; ') + '</p>';
+      '<p>' + anchors.join('') + '</p>';
     await workspaceSection.expand();
     return true;
   }
