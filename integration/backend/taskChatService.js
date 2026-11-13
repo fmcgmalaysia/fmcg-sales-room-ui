@@ -6,6 +6,7 @@ const clone=value=>JSON.parse(JSON.stringify(value));
 export function taskChatPair(department,peer){const pair=[department,peer].sort().join(':');if(!pairs.includes(pair))throw Error('Chat departments are not permitted to converse.');return pair;}
 export function createTaskChatService({drive,index,resolve,hash}){
  const indexId=(company,task)=>hash(['TASK_CHAT_INDEX',company,task.kind,task.id]).slice(0,32);
+ const matchesIndex=(row,company,task)=>row.company===company&&row.taskKind===task.kind&&row.taskId===task.id;
  const storageTask=task=>hash(['TASK_CHAT_TASK',task.kind,task.id]);
  const fail=message=>{throw Error('Chat '+message);};
  function select(model,input,department){const task=model.tasks.find(t=>t.kind===input.kind&&t.id===input.taskId);if(!task)fail('task is not available in this company.');const pair=taskChatPair(department,input.peer);if(!task.peers.includes(input.peer))fail('department is not permitted on this task.');return {task,pair};}
@@ -13,7 +14,7 @@ export function createTaskChatService({drive,index,resolve,hash}){
  const envelope=(company,department,staff,task,pair)=>({company,kind:task.kind,taskId:storageTask(task),pair,actor:actor(staff,department)});
  const updates=(task,department,peer)=>(task.updates||[]).filter(e=>!e.from||e.from===department||e.from===peer);
  async function ensureIndex(company,task){
-  const id=indexId(company,task),valid=row=>row&&row.company===company&&row.taskKind===task.kind&&row.taskId===task.id;
+  const id=indexId(company,task),valid=row=>row&&matchesIndex(row,company,task);
   const existing=await index.read(id);if(existing){if(!valid(existing))fail('index identity requires review.');return;}
   // Establish discoverability before the first Drive write, including a lost browser session.
   const row={_id:id,title:task.number||task.title||task.id,company,taskKind:task.kind,taskId:task.id,manifestId:null,departmentKeys:departmentKeys(task),details:{task:{number:task.number,title:task.title,closed:!!task.closed,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[],...salesContext(task)},summaries:{},authority:'DRIVE_V1'}};
@@ -22,10 +23,13 @@ export function createTaskChatService({drive,index,resolve,hash}){
  async function cache(company,task,result){
   if(!result.fileId)return;
   const id=indexId(company,task),existing=await index.read(id);
-  if(existing&&(existing.company!==company||existing.taskKind!==task.kind||existing.taskId!==task.id||existing.manifestId&&existing.manifestId!==result.fileId))fail('index identity requires review.');
+  checkIndex(existing,company,task,result.fileId);
   const row={...(existing||{}),_id:id,title:task.number||task.title||task.id,company,taskKind:task.kind,taskId:task.id,manifestId:result.fileId,departmentKeys:departmentKeys(task),details:{...(existing?.details||{}),task:{number:task.number,title:task.title,closed:!!task.closed,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[],...salesContext(task)},summaries:{...(existing?.details?.summaries||{}),[result.summary.pair]:{revision:result.revision,updatedAt:result.summary.updatedAt,lastIncoming:result.summary.lastIncoming}},authority:'DRIVE_V1'}};
   // Summary cache may lag a competing response. List never treats it as message authority.
   if(existing)await index.update(row);else try{await index.insert(row);}catch(error){const raced=await index.read(id);if(!raced||raced.company!==company||raced.taskKind!==task.kind||raced.taskId!==task.id||raced.manifestId!==row.manifestId)throw error;}
+ }
+ function checkIndex(row,company,task,fileId){
+  if(row&&(!matchesIndex(row,company,task)||row.manifestId&&row.manifestId!==fileId))fail('index identity requires review.');
  }
  function legacy(task,department,peer,summary){
   return (task.legacy||[]).filter(m=>(m.from===department&&m.to.includes(peer))||(m.from===peer&&m.to.includes(department))).map(m=>{
@@ -55,7 +59,7 @@ export function createTaskChatService({drive,index,resolve,hash}){
    const {task,pair}=select(model,input,department);
    if(before!==null&&!/^[NL]:\d+$/.test(before))fail('history cursor is invalid.');
    const core=await drive({...envelope(company,department,staff,task,pair),action:'CHAT_OPERATION',operation:before?.startsWith('L:')?'SUMMARY':'PAGE',...(before?.startsWith('N:')?{beforeSequence:Number(before.slice(2))}:{})});
-   if(core.fileId)await cache(company,task,core);
+   if(core.fileId)checkIndex(await index.read(indexId(company,task)),company,task,core.fileId);
    const previous=legacy(task,department,input.peer,{...core.summary,staffId:staff.staffId}),messages=before?.startsWith('L:')?[]:core.messages||[];
    let next=core.beforeSequence?'N:'+core.beforeSequence:null;
    if(!next&&messages.length<20){const end=before?.startsWith('L:')?Number(before.slice(2)):previous.length;if(end<0||end>previous.length)fail('history cursor is invalid.');const start=Math.max(0,end-(20-messages.length));messages.unshift(...previous.slice(start,end));next=start?'L:'+start:null;}

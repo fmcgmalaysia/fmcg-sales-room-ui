@@ -23,6 +23,25 @@ test('many sends and read receipts update one CMS task index; list does not scan
 test('a saved message whose CMS confirmation failed is retried without creating another message',async()=>{
  const f=fixture(),request={...f.base,requestId:f.uuid(1),input:{...f.input,action:'SEND',body:'Keep exactly once',requiresAck:false,baseSequence:0}};f.failUpdate();await assert.rejects(f.operations.save(request),/Index outage/);const result=await f.operations.save(request);assert.equal(result.unchanged,true);assert.equal(f.inserted,1);assert.equal([...f.pages.values()][0].messages.length,1);
 });
+test('opening and paging a conversation never update the CMS index and still verify its identity',async()=>{
+ const f=fixture();
+ for(let i=0;i<22;i++)await f.operations.save({...f.base,requestId:f.uuid(i),input:{...f.input,action:'SEND',body:'Message '+i,requiresAck:false,baseSequence:i}});
+ const row=[...f.indices.values()][0],request={...f.base,input:f.input};
+ const original=JSON.stringify(row);
+ f.failUpdate();
+ const page=await f.operations.page(request);
+ assert.equal(page.messages.length,20);
+ assert.equal(page.messages.at(-1).body,'Message 21');
+ assert.ok(page.before);
+ const earlier=await f.operations.page({...request,input:{...request.input,before:page.before}});
+ assert.equal(earlier.messages[0].body,f.old.body);
+ assert.equal(earlier.messages.at(-1).body,'Message 1');
+ assert.equal(JSON.stringify(f.indices.get(row._id)),original);
+ f.indices.set(row._id,{...row,manifestId:'Wrong Drive file'});
+ await assert.rejects(f.operations.page(request),/index identity requires review/);
+ f.indices.set(row._id,row);
+ await assert.rejects(f.operations.save({...request,requestId:f.uuid(100),input:{...f.input,action:'SEND',body:'Save still updates index',requiresAck:false,baseSequence:22}}),/Index outage/);
+});
 test('legacy content remains readable and personal READ/ACK create no activity events',async()=>{
  const f=fixture();let page=await f.operations.page({...f.base,input:f.input});assert.equal(page.messages[0].legacy,true);assert.equal(page.messages[0].body,f.old.body);
  await f.operations.save({...f.base,requestId:f.uuid(1),input:{...f.input,action:'LEGACY_READ',messageId:f.old.id}});await f.operations.save({...f.base,requestId:f.uuid(2),input:{...f.input,action:'LEGACY_ACK',messageId:f.old.id}});
