@@ -68,6 +68,9 @@ const css = `
 #charge-document-identity{display:contents}
 #documents.charge-form #charge-document-identity{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(95px,1fr);gap:10px;align-items:end}
 #documents.charge-form #charge-document-identity>label{margin:0;font-weight:600}
+.invoice-toolbar .invoice-legend{gap:5px 12px}
+.invoice-toolbar .invoice-legend li{display:inline-flex;align-items:center;gap:5px}
+.invoice-toolbar .invoice-legend strong{display:inline-grid;place-items:center;box-sizing:border-box;min-width:26px;height:20px;margin:0;padding:0 5px;border:1px solid #b9d0e4;border-radius:4px;background:#edf4fb;color:#234766;line-height:1}
 `;
 
 module.exports = { supportScript, supportModel, financeScript, css };
