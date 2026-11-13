@@ -36,33 +36,37 @@ function patchSupportScript(source) {
 }
 
 function patchInvoices(source) {
-  source = replace(source, "function invoiceTable(rows){", "function invoiceTable(rows,showCustomer=false){");
-  source = replace(source, "table([['Invoice'],['Details']", "table([['Invoice'],...(showCustomer?[['Customer']]:[]),['Details']");
-  source = replace(source, `+'</small></td><td class="invoice-details">'+esc(details)`,
-    `+'</small></td>'+(showCustomer?'<td>'+esc(row.customerName)+'</td>':'')+'<td class="invoice-details">'+esc(details)`);
-  source = replace(source, "$('order-filter').hidden=true;\n    document.querySelectorAll", "$('order-filter').hidden=true;$('invoice-month').hidden=view!=='transactions';\n    document.querySelectorAll");
-  const start = source.indexOf('    const customer=data.customers.find(row=>row.id===selectedCustomer);\n    if(!customer)');
-  const end = source.indexOf('    const order=activeOrder();', start);
-  assert.ok(start >= 0 && end > start);
-  source = source.slice(0,start)+`    const customer=data.customers.find(row=>row.id===selectedCustomer);
-    if(view==='transactions'){
-      const month=$('invoice-month').value;
-      const customers=customer?[customer]:data.customers;
-      const records=customers.flatMap(item=>[...item.invoices,...(item.transactions||[]).filter(row=>['CHARGE_INV','CHARGE_INVOICE_DOCUMENT'].includes(row.type))].map(row=>({...row,customerName:item.name})))
-        .filter(row=>!month||(!row.pending&&String(row.date||'').slice(0,7)===month));
-      const rows=matching(records)
-        .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-      const issued=records.filter(row=>!row.pending).length,pending=records.length-issued;
-      const legend=guides.map(([code,label])=>'<li><strong>'+esc(code)+'</strong> '+esc(label)+'</li>').join('');
-      const add='<button type="button" class="primary" data-new-charge="'+esc(customer?.id||'')+'" '+(customer?'':'disabled')+'>+ Add Invoice</button>';
-      $('content').innerHTML='<section class="invoice-toolbar"><span class="muted">'+(customer?'':'Select a customer to add an invoice.')+'</span>'+add+'<ul class="invoice-legend" aria-label="Document codes">'+legend+'</ul></section>'+invoiceTable(rows,!customer);
-      $('count').textContent=issued+' issued'+(pending?' · '+pending+' awaiting Finance':'')+(rows.length!==records.length?' · '+rows.length+' shown':'');return;
+  source = replace(source, "function matching(rows){const query=$('search').value.trim().toLowerCase(),customer=$('customer-filter').value;", "function matching(rows,filterCustomer=true){const query=$('search').value.trim().toLowerCase(),customer=filterCustomer?$('customer-filter').value:'';");
+  source = replace(source, "transactions:'Invoices & Payments'", "transactions:'Invoices & Payments',invoiceRegister:'Invoice Register'");
+  source = replace(source, "$('order-filter').hidden=true;\n    document.querySelectorAll", "$('order-filter').hidden=true;$('invoice-month').hidden=view!=='invoiceRegister';\n    document.querySelectorAll");
+  source = replace(source, "    const customer=data.customers.find(row=>row.id===selectedCustomer);\n    if(!customer)", "    if(view==='invoiceRegister'){renderInvoiceRegister();return;}\n    const customer=data.customers.find(row=>row.id===selectedCustomer);\n    if(!customer)");
+  source = replace(source, "    $('company-name').textContent=customer.name;", "    if(view!=='transactions')$('company-name').textContent=customer.name;");
+  source = replace(source, `<strong>'+esc(customer.name)+'</strong><button type="button" class="primary" data-new-charge`, `<button type="button" class="primary invoice-add" data-new-charge`);
+  source = replace(source, "$('search').oninput=render;", `$('search').oninput=render;
+  const monthParts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit'}).formatToParts(new Date()).map(part=>[part.type,part.value]));
+  $('invoice-month').value=monthParts.year+'-'+monthParts.month;
+  $('invoice-month').onchange=render;`);
+  return replace(source, '  function chargeInvoiceDetails(row){', `  function renderInvoiceRegister(){
+    const month=$('invoice-month').value;
+    if(!month){$('count').textContent='';$('content').innerHTML='<div class="empty">Select an invoice month.</div>';return;}
+    const invoices=new Map();
+    for(const customer of data.customers){
+      const issued=(customer.transactions||[]).filter(row=>row.type==='SALES_INV'||row.type==='CHARGE_INV');
+      for(const row of issued){
+        if(!row.id||row.pending||row.customerId!==customer.id||(row.company&&row.company!==data.company)||String(row.date||'').slice(0,7)!==month)continue;
+        invoices.set(row.id,{...row,customerName:customer.name});
+      }
     }
-    if(!customer){$('content').innerHTML='<div class="empty">Select a customer to view order tasks.</div>';$('count').textContent='';return;}
-    $('company-name').textContent=customer.name;
-`+source.slice(end);
-  source = replace(source, '<option value="">Select Customer</option>', '<option value="">All Customers</option>');
-  return replace(source, "$('search').oninput=render;", "$('search').oninput=render;$('invoice-month').onchange=render;");
+    const rows=matching([...invoices.values()],false).sort((a,b)=>b.date.localeCompare(a.date)||String(a.number).localeCompare(String(b.number)));
+    $('count').textContent=invoices.size+' issued'+(rows.length!==invoices.size?' · '+rows.length+' shown':'');
+    $('content').innerHTML=table([['Invoice'],['Customer'],['Invoice Date'],['Type'],['Currency'],['Invoice Amount',true]],rows.map(row=>{
+      const charge=row.type==='CHARGE_INV',label=esc(row.number);
+      const invoice=charge?(/^[A-Za-z0-9_-]{10,200}$/.test(row.fileId||'')?'<a class="link" target="_blank" rel="noopener noreferrer" href="https://drive.google.com/file/d/'+encodeURIComponent(row.fileId)+'/view">'+label+'</a>':label):'<button type="button" class="link" data-invoice="'+esc(row.id)+'">'+label+'</button>';
+      return '<tr><td>'+invoice+'</td><td>'+esc(row.customerName)+'</td><td>'+day(row.date)+'</td><td>'+(charge?'Charge':'Goods')+'</td><td>'+esc(row.currency)+'</td><td class="num">'+(Number.isSafeInteger(row.amountCents)?number(row.amountCents/100,2):'—')+'</td></tr>';
+    }),'invoice-register');
+  }
+
+  function chargeInvoiceDetails(row){`);
 }
 
 function patchDeskDelivery(source) {
@@ -79,6 +83,7 @@ function patchDeskDelivery(source) {
 
 function patchSupportHtml(source, previousBuild, build) {
   source = source.replaceAll(previousBuild, build);
+  source = replace(source, '<button data-view="transactions">Invoices &amp; Payments</button>', '<button data-view="transactions">Invoices &amp; Payments</button><button data-view="invoiceRegister">Invoice Register</button>');
   source = replace(source, '<select id="order-filter"', '<input id="invoice-month" type="month" aria-label="Invoice month" hidden><select id="order-filter"');
   source = replace(source, 'task-chat.js?v=20261103-department-chat-prompts-v1', 'task-chat.js?v='+build);
   return replace(source, 'desk-delivery.js?v=20261111-warehouse-desk-workflow-v1', 'desk-delivery.js?v='+build);
@@ -123,7 +128,9 @@ const css = `
 .overview-entry-cell .customer-order-entry svg{transition:transform .18s ease}
 .overview-entry-cell .customer-order-entry:is(:hover,:focus-visible) svg{transform:translateX(3px)}
 @media(prefers-reduced-motion:reduce){.overview-entry-cell .customer-order-entry svg{transition:none}}
-.invoice-toolbar button:disabled{opacity:.55}
+.invoice-toolbar .invoice-add{grid-column:2}
+.work-table.invoice-register{min-width:640px}
+.invoice-register td:nth-child(2){width:35%;overflow-wrap:anywhere}
 `;
 
 module.exports = { patchSupportScript, patchSupportHtml, patchDeskDelivery, patchTaskChat, css };
