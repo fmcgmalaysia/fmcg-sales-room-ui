@@ -46,14 +46,14 @@ function taskChatRun_(store,input,hash,clock){
  if(input.operation==='SUMMARY')return result({});
  // List summaries never open body pages. A page/save request recovers an ambiguous tail.
  let recovered=false;
- const tail=readPage(Math.floor(thread.sequence/TASK_CHAT_PAGE_SIZE));
+ const tailNumber=Math.floor(thread.sequence/TASK_CHAT_PAGE_SIZE),tail=readPage(tailNumber);
  if(tail)for(const message of tail.messages.filter(m=>m.sequence>thread.sequence).sort((a,b)=>a.sequence-b.sequence)){accept(message);recovered=true;}
  if(recovered)commitHead();
  if(input.operation==='PAGE'){
   const before=input.beforeSequence==null?thread.sequence+1:input.beforeSequence;
   if(!Number.isSafeInteger(before)||before<1||before>thread.sequence+1)fail('INVALID_CURSOR');
   const limit=20,messages=[];let next=before-1;
-  while(next>0&&messages.length<limit){const page=readPage(pageNumber(next));if(!page)fail('PAGE_MISSING');const selected=page.messages.filter(m=>m.sequence<=next).sort((a,b)=>b.sequence-a.sequence).slice(0,limit-messages.length);if(!selected.length)fail('PAGE_MISSING');messages.push(...selected);next=selected[selected.length-1].sequence-1;}
+  while(next>0&&messages.length<limit){const number=pageNumber(next),page=number===tailNumber?tail:readPage(number);if(!page)fail('PAGE_MISSING');const selected=page.messages.filter(m=>m.sequence<=next).sort((a,b)=>b.sequence-a.sequence).slice(0,limit-messages.length);if(!selected.length)fail('PAGE_MISSING');messages.push(...selected);next=selected[selected.length-1].sequence-1;}
   return result({messages:messages.reverse().map(decorate),beforeSequence:next>0?next+1:null});
  }
  if(!/^[a-f0-9-]{36}$/i.test(input.requestId||''))fail('INVALID_REQUEST');
