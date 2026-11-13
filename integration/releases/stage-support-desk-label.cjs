@@ -3,8 +3,10 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const { compactHeader, compactOverview, compactTransactions, chargeInvoiceForm, css } = require('./support-compact-document-header.cjs');
+const layout = require('./support-desk-layout.cjs');
 
 const build = '20261113-support-workroom-compact-v2';
+const layoutBuild = '20261113-support-desk-layout-v1';
 const previousBuild = '20261111-support-split-quantity-v1';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const originals = {
@@ -58,6 +60,17 @@ function stageSupportDeskLabel(site) {
   sources['workroom-model.js'] = replaceOnce(sources['workroom-model.js'],
     "entries||[]).filter(row=>row.customerId===customer.id).concat(",
     "entries||[]).filter(row=>row.customerId===customer.id).map(row=>row.type==='CHARGE_INV'?{...row,...invoicePayment({...row,invoice:row},fulfilment)}:row).concat(");
+  const deliveryFile = path.join(site, 'master-shared', 'desk-delivery.js');
+  const delivery = fs.readFileSync(deliveryFile);
+  assert.equal(hash(delivery), '5614342aab0341c8214fb63c4782b7d54e560634e75e3dd2ee83ba7b1ea76073');
+  const chatFile = path.join(site, 'master-shared', 'task-chat.js');
+  const chat = fs.readFileSync(chatFile);
+  assert.equal(hash(chat), 'fc48ed4766d7bd0506356fbd4b3c2dd5de540872fe5673514383e18a11d33f78');
+  sources['workroom.js'] = layout.patchSupportScript(sources['workroom.js']);
+  sources['workroom.html'] = layout.patchSupportHtml(sources['workroom.html'], build, layoutBuild);
+  sources['workroom.css'] += layout.css;
+  fs.writeFileSync(deliveryFile, layout.patchDeskDelivery(delivery.toString('utf8')));
+  fs.writeFileSync(chatFile, layout.patchTaskChat(chat.toString('utf8')));
   for (const [name, content] of Object.entries(sources)) fs.writeFileSync(path.join(directory, name), content);
 }
 
