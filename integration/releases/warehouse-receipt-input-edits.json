@@ -1,0 +1,116 @@
+{
+  "warehouse-room/app.js": {
+    "before": "b8e18d11a166cad00e7b06022cfccd16e244cbc89a55eb5ce1e8ac07012483b8",
+    "after": "e63406c3aebec930d090a0d786b758540725f6e9335afe845af2ec03f4fa0682",
+    "hunks": [
+      {
+        "index": 106,
+        "before": [
+          "function receiptRowMarkup(line,index){const editable=receiptEditable(index);return `<section class=\"receive-line\" data-line=\"${index}\"><span class=\"receipt-line-number\">${String(index+1).padStart(2,'0')}</span><div class=\"receipt-product\">${receiptThumbnail(line)}<div><span class=\"product-code\">${esc(line.barcode)}</span><strong class=\"product-name\">${esc(line.name)}</strong><span class=\"product-packing\">${esc(line.packing)}</span>${editable&&!correcting&&line.accepted?'<small class=\"receipt-prior\">Previously received 已收：'+line.accepted+'</small>':''}${receiptRowActions(line,index)}</div></div><div class=\"receipt-quantities\"><div class=\"readonly\"><span class=\"receipt-qty-label\">Expected 应收</span><b>${line.planned}</b></div>${editable?`<label><span class=\"receipt-qty-label\">${correcting?'Correct Total 更正累计':'This Receipt 本次收货'}</span><input data-field=\"accepted\" aria-label=\"Accepted ${esc(line.barcode)}\" type=\"number\" inputmode=\"numeric\" min=\"0\" max=\"${correcting?line.planned:line.remaining}\" step=\"1\" value=\"${correcting?line.accepted:0}\"></label>`:`<div class=\"readonly\"><span class=\"receipt-qty-label receipt-qty-saved\">Received 已收</span><b>${line.accepted}</b></div>`}<div class=\"readonly\"><span class=\"receipt-qty-label\">Pending 待收</span><b data-waiting>${line.remaining}</b></div>${editable?`<label data-rejected-label hidden>Rejected 拒收<input data-field=\"rejected\" aria-label=\"Rejected ${esc(line.barcode)}\" type=\"number\" inputmode=\"numeric\" min=\"0\" max=\"9999\" step=\"1\" value=\"${correcting?line.rejected:0}\"></label>`:''}</div>${editable&&!correcting?receiptPhotoField(line):''}${editable?`<div class=\"receipt-reason\"><label data-reason-label>Pending reason 待收原因</label><select data-field=\"kind\" aria-label=\"Pending reason ${esc(line.barcode)}\" ${correcting?'disabled':''}><option value=\"DELIVERY\">Select reason 选择原因</option><option value=\"SHORT\">Short delivery 供应商少发货</option><option value=\"DAMAGED\">Damaged goods rejected 货物损坏，拒收</option><option value=\"WRONG\">Wrong goods supplied 供应商发错货</option></select><input data-field=\"reason\" maxlength=\"1000\" aria-label=\"Reason ${esc(line.barcode)}\" hidden><span data-receipt-normal hidden></span></div>${line.issue?'<label class=\"resolve\" hidden><input type=\"checkbox\" data-field=\"resolveIssue\">Resolve Issue 解决原收货异常</label>':''}`:''}${line.receivingStoppedWaiting&&!entryReadOnly?'<p class=\"receipt-stopped-note\">Purchase has confirmed: do not wait for the remaining goods.<br>采购员已明确指示：无需等待剩余未到的货。</p>':''}</section>`;}"
+        ],
+        "after": [
+          "function receiptRowMarkup(line,index){const editable=receiptEditable(index);return `<section class=\"receive-line\" data-line=\"${index}\"><span class=\"receipt-line-number\">${String(index+1).padStart(2,'0')}</span><div class=\"receipt-product\">${receiptThumbnail(line)}<div><span class=\"product-code\">${esc(line.barcode)}</span><strong class=\"product-name\">${esc(line.name)}</strong><span class=\"product-packing\">${esc(line.packing)}</span>${editable&&!correcting&&line.accepted?'<small class=\"receipt-prior\">Previously received 已收：'+line.accepted+'</small>':''}${receiptRowActions(line,index)}</div></div><div class=\"receipt-quantities\"><div class=\"readonly\"><span class=\"receipt-qty-label\">Expected 应收</span><b>${line.planned}</b></div>${editable?`<label><span class=\"receipt-qty-label\">${correcting?'Correct Total 更正累计':'This Receipt 本次收货'}</span><input data-field=\"accepted\" aria-label=\"Accepted ${esc(line.barcode)}\" type=\"number\" inputmode=\"numeric\" min=\"0\" max=\"${correcting?line.planned:line.remaining}\" step=\"1\" value=\"${correcting?line.accepted:''}\"></label>`:`<div class=\"readonly\"><span class=\"receipt-qty-label receipt-qty-saved\">Received 已收</span><b>${line.accepted}</b></div>`}<div class=\"readonly\"><span class=\"receipt-qty-label\">Pending 待收</span><b data-waiting>${line.remaining}</b></div>${editable?`<label data-rejected-label hidden>Rejected 拒收<input data-field=\"rejected\" aria-label=\"Rejected ${esc(line.barcode)}\" type=\"number\" inputmode=\"numeric\" min=\"0\" max=\"9999\" step=\"1\" value=\"${correcting?line.rejected:0}\"></label>`:''}</div>${editable&&!correcting?receiptPhotoField(line):''}${editable?`<div class=\"receipt-reason\"><label data-reason-label>Pending reason 待收原因</label><select data-field=\"kind\" aria-label=\"Pending reason ${esc(line.barcode)}\" ${correcting?'disabled':''}><option value=\"DELIVERY\">Select reason 选择原因</option><option value=\"SHORT\">Short delivery 供应商少发货</option><option value=\"DAMAGED\">Damaged goods rejected 货物损坏，拒收</option><option value=\"WRONG\">Wrong goods supplied 供应商发错货</option></select><input data-field=\"reason\" maxlength=\"1000\" aria-label=\"Reason ${esc(line.barcode)}\" hidden><span data-receipt-normal hidden></span></div>${line.issue?'<label class=\"resolve\" hidden><input type=\"checkbox\" data-field=\"resolveIssue\">Resolve Issue 解决原收货异常</label>':''}`:''}${line.receivingStoppedWaiting&&!entryReadOnly?'<p class=\"receipt-stopped-note\">Purchase has confirmed: do not wait for the remaining goods.<br>采购员已明确指示：无需等待剩余未到的货。</p>':''}</section>`;}"
+        ]
+      },
+      {
+        "index": 127,
+        "before": [
+          "function save(){if(entryReadOnly||saving||receiptPhotoReading||selected.lines.every(line=>line.receivingStoppedWaiting))return;if(!pending){const changes=[];for(const section of $('entryLines').querySelectorAll('[data-line]')){const index=Number(section.dataset.line);if(!receiptEditable(index))continue;const line=selected.lines[index],value=field=>section.querySelector(`[data-field=\"${field}\"]`),accepted=Number(value('accepted').value),rejected=Number(value('rejected').value),kind=value('kind').value,reason=value('reason').value.trim();if(line.receivingStoppedWaiting)continue;if(correcting&&accepted===line.accepted&&rejected===line.rejected)continue;const photo=correcting?undefined:receiptPhotos.get(line.taskId);if(!correcting&&!accepted&&!rejected&&kind==='DELIVERY'){if(photo){$('entryError').textContent='Enter the receipt quantity or shortage for the row with a photo. 请填写该照片对应的收货数量或少货原因。';return;}continue;}if(!Number.isSafeInteger(accepted)||!Number.isSafeInteger(rejected)||accepted<0||rejected<0||accepted>(correcting?line.planned:line.remaining)){$('entryError').textContent='请填写有效整数箱数，本次可用数量不可超过待收数量。';return;}if((correcting||accepted<line.remaining||rejected>0||kind!=='DELIVERY'||line.issue)&&!reason){$('entryError').textContent='请填写分批到货、少货、拒收或解决异常的原因。';return;}if(!correcting&&accepted<line.remaining&&kind==='DELIVERY'){$('entryError').textContent='尚未收齐，请选择分批送货或少货原因。';return;}changes.push({taskId:line.taskId,accepted,rejected,kind,reason,resolveIssue:value('resolveIssue')?.checked===true,...(photo?{photo}:{})});}if(!changes.length){$('entryError').textContent='请先填写本次收货数量或异常。';return;}pending={type:'WAREHOUSE_RECEIPT_REQUEST',company,requestId:crypto.randomUUID(),input:{action:correcting?'CORRECT':'RECEIVE',id:selected.id,version:selected.version,lines:changes}};}"
+        ],
+        "after": [
+          "function save(){if(entryReadOnly||saving||receiptPhotoReading||selected.lines.every(line=>line.receivingStoppedWaiting))return;if(!pending){const changes=[];for(const section of $('entryLines').querySelectorAll('[data-line]')){const index=Number(section.dataset.line);if(!receiptEditable(index))continue;const line=selected.lines[index],value=field=>section.querySelector(`[data-field=\"${field}\"]`),accepted=Number(value('accepted').value),rejected=Number(value('rejected').value),kind=value('kind').value,reason=value('reason').value.trim();if(line.receivingStoppedWaiting)continue;if(value('accepted').validity.badInput){entryError.textContent='Enter whole cartons. 请输入整数箱数。';return;}if(value('accepted').value.trim()===''){if(correcting||receiptPhotos.has(line.taskId)){entryError.textContent='Enter the receipt quantity. 请输入本次收货数量。';return;}continue;}if(correcting&&accepted===line.accepted&&rejected===line.rejected)continue;const photo=correcting?undefined:receiptPhotos.get(line.taskId);if(!Number.isSafeInteger(accepted)||!Number.isSafeInteger(rejected)||accepted<0||rejected<0||accepted>(correcting?line.planned:line.remaining)){$('entryError').textContent='Enter whole cartons within the task quantity. If more cartons arrived, contact Purchase immediately and enter no more than the task allows. 请输入任务范围内的整数箱数。若实际到货超量，请立即联系采购员，最多输入本任务允许的数量。';return;}if((correcting||accepted<line.remaining||rejected>0||kind!=='DELIVERY'||line.issue)&&!reason){$('entryError').textContent='请填写分批到货、少货、拒收或解决异常的原因。';return;}if(!correcting&&accepted<line.remaining&&kind==='DELIVERY'){$('entryError').textContent='尚未收齐，请选择分批送货或少货原因。';return;}changes.push({taskId:line.taskId,accepted,rejected,kind,reason,resolveIssue:value('resolveIssue')?.checked===true,...(photo?{photo}:{})});}if(!changes.length){$('entryError').textContent='请先填写本次收货数量或异常。';return;}pending={type:'WAREHOUSE_RECEIPT_REQUEST',company,requestId:crypto.randomUUID(),input:{action:correcting?'CORRECT':'RECEIVE',id:selected.id,version:selected.version,lines:changes}};}"
+        ]
+      },
+      {
+        "index": 137,
+        "before": [
+          "  const index=Number(section.dataset.line);if(!receiptEditable(index))return;const line=selected.lines[index],field=name=>section.querySelector('[data-field=\"'+name+'\"]'),accepted=Number(field('accepted').value),waiting=Math.max(0,line.remaining-accepted);"
+        ],
+        "after": [
+          "  const index=Number(section.dataset.line);if(!receiptEditable(index))return;const line=selected.lines[index],field=name=>section.querySelector('[data-field=\"'+name+'\"]'),input=field('accepted'),accepted=Number(input.value),waiting=Math.max(0,line.remaining-accepted);"
+        ]
+      },
+      {
+        "index": 140,
+        "before": [
+          "  const select=field('kind'),reason=field('reason');section.querySelector('.receipt-reason').hidden=!correcting&&waiting===0;select.hidden=correcting||waiting===0;select.required=!select.hidden;receiptPhotoLocks(section);section.querySelector('[data-reason-label]').hidden=select.hidden;"
+        ],
+        "after": [
+          "  const select=field('kind'),reason=field('reason'),blank=input.value.trim()==='',over=!blank&&accepted>(correcting?line.planned:line.remaining);const needsReason=!blank&&!over&&waiting>0;section.querySelector('.receipt-reason').hidden=!correcting&&!needsReason;select.hidden=correcting||!needsReason;select.required=!select.hidden;input.setAttribute('aria-invalid',String(over));receiptPhotoLocks(section);section.querySelector('[data-reason-label]').hidden=select.hidden;",
+          "  const warning='More than the task quantity. Contact Purchase and enter at most '+input.max+' CTN. 超过任务箱数，请联系采购并输入不超过 '+input.max+' 箱。';",
+          "  if(over){section.dataset.receiptWarning=warning;}",
+          "  else delete section.dataset.receiptWarning;"
+        ]
+      },
+      {
+        "index": 143,
+        "before": [],
+        "after": [
+          "  if(blank||over){field('rejected').value=0;const resolve=field('resolveIssue');if(resolve)resolve.checked=false;return;}"
+        ]
+      },
+      {
+        "index": 148,
+        "before": [],
+        "after": [
+          " const excess=$('entryLines').querySelector('[data-receipt-warning]');",
+          " const warning=$('entryWarning');",
+          " if(excess){warning.dataset.excess='1';warning.textContent=excess.dataset.receiptWarning;}",
+          " else if(warning.dataset.excess){delete warning.dataset.excess;warning.textContent=correcting?'Correct total 更正累计数量 · Reason required 必须填写原因':'';}"
+        ]
+      },
+      {
+        "index": 153,
+        "before": [
+          "  if(!accepted&&!rejected&&kind==='DELIVERY')return true;"
+        ],
+        "after": [
+          "  if(field('accepted').value.trim()==='')return true;"
+        ]
+      }
+    ]
+  },
+  "warehouse-room/index.html": {
+    "before": "b5adbb41ca918450fe45c54f4c2e5080af1b975ad2453f54a25a745d3650e6a3",
+    "after": "6572a3edf3e1f2b347aca7d0bdfedba2e225946658fbf0aa78d259625809cf18",
+    "hunks": [
+      {
+        "index": 2,
+        "before": [
+          "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261113-warehouse-delivery-compact-v2\"><title>Warehouse Department</title><link rel=\"stylesheet\" href=\"../account-room/style.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"style.css?v=20261113-shipment-delivery-v1\"><link rel=\"stylesheet\" href=\"../master-shared/task-signals.css?v=20261018-warehouse-workroom-v1\"><script src=\"../master-shared/task-signals.js?v=20261018-task-chat-drive-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/stock-exceptions.css?v=20261101-month-end-stock-loss-v2\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-warehouse-workroom-v1\"><script defer src=\"../master-shared/fixed-header.js?v=20261018-warehouse-workroom-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261020-sales-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"../master-shared/mobile-menu.css?v=20261018-department-mobile-qty-v1\"><link rel=\"stylesheet\" href=\"../master-shared/quantity-alignment.css?v=20261018-department-mobile-qty-v1\"><script src=\"../master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/action-affordances.css?v=20261020-action-affordances-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261113-warehouse-delivery-compact-v2\"></head>"
+        ],
+        "after": [
+          "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261114-warehouse-receipt-input-v1\"><title>Warehouse Department</title><link rel=\"stylesheet\" href=\"../account-room/style.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"style.css?v=20261113-shipment-delivery-v1\"><link rel=\"stylesheet\" href=\"../master-shared/task-signals.css?v=20261018-warehouse-workroom-v1\"><script src=\"../master-shared/task-signals.js?v=20261018-task-chat-drive-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/stock-exceptions.css?v=20261101-month-end-stock-loss-v2\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-warehouse-workroom-v1\"><script defer src=\"../master-shared/fixed-header.js?v=20261018-warehouse-workroom-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261020-sales-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261114-warehouse-receipt-input-v1\"><link rel=\"stylesheet\" href=\"../master-shared/mobile-menu.css?v=20261018-department-mobile-qty-v1\"><link rel=\"stylesheet\" href=\"../master-shared/quantity-alignment.css?v=20261018-department-mobile-qty-v1\"><script src=\"../master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/action-affordances.css?v=20261020-action-affordances-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261113-warehouse-delivery-compact-v2\"></head>"
+        ]
+      },
+      {
+        "index": 12,
+        "before": [
+          "<script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"workroom.js?v=20261111-warehouse-desk-workflow-v1\"></script><script src=\"dispatch.js?v=20261018-warehouse-workroom-v1\"></script><script src=\"stock-control-link.js?v=20261101-month-end-stock-loss-v2\"></script><script src=\"../master-shared/desk-delivery.js?v=20261113-shipment-delivery-v1\"></script><script src=\"app.js?v=20261111-warehouse-desk-workflow-history-v2\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261101-customer-loaded-records-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script></body></html>"
+        ],
+        "after": [
+          "<script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"workroom.js?v=20261111-warehouse-desk-workflow-v1\"></script><script src=\"dispatch.js?v=20261018-warehouse-workroom-v1\"></script><script src=\"stock-control-link.js?v=20261101-month-end-stock-loss-v2\"></script><script src=\"../master-shared/desk-delivery.js?v=20261113-shipment-delivery-v1\"></script><script src=\"app.js?v=20261114-warehouse-receipt-input-v1\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261101-customer-loaded-records-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script></body></html>"
+        ]
+      }
+    ]
+  },
+  "warehouse-room/workroom.css": {
+    "before": "23354eba4460a472f0e53dade15b018328d08335b2f0673db86eaa3e826ea9ab",
+    "after": "b6452b441464562a0847f266c0118eaa7e9a05764a703ca11d408f4f99bf2dd5",
+    "hunks": [
+      {
+        "index": 242,
+        "before": [],
+        "after": [
+          "",
+          "@media(min-width:561px){",
+          "  #entry{width:min(1020px,calc(100vw - 32px))}",
+          "  #entry .receipt-columns>:nth-child(2){padding-inline-start:44px}",
+          "}",
+          "#entry input[type=number][data-field=accepted]:out-of-range{border-color:#E51B2B;color:#991b1b;background:#fff1f2}",
+          "#entry #entryWarning[data-excess]{color:#b91c1c;background:#fff1f2;border-color:#f4bdc4}"
+        ]
+      }
+    ]
+  }
+}
