@@ -76,6 +76,15 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const task=s.tasks.find(task=>task.title===id);if(!task)throw Error('Task missing.');
         const order=s.orders.find(order=>order.title===task.description&&order.sourceLineId===task.imageAltText);if(!order||order.salesInvoiceNumber)throw Error('Customer invoice has locked this transaction.');return {row,task,order};};
       const edit=(task,patch)=>{const existing=updates.find(change=>change.id===task._id);if(existing)Object.assign(existing.patch,patch);else updates.push({id:task._id,expected:taskEditVersion(task),patch,orderId:task.description,lineId:task.imageAltText});};
+      const recordPrice=(task,event)=>{
+        const supplierChanged='supplierId' in event.after&&event.after.supplierId!==task.supplierId;
+        const priceChanged=prices.some(key=>key in event.after&&event.after[key]!==task[key]);
+        if(task.ourPoNumber){
+          if(priceChanged||supplierChanged)events.push(event);
+        }else if(operation==='PLAN')updates[0].draftPriceBefore=event.before;
+        else if(supplierChanged)events.push({...event,before:{supplierId:task.supplierId??null},after:{supplierId:event.after.supplierId}});
+        else if(event.calculation)updates[0].draftCostCalculation=event.calculation;
+      };
       if(operation==='EDIT') {
         if(!Array.isArray(input.edits)||(!input.edits.length&&!input.taskIds)||input.edits.length>100||new Set(input.edits.map(row=>row.taskId)).size!==input.edits.length)throw Error('Select distinct task edits.');
         for(const item of input.edits) {
@@ -91,7 +100,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
           if('lpPc' in patch && !('lpCtn' in patch)){if(!Number.isFinite(order.orderId)||order.orderId<=0)throw Error('EA is unavailable.');patch.lpCtn=Number((patch.lpPc*order.orderId).toFixed(2));}
           const combined={...task,...patch};if(prices.every(key=>typeof combined[key]==='number')&&combined.lpCtn*(1-combined.disc1)*(1-combined.disc2)-combined.disc3<0)throw Error('Net cost cannot be negative.');
           patch.manualCostField=[...new Set([...(task.manualCostField||[]),...Object.keys(patch).filter(key=>prices.includes(key))])];
-          edit(task,patch);events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch});
+          edit(task,patch);recordPrice(task,{taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch});
         }
         if(input.taskIds){const current=s.workspace.tasks.filter(row=>row.customerId===input.customerId&&!row.archived);
           if(input.displayRows!==undefined)displayOrder=preparePurchaseDisplayOrder(s.workspace,input);
@@ -117,7 +126,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const average=input.lineCost/input.cartons;
         const patch={lpCtn:average,lpPc:average/order.orderId,disc1:0,disc2:0,disc3:0,manualCostField:[...new Set([...(task.manualCostField||[]),...prices])]};
         edit(task,patch);
-        events.push({taskId:task.title,action:'PURCHASE_AVERAGE_COST_APPLIED',before:Object.fromEntries(prices.map(key=>[key,task[key]??null])),after:Object.fromEntries(prices.map(key=>[key,patch[key]])),calculation:{currency:'MYR',lineCost:input.lineCost,totalCtn:input.cartons,averageCostCtn:average,ea:order.orderId,note},supplierId:task.supplierId});
+        recordPrice(task,{taskId:task.title,action:'PURCHASE_AVERAGE_COST_APPLIED',before:Object.fromEntries(prices.map(key=>[key,task[key]??null])),after:Object.fromEntries(prices.map(key=>[key,patch[key]])),calculation:{currency:'MYR',lineCost:input.lineCost,totalCtn:input.cartons,averageCostCtn:average,ea:order.orderId,note},supplierId:task.supplierId});
       } else if(operation==='PLAN') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim(),plan=readPurchasePlan(task,s.activity);
         if(taskEditVersion(task)!==input.version||plan.revision!==input.planRevision)throw Error('Procurement plan changed. Refresh before saving; your input is retained.');
@@ -150,7 +159,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(extra>0&&(!costing&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true)))throw Error('Confirm extra cartons and whether they are free goods or paid procurement; an additional purchase reason is required.');
         if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
         edit(task,patch);
-        if(Object.keys(patch).length)events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
+        if(Object.keys(patch).length)recordPrice(task,{taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
         updates[0].planRevision=plan.revision;
         updates[0].receiptPoId=task.ourPoNumber?operationId(company,'PURCHASE_ORDER',s.tasks.filter(row=>row.ourPoNumber===task.ourPoNumber&&row.supplierId===task.supplierId).map(row=>row.title).sort()):null;
         if(batchContext){updates[0].shipmentBatch=batchContext;updates[0].shipmentBatchRoot=demandTask.title;}
@@ -209,11 +218,15 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         events.push({taskId:childId,action:'SPECIAL_PURCHASE_ADDED',parentTaskId:task.title,submissionId:s.orders.find(order=>order.title===task.description&&order.sourceLineId===task.imageAltText).submissionId,
           extraQty:input.extraQty,reason,stockDestination:'AVATA',allocationPending:true});
       }
-      for(const change of updates.filter(change=>change.sharesRevision!==undefined)){const original=s.tasks.find(task=>task._id===change.id);change.targetVersion=taskEditVersion({...original,...change.patch});}
+      for(const change of updates.filter(change=>change.sharesRevision!==undefined||change.draftPriceBefore)){const original=s.tasks.find(task=>task._id===change.id);change.targetVersion=taskEditVersion({...original,...change.patch});}
       // Capture exact saved inputs once on the existing journal, including legacy edit paths.
       for(const event of events.filter(event=>['PURCHASE_PLAN_SAVED','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PO_ASSIGNED'].includes(event.action))){
         const task=s.tasks.find(task=>task.title===event.taskId),change=updates.find(change=>change.id===event.taskId),order=s.orders.find(order=>order.title===task?.description&&order.sourceLineId===task?.imageAltText);
         if(!task||!change||!order)continue;
+        if(operation==='PLAN'&&!task.ourPoNumber){
+          event.commercialChanged=false;
+          continue;
+        }
         const beforePlan=readPurchasePlan(task,s.activity),planEvent=events.find(item=>item.taskId===task.title&&item.action==='PURCHASE_PLAN_SAVED'),afterPlan=planEvent?{...beforePlan,totalCtn:planEvent.totalCtn,costing:planEvent.costing||null}:beforePlan;
         event.commercialBefore=commercialSnapshot(task,beforePlan,order);event.commercialAfter=commercialSnapshot({...task,...change.patch},afterPlan,order);
         event.commercialChanged=JSON.stringify(event.commercialBefore)!==JSON.stringify(event.commercialAfter);event.amendment=Boolean(task.ourPoNumber)&&event.commercialChanged;

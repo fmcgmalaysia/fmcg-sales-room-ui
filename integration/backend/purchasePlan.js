@@ -113,8 +113,9 @@ export function confirmedPurchaseState({company,tasks,activity,recoveringPoReque
     const price=plan.events.find(event=>event.action==='PURCHASE_PRICE_SAVED');
     let prior={...current};
     if(taskEditVersion(current)!==change.expected){
-      if(!price||canonical(price.after)!==canonical(change.patch)||Object.keys(change.patch).some(key=>!Object.hasOwn(price.before,key)))recoveryEvidenceError();
-      prior={...current,...price.before};
+      const before=price?price.before:change.draftPriceBefore;
+      if(!before||(price?canonical(price.after)!==canonical(change.patch):Boolean(current.ourPoNumber))||Object.keys(change.patch).some(key=>!Object.hasOwn(before,key)))recoveryEvidenceError();
+      prior={...current,...before};
       if(taskEditVersion(prior)!==change.expected||taskEditVersion({...prior,...change.patch})!==taskEditVersion(current))recoveryEvidenceError();
     }
     if(change.targetVersion&&taskEditVersion({...prior,...change.patch})!==change.targetVersion)recoveryEvidenceError();

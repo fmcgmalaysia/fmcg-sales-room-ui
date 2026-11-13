@@ -61,6 +61,12 @@ test('first confirmed B uses existing root PLAN once, opens its PO, and later A 
  const added=await add({...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:40,supplierId:'S',poNumber:'',costing:cost(40),reason:''}});
  assert.notEqual(added.sourceTaskId,f.id);assert.deepEqual(f.task(),b);const workspace=f.workspace(),root=workspace.tasks.find(row=>row.id===f.id);assert.equal(root.ord,250);assert.equal(root.sourcing.orderedCtn,70);assert.equal(root.sourcing.unplacedCtn,180);
  const orders=projectPurchaseOrders({company:'NCT',workspace,records:[]}),warehouse=projectWarehouseOrders({company:'NCT',purchaseOrders:orders,tasks:workspace.tasks,activity:[...f.rows.values()].filter(row=>row.action)});assert.equal(warehouse.length,1);assert.deepEqual(copy(warehouse[0].lines.map(line=>line.taskId)),[f.id]);assert.equal(warehouse[0].lines[0].planned,30);
+ const source=workspace.tasks.find(row=>row.id===added.sourceTaskId);
+ const costing=cost(40);costing.prices.lpPc=2;costing.prices.lpCtn=32;
+ await f.operate({...f.base,requestId:'44444444-4444-4444-8444-444444444444',operation:'PLAN',input:{taskId:source.id,version:source.editVersion,planRevision:source.procurement.revision,transportMode:'SUPPLIER_DELIVER',totalCtn:40,draftPlan:true,costing,reason:''}});
+ assert.equal(f.task(source.id).lpCtn,32);
+ assert.equal([...f.rows.values()].filter(event=>event.action==='PURCHASE_PRICE_SAVED').length,0);
+ assert.deepEqual(f.task(),b);
 });
 
 test('customer demand rejects Purchase, Account, Warehouse, Top Management and forged client role before any write',async()=>{
@@ -215,7 +221,7 @@ test('unassigned supplier source plans become separate Account POs only when ass
  for(const [index,id] of [f.id,result.sourceTaskId].entries())await f.operate({...f.base,requestId:String(index+4).repeat(8)+'-4444-4444-8444-444444444444',operation:'PO',input:{taskIds:[id],versions:{[id]:f.workspace().tasks.find(row=>row.id===id).editVersion},poNumber:'NCT-PO-'+index}});
  const pos=await poOps.list('NCT',f.base.staff);assert.equal(pos.length,2);assert.deepEqual(copy(pos.map(row=>row.amount).sort((a,b)=>a-b)),[1168,10880]);assert.equal(f.task().purchaseQtyInCtn,250);
 });
-test('manual prices derive cartons, preserve original/source quote, audit once and replay saved result',async()=>{const f=fixture(),before=copy(f.task()),input={edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpPc:2,disc3:3}}]};const result=await f.operate({...f.base,operation:'EDIT',input});assert.equal(result.ok,true);assert.equal(f.task().lpCtn,32);assert.deepEqual(f.task().originalCostSnapshot,before.originalCostSnapshot);assert.equal(f.rows.get('NCTOrders/O0').sellingPricePc,14.66);assert(f.task().manualCostField.includes('lpCtn'));await f.operate({...f.base,operation:'EDIT',input});assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PRICE_SAVED').length,1);});
+test('manual prices derive cartons, preserve original/source quote, audit once and replay saved result',async()=>{const f=fixture();f.task().ourPoNumber='NCT-PO-PRICE';const before=copy(f.task()),input={edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpPc:2,disc3:3}}]};const result=await f.operate({...f.base,operation:'EDIT',input});assert.equal(result.ok,true);assert.equal(f.task().lpCtn,32);assert.deepEqual(f.task().originalCostSnapshot,before.originalCostSnapshot);assert.equal(f.rows.get('NCTOrders/O0').sellingPricePc,14.66);assert(f.task().manualCostField.includes('lpCtn'));await f.operate({...f.base,operation:'EDIT',input});assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PRICE_SAVED').length,1);});
 test('partial multirow save resumes exact prepared changes without losing later edits',async()=>{const f=fixture(),input={edits:[f.id,f.second].map(taskId=>({taskId,version:taskEditVersion(f.task(taskId)),changes:{disc3:1}}))};f.fail(1);await assert.rejects(f.operate({...f.base,operation:'EDIT',input}),/response lost/);await f.operate({...f.base,operation:'EDIT',input});assert.equal(f.task().disc3,1);assert.equal(f.task(f.second).disc3,1);});
 test('P.O. validates one supplier/customer and records stage and identities without changing quantities',async()=>{const f=fixture(),input={taskIds:[f.id,f.second],versions:f.versions(),poNumber:'po-001'};await f.operate({...f.base,operation:'PO',input});assert.equal(f.task().ourPoNumber,'PO-001');assert.equal(f.task().purchaseStage,'WAITING_FOR_SUPPLIER_INV');assert.equal(f.task().purchaseQtyInCtn,250);assert.equal(f.workspace().tasks.length,2);});
 test('PO metadata associations cannot split or merge and a bare prefix cannot be saved',async()=>{
@@ -242,12 +248,11 @@ test('reorder persists positions with only two recovery receipts and exact repla
  assert.equal(f.rows.size-before.length,2);assert.deepEqual(copy([...f.rows].filter(([key])=>key.startsWith('NCTOrders/'))),before.filter(([key])=>key.startsWith('NCTOrders/')));
 });
 
-test('combined price edit and reorder preserves price audit without row-move events',async()=>{
+test('combined draft price edit and reorder only writes save receipts',async()=>{
  const f=fixture(),request={...f.base,operation:'EDIT',input:{edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpCtn:20}}],customerId:'C',taskIds:[f.second,f.id],versions:f.versions()}};
  await f.operate(request);await f.operate(request);assert.equal(f.task().rowPosition,2);assert.equal(f.task().lpCtn,20);
  const events=[...f.rows.values()].filter(row=>row.action?.startsWith('PURCHASE_'));
- assert.deepEqual(copy(events.map(row=>row.action)).sort(),['PURCHASE_OPERATION_PREPARED','PURCHASE_OPERATION_RESULT','PURCHASE_PRICE_SAVED']);
- assert.equal(events.find(row=>row.action==='PURCHASE_PRICE_SAVED').details.after.lpCtn,20);
+ assert.deepEqual(copy(events.map(row=>row.action)).sort(),['PURCHASE_OPERATION_PREPARED','PURCHASE_OPERATION_RESULT']);
 });
 
 test('reorder resumes after a lost first-row response without audit fanout or leaked locks',async()=>{
@@ -291,7 +296,7 @@ test('quantity retry finishes missing history after a lost write response',async
 test('another decrease cannot pass an unfinished prior quantity save',async()=>{const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),quantity:90,reason:'Stock shortage'};f.fail(1);await assert.rejects(f.operate({...f.base,operation:'QTY',input}));await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'QTY',input:{...input,version:taskEditVersion(f.task()),quantity:80}}),/Previous quantity/);await f.operate({...f.base,operation:'QTY',input});assert.equal(f.task().purchaseQtyInCtn,90);});
 
 test('average cost applies unrounded amount once, zeros discounts and audits employee/time without quantity changes',async()=>{
- const f=fixture(),before=copy(f.task()),input={taskId:f.id,version:taskEditVersion(f.task()),lineCost:921.50,cartons:11,note:'100 less 5% less 3%; buy ten get one'};
+ const f=fixture();f.task().ourPoNumber='NCT-PO-AVERAGE';const before=copy(f.task()),input={taskId:f.id,version:taskEditVersion(f.task()),lineCost:921.50,cartons:11,note:'100 less 5% less 3%; buy ten get one'};
  await f.operate({...f.base,operation:'AVERAGE_COST',input});await f.operate({...f.base,operation:'AVERAGE_COST',input});
  assert.equal(f.task().lpCtn,921.5/11);assert.equal(f.task().lpPc,921.5/11/16);for(const key of ['disc1','disc2','disc3'])assert.equal(f.task()[key],0);
  assert.equal(f.task().purchaseQtyInCtn,before.purchaseQtyInCtn);assert.deepEqual(f.task().originalCostSnapshot,before.originalCostSnapshot);assert.equal(f.rows.get('NCTOrders/O0').sellingPricePc,14.66);
@@ -303,7 +308,8 @@ test('average cost refuses missing supplier, invalid amount/cartons and missing 
  for(const kind of ['supplier','EA']){const f=fixture();if(kind==='supplier')f.task().supplierId='';else f.rows.get('NCTOrders/O0').orderId=null;await assert.rejects(f.operate({...f.base,operation:'AVERAGE_COST',input:{taskId:f.id,version:taskEditVersion(f.task()),lineCost:100,cartons:10}}),kind==='supplier'?/supplier/:/EA/);}
 });
 test('average cost lost response retries exact calculation and invoice blocks cost changes',async()=>{
- const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),lineCost:100,cartons:11,note:'Offer'};f.fail(1);await assert.rejects(f.operate({...f.base,operation:'AVERAGE_COST',input}),/response lost/);await f.operate({...f.base,operation:'AVERAGE_COST',input});assert.equal(f.task().lpCtn,100/11);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_AVERAGE_COST_APPLIED').length,1);
+ const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),lineCost:100,cartons:11,note:'Offer'};f.fail(1);await assert.rejects(f.operate({...f.base,operation:'AVERAGE_COST',input}),/response lost/);await f.operate({...f.base,operation:'AVERAGE_COST',input});assert.equal(f.task().lpCtn,100/11);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_AVERAGE_COST_APPLIED').length,0);
+ assert.equal([...f.rows.values()].find(row=>row.action==='PURCHASE_OPERATION_PREPARED').details.plan.updates[0].draftCostCalculation.lineCost,100);
  f.rows.get('NCTOrders/O0').salesInvoiceNumber='INV';await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'AVERAGE_COST',input:{...input,version:taskEditVersion(f.task())}}),/locked/);
 });
 
@@ -339,11 +345,32 @@ test('zero quantity and reduction below received cartons cannot masquerade as or
 test('lost plan-audit write blocks competing saves and resumes the exact original operation',async()=>{
  const f=fixture(),insert=f.store.insert;let lose=true;
  f.store.insert=async(c,row)=>{if(row.action==='PURCHASE_PLAN_SAVED'&&lose){lose=false;throw Error('response lost');}return insert(c,row);};
- const input={taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer'};
+ const input={taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer',prices:{lpPc:2,lpCtn:32,disc1:0,disc2:0,disc3:0}};
  await assert.rejects(f.operate({...f.base,operation:'PLAN',input}),/response lost/);
+ assert.equal(f.workspace().tasks.find(row=>row.id===f.id).lpCtn,16);
+ assert.equal(f.task().lpCtn,32);
  await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:{...input,totalCtn:280}}),/pending/);
  await f.operate({...f.base,operation:'PLAN',input});assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.totalCtn,275);
  assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED').length,1);
+});
+
+test('three draft prices create no price history, and first PO captures the final terms before one amendment',async()=>{
+ const f=fixture(),requestId=n=>`00000000-0000-4000-8000-00000000000${n}`;
+ const save=(n,price)=>{const row=f.workspace().tasks.find(row=>row.id===f.id);return f.operate({...f.base,requestId:requestId(n),operation:'PLAN',input:{taskId:f.id,version:row.editVersion,planRevision:row.procurement.revision,transportMode:'SUPPLIER_DELIVER',totalCtn:250,draftPlan:!row.po,supplierConfirmed:Boolean(row.po),reason:'Supplier terms',prices:{lpPc:price/16,lpCtn:price,disc1:0,disc2:0,disc3:0}}});};
+ const events=action=>[...f.rows.values()].filter(row=>row.action===action);
+ for(const [i,price] of [20,24,28].entries())await save(i+1,price);
+ assert.equal(events('PURCHASE_PRICE_SAVED').length,0);
+ assert.equal(f.task().lpCtn,28);
+ await f.operate({...f.base,requestId:requestId(4),operation:'PO',input:{taskIds:[f.id],versions:f.versions(),poNumber:'NCT-PO-PRICE'}});
+ const original=events('PURCHASE_PO_ASSIGNED')[0].details;
+ assert.equal(original.commercialAfter.amountCents,700000);
+ assert.equal(original.amendment,false);
+ await save(5,30);
+ assert.equal(events('PURCHASE_PRICE_SAVED').length,1);
+ assert.equal(events('PURCHASE_PRICE_SAVED')[0].details.before.lpCtn,28);
+ assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.amendmentCount,1);
+ await assert.rejects(save(6,30),/have not changed/);
+ assert.equal(events('PURCHASE_PRICE_SAVED').length,1);
 });
 
 test('plan revisions reject branched history instead of displaying invented available inventory',async()=>{
