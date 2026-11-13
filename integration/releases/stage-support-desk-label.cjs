@@ -4,13 +4,14 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const { compactHeader, compactOverview, compactTransactions, chargeInvoiceForm, css } = require('./support-compact-document-header.cjs');
 
-const build = '20261113-support-workroom-compact-v1';
+const build = '20261113-support-workroom-compact-v2';
 const previousBuild = '20261111-support-split-quantity-v1';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const originals = {
   'workroom.js': 'd2bf9566dbfa4ebf9995a95794dc8bb83f3b1f7747d73c04b1dcf48c3158a63c',
   'workroom.css': 'a21ac4a18f1cba4aad9ea28a8c3359558c21b4f6b964695af7d6f4e1de9580fe',
   'workroom.html': '28d868d71e6c0bc35c31a9fe2ca28d792a156629470d62aef4470635fbc57b8d',
+  'workroom-model.js': 'e045e93e0fdffc1cbf5794057448b9704e9b36cedc9a16881a5c24628a97361f',
 };
 
 function replaceOnce(source, before, after) {
@@ -53,6 +54,10 @@ function stageSupportDeskLabel(site) {
   sources['workroom.css'] += css + '\n';
   sources['workroom.html'] = sources['workroom.html'].replaceAll(previousBuild, build)
     .replace('data-view="transactions">Transactions</button>', 'data-view="transactions">Invoices &amp; Payments</button>');
+  sources['workroom.html'] = replaceOnce(sources['workroom.html'], 'workroom-model.js?v=20261105-support-transaction-context-v1', `workroom-model.js?v=${build}`);
+  sources['workroom-model.js'] = replaceOnce(sources['workroom-model.js'],
+    "entries||[]).filter(row=>row.customerId===customer.id).concat(",
+    "entries||[]).filter(row=>row.customerId===customer.id).map(row=>row.type==='CHARGE_INV'?{...row,...invoicePayment({...row,invoice:row},fulfilment)}:row).concat(");
   for (const [name, content] of Object.entries(sources)) fs.writeFileSync(path.join(directory, name), content);
 }
 
