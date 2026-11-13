@@ -28,8 +28,8 @@ $w.onReady(() => {
     if (!authorized.length) { await clearLinks(); return false; }
     const anchors = authorized.map(([, [label, url]]) =>
       '<a href="' + url + '" target="_blank">' + label + '</a>');
-    links.html = '<p>My Workspaces 我的工作室</p><p>' + anchors.join(' · ') + '</p>';
     await workspaceSection.expand();
+    links.html = '<p>My Workspaces 我的工作室</p><p>' + anchors.join(' · ') + '</p>';
     return true;
   }
   async function load() {
