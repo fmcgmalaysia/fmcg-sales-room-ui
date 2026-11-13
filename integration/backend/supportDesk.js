@@ -79,6 +79,14 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
   const locks=currentSupportDeskLocks(context).filter(row=>row.customerId===input.customerId),affected=[input.desk,...(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)?[supportDeskForTask(before,input.taskId),...(normalized.parts||[]).map(part=>part.desk)]:[])];
   if(input.action!=='DESK_SPLIT'&&locks.some(row=>affected.includes(row.desk)||input.action==='DESK_ASSIGN'&&row.taskIds.includes(input.taskId)))throw Error('This Desk is locked by its Sales Invoice.');
   if(before.revision!==input.revision)throw Error('Desk details changed. Refresh before editing.');
+  const previousShipment=before.shipments.find(row=>row.desk===input.desk);
+  const shipmentFields=normalized.details?['transport','date','arrival','lastGateIn','departureDate']:['transport','date','arrival'];
+  const changedShipmentFields=input.action==='DESK_SHIPMENT'?shipmentFields.filter(key=>(normalized[key]||'')!==(previousShipment?.[key]||'')):[];
+  if(changedShipmentFields.length){
+   const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).format(now());
+   if(changedShipmentFields.some(key=>key!=='transport'&&normalized[key]&&normalized[key].slice(0,10)<today))throw Error('New shipment dates must be today or later (Malaysia time).');
+   if(changedShipmentFields.includes('lastGateIn')&&normalized.lastGateIn&&!/:(00|15|30|45)$/.test(normalized.lastGateIn))throw Error('Select Last Gate In minutes 00, 15, 30 or 45.');
+  }
   if(normalized.details?.depositAmountCents!==null&&normalized.details?.depositAmountCents!==undefined){const currencies=[...new Set(tasks.filter(task=>(readShortloadResolutions(context.activity).some(row=>row.taskId===task.id)||before.assignments.find(row=>row.taskId===task.id)?.parts)?deskTaskPortions(context.activity,before,task).some(part=>part.desk===input.desk&&part.quantity>0):supportDeskForTask(before,task.id)===input.desk).map(task=>task.transactionCurrency))];if(currencies.length!==1||currencies[0]!==normalized.details.depositCurrency)throw Error('Desk deposit currency must match its assigned order currency.');}
   const state=copy(before);delete state.revision;
   if(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)){
@@ -96,7 +104,7 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
    state.assignments=state.assignments.filter(row=>row.taskId!==input.taskId).concat({taskId:input.taskId,desk:input.desk,...(normalized.parts?{parts:normalized.parts,dispositionRevision:readShortloadResolutions(context.activity).filter(row=>row.taskId===input.taskId&&row.customerId===input.customerId).at(-1)?.revision||''}:{})}).sort((a,b)=>a.taskId.localeCompare(b.taskId));
   }
   else if(input.action==='DESK_SHIPMENT'){
-   state.shipments=state.shipments.filter(row=>row.desk!==input.desk).concat({...state.shipments.find(row=>row.desk===input.desk),desk:input.desk,transport:input.transport,date:input.date,arrival:input.arrival,...(normalized.details?{detailsVersion:3,lastGateIn:normalized.lastGateIn,departureDate:normalized.departureDate}:{})}).sort((a,b)=>a.desk-b.desk);
+   state.shipments=state.shipments.filter(row=>row.desk!==input.desk).concat({...previousShipment,desk:input.desk,transport:input.transport,date:input.date,arrival:input.arrival,...(normalized.details?{detailsVersion:3,lastGateIn:normalized.lastGateIn,departureDate:normalized.departureDate}:{}),...(changedShipmentFields.length?{bookedBy:staff.staffName}:{})}).sort((a,b)=>a.desk-b.desk);
    if(normalized.details)state.references=(state.references||[]).filter(row=>row.desk!==input.desk).concat({desk:input.desk,detailsVersion:3,...normalized.details}).sort((a,b)=>a.desk-b.desk);
   }
   else state.references=(state.references||[]).filter(row=>row.desk!==input.desk).concat({...state.references?.find(row=>row.desk===input.desk),desk:input.desk,soNo:normalized.soNo,poNo:normalized.poNo}).sort((a,b)=>a.desk-b.desk);

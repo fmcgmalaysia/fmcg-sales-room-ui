@@ -1,9 +1,9 @@
 const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
 const {createSupportDeskOperations,readSupportDesks,supportDeskForTask,checkSupportDeskInvoice}=load('supportDesk.js');
-function fixture(){const records=new Map(),copy=v=>structuredClone(v),tasks=[{id:'T1',customerId:'C1',orderId:'O1'},{id:'T2',customerId:'C1',orderId:'O2'},{id:'T3',customerId:'C2',orderId:'O3'}];let lose=false;
+function fixture(now=()=>new Date('2026-10-27T08:00:00Z')){const records=new Map(),copy=v=>structuredClone(v),tasks=[{id:'T1',customerId:'C1',orderId:'O1'},{id:'T2',customerId:'C1',orderId:'O2'},{id:'T3',customerId:'C2',orderId:'O3'}];let lose=false;
  const store={read:async(c,id)=>copy(records.get(c+'/'+id)||null),insert:async(c,row)=>{const key=c+'/'+row._id;if(records.has(key))throw Error('duplicate');records.set(key,copy(row));if(lose){lose=false;throw Error('lost acknowledgement');}return copy(row);}};
  const context=async company=>({company,tasks:copy(tasks),activity:[...records].filter(([key])=>key.startsWith(company+'/')).map(([,row])=>copy(row))}),staff={packingDepartment:'SUPPORT',memberId:'M',staffId:'S',staffName:'Support'};
- const save=createSupportDeskOperations({store,names:{NCT:{activity:'NCT'},GHR:{activity:'GHR'}},readContext:context,now:()=>new Date('2026-10-27T08:00:00Z')});
+ const save=createSupportDeskOperations({store,names:{NCT:{activity:'NCT'},GHR:{activity:'GHR'}},readContext:context,now});
  const request={company:'NCT',staff,requestId:'aaaaaaaa-1111-4111-8111-111111111111',input:{action:'DESK_ASSIGN',customerId:'C1',taskId:'T1',desk:2,revision:''}};
  return {records,tasks,context,save,request,lose:()=>lose=true};
 }
@@ -20,6 +20,28 @@ test('Desk invoice must include exactly its currently confirmed loaded quantitie
 test('a task can be unassigned and references survive a fresh read independently per Desk',async()=>{const f=fixture();const a=await f.save(f.request);const b=await f.save({...f.request,requestId:'bbbbbbbb-1111-4111-8111-111111111111',input:{...f.request.input,desk:0,revision:a.deskState.revision}});assert.equal(supportDeskForTask(b.deskState,'T1'),0);const c=await f.save({...f.request,requestId:'cccccccc-1111-4111-8111-111111111111',input:{action:'DESK_REFERENCES',customerId:'C1',desk:2,revision:b.deskState.revision,soNo:'SO-002',poNo:'PO-002'}});const state=readSupportDesks((await f.context('NCT')).activity,'NCT')[0];assert.deepEqual(state.references,[{desk:2,soNo:'SO-002',poNo:'PO-002'}]);assert.equal(state.revision,c.deskState.revision);assert.equal(f.tasks[0].orderId,'O1');});
 
 function detailInput(revision,extra={}){return {action:'DESK_SHIPMENT',customerId:'C1',desk:2,revision,transport:'SEA_40FT',date:'2026-11-20',arrival:'2026-12-03',lastGateIn:'2026-11-18T16:00',departureDate:'2026-11-21',details:{poNo:'PO-1',soNo:'PI-1',invoiceNoDraft:'NCT-INV-0001',depositAmountCents:250000,depositDate:'2026-11-05',depositCurrency:'USD'},...extra};}
+test('shipment planning validates Malaysia dates and quarter hours, retains history and authenticates Booked By',async()=>{
+ let time=new Date('2026-11-18T16:01:00Z');
+ const f=fixture(()=>time);
+ f.tasks.forEach(task=>task.transactionCurrency='USD');
+ const assigned=await f.save(f.request);
+ const input=detailInput(assigned.deskState.revision,{lastGateIn:'2026-11-19T16:15'});
+ const request={...f.request,requestId:'bbbbbbbb-1111-4111-8111-111111111111',input};
+ await assert.rejects(f.save({...request,input:{...input,lastGateIn:'2026-11-18T23:45'}}),/today or later/);
+ await assert.rejects(f.save({...request,input:{...input,lastGateIn:'2026-11-19T16:35'}}),/00, 15, 30 or 45/);
+ await assert.rejects(f.save({...request,input:{...input,date:'2026-11-18'}}),/today or later/);
+ assert.equal(f.records.size,1);
+ const saved=await f.save({...request,input:{...input,bookedBy:'Spoof'}});
+ assert.equal(saved.deskState.shipments[0].bookedBy,'Support');
+ time=new Date('2027-01-01T00:00:00Z');
+ assert.equal((await f.save(request)).deskState.revision,saved.deskState.revision);
+ const referenceOnly={...input,revision:saved.deskState.revision,details:{...input.details,poNo:'PO-2'}};
+ const other={...f.request.staff,staffName:'Another Editor'};
+ const updated=await f.save({...request,staff:other,requestId:'cccccccc-1111-4111-8111-111111111111',input:referenceOnly});
+ assert.equal(updated.deskState.shipments[0].bookedBy,'Support');
+ assert.equal(updated.deskState.shipments[0].lastGateIn,input.lastGateIn);
+ assert.equal(updated.deskState.references[0].depositDate,'2026-11-05');
+});
 test('one Desk receipt atomically saves all header details, manual deposit and invoice draft without posting finance or changing tasks',async()=>{const f=fixture();f.tasks.forEach(task=>task.transactionCurrency='USD');const assigned=await f.save(f.request),before=structuredClone(f.tasks),request={...f.request,requestId:'bbbbbbbb-1111-4111-8111-111111111111',input:detailInput(assigned.deskState.revision)},saved=await f.save(request),again=await f.save(request),state=readSupportDesks((await f.context('NCT')).activity,'NCT')[0];assert.equal(saved.deskState.revision,again.deskState.revision);assert.equal(state.references[0].depositAmountCents,250000);assert.equal(state.references[0].invoiceNoDraft,'NCT-INV-0001');assert.equal(state.shipments[0].lastGateIn,'2026-11-18T16:00');assert.equal(state.shipments[0].date,'2026-11-20');assert.equal(state.shipments[0].departureDate,'2026-11-21');assert.deepEqual(f.tasks,before);assert([...f.records.values()].every(row=>row.action==='SUPPORT_DESK_SAVED'));});
 test('partial Desk metadata preserves a real zero, rejects invalid civil times/currency and stale edits',async()=>{const f=fixture();f.tasks.forEach(task=>task.transactionCurrency='USD');const assigned=await f.save(f.request),base=detailInput(assigned.deskState.revision);for(const input of [{...base,lastGateIn:'2026-02-30T10:00'},{...base,lastGateIn:'2026-11-18T25:00'},{...base,details:{...base.details,depositCurrency:'MYR'}}])await assert.rejects(f.save({...f.request,requestId:'bbbbbbbb-1111-4111-8111-111111111111',input}),/valid Desk|deposit currency/);const zero=await f.save({...f.request,requestId:'cccccccc-1111-4111-8111-111111111111',input:{...base,transport:'',date:'',arrival:'',departureDate:'',lastGateIn:'',details:{...base.details,depositAmountCents:0}}});assert.equal(zero.deskState.references[0].depositAmountCents,0);assert.equal(zero.deskState.shipments[0].date,'');await assert.rejects(f.save({...f.request,requestId:'dddddddd-1111-4111-8111-111111111111',input:base}),/changed/);});
 test('new header metadata cannot modify an invoice-reserved Desk',async()=>{const f=fixture(),assigned=await f.save(f.request),context=await f.context('NCT');await load('supportDesk.js').reserveSupportDeskInvoice({store:{...f,read:async(c,id)=>structuredClone(f.records.get(c+'/'+id)||null),insert:async(c,row)=>{if(f.records.has(c+'/'+row._id))throw Error('duplicate');f.records.set(c+'/'+row._id,structuredClone(row));return row;}},names:{NCT:{activity:'NCT'}},context,staff:f.request.staff,requestId:'bbbbbbbb-1111-4111-8111-111111111111',input:{customerId:'C1',desk:{number:2,revision:assigned.deskState.revision},number:'LOCKED-SI',lines:[{taskId:'T1',quantity:100}]},digest:'DIGEST',snapshot:{number:2,shipment:null,references:null},now:()=>new Date('2026-10-29T08:00:00Z')});const state=readSupportDesks((await f.context('NCT')).activity,'NCT')[0];await assert.rejects(f.save({...f.request,requestId:'cccccccc-1111-4111-8111-111111111111',input:detailInput(state.revision)}),/locked by its Sales Invoice/);});

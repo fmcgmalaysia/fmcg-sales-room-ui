@@ -34,6 +34,8 @@ export function createSupportBookingOperations({store,names,readContext,now=()=>
   if(!tasks.some(row=>!row.archived))throw Error('Select an active customer order.');
   const before=states.find(row=>row.customerId===input.customerId&&row.orderId===input.orderId);
   if((before?.revision||'')!==input.revision)throw Error('Shipment details changed. Refresh before editing.');
+  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).format(now());
+  if(input.date!==before?.date&&input.date<today)throw Error('New shipment dates must be today or later (Malaysia time).');
   const eventId=operationId(id,input.revision,'NEXT'),at=now().toISOString(),booking={company,customerId:input.customerId,orderId:input.orderId,transport:input.transport,date:input.date};
   const event={_id:eventId,title:eventId,description:id,image:input.customerId,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support updated shipment booking details',details:{beforeRevision:input.revision,memberId:staff.memberId,requestId,digest,booking}};
   try{await store.insert(names[company].activity,event);}catch(error){const retained=await store.read(names[company].activity,eventId);if(!retained||retained.details?.requestId!==requestId||retained.details?.memberId!==staff.memberId||retained.details?.digest!==digest)throw error;}

@@ -10,7 +10,7 @@ const {deskTaskPortions}=load('shortloadResolutionModel.js');
 
 async function setup(){
  const f=fixture(),names={NCT:{activity:'N'},GHR:{activity:'G'}},staff={...f.staff,packingDepartment:'SUPPORT'};
- const saveDesk=desks.createSupportDeskOperations({store:f.store,names,readContext:f.context});
+ const saveDesk=desks.createSupportDeskOperations({store:f.store,names,readContext:f.context,now:()=>new Date('2026-11-03T08:00:00Z')});
  const issue=invoice.createSupportInvoiceOperations({store:f.store,names,readContext:f.context,saveFulfilment:f.fulfilSave,readRates:async()=>[{currency:'USD',rateToMyr:4}]});
  const resolve=createShortloadResolutionOperations({store:f.store,names,readContext:f.packingContext});
  const state=async()=>desks.readSupportDesks((await f.context()).activity,'NCT').find(row=>row.customerId==='CUSTOMER-A');

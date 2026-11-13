@@ -22,7 +22,7 @@ test('actual service admits only the current opened Desk, strips read/save/retry
 });
 test('issued batch moves to redacted Completed and retains its shipment when the same Desk is edited',async()=>{
  const f=fixture(),api=service(f),staff={...f.staff,packingDepartment:'SUPPORT'},warehouse={...f.staff,packingDepartment:'WAREHOUSE'},desks=load('supportDesk.js'),invoices=load('supportInvoice.js');
- const saveDesk=desks.createSupportDeskOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context});
+ const saveDesk=desks.createSupportDeskOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context,now:()=>new Date('2026-11-03T08:00:00Z')});
  const state=async()=>desks.readSupportDesks((await f.context()).activity,'NCT')[0];
  const assign=async input=>saveDesk({company:'NCT',staff,requestId:f.nextId(),input:{customerId:'CUSTOMER-A',revision:(await state())?.revision||'',...input}});
  await assign({action:'DESK_ASSIGN',taskId:'A',desk:1});await assign({action:'DESK_SHIPMENT',desk:1,transport:'LAND',date:'2026-11-04',arrival:''});

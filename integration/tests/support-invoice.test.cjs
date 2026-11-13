@@ -31,7 +31,7 @@ test('Support combines loaded lines from two order dates into one invoice withou
 
 
 const {createSupportDeskOperations,readSupportDesks,readSupportDeskLocks}=load('supportDesk.js');
-async function assigned(f,desk=1){const move=createSupportDeskOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context});const r=await move({company:'NCT',staff:f.staff,requestId:'eeeeeeee-1111-4111-8111-111111111111',input:{action:'DESK_ASSIGN',customerId:'C1',taskId:'T1',desk,revision:''}});return {move,revision:r.deskState.revision};}
+async function assigned(f,desk=1){const move=createSupportDeskOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context,now:()=>new Date('2026-10-31T08:00:00Z')});const r=await move({company:'NCT',staff:f.staff,requestId:'eeeeeeee-1111-4111-8111-111111111111',input:{action:'DESK_ASSIGN',customerId:'C1',taskId:'T1',desk,revision:''}});return {move,revision:r.deskState.revision};}
 test('canonical SI releases its workbench after lost acknowledgement while its original retry and historical batch remain fixed',async()=>{
  const f=fixture();await f.setLoad(100);const {move,revision}=await assigned(f),request=await f.request(100);request.input.desk={number:1,revision};f.lose();await assert.rejects(f.save(request),/lost acknowledgement/);
  const context=await f.context(),state=readSupportDesks(context.activity,'NCT')[0],before=JSON.stringify(readCustomerShipments(context.activity));

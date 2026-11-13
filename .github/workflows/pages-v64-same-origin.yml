@@ -99,6 +99,10 @@ on:
         description: Apply the Support Desk label to the verified staff and Warehouse Desk package
         type: boolean
         default: false
+      shipment_delivery:
+        description: Apply Support planning dates and Warehouse Delivery Task display
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -1009,6 +1013,10 @@ jobs:
       - name: Update Support Desk labels
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only' && inputs.master_staff_management && inputs.support_desk_label
         run: node integration/releases/stage-support-desk-label.cjs "$RUNNER_TEMP/warehouse-desk-workflow-site"
+
+      - name: Update Support planning and Warehouse Delivery Task
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only' && inputs.master_staff_management && inputs.support_desk_label && inputs.shipment_delivery
+        run: node integration/releases/support-shipment-delivery.cjs "$RUNNER_TEMP/warehouse-desk-workflow-site"
 
       - name: Upload Warehouse Desk workflow
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only'
