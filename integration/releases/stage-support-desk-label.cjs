@@ -6,7 +6,7 @@ const { compactHeader, compactOverview, compactTransactions, chargeInvoiceForm, 
 const layout = require('./support-desk-layout.cjs');
 
 const build = '20261113-support-workroom-compact-v2';
-const layoutBuild = '20261113-support-desk-layout-v2';
+const layoutBuild = '20261113-support-desk-layout-v3';
 const previousBuild = '20261111-support-split-quantity-v1';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const originals = {
