@@ -70,11 +70,13 @@ function stageSupportDeskLabel(site) {
   sources['workroom.js'] = layout.patchSupportScript(sources['workroom.js']);
   sources['workroom.html'] = layout.patchSupportHtml(sources['workroom.html'], build, layoutBuild);
   sources['workroom.css'] += layout.css;
+  sources['workroom.css'] += debit.css;
   sources['workroom.js'] = debit.supportScript(sources['workroom.js']);
   sources['workroom-model.js'] = debit.supportModel(sources['workroom-model.js']);
   sources['workroom.html'] = sources['workroom.html']
-    .replace('name="build" content="'+layoutBuild+'"', 'name="build" content="20261113-support-standalone-dn-v1"')
-    .replace('workroom.js?v='+layoutBuild, 'workroom.js?v=20261113-support-standalone-dn-v1')
+    .replace('name="build" content="'+layoutBuild+'"', 'name="build" content="20261113-support-standalone-dn-v2"')
+    .replace('workroom.css?v='+layoutBuild, 'workroom.css?v=20261113-support-standalone-dn-v2')
+    .replace('workroom.js?v='+layoutBuild, 'workroom.js?v=20261113-support-standalone-dn-v2')
     .replace('workroom-model.js?v='+layoutBuild, 'workroom-model.js?v=20261113-support-standalone-dn-v1');
   const financeIndex = path.join(site, 'account-room', 'index.html');
   const financeScript = path.join(site, 'account-room', 'customer-debtors.js');

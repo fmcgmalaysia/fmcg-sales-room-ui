@@ -7,9 +7,11 @@ function replace(source, before, after) {
 
 function supportScript(source) {
   source = replace(source, 'ctx.replacesDocumentId||\'\']);}', "ctx.replacesDocumentId||'',ctx.charge||false]);}");
-  source = replace(source, "$('documents').classList.toggle('charge-form',charge);documentContext=", "$('documents').classList.toggle('charge-form',Boolean(charge));documentContext=");
+  source = replace(source, "$('documents').classList.toggle('charge-form',charge);documentContext=", "$('documents').classList.toggle('charge-form',Boolean(charge));$('documents').classList.toggle('standalone-debit-form',charge==='STANDALONE_DN');documentContext=");
   source = replace(source, "window.SupportWorkroom.pendingDocumentAttempt(documentContext,data)", "window.SupportWorkroom.pendingDocumentAttempt({...documentContext,invoiceKind:charge==='STANDALONE_DN'?charge:undefined},data)");
   source = replace(source, "$('document-title').textContent='Charge Invoice';", "$('document-title').textContent=charge==='STANDALONE_DN'?'Debit Note':'Charge Invoice';");
+  source = replace(source, "$('document-context').textContent=(customer?.name||customerId)+' · '+company;", `const identity=$('document-context');identity.textContent=(customer?.name||customerId)+' · '+company;
+    if(charge==='STANDALONE_DN')identity.innerHTML='<strong>'+esc(customer?.name||customerId)+'</strong><small>'+esc(company)+'</small>';`);
   source = replace(source, "const choices=['Ocean Fee','Insurance','Sticker Printing','Labour Charges','Other'];", "const choices=charge==='STANDALONE_DN'?['On behalf of customer','Other']:['Ocean Fee','Insurance','Sticker Printing','Labour Charges','Other'];");
   source = replace(source, "const preferred=pendingInput?.chargeCurrency||customer?.currency||'';", `const preferred=pendingInput?.chargeCurrency||customer?.currency||'';
 const reference=$('document-reference'),prefix=company+(charge==='STANDALONE_DN'?'-DN-':'-INV-');
@@ -56,4 +58,10 @@ function financeScript(source) {
   return source;
 }
 
-module.exports = { supportScript, supportModel, financeScript };
+const css = `
+#documents.standalone-debit-form #document-context{display:grid;gap:3px;margin:0 0 10px}
+#documents.standalone-debit-form #document-context strong{font:700 17px/1.25 var(--master-font);color:#173651;overflow-wrap:anywhere}
+#documents.standalone-debit-form #document-context small{font:500 11px/1.3 var(--master-font);color:#536d87}
+`;
+
+module.exports = { supportScript, supportModel, financeScript, css };
