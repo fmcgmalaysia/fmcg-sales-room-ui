@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 
 const build = '20261113-shipment-delivery-v1';
-const warehouseTableBuild = '20261113-warehouse-delivery-compact-v1';
+const warehouseTableBuild = '20261113-warehouse-delivery-compact-v2';
 const previousSupport = '20261113-support-standalone-dn-v3';
 const previousWarehouse = '20261111-warehouse-desk-workflow-history-v2';
 const previousDelivery = '20261111-warehouse-desk-workflow-v1';
@@ -104,7 +104,7 @@ const deliveryCss = '\n'+[
   '.dd-desk-overview .dd-shipment{margin:0;gap:7px 18px}.dd-totals{display:flex;gap:14px;margin:0;color:#203047}',
   '.dd-totals div{border-left:1px solid #d5dee7;padding-left:10px}.dd-totals dt{color:#59708a;font-size:10px}.dd-totals dd{margin:0;font-weight:600;white-space:nowrap}.dd-totals small{font-weight:400;color:#59708a}',
   '.dd-task-table{min-width:740px}.dd-task-table td,.dd-task-table th{padding:5px 7px;vertical-align:middle}.dd-task-table th{white-space:nowrap}.dd-task-table td.dd-row-no{font-weight:600}',
-  '.dd-task-table th:nth-child(2),.dd-task-table td:nth-child(2){width:48px;text-align:center}.dd-task-table .dd-product-image img{width:38px;height:38px;margin-inline:auto}',
+  '.dd-task-table th:nth-child(2),.dd-task-table td:nth-child(2){width:54px;text-align:center}.dd-task-table .dd-product-image img{width:38px;height:38px;max-width:100%;margin-inline:auto}',
   '.dd-task-table th:nth-child(4),.dd-task-table th:nth-child(5){width:68px;text-align:center}.dd-task-table td:nth-child(4),.dd-task-table td:nth-child(5){text-align:center}',
   '.dd-task-table th:nth-child(6){width:98px}.dd-task-table th:nth-child(7){width:68px;text-align:right}.dd-task-table th:nth-child(8){width:72px;text-align:center}.dd-task-table td.dd-expiry{text-align:center}.dd-task-table th:nth-child(9){width:clamp(160px,24vw,400px);text-align:left}',
   '.dd-task-table .dd-description small,.dd-task-table .dd-description strong{display:block;line-height:1.2;margin:0}.dd-task-table .dd-description strong{margin:1px 0;overflow-wrap:anywhere}',
