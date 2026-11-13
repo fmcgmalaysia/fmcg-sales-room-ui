@@ -1,12 +1,14 @@
 // Invoice matching is a relation over the existing account ledger, never another cash balance.
 const positive=value=>Number.isSafeInteger(value)&&value>0&&value<=999999999999;
 export const CUSTOMER_ALLOCATION_ACTION='CUSTOMER_ACCOUNT_ALLOCATION_SAVED';
+export const isStandaloneDebitNote=row=>row.type==='DEBIT_NOTE'&&row.invoiceKind==='STANDALONE_DN';
+export const canAllocateCustomerDocument=row=>['CUSTOMER_RECEIPT','SALES_CN','DEBIT_NOTE'].includes(row.type)&&!isStandaloneDebitNote(row);
 export function normalizeChargeLines(value){
  if(!Array.isArray(value)||!value.length||value.length>20)throw Error('Enter one to twenty charge lines.');
  return value.map(row=>{const description=String(row?.description||'').trim();if(!description||description.length>200||!Number.isSafeInteger(row.amountCents)||row.amountCents<0||row.amountCents>999999999999)throw Error('Enter a charge description and valid amount.');return {description,amountCents:row.amountCents};});
 }
 export function customerInvoiceFacts(company,shipments,documents){
- return shipments.filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status)).map(row=>({id:row.id,company,customerId:row.customerId,number:row.invoice.number,date:row.invoice.date,currency:row.invoice.currency,amountCents:row.invoice.amountCents,at:row.invoice.at,by:row.invoice.by,quantity:row.lines.reduce((n,line)=>n+line.quantity,0),kind:'GOODS'})).concat(documents.filter(row=>row.company===company&&row.type==='CHARGE_INV').map(row=>({...row,quantity:null,kind:'CHARGE'})));
+ return shipments.filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status)).map(row=>({id:row.id,company,customerId:row.customerId,number:row.invoice.number,date:row.invoice.date,currency:row.invoice.currency,amountCents:row.invoice.amountCents,at:row.invoice.at,by:row.invoice.by,quantity:row.lines.reduce((n,line)=>n+line.quantity,0),kind:'GOODS'})).concat(documents.filter(row=>row.company===company&&(row.type==='CHARGE_INV'||isStandaloneDebitNote(row))).map(row=>({...row,quantity:null,kind:isStandaloneDebitNote(row)?'DEBIT_NOTE':'CHARGE'})));
 }
 export function normalizeInvoiceAllocations(value=[]){
  if(!Array.isArray(value)||value.length>200)throw Error('Select at most 200 invoice allocations.');
@@ -15,7 +17,7 @@ export function normalizeInvoiceAllocations(value=[]){
  return rows.sort((a,b)=>a.invoiceId.localeCompare(b.invoiceId));
 }
 export function readInvoiceAllocationStates(documents,activity,company){
- const states=new Map(documents.filter(row=>row.company===company&&['CUSTOMER_RECEIPT','SALES_CN','DEBIT_NOTE'].includes(row.type)).map(row=>[row.id,{documentId:row.id,revision:row.id,allocations:normalizeInvoiceAllocations(row.allocations)}]));
+ const states=new Map(documents.filter(row=>row.company===company&&canAllocateCustomerDocument(row)).map(row=>[row.id,{documentId:row.id,revision:row.id,allocations:normalizeInvoiceAllocations(row.allocations)}]));
  const pending=activity.filter(row=>row.action===CUSTOMER_ALLOCATION_ACTION&&row.result==='SAVED');
  const seen=new Set();
  while(pending.length){
@@ -32,11 +34,12 @@ export function projectInvoicePayments({company,documents,invoices,activity}){
  const docs=documents.filter(row=>row.company===company),states=readInvoiceAllocationStates(docs,activity,company),matched=new Map();
  for(const invoice of invoices){if(invoice.company!==company||!positive(invoice.amountCents)||matched.has(invoice.id))throw Error('Customer invoice identity requires review.');matched.set(invoice.id,{...invoice,payments:[],adjustments:[],paidCents:0,creditCents:0,debitCents:0});}
  const unapplied=[];
- for(const doc of docs.filter(row=>['CUSTOMER_RECEIPT','SALES_CN','DEBIT_NOTE'].includes(row.type))){
+ for(const doc of docs.filter(canAllocateCustomerDocument)){
   const state=states.get(doc.id);let used=0;
   for(const allocation of state.allocations){
    const invoice=matched.get(allocation.invoiceId);
    if(!invoice||invoice.customerId!==doc.customerId||invoice.currency!==doc.currency)throw Error('Invoice allocations must belong to the same company, customer and currency.');
+   if(invoice.kind==='DEBIT_NOTE'&&doc.type!=='CUSTOMER_RECEIPT')throw Error('Only a receipt can be matched to a standalone Debit Note.');
    used+=allocation.amountCents;if(!Number.isSafeInteger(used)||used>doc.amountCents)throw Error('Invoice allocations exceed the available document amount.');
    const entry={documentId:doc.id,number:doc.number,date:doc.date,at:doc.at||'',type:doc.type,amountCents:allocation.amountCents,totalAmountCents:doc.amountCents,fileId:doc.fileId};
    if(doc.type==='CUSTOMER_RECEIPT'){invoice.paidCents+=allocation.amountCents;invoice.payments.push(entry);}

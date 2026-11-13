@@ -21,6 +21,42 @@ test('ordinary SI still requires the real issued goods invoice',async()=>{const 
 test('a fee already posted as a debit note cannot create a second receivable',async()=>{const f=fixture(),uploaded=await f.upload(await f.request());f.records.set('NCT/DN',{_id:'DN',action:'CUSTOMER_ACCOUNT_DOCUMENT_SAVED',result:'SAVED',details:{document:{id:'DN',company:'NCT',customerId:'C',type:'DEBIT_NOTE',number:'DN1',date:'2026-11-01',currency:'USD',amountCents:25000,fileId:'debit-proof-file',sha256:'b'.repeat(64)}}});await assert.rejects(f.save(await f.confirm(uploaded.documentId,{existingDebitNoteId:'DN'})),/second receivable/);assert.equal(projectCustomerAccount(await f.context()).balances[0].balanceCents,25000);assert.equal(readCustomerAccountDocuments((await f.context()).activity).length,1);});
 test('NCT/GHR separate charge ledgers and customer lookup reject another customer',async()=>{const f=fixture(),n=await f.upload(await f.request()),g=await f.upload(await f.request({reference:'GHR-INV-CHARGE-01'},'GHR'));await f.save(await f.confirm(n.documentId));await f.save(await f.confirm(g.documentId,{number:'GHR-INV-CHARGE-01',amountCents:25000},'GHR'));assert.equal(projectCustomerAccount(await f.context()).balances[0].balanceCents,25000);assert.equal(projectCustomerAccount(await f.context('GHR')).balances[0].balanceCents,25000);const bad=await f.request({customerId:'OTHER'});await assert.rejects(f.upload(bad),/unavailable/);});
 
+test('standalone DN PDF needs no shipment, adds one receivable, and two receipts settle only that DN',async()=>{
+ const f=fixture(),reference='NCT-DN-000001',description='10 PACK OF SNACK ON BEHALF OF CUSTOMER';
+ const request=await f.request({invoiceKind:'STANDALONE_DN',code:'DN',scope:'CUSTOMER',reference,chargeCurrency:'USD',amountCents:230,chargeLines:[{description,amountCents:230}]});
+ const uploaded=await f.upload(request);
+ assert.equal((await f.upload(request)).documentId,uploaded.documentId);
+ let context=await f.context();
+ const evidence=readCustomerAccountEvidence(context)[0];
+ assert.equal(evidence.type,'DEBIT_NOTE');
+ assert.equal(evidence.status,'AWAITING_REVIEW');
+ assert.equal(evidence.chargeLines[0].description,description);
+ assert.equal(projectCustomerAccount(context).entries.length,0);
+ assert.equal(projectCustomerTransactionHistory(context,'C').documents.length,0);
+ assert.equal(f.calls[1].businessId,'');
+ assert.equal(f.calls[1].type,'SUPPORT_DN');
+ assert.equal(f.calls[1].customerScope,'CUSTOMER');
+ const confirmation=await f.confirm(uploaded.documentId,{number:reference,amountCents:230});
+ const posted=await f.save(confirmation);
+ assert.equal((await f.save(confirmation)).documentId,posted.documentId);
+ context=await f.context();
+ assert.equal(projectCustomerAccount(context).balances[0].debitCents,230);
+ assert.equal(projectCustomerAccount(context).balances[0].invoiceCents,0);
+ assert.equal(projectCustomerAccount(context).entries.length,1);
+ assert.equal(projectCustomerTransactionHistory(context,'C').documents[0].code,'DN');
+ for(const [number,amountCents,due] of [['RECEIPT-01',100,130],['RECEIPT-02',130,0]]){
+  const slip=await f.upload(await f.request({invoiceKind:undefined,chargeLines:undefined,code:'$',scope:'INVOICE',invoiceId:posted.documentId,reference:number,amountCents}));
+  await f.save(await f.confirm(slip.documentId,{number,amountCents,allocations:[{invoiceId:posted.documentId,amountCents}]}));
+  const projection=projectCustomerAccount(await f.context());
+  assert.equal(projection.invoicePayments.invoices[0].dueCents,due);
+  assert.equal(projection.balances[0].balanceCents,due);
+ }
+ assert.equal((await f.context()).activity.some(row=>/WAREHOUSE|DESK|CUSTOMER_SHIPMENT/.test(row.action)),false);
+ const duplicate=await f.request({...request.input,base64:Buffer.from('%PDF-1.4\nDifferent file').toString('base64')});
+ await assert.rejects(f.upload(duplicate),/already exists/);
+ await assert.rejects(f.save(await f.confirm(uploaded.documentId,{number:reference,amountCents:230,currency:'MYR'})),/keep its PDF reference and currency/);
+});
+
 test('USD customer receives an independent MYR charge after Finance confirms it',async()=>{
  const f=fixture();
  const usd=await f.upload(await f.request());

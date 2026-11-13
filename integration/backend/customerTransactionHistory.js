@@ -34,7 +34,7 @@ export function projectCustomerTransactionHistory(context, customerId) {
   const knownOrders = new Set((context.tasks || []).filter(row => row.customerId === customerId).map(row => row.orderId));
   shipments.forEach(row => row.lines.forEach(line => knownOrders.add(line.orderId)));
   const supportFiles = supportDocuments
-    .filter(row => row.customerId === customerId && !row.superseded && publicCodes.has(row.code) && (row.scope==='CUSTOMER'||knownOrders.has(row.orderId)))
+    .filter(row => row.customerId === customerId && !row.superseded && row.invoiceKind!=='STANDALONE_DN' && publicCodes.has(row.code) && (row.scope==='CUSTOMER'||knownOrders.has(row.orderId)))
     .filter(row => {
       const shipment=shipmentsById.get(row.invoiceId);
       return !row.invoiceId || shipment &&
@@ -42,7 +42,7 @@ export function projectCustomerTransactionHistory(context, customerId) {
         (row.scope !== 'DESK' || shipment.desk === row.desk);
     })
     .map(publicFile);
-  const accountFiles = entries.flatMap(row => row.documents.map(document=>publicFile(row.type==='CHARGE_INV'?{...document,shipmentId:row.id}:document)));
+  const accountFiles = entries.flatMap(row => row.documents.map(document=>publicFile(row.type==='CHARGE_INV'||row.invoiceKind==='STANDALONE_DN'?{...document,shipmentId:row.id}:document)));
   // The same Drive file may be linked by both existing ledgers; never duplicate it in the customer library.
   const documents = [...new Map([...supportFiles, ...accountFiles].map(row => [row.fileId, row])).values()]
     .sort((a, b) => String(b.at).localeCompare(String(a.at)) || a.id.localeCompare(b.id));
