@@ -27,9 +27,8 @@ $w.onReady(() => {
     const authorized = [...workspaces].filter(([id]) => ids.includes(id));
     if (!authorized.length) { await clearLinks(); return false; }
     const anchors = authorized.map(([, [label, url]]) =>
-      '<a href="' + url + '" target="_blank" rel="noopener noreferrer"><span style="color:#174c83;font-size:16px;font-weight:bold;">' + label.replace(' ', '&nbsp;') + '</span></a>');
-    links.html = '<p><span style="color:#143654;font-size:16px;font-weight:bold;">My Workspaces 我的工作室</span></p>' +
-      '<p>' + anchors.join(' &nbsp; ') + '</p>';
+      '<a href="' + url + '" target="_blank">' + label + '</a>');
+    links.html = '<p>My Workspaces 我的工作室</p><p>' + anchors.join(' · ') + '</p>';
     await workspaceSection.expand();
     return true;
   }
