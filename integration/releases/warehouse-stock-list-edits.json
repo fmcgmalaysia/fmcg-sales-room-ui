@@ -1,0 +1,258 @@
+{
+  "warehouse-room/stock-control-app.js": {
+    "before": "f90a5c91506c5d7360fd8c6e50d9f38e269dacf4f816d9e7e71e2551968a3e71",
+    "after": "ffa97969f4571d18837b2590c39dcc2e377a08971f75673fe2bccc8f1a5ddeef",
+    "newLine": "\n",
+    "hunks": [
+      {
+        "index": 12,
+        "before": [],
+        "after": [
+          "  const showProductImages = !finance && Boolean($('stock-image-preview'));",
+          "  const productImage = row => /^https:\\/\\/[^\\s<>\"']+$/i.test(row.productImageUrl || '')",
+          "    ? '<img class=\"stock-thumbnail\" loading=\"lazy\" referrerpolicy=\"no-referrer\" src=\"' + esc(row.productImageUrl) + '\" alt=\"\">'",
+          "    : '—';"
+        ]
+      },
+      {
+        "index": 23,
+        "before": [],
+        "after": [
+          "  const dialogOpen = () => $('source-dialog').open || Boolean($('reservation-dialog')?.open);"
+        ]
+      },
+      {
+        "index": 25,
+        "before": [
+          "      height: document.body.scrollHeight, busy: $('source-dialog').open }, location.origin === 'null' ? '*' : location.origin);"
+        ],
+        "after": [
+          "      height: document.body.scrollHeight, busy: dialogOpen() }, location.origin === 'null' ? '*' : location.origin);"
+        ]
+      },
+      {
+        "index": 30,
+        "before": [],
+        "after": [
+          "    $('reservation-dialog')?.addEventListener('close', layout);"
+        ]
+      },
+      {
+        "index": 38,
+        "before": [
+          "    if ($('source-dialog').open) return;"
+        ],
+        "after": [
+          "    if (dialogOpen()) return;"
+        ]
+      },
+      {
+        "index": 55,
+        "before": [
+          "    $('stock-rows').innerHTML = items.map(row => '<tr><td><button class=\"product\" data-key=\"' + esc(row.key) + '\">' + esc(row.name)",
+          "      + '<small>' + esc(row.barcode) + ' · ' + esc(row.packing) + '</small></button>'"
+        ],
+        "after": [
+          "    if (showProductImages) $('stock-image-preview').hidden = true;",
+          "    $('stock-rows').innerHTML = items.map(row => '<tr>' + (showProductImages ? '<td class=\"stock-image\">' + productImage(row) + '</td>' : '')",
+          "      + '<td><button class=\"product\" data-key=\"' + esc(row.key) + '\">' + (finance ? esc(row.name) + '<small>' + esc(row.barcode) + ' · ' + esc(row.packing) : '<small>' + esc(row.barcode) + '</small>' + esc(row.name) + '<small>' + esc(row.packing)) + '</small></button>'"
+        ]
+      },
+      {
+        "index": 59,
+        "before": [
+          "      + [row.onHand, row.reservedUsable, row.available, row.isolated].map(value => '<td class=\"num\">' + amount(value) + '</td>').join('')"
+        ],
+        "after": [
+          "      + [row.onHand, row.reservedUsable, row.available, row.isolated].map((value, index) => '<td class=\"num\">'",
+          "        + ($('reservation-dialog') && !finance && index === 1 && row.sources.some(source => source.reservations.length) ? '<button type=\"button\" class=\"stock-reserved\" data-reserved=\"' + esc(row.key) + '\" aria-label=\"View customer reservations for ' + esc(row.name) + '\">' + amount(value) + '</button>' : amount(value)) + '</td>').join('')"
+        ]
+      },
+      {
+        "index": 61,
+        "before": [
+          "      || '<tr><td colspan=\"' + (finance ? 8 : 5) + '\" class=\"empty\">' + (data ? label('No matching stock records', '没有符合条件的库存记录') : label('Waiting for verified stock data', '等待已确认的库存资料')) + '</td></tr>';"
+        ],
+        "after": [
+          "      || '<tr><td colspan=\"' + (finance ? 8 : showProductImages ? 6 : 5) + '\" class=\"empty\">' + (data ? label('No matching stock records', '没有符合条件的库存记录') : label('Waiting for verified stock data', '等待已确认的库存资料')) + '</td></tr>';"
+        ]
+      },
+      {
+        "index": 98,
+        "before": [
+          "  $('stock-rows').onclick = event => { const button = event.target.closest('[data-key]'); if (!button) return;",
+          "    const row = data?.items.find(item => item.key === button.dataset.key); if (row) showSources(row); };"
+        ],
+        "after": [
+          "  function showReservations(row) {",
+          "    const dialog = $('reservation-dialog');",
+          "    $('reservation-product').textContent = row.name;",
+          "    $('reservation-rows').innerHTML = row.sources.flatMap(source => source.reservations.map(entry => '<tr><td>'",
+          "      + esc(entry.customerName || 'Customer pending review') + '</td><td>' + esc(source.po || '—')",
+          "      + '</td><td class=\"num\">' + amount(entry.outstandingQuantity) + '</td></tr>')).join('');",
+          "    dialog.showModal();",
+          "    layout();",
+          "  }",
+          "  if (showProductImages) {",
+          "    const thumbnailPreview = $('stock-image-preview');",
+          "    $('stock-rows').addEventListener('pointermove', event => {",
+          "      const image = event.target.closest('.stock-thumbnail');",
+          "      if (event.pointerType !== 'mouse' || !image?.complete || !image.naturalWidth) { thumbnailPreview.hidden = true; return; }",
+          "      if (thumbnailPreview.firstElementChild.src !== image.src) thumbnailPreview.firstElementChild.src = image.src;",
+          "      thumbnailPreview.hidden = false;",
+          "      const { width, height } = thumbnailPreview.getBoundingClientRect();",
+          "      const left = event.clientX + 14 + width > innerWidth - 10 ? event.clientX - width - 14 : event.clientX + 14;",
+          "      const top = event.clientY + 14 + height > innerHeight - 10 ? event.clientY - height - 14 : event.clientY + 14;",
+          "      thumbnailPreview.style.left = Math.max(10, left) + 'px';",
+          "      thumbnailPreview.style.top = Math.max(10, top) + 'px';",
+          "    });",
+          "    $('stock-rows').addEventListener('pointerleave', () => { thumbnailPreview.hidden = true; });",
+          "  }",
+          "  $('stock-rows').onclick = event => {",
+          "    const button = event.target.closest('[data-key],[data-reserved]');",
+          "    if (!button) return;",
+          "    const row = data?.items.find(item => item.key === (button.dataset.key ?? button.dataset.reserved));",
+          "    if (row) (button.dataset.reserved === undefined ? showSources : showReservations)(row);",
+          "  };"
+        ]
+      },
+      {
+        "index": 108,
+        "before": [
+          "  $('company').onchange = () => { if ($('source-dialog').open) { $('company').value = company; return; }"
+        ],
+        "after": [
+          "  $('company').onchange = () => { if (dialogOpen()) { $('company').value = company; return; }"
+        ]
+      }
+    ]
+  },
+  "warehouse-room/stock-control-embedded.css": {
+    "before": "644d097d676a8454104a16db07507d7fbbbf44a4fe73dd1fb5a3c3a97e485ad3",
+    "after": "c9d1797d01b8470b6f1d55640bab97c90fbec84d680fcda206ff31081b3b6117",
+    "newLine": "\n",
+    "hunks": [
+      {
+        "index": 11,
+        "before": [],
+        "after": [
+          ".warehouse-stock-list main .stock-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;border:0;background:transparent}",
+          ".warehouse-stock-list main .stock-summary>div{border:1px solid #c5d6e5;border-radius:5px;background:#fff;padding:7px 10px}",
+          ".warehouse-stock-list main .stock-summary>div:nth-child(2){background:#edf4ff}",
+          ".warehouse-stock-list main .stock-summary>div:nth-child(4){background:#fff5e8}",
+          ".warehouse-stock-list main>.frame>table{min-width:520px}",
+          ".warehouse-stock-list main th.stock-image,.warehouse-stock-list td.stock-image{width:58px;text-align:center;color:#647a90}",
+          ".warehouse-stock-list main th:nth-child(2){width:44%}",
+          ".warehouse-stock-list .stock-thumbnail{display:block;margin:auto;width:34px;height:34px;object-fit:contain;cursor:zoom-in}",
+          ".warehouse-stock-list .product small{margin:0;line-height:1.3}",
+          ".warehouse-stock-list .stock-reserved{padding:0 5px;min-height:19px;border-radius:10px;background:#e8f1ff;color:#245398}",
+          "#stock-image-preview{position:fixed;z-index:65;box-sizing:border-box;width:min(286px,calc(100vw - 24px));height:min(286px,calc(100vh - 24px));padding:10px;background:#fff;border:1px solid #b8c4d0;border-radius:10px;box-shadow:0 16px 38px rgba(23,43,77,.18);pointer-events:none}",
+          "#stock-image-preview img{display:block;width:100%;height:100%;object-fit:contain}",
+          ".warehouse-stock-list #reservation-dialog{width:min(460px,calc(100vw - 24px))}",
+          "#reservation-dialog .dialog-heading{justify-content:space-between}",
+          "#reservation-dialog table{min-width:280px}",
+          "@media(max-width:650px){.warehouse-stock-list main .stock-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}"
+        ]
+      }
+    ]
+  },
+  "warehouse-room/stock-control.html": {
+    "before": "87c21a6f1dba0f48dc6de0bc8a282f6419468bb996ee5d2f998ab4b8b8f099a3",
+    "after": "4a8f4ba9c22806cc68de209ca9b015df331819675a911f8e3ae54e4973258304",
+    "newLine": "\r\n",
+    "hunks": [
+      {
+        "index": 1,
+        "before": [
+          "<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261102-two-site-closeout-v1\"><title>Stock List · Warehouse</title><link rel=\"stylesheet\" href=\"stock-control.css\"><link rel=\"stylesheet\" href=\"stock-control-embedded.css?v=20261031-stock-list-purchase-v1\"><link rel=\"stylesheet\" href=\"../master-shared/stock-list.css?v=20261031-stock-list-purchase-v1\"></head>",
+          "<body><header><strong>MASTER</strong><span>Warehouse Department <small>货仓部</small></span><select id=\"company\" aria-label=\"Company 公司\"><option value=\"NCT\">North Cape Trading · NCT</option><option value=\"GHR\">Global HR · GHR</option></select><b id=\"staff\"></b></header>"
+        ],
+        "after": [
+          "<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261114-warehouse-stock-list-v1\"><title>Stock List · Warehouse</title><link rel=\"stylesheet\" href=\"stock-control.css\"><link rel=\"stylesheet\" href=\"stock-control-embedded.css?v=20261114-warehouse-stock-list-v1\"><link rel=\"stylesheet\" href=\"../master-shared/stock-list.css?v=20261031-stock-list-purchase-v1\"></head>",
+          "<body class=\"warehouse-stock-list\"><header><strong>MASTER</strong><span>Warehouse Department <small>货仓部</small></span><select id=\"company\" aria-label=\"Company 公司\"><option value=\"NCT\">North Cape Trading · NCT</option><option value=\"GHR\">Global HR · GHR</option></select><b id=\"staff\"></b></header>"
+        ]
+      },
+      {
+        "index": 5,
+        "before": [
+          "<p class=\"scope-note\">Based on recorded receipts and physical movements. Unrecorded opening stock requires reconciliation. 本页依据已记录的收货及实物进出；未入账的期初货物仍需盘点核对。</p>"
+        ],
+        "after": []
+      },
+      {
+        "index": 9,
+        "before": [
+          "<div class=\"frame\"><table><thead><tr><th>Product 产品</th><th class=\"num\">On Hand<small>在手数量</small></th><th class=\"num\">Reserved<small>客户预留可用货</small></th><th class=\"num\">Available<small>自由库存</small></th><th class=\"num\">Isolated<small>隔离数量</small></th></tr></thead><tbody id=\"stock-rows\"><tr><td colspan=\"5\" class=\"empty\">Waiting for verified stock data 等待已确认的库存资料</td></tr></tbody></table></div>"
+        ],
+        "after": [
+          "<div class=\"frame\"><table><thead><tr><th class=\"stock-image\">Image</th><th>Product 产品</th><th class=\"num\">On Hand<small>在手数量</small></th><th class=\"num\">Reserved<small>客户预留可用货</small></th><th class=\"num\">Available<small>自由库存</small></th><th class=\"num\">Isolated<small>隔离数量</small></th></tr></thead><tbody id=\"stock-rows\"><tr><td colspan=\"6\" class=\"empty\">Waiting for verified stock data 等待已确认的库存资料</td></tr></tbody></table></div>"
+        ]
+      },
+      {
+        "index": 11,
+        "before": [
+          "<p class=\"footnote\">Incoming P.O.s are excluded from On Hand. Unknown quantities are shown as Review Required, never as zero. 在途采购不计入在手数量；未知数量显示待核对，不计作0。</p>"
+        ],
+        "after": []
+      },
+      {
+        "index": 13,
+        "before": [],
+        "after": [
+          "<div id=\"stock-image-preview\" hidden aria-hidden=\"true\"><img alt=\"\"></div>",
+          "<dialog id=\"reservation-dialog\" aria-labelledby=\"reservation-heading\"><div class=\"dialog-heading\"><div><h2 id=\"reservation-heading\">Customer Reservations 客户预留</h2><p id=\"reservation-product\"></p></div><form method=\"dialog\"><button aria-label=\"Close\">×</button></form></div><div class=\"dialog-body\"><div class=\"frame\"><table><thead><tr><th>Customer 客户</th><th>P.O.</th><th class=\"num\">Claim CTN</th></tr></thead><tbody id=\"reservation-rows\"></tbody></table></div><p class=\"footnote\">Claims can exceed usable stock during a shortage. 缺货时，预留需求可高于可用实物。</p></div></dialog>"
+        ]
+      },
+      {
+        "index": 14,
+        "before": [
+          "<script src=\"stock-control-app.js?v=20261102-two-site-closeout-v1\"></script></body></html>"
+        ],
+        "after": [
+          "<script src=\"stock-control-app.js?v=20261114-warehouse-stock-list-v1\"></script></body></html>"
+        ]
+      }
+    ]
+  },
+  "warehouse-room/stock-control-link.js": {
+    "before": "05e15efd06f29f9d2e8175321ee824d9942e3810c3fa8d5e340398f93bfa6e35",
+    "after": "5bcf99c49c43a98de2186b80e010f28873902a4961b9aadf017fff84523dbc5d",
+    "newLine": "\r\n",
+    "hunks": [
+      {
+        "index": 12,
+        "before": [
+          "      frame.src = 'stock-control.html?v=20261101-month-end-stock-loss-v2&embedded=warehouse&company=' + company;"
+        ],
+        "after": [
+          "      frame.src = 'stock-control.html?v=20261114-warehouse-stock-list-v1&embedded=warehouse&company=' + company;"
+        ]
+      }
+    ]
+  },
+  "warehouse-room/index.html": {
+    "before": "b5adbb41ca918450fe45c54f4c2e5080af1b975ad2453f54a25a745d3650e6a3",
+    "after": "83fe963a587da010b2813b1f82978e2c2f76067d6df2f168d98827011bfdcb3c",
+    "newLine": "\n",
+    "hunks": [
+      {
+        "index": 2,
+        "before": [
+          "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261113-warehouse-delivery-compact-v2\"><title>Warehouse Department</title><link rel=\"stylesheet\" href=\"../account-room/style.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"style.css?v=20261113-shipment-delivery-v1\"><link rel=\"stylesheet\" href=\"../master-shared/task-signals.css?v=20261018-warehouse-workroom-v1\"><script src=\"../master-shared/task-signals.js?v=20261018-task-chat-drive-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/stock-exceptions.css?v=20261101-month-end-stock-loss-v2\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-warehouse-workroom-v1\"><script defer src=\"../master-shared/fixed-header.js?v=20261018-warehouse-workroom-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261020-sales-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"../master-shared/mobile-menu.css?v=20261018-department-mobile-qty-v1\"><link rel=\"stylesheet\" href=\"../master-shared/quantity-alignment.css?v=20261018-department-mobile-qty-v1\"><script src=\"../master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/action-affordances.css?v=20261020-action-affordances-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261113-warehouse-delivery-compact-v2\"></head>"
+        ],
+        "after": [
+          "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261114-warehouse-stock-list-v1\"><title>Warehouse Department</title><link rel=\"stylesheet\" href=\"../account-room/style.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"style.css?v=20261113-shipment-delivery-v1\"><link rel=\"stylesheet\" href=\"../master-shared/task-signals.css?v=20261018-warehouse-workroom-v1\"><script src=\"../master-shared/task-signals.js?v=20261018-task-chat-drive-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/stock-exceptions.css?v=20261101-month-end-stock-loss-v2\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-warehouse-workroom-v1\"><script defer src=\"../master-shared/fixed-header.js?v=20261018-warehouse-workroom-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261020-sales-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"../master-shared/mobile-menu.css?v=20261018-department-mobile-qty-v1\"><link rel=\"stylesheet\" href=\"../master-shared/quantity-alignment.css?v=20261018-department-mobile-qty-v1\"><script src=\"../master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/action-affordances.css?v=20261020-action-affordances-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261113-warehouse-delivery-compact-v2\"></head>"
+        ]
+      },
+      {
+        "index": 12,
+        "before": [
+          "<script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"workroom.js?v=20261111-warehouse-desk-workflow-v1\"></script><script src=\"dispatch.js?v=20261018-warehouse-workroom-v1\"></script><script src=\"stock-control-link.js?v=20261101-month-end-stock-loss-v2\"></script><script src=\"../master-shared/desk-delivery.js?v=20261113-shipment-delivery-v1\"></script><script src=\"app.js?v=20261111-warehouse-desk-workflow-history-v2\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261101-customer-loaded-records-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script></body></html>"
+        ],
+        "after": [
+          "<script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"workroom.js?v=20261111-warehouse-desk-workflow-v1\"></script><script src=\"dispatch.js?v=20261018-warehouse-workroom-v1\"></script><script src=\"stock-control-link.js?v=20261114-warehouse-stock-list-v1\"></script><script src=\"../master-shared/desk-delivery.js?v=20261113-shipment-delivery-v1\"></script><script src=\"app.js?v=20261111-warehouse-desk-workflow-history-v2\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261101-customer-loaded-records-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script></body></html>"
+        ]
+      }
+    ]
+  }
+}
