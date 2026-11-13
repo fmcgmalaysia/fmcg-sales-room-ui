@@ -1,0 +1,91 @@
+{
+  "support-room/workroom.js": {
+    "before": "40f7c884c5654775c9ba171fbcc0e465cd8c58a432e6962770350b60d2faef3c",
+    "after": "50baeca409e8e8ba0d3853302181faa7e98c92ec072fa8b6040f15e4b4580994",
+    "hunks": [
+      {
+        "index": 426,
+        "before": [
+          "      '<div class=\"shipment-compact-footer\">'+'<section class=\"shipment-totals\"><dl><dt>Qty</dt><dd>'+quantityPair(planned.qty,totalQty,0,'CTN',Boolean(invoice))+'</dd><dt>CBM</dt><dd>'+quantityPair(planned.cbm,totalCbm,4,'m³',Boolean(invoice))+'</dd></dl><div class=\"desk-amount\"><span>Amount</span><strong>'+quantityPair(planned.amount,amount,2,esc(currency),Boolean(invoice))+'</strong></div><div class=\"shipment-invoice\"><span>Our Sales Inv. No:</span><button type=\"button\" class=\"invoice-number-link '+(!invoice&&!references.invoiceNoDraft?'invoice-prefix':'')+'\" '+(invoice?'data-invoice=\"'+esc(invoice.id)+'\"':'data-edit-invoice-number')+' '+(invoice||canEdit?'':'disabled')+'>'+esc(invoiceLabel)+'</button></div></section></div>'+",
+          "      '<div class=\"shipment-columns\"><section class=\"shipment-details\"><h3>Customer Details</h3>'+read('Country',countryLabel(order.country))+read('Port Name',order.port)+'</section>'+"
+        ],
+        "after": [
+          "",
+          "      '<div class=\"shipment-columns\"><section class=\"shipment-details\"><h3>Customer Details</h3>'+read('Country',countryLabel(order.country))+read('Port Name',order.port)+'<div class=\"shipment-invoice\"><span>Sales Invoice No.</span><button type=\"button\" class=\"invoice-number-link '+(!invoice&&!references.invoiceNoDraft?'invoice-prefix':'invoice-assigned')+'\" '+(invoice?'data-invoice=\"'+esc(invoice.id)+'\"':'data-edit-invoice-number')+' '+(invoice||canEdit?'':'disabled')+'>'+esc(invoiceLabel)+'</button></div></section>'+"
+        ]
+      },
+      {
+        "index": 429,
+        "before": [
+          "      '<section class=\"shipment-shipping\">'+section('Shipment Details','shipment')+read('Logistic',activeDesk?transportLabel(shipment?.transport):'Per Desk')+read('Booked By',activeDesk?shipment?.bookedBy:'Per Desk')+read('Last Gate In',activeDesk&&shipment?.lastGateIn?day(shipment.lastGateIn)+' · '+shipment.lastGateIn.slice(11,16):activeDesk?'—':'Per Desk')+read('Departure Date',activeDesk?day(shipment?.departureDate):'Per Desk')+read('ETA',activeDesk?day(shipment?.arrival):'Per Desk')+'</section>'+headerDocuments(order)+'</div>'+"
+        ],
+        "after": [
+          "      '<section class=\"shipment-shipping\">'+section('Shipment Details','shipment')+read('Logistic',activeDesk?transportLabel(shipment?.transport):'Per Desk')+read('Booked By',activeDesk?shipment?.bookedBy:'Per Desk')+read('Last Gate In',activeDesk&&shipment?.lastGateIn?day(shipment.lastGateIn)+' · '+shipment.lastGateIn.slice(11,16):activeDesk?'—':'Per Desk')+read('Departure Date',activeDesk?day(shipment?.departureDate):'Per Desk')+read('ETA',activeDesk?day(shipment?.arrival):'Per Desk')+'</section><section class=\"shipment-totals\"><dl><dt>Qty</dt><dd>'+quantityPair(planned.qty,totalQty,0,'CTN',Boolean(invoice))+'</dd><dt>CBM</dt><dd>'+quantityPair(planned.cbm,totalCbm,4,'m³',Boolean(invoice))+'</dd></dl><div class=\"desk-amount\"><span>Amount</span><strong>'+quantityPair(planned.amount,amount,2,esc(currency),Boolean(invoice))+'</strong></div></section></div>'+headerDocuments(order)+"
+        ]
+      },
+      {
+        "index": 440,
+        "before": [
+          "      (part.desk?'Desk '+part.desk:'Pending')+' · '+number(part.quantity)+'</span>').join('')||'—';"
+        ],
+        "after": [
+          "      (part.desk?'Desk '+part.desk:'Pending')+(activeDesk?'':' · '+number(part.quantity))+'</span>').join('')||'—';"
+        ]
+      }
+    ]
+  },
+  "support-room/workroom.html": {
+    "before": "b983d4878a200bd4b1d1189d3b0a86b1b9104b7d6ac76ca24bcb10e0521afcec",
+    "after": "10d388e1015bb292bc99e8909e62a22d6d8fef0c6b5d807321ec13371eba16bd",
+    "hunks": [
+      {
+        "index": 1,
+        "before": [
+          "<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261113-shipment-delivery-v1\"><title>Support Department</title><link rel=\"stylesheet\" href=\"draft.css?v=20261021-support-preview-v1\"><link rel=\"stylesheet\" href=\"draft-compact.css?v=20261021-support-preview-v1\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-department-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261113-shipment-delivery-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261111-warehouse-desk-workflow-v1\"></head>"
+        ],
+        "after": [
+          "<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261114-support-desk-header-v1\"><title>Support Department</title><link rel=\"stylesheet\" href=\"draft.css?v=20261021-support-preview-v1\"><link rel=\"stylesheet\" href=\"draft-compact.css?v=20261021-support-preview-v1\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-department-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261114-support-desk-header-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261111-warehouse-desk-workflow-v1\"></head>"
+        ]
+      },
+      {
+        "index": 19,
+        "before": [
+          "<link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261027-chat-latest-v1\"><script src=\"../master-shared/task-chat.js?v=20261113-support-desk-layout-v4\"></script><script src=\"workroom-model.js?v=20261113-support-standalone-dn-v1\"></script><script src=\"../master-shared/desk-delivery.js?v=20261113-support-desk-layout-v4\"></script><script src=\"workroom.js?v=20261113-shipment-delivery-v1\"></script></body></html>"
+        ],
+        "after": [
+          "<link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261027-chat-latest-v1\"><script src=\"../master-shared/task-chat.js?v=20261113-support-desk-layout-v4\"></script><script src=\"workroom-model.js?v=20261113-support-standalone-dn-v1\"></script><script src=\"../master-shared/desk-delivery.js?v=20261113-support-desk-layout-v4\"></script><script src=\"workroom.js?v=20261114-support-desk-header-v1\"></script></body></html>"
+        ]
+      }
+    ]
+  },
+  "support-room/workroom.css": {
+    "before": "48d22620044271f0d5aa8bf48541f5571e353bb36d5743b9aca048d536bc51ee",
+    "after": "3389b8d3d2575c7b1f6a3f30bfcc55ae13e0f75870fd54fddf1fb55c82e10762",
+    "hunks": [
+      {
+        "index": 313,
+        "before": [],
+        "after": [
+          "",
+          ".shipment-compact .shipment-columns{grid-template-columns:minmax(170px,1fr) minmax(150px,1fr) minmax(170px,1.12fr) minmax(160px,.85fr)}",
+          ".shipment-compact .shipment-columns>section{padding:7px 12px}",
+          ".shipment-compact .shipment-kv{min-height:18px}",
+          ".shipment-compact .shipment-columns>.shipment-totals{display:grid;align-content:center;justify-content:stretch;gap:5px;border-left:1px solid #dce6ef;background:#f0f5fa;color:#173651}",
+          ".shipment-compact .shipment-totals dl,.shipment-compact .shipment-totals .desk-amount{display:grid;grid-template-columns:42px 1fr;gap:5px;margin:0;padding:0;border:0}",
+          ".shipment-compact .shipment-totals :is(dt,small,.desk-amount>span){color:#526d86}",
+          ".shipment-compact .shipment-totals .quantity-basis>b{color:#173651}",
+          ".shipment-compact .shipment-invoice{justify-content:flex-start;gap:3px 8px;margin-top:4px}",
+          ".shipment-compact .shipment-invoice .invoice-number-link:not(:disabled){font-size:12px;background:#2563eb;color:#fff;border-color:#2563eb}",
+          ".shipment-compact .shipment-invoice .invoice-prefix:not(:disabled){background:#f58a00;color:#fff;border-color:#f58a00}",
+          ".shipment-compact .shipment-documents{padding:5px 12px;border-top:1px solid #dce6ef}",
+          ".shipment-compact .shipment-documents h3{margin:0 0 4px;font-size:11px}",
+          ".shipment-compact .shipment-doc-grid{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:auto;grid-auto-flow:row;gap:4px 10px}",
+          ".shipment-compact .shipment-doc-grid>div:nth-child(n+6){grid-column:auto}",
+          ".shipment-compact .shipment-doc-grid button{height:24px}",
+          "@media(max-width:850px){.shipment-compact .shipment-columns{grid-template-columns:repeat(2,minmax(0,1fr))}.shipment-compact .shipment-doc-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}",
+          "@media(max-width:480px){.shipment-compact .shipment-columns{grid-template-columns:1fr}.shipment-compact .shipment-doc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}"
+        ]
+      }
+    ]
+  }
+}
