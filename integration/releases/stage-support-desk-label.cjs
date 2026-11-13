@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const { compactHeader, compactOverview, compactTransactions, chargeInvoiceForm, css } = require('./support-compact-document-header.cjs');
 const layout = require('./support-desk-layout.cjs');
+const debit = require('./support-standalone-debit.cjs');
 
 const build = '20261113-support-workroom-compact-v2';
 const layoutBuild = '20261113-support-desk-layout-v4';
@@ -69,6 +70,18 @@ function stageSupportDeskLabel(site) {
   sources['workroom.js'] = layout.patchSupportScript(sources['workroom.js']);
   sources['workroom.html'] = layout.patchSupportHtml(sources['workroom.html'], build, layoutBuild);
   sources['workroom.css'] += layout.css;
+  sources['workroom.js'] = debit.supportScript(sources['workroom.js']);
+  sources['workroom-model.js'] = debit.supportModel(sources['workroom-model.js']);
+  sources['workroom.html'] = sources['workroom.html']
+    .replace('name="build" content="'+layoutBuild+'"', 'name="build" content="20261113-support-standalone-dn-v1"')
+    .replace('workroom.js?v='+layoutBuild, 'workroom.js?v=20261113-support-standalone-dn-v1')
+    .replace('workroom-model.js?v='+layoutBuild, 'workroom-model.js?v=20261113-support-standalone-dn-v1');
+  const financeIndex = path.join(site, 'account-room', 'index.html');
+  const financeScript = path.join(site, 'account-room', 'customer-debtors.js');
+  const financeHtml = fs.readFileSync(financeIndex, 'utf8');
+  const financeBuild = replaceOnce(financeHtml, 'name="build" content="20261111-warehouse-receipt-evidence-v1"', 'name="build" content="20261113-support-standalone-dn-v1"');
+  fs.writeFileSync(financeIndex, replaceOnce(financeBuild, 'customer-debtors.js?v=20261102-customer-invoice-payments-v1', 'customer-debtors.js?v=20261113-support-standalone-dn-v1'));
+  fs.writeFileSync(financeScript, debit.financeScript(fs.readFileSync(financeScript, 'utf8')));
   fs.writeFileSync(deliveryFile, layout.patchDeskDelivery(delivery.toString('utf8')));
   fs.writeFileSync(chatFile, layout.patchTaskChat(chat.toString('utf8')));
   for (const [name, content] of Object.entries(sources)) fs.writeFileSync(path.join(directory, name), content);

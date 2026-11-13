@@ -3,7 +3,7 @@ import { operationId, createOperationJournal } from 'backend/purchaseOperationJo
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { createHash } from 'crypto';
 import { readSupportDocuments } from 'backend/supportDocuments.js';
-import { CUSTOMER_ALLOCATION_ACTION, normalizeInvoiceAllocations, normalizeChargeLines, projectInvoicePayments, customerInvoiceFacts, readInvoiceAllocationStates } from 'backend/customerInvoicePayments.js';
+import { CUSTOMER_ALLOCATION_ACTION, normalizeInvoiceAllocations, normalizeChargeLines, projectInvoicePayments, customerInvoiceFacts, readInvoiceAllocationStates, isStandaloneDebitNote, canAllocateCustomerDocument } from 'backend/customerInvoicePayments.js';
 export const CUSTOMER_ACCOUNT_ACTION='CUSTOMER_ACCOUNT_DOCUMENT_SAVED';
 const text=value=>String(value??'').trim();
 const types=['SALES_INV','SALES_CN','DEBIT_NOTE','CUSTOMER_RECEIPT','CHARGE_INV'];
@@ -11,7 +11,7 @@ const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value
 export function readCustomerAccountDocuments(activity){
  const docs=activity.filter(row=>row.action===CUSTOMER_ACCOUNT_ACTION&&row.result==='SAVED').map(row=>row.details?.document);
  if(docs.some(row=>!row||!types.includes(row.type)||!['NCT','GHR'].includes(row.company)||!row.customerId||!row.id||!row.number||!validDate(row.date)||!Number.isSafeInteger(row.amountCents)||row.amountCents<=0||!(/^[A-Z]{3}$/).test(row.currency)||!row.fileId||!row.sha256)||new Set(docs.map(row=>row.id)).size!==docs.length)throw Error('Customer document ledger requires review.');
- for(const doc of docs.filter(row=>row.type==='CHARGE_INV'))if(!doc.confirmedByFinance||!doc.sourceDocumentId||normalizeChargeLines(doc.chargeLines).reduce((n,line)=>n+line.amountCents,0)!==doc.amountCents)throw Error('Charge invoice ledger requires review.');
+ for(const doc of docs.filter(row=>row.type==='CHARGE_INV'||isStandaloneDebitNote(row)))if(!doc.confirmedByFinance||!doc.sourceDocumentId||normalizeChargeLines(doc.chargeLines).reduce((n,line)=>n+line.amountCents,0)!==doc.amountCents||isStandaloneDebitNote(doc)&&(doc.shipmentId||doc.allocations?.length))throw Error('Charge document ledger requires review.');
  return docs;
 }
 export function customerAccountVersion({company,activity}){const matching=activity.filter(row=>row.action===CUSTOMER_ALLOCATION_ACTION&&row.result==='SAVED');return matching.length?operationId(company,readCustomerAccountDocuments(activity),readCustomerShipments(activity),readSupportDocuments(activity,company),matching):operationId(company,readCustomerAccountDocuments(activity),readCustomerShipments(activity),readSupportDocuments(activity,company));}
@@ -21,7 +21,7 @@ export function readCustomerAccountEvidence({company,activity}){
  const posted=readCustomerAccountDocuments(activity).filter(row=>row.company===company);
  return readSupportDocuments(activity,company).filter(row=>accountType(row.code,row.invoiceKind)&&!row.superseded).map(source=>{
   const entry=posted.find(row=>row.sourceDocumentId===source.id||row.customerId===source.customerId&&row.type===accountType(source.code,source.invoiceKind)&&(row.fileId===source.fileId||row.sha256===source.sha256));
-  return {sourceDocumentId:source.id,company,customerId:source.customerId,customerName:source.customerName||source.customerId,type:accountType(source.code,source.invoiceKind),...(source.chargeLines?{chargeLines:source.chargeLines}:{}),reference:source.reference,referenceCurrency:source.currency,referenceAmountCents:source.amountCents,uploadedAt:source.at,fileId:source.fileId,name:source.name,status:entry?'RECORDED':'AWAITING_REVIEW',...(entry?{accountDocumentId:entry.id,postedDate:entry.date,postedCurrency:entry.currency,postedAmountCents:entry.amountCents}:{} )};
+  return {sourceDocumentId:source.id,company,customerId:source.customerId,customerName:source.customerName||source.customerId,type:accountType(source.code,source.invoiceKind),...(source.invoiceKind==='STANDALONE_DN'?{invoiceKind:source.invoiceKind}:{}),...(source.chargeLines?{chargeLines:source.chargeLines}:{}),reference:source.reference,referenceCurrency:source.currency,referenceAmountCents:source.amountCents,uploadedAt:source.at,fileId:source.fileId,name:source.name,status:entry?'RECORDED':'AWAITING_REVIEW',...(entry?{accountDocumentId:entry.id,postedDate:entry.date,postedCurrency:entry.currency,postedAmountCents:entry.amountCents}:{} )};
  });
 }
 // This retained entry point only recovers an already committed historical Sales request.
@@ -48,7 +48,7 @@ export function createFinanceCustomerAccountOperations({store,names,readContext,
   if(!names[company]||staff?.canPostCustomerAccount!==true||typeof input.documentId!=='string'||!input.documentId||input.documentId.length>100||typeof input.customerId!=='string'||!input.customerId)throw Error('Finance invoice matching access is required.');
   const allocations=normalizeInvoiceAllocations(input.allocations),checkedInput={action:input.action,documentId:input.documentId,customerId:input.customerId,version:input.version,allocations};
   return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{financeInvoiceMatching:checkedInput},prepare:async()=>{
-   const context=await readContext(company,staff),docs=readCustomerAccountDocuments(context.activity).filter(row=>row.company===company),doc=docs.find(row=>row.id===input.documentId&&row.customerId===input.customerId&&['CUSTOMER_RECEIPT','SALES_CN','DEBIT_NOTE'].includes(row.type));
+   const context=await readContext(company,staff),docs=readCustomerAccountDocuments(context.activity).filter(row=>row.company===company),doc=docs.find(row=>row.id===input.documentId&&row.customerId===input.customerId&&canAllocateCustomerDocument(row));
    if(context.company!==company||!doc)rejectConfirmation('The posted customer document is unavailable.');
    if(input.version!==customerAccountVersion(context))rejectConfirmation('Invoice matching changed. Refresh before confirming.');
    const state=readInvoiceAllocationStates(docs,context.activity,company).get(doc.id),id=operationId(company,requestId,staff.memberId,'CUSTOMER_INVOICE_MATCHING'),at=now().toISOString();
@@ -79,13 +79,20 @@ export function createFinanceCustomerAccountOperations({store,names,readContext,
    if(context.company!==company)throw Error('Customer company could not be confirmed.');
    const source=readSupportDocuments(context.activity,company).find(row=>row.id===input.sourceDocumentId&&row.customerId===input.customerId&&accountType(row.code,row.invoiceKind)&&!row.superseded);
    if(!source)rejectConfirmation('The Support document is unavailable.');
+   const independentDebit=source.invoiceKind==='STANDALONE_DN';
+   if(independentDebit&&(number.toUpperCase()!==source.reference.toUpperCase()||currency!==source.currency||allocations?.length||existingDebitNoteId))rejectConfirmation('The standalone Debit Note must keep its PDF reference and currency, without an invoice allocation.');
    const existing=docs.find(row=>row.sourceDocumentId===source.id);
    if(existing){if(existing.number!==number||existing.date!==input.date||existing.currency!==currency||existing.amountCents!==input.amountCents||allocations&&operationId(existing.allocations||[])!==operationId(allocations)||chargeLines&&operationId(existing.chargeLines)!==operationId(chargeLines))throw Error('This document is already recorded. Its posted amount cannot be overwritten.');return {existingId:existing.id};}
    if(input.version!==customerAccountVersion(context))rejectConfirmation('Customer ledger or evidence changed. Refresh before confirming.');
    if(docs.some(row=>row.fileId===source.fileId||row.sha256===source.sha256||row.type===accountType(source.code,source.invoiceKind)&&row.number.toUpperCase()===number.toUpperCase()))rejectConfirmation('This proof or document reference is already recorded. Review the existing entry.');
-   const id=operationId(company,'SUPPORT_ACCOUNT_POSTING',source.id),at=now().toISOString();
+   const id=independentDebit?operationId(company,'STANDALONE_DEBIT_NOTE',number.toUpperCase()):operationId(company,'SUPPORT_ACCOUNT_POSTING',source.id),at=now().toISOString();
    const document={id,company,customerId:source.customerId,customerName:source.customerName||source.customerId,type:accountType(source.code,source.invoiceKind),number,date:input.date,currency,amountCents:input.amountCents,reason,shipmentId:source.invoiceId||'',fileId:source.fileId,sha256:source.sha256,size:source.size,name:source.name,at,by:staff.staffName,byStaffId:staff.staffId,url:'https://drive.google.com/file/d/'+source.fileId+'/view',sourceDocumentId:source.id,referenceAmountCents:source.amountCents,referenceCurrency:source.currency,sourceUploadedAt:source.at,confirmedByFinance:true};
-   if(document.type==='CHARGE_INV'){
+   if(independentDebit){
+    document.invoiceKind=source.invoiceKind;
+    document.chargeLines=chargeLines||normalizeChargeLines(source.chargeLines);
+    if(document.chargeLines.reduce((n,line)=>n+line.amountCents,0)!==document.amountCents)rejectConfirmation('Finance charge lines must equal the actual Debit Note amount.');
+    if(docs.some(row=>row.type==='CHARGE_INV'&&row.number.toUpperCase()===number.toUpperCase()))rejectConfirmation('This charge document number is already recorded.');
+   }else if(document.type==='CHARGE_INV'){
     if(existingDebitNoteId||docs.some(row=>row.type==='DEBIT_NOTE'&&row.customerId===source.customerId&&row.currency===currency&&[number.toUpperCase(),source.reference.toUpperCase()].includes(row.number.toUpperCase())))rejectConfirmation('This charge is already represented by a debit note. Keep the existing posting; do not create a second receivable.');
     if(allocations?.length)rejectConfirmation('Match incoming payments after the charge invoice is confirmed.');
     document.chargeLines=chargeLines||normalizeChargeLines(source.chargeLines);
