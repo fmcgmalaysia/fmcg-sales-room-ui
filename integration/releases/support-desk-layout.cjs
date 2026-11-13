@@ -100,10 +100,13 @@ const css = `
 .shipment-compact .shipment-compact-footer{background:#173651;padding:9px 15px}
 .shipment-compact .shipment-totals{justify-content:flex-start;gap:9px 19px;border:0;color:#fff;padding:0}
 .shipment-compact .shipment-totals :is(dt,small,.desk-amount>span,.shipment-invoice>span){color:#d8e7f4}
-.shipment-compact .shipment-totals .quantity-basis>b,.shipment-compact .shipment-invoice button{color:#fff}
+.shipment-compact .shipment-totals .quantity-basis>b{color:#fff}
+.shipment-compact .shipment-invoice .invoice-number-link{background:#244963;border-color:#7895ac;color:#fff}
+.shipment-compact .shipment-invoice .invoice-number-link:disabled{background:#244963;color:#c0d2e0}
 .shipment-compact .quantity-basis,.order-tasks .quantity-basis{justify-content:flex-end;gap:5px}
 .order-tasks .quantity-comparison{width:auto;min-width:0}
 .order-tasks .quantity-basis>b{min-width:7ch;text-align:right}
+.order-tasks :is(th,td):nth-child(8),.order-tasks :is(th,td):nth-child(9){width:1%;padding-inline:6px}
 .order-tasks .cbm-issue-pill{background:#e51b2b;color:#fff;border:0;border-radius:999px;font:inherit;padding:1px 6px}
 .shipment-delivery-actions .dd-action[hidden]{display:none}
 .shipment-delivery-actions .dd-opened-status{font-size:11px;font-weight:600;color:#184d80}
