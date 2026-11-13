@@ -19,8 +19,22 @@ function stageMasterStaff(site) {
     assert.equal(hash(fs.readFileSync(path.join(site, item.path))), item.sha256, item.path);
   }
 
-  const additions = ['ltpos/index.html', 'ltpos/ltpos-team.jpg', 'master-staff/index.html']
-    .map(file => ({ file, bytes: fs.readFileSync(path.join(root, file)) }));
+  const portal = fs.readFileSync(path.join(root, 'ltpos/index.html'));
+  const publishedPortal = execFileSync('git', [
+    'show', 'a1a2cc3116a66fc1e5fed70b5aebdb49135c85b0:ltpos/index.html'
+  ], { cwd: root });
+  const teamPhoto = fs.readFileSync(path.join(root, 'ltpos/ltpos-team.jpg'));
+  assert.equal(hash(publishedPortal), '2d63bb908541e3b11e7034ac209bb79e31095a5bac63f9ae25484fcb6a1768c5');
+  assert.equal(hash(teamPhoto), 'bbc45b5201cca468a49d278dfa21279466cb3f6c8d811813ce4cf361805874a0');
+  assert.match(portal.toString('utf8'), /name="build" content="ltpos-staff-portal-v2"/);
+  const staffPage = fs.readFileSync(path.join(root, 'master-staff/index.html'));
+  assert.match(staffPage.toString('utf8'), /name="build" content="master-staff-management-v1"/);
+  const additions = [
+    { file: 'ltpos/index.html', bytes: publishedPortal },
+    { file: 'ltpos/managed.html', bytes: portal },
+    { file: 'ltpos/ltpos-team.jpg', bytes: teamPhoto },
+    { file: 'master-staff/index.html', bytes: staffPage },
+  ];
   const buyerResetSource = execFileSync('git', [
     'show', 'e007684e441e52d545d5774b6f8c49729b26f771:buyer-login.html'
   ], { cwd: root, encoding: 'utf8' });
@@ -28,9 +42,6 @@ function stageMasterStaff(site) {
   assert.equal(hash(buyerReset), 'e4a2f0cdb8627a4e4d50bfd3f84bebfe941c227b7d9165ca58e6e94a10e8b472',
     'Retain the published Buyer password reset page referenced by Wix.');
   additions.push({ file: 'buyer-login-20261113.html', bytes: buyerReset });
-  assert.match(additions[0].bytes.toString('utf8'), /name="build" content="ltpos-staff-portal-v2"/);
-  assert.equal(additions[1].bytes.readUInt16BE(0), 0xffd8);
-  assert.match(additions[2].bytes.toString('utf8'), /name="build" content="master-staff-management-v1"/);
   for (const { file } of additions) assert(!fs.existsSync(path.join(site, file)), file);
   for (const { file, bytes } of additions) {
     const target = path.join(site, file);
