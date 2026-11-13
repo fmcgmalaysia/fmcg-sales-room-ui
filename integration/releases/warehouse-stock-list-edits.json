@@ -1,7 +1,7 @@
 {
   "warehouse-room/stock-control-app.js": {
     "before": "f90a5c91506c5d7360fd8c6e50d9f38e269dacf4f816d9e7e71e2551968a3e71",
-    "after": "ffa97969f4571d18837b2590c39dcc2e377a08971f75673fe2bccc8f1a5ddeef",
+    "after": "f4525b6e161bfd6b53624134350bde46863a9659dff6bd001676ae835f2ffb7b",
     "newLine": "\n",
     "hunks": [
       {
@@ -24,17 +24,24 @@
       {
         "index": 25,
         "before": [
-          "      height: document.body.scrollHeight, busy: $('source-dialog').open }, location.origin === 'null' ? '*' : location.origin);"
+          "      height: document.body.scrollHeight, busy: $('source-dialog').open }, location.origin === 'null' ? '*' : location.origin);",
+          "  }",
+          "  if (embedded) {",
+          "    new ResizeObserver(layout).observe(document.body);",
+          "    $('source-dialog').addEventListener('close', layout);"
         ],
         "after": [
           "      height: document.body.scrollHeight, busy: dialogOpen() }, location.origin === 'null' ? '*' : location.origin);"
         ]
       },
       {
-        "index": 30,
+        "index": 31,
         "before": [],
         "after": [
-          "    $('reservation-dialog')?.addEventListener('close', layout);"
+          "  if (embedded) new ResizeObserver(layout).observe(document.body);",
+          "  function onDialogClose() { layout(); drainQueued(); }",
+          "  $('source-dialog').addEventListener('close', onDialogClose);",
+          "  $('reservation-dialog')?.addEventListener('close', onDialogClose);"
         ]
       },
       {
@@ -44,6 +51,16 @@
         ],
         "after": [
           "    if (dialogOpen()) return;"
+        ]
+      },
+      {
+        "index": 50,
+        "before": [
+          "    if (!queued) return false;"
+        ],
+        "after": [
+          "    if (!queued || pending) return false;",
+          "    if (dialogOpen()) { paging(); return true; }"
         ]
       },
       {
