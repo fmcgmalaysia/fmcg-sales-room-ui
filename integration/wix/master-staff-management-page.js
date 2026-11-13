@@ -1,7 +1,7 @@
 import { getManagedStaffDirectory, getManagedStaffSaveStatus, registerPendingStaff, updateManagedStaff, getManagedCustomerDirectory } from 'backend/staffManagement.web';
 import { authentication } from 'wix-members-frontend';
 
-const FRAME_URL = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-staff/?v=master-staff-management-v1';
+const FRAME_URL = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-staff/?v=master-staff-management-v2';
 
 $w.onReady(() => {
   const frame = $w('#html1');
