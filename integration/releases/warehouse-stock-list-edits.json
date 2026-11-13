@@ -1,7 +1,7 @@
 {
   "warehouse-room/stock-control-app.js": {
     "before": "f90a5c91506c5d7360fd8c6e50d9f38e269dacf4f816d9e7e71e2551968a3e71",
-    "after": "f4525b6e161bfd6b53624134350bde46863a9659dff6bd001676ae835f2ffb7b",
+    "after": "50ac3f548fca92a45a93eba1a929a2d3203c1a74f2d68c26df5b38c3f69f5adf",
     "newLine": "\n",
     "hunks": [
       {
@@ -15,9 +15,12 @@
         ]
       },
       {
-        "index": 23,
-        "before": [],
+        "index": 22,
+        "before": [
+          "  let cursor = null, previous = [], queued = null;"
+        ],
         "after": [
+          "  let cursor = null, previous = [], queued = null, shownCriteria = null;",
           "  const dialogOpen = () => $('source-dialog').open || Boolean($('reservation-dialog')?.open);"
         ]
       },
@@ -45,12 +48,54 @@
         ]
       },
       {
+        "index": 32,
+        "before": [],
+        "after": [
+          "  const criteria = () => ({ search: $('search').value.trim(), filter: $('filter').value });",
+          "  const matchesShownCriteria = () => {",
+          "    const current = criteria();",
+          "    return shownCriteria?.search === current.search && shownCriteria.filter === current.filter;",
+          "  };"
+        ]
+      },
+      {
+        "index": 33,
+        "before": [
+          "    $('previous').disabled = !!pending || !previous.length;",
+          "    $('next').disabled = !!pending || !data?.nextCursor;"
+        ],
+        "after": [
+          "    const pageUnavailable = Boolean(pending) || !matchesShownCriteria();",
+          "    $('previous').disabled = pageUnavailable || !previous.length;",
+          "    $('next').disabled = pageUnavailable || !data?.nextCursor;"
+        ]
+      },
+      {
         "index": 38,
         "before": [
           "    if ($('source-dialog').open) return;"
         ],
         "after": [
           "    if (dialogOpen()) return;"
+        ]
+      },
+      {
+        "index": 40,
+        "before": [
+          "    requestId = crypto.randomUUID(); pending = { id: requestId, company, cursor: nextCursor, previous: nextPrevious };"
+        ],
+        "after": [
+          "    const query = criteria();",
+          "    requestId = crypto.randomUUID(); pending = { id: requestId, company, cursor: nextCursor, previous: nextPrevious, query };"
+        ]
+      },
+      {
+        "index": 43,
+        "before": [
+          "      input: { search: $('search').value.trim(), filter: $('filter').value, cursor: nextCursor, pageSize: 50 } }, '*');"
+        ],
+        "after": [
+          "      input: { ...query, cursor: nextCursor, pageSize: 50 } }, '*');"
         ]
       },
       {
@@ -134,12 +179,43 @@
         ]
       },
       {
+        "index": 103,
+        "before": [
+          "  $('next').onclick = () => { if (data?.nextCursor) request(data.nextCursor, [...previous, cursor]); };",
+          "  $('previous').onclick = () => { if (previous.length) request(previous[previous.length - 1], previous.slice(0, -1)); };",
+          "  $('search').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => request(), 400); };"
+        ],
+        "after": [
+          "  $('next').onclick = () => { if (matchesShownCriteria() && data?.nextCursor) request(data.nextCursor, [...previous, cursor]); };",
+          "  $('previous').onclick = () => { if (matchesShownCriteria() && previous.length) request(previous[previous.length - 1], previous.slice(0, -1)); };",
+          "  $('search').oninput = () => { paging(); clearTimeout(searchTimer); searchTimer = setTimeout(() => request(), 400); };"
+        ]
+      },
+      {
         "index": 108,
         "before": [
           "  $('company').onchange = () => { if ($('source-dialog').open) { $('company').value = company; return; }"
         ],
         "after": [
           "  $('company').onchange = () => { if (dialogOpen()) { $('company').value = company; return; }"
+        ]
+      },
+      {
+        "index": 110,
+        "before": [
+          "    company = $('company').value; data = null; cursor = null; previous = []; $('staff').textContent = ''; $('read-at').textContent = '';"
+        ],
+        "after": [
+          "    company = $('company').value; data = null; cursor = null; previous = []; shownCriteria = null; $('staff').textContent = ''; $('read-at').textContent = '';"
+        ]
+      },
+      {
+        "index": 124,
+        "before": [
+          "    data = result; cursor = current.cursor; previous = current.previous;"
+        ],
+        "after": [
+          "    data = result; cursor = current.cursor; previous = current.previous; shownCriteria = current.query;"
         ]
       }
     ]
