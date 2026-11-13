@@ -58,8 +58,13 @@ export function createTaskChatService({drive,index,resolve,hash}){
    if(input.legacyOnly){const archived=(model.legacyArchive||[]).find(t=>t.taskId===input.taskId&&t.peer===input.peer);if(!archived)fail('legacy history is not available.');const end=before==null?archived.messages.length:Number(String(before).replace(/^L:/,''));if(!Number.isSafeInteger(end)||end<0||end>archived.messages.length)fail('history cursor is invalid.');const start=Math.max(0,end-20);return {company,department,kind:'PO',taskId:input.taskId,peer:input.peer,readOnly:true,messages:archived.messages.slice(start,end),before:start?'L:'+start:null,updates:[]};}
    const {task,pair}=select(model,input,department);
    if(before!==null&&!/^[NL]:\d+$/.test(before))fail('history cursor is invalid.');
+   const indexLookup=Promise.resolve().then(()=>index.read(indexId(company,task))).then(row=>({row}),error=>({error,failed:true}));
    const core=await drive({...envelope(company,department,staff,task,pair),action:'CHAT_OPERATION',operation:before?.startsWith('L:')?'SUMMARY':'PAGE',...(before?.startsWith('N:')?{beforeSequence:Number(before.slice(2))}:{})});
-   if(core.fileId)checkIndex(await index.read(indexId(company,task)),company,task,core.fileId);
+   if(core.fileId){
+    const indexResult=await indexLookup;
+    if(indexResult.failed)throw indexResult.error;
+    checkIndex(indexResult.row,company,task,core.fileId);
+   }
    const previous=legacy(task,department,input.peer,{...core.summary,staffId:staff.staffId}),messages=before?.startsWith('L:')?[]:core.messages||[];
    let next=core.beforeSequence?'N:'+core.beforeSequence:null;
    if(!next&&messages.length<20){const end=before?.startsWith('L:')?Number(before.slice(2)):previous.length;if(end<0||end>previous.length)fail('history cursor is invalid.');const start=Math.max(0,end-(20-messages.length));messages.unshift(...previous.slice(start,end));next=start?'L:'+start:null;}
