@@ -19,7 +19,8 @@ function stageMasterStaff(site) {
     assert.equal(hash(fs.readFileSync(path.join(site, item.path))), item.sha256, item.path);
   }
 
-  const portal = fs.readFileSync(path.join(root, 'ltpos/index.html'));
+  const portal = Buffer.from(fs.readFileSync(path.join(root, 'ltpos/index.html'), 'utf8').replace(/\r\n/g, '\n'));
+  assert.equal(hash(portal), 'fe461e0e38741739ef67bb86256476e46add871d96910c25b21ccc6064315132');
   const publishedPortal = execFileSync('git', [
     'show', 'a1a2cc3116a66fc1e5fed70b5aebdb49135c85b0:ltpos/index.html'
   ], { cwd: root });
@@ -28,7 +29,7 @@ function stageMasterStaff(site) {
   assert.equal(hash(teamPhoto), 'bbc45b5201cca468a49d278dfa21279466cb3f6c8d811813ce4cf361805874a0');
   assert.match(portal.toString('utf8'), /name="build" content="ltpos-staff-portal-v2"/);
   const staffPage = fs.readFileSync(path.join(root, 'master-staff/index.html'));
-  assert.match(staffPage.toString('utf8'), /name="build" content="master-staff-management-v1"/);
+  assert.match(staffPage.toString('utf8'), /name="build" content="master-staff-management-v2"/);
   const additions = [
     { file: 'ltpos/index.html', bytes: publishedPortal },
     { file: 'ltpos/managed.html', bytes: portal },
