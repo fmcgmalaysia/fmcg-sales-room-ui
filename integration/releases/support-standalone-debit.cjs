@@ -16,7 +16,10 @@ function supportScript(source) {
   source = replace(source, "const preferred=pendingInput?.chargeCurrency||customer?.currency||'';", `const preferred=pendingInput?.chargeCurrency||customer?.currency||'';
 const reference=$('document-reference'),prefix=company+(charge==='STANDALONE_DN'?'-DN-':'-INV-');
 reference.placeholder=prefix+'000000';reference.value=pendingInput?.reference||prefix;`);
-  source = replace(source, "$('document-reference').readOnly=false;", "$('document-reference').readOnly=false;$('document-reference').placeholder='';");
+  source = replace(source, "$('document-reference').readOnly=false;", "$('charge-currency')?.closest('label').remove();$('document-reference-label').firstChild.textContent=charge?'Document No.':'Reference';$('document-reference').readOnly=false;$('document-reference').placeholder='';");
+  source = replace(source, "const preferred=pendingInput?.chargeCurrency||customer?.currency||'';", "const allowedCurrencies=['MYR','SGD','USD','RMB','EUR'];\nconst originalCurrency=pendingInput?.chargeCurrency||'';\nconst preferred=originalCurrency||(allowedCurrencies.includes(customer?.currency)?customer.currency:'');");
+  source = replace(source, "const currencies=[...new Set([preferred,'MYR','USD','SGD','EUR','GBP','AUD','JPY','CNY','HKD','THB','IDR','PHP','BND','NZD'].filter(value=>/^[A-Z]{3}$/.test(value)))];", "const currencies=originalCurrency&&!allowedCurrencies.includes(originalCurrency)?[...allowedCurrencies,originalCurrency]:allowedCurrencies;");
+  source = replace(source, "if(attempt||recovery)container.querySelector('#charge-currency').disabled=true;", "const currency=container.querySelector('#charge-currency');$('charge-document-identity').append(currency.closest('label'));if(attempt||recovery)currency.disabled=true;");
   source = replace(source, "const named=label&&label!=='Other';", "const named=label&&label!=='Other'&&label!=='On behalf of customer';");
   source = replace(source, "description:label==='Other'?'':label", "description:['Other','On behalf of customer'].includes(label)?'':label");
   source = replace(source, "scope=ctx.charge?'INVOICE':ctx.customerScope?", "scope=ctx.charge==='STANDALONE_DN'?'CUSTOMER':ctx.charge?'INVOICE':ctx.customerScope?");
@@ -62,6 +65,9 @@ const css = `
 #documents.standalone-debit-form #document-context{display:grid;gap:3px;margin:0 0 10px}
 #documents.standalone-debit-form #document-context strong{font:700 17px/1.25 var(--master-font);color:#173651;overflow-wrap:anywhere}
 #documents.standalone-debit-form #document-context small{font:500 11px/1.3 var(--master-font);color:#536d87}
+#charge-document-identity{display:contents}
+#documents.charge-form #charge-document-identity{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(95px,1fr);gap:10px;align-items:end}
+#documents.charge-form #charge-document-identity>label{margin:0;font-weight:600}
 `;
 
 module.exports = { supportScript, supportModel, financeScript, css };

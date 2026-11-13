@@ -74,10 +74,11 @@ function stageSupportDeskLabel(site) {
   sources['workroom.js'] = debit.supportScript(sources['workroom.js']);
   sources['workroom-model.js'] = debit.supportModel(sources['workroom-model.js']);
   sources['workroom.html'] = sources['workroom.html']
-    .replace('name="build" content="'+layoutBuild+'"', 'name="build" content="20261113-support-standalone-dn-v2"')
-    .replace('workroom.css?v='+layoutBuild, 'workroom.css?v=20261113-support-standalone-dn-v2')
-    .replace('workroom.js?v='+layoutBuild, 'workroom.js?v=20261113-support-standalone-dn-v2')
+    .replace('name="build" content="'+layoutBuild+'"', 'name="build" content="20261113-support-standalone-dn-v3"')
+    .replace('workroom.css?v='+layoutBuild, 'workroom.css?v=20261113-support-standalone-dn-v3')
+    .replace('workroom.js?v='+layoutBuild, 'workroom.js?v=20261113-support-standalone-dn-v3')
     .replace('workroom-model.js?v='+layoutBuild, 'workroom-model.js?v=20261113-support-standalone-dn-v1');
+  sources['workroom.html'] = replaceOnce(sources['workroom.html'], '<label id="document-reference-label">Reference<input id="document-reference" maxlength="100" autocomplete="off"></label>', '<div id="charge-document-identity"><label id="document-reference-label">Reference<input id="document-reference" maxlength="100" autocomplete="off"></label></div>');
   const financeIndex = path.join(site, 'account-room', 'index.html');
   const financeScript = path.join(site, 'account-room', 'customer-debtors.js');
   const financeHtml = fs.readFileSync(financeIndex, 'utf8');
