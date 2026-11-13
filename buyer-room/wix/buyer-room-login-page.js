@@ -14,6 +14,7 @@ const STATE_KEY = 'buyerRoomGoogleOAuthState';
 const RETURN_KEY = 'buyerRoomGoogleOAuthReturn';
 
 let googleReturnPromise = null;
+let passwordResetPending = false;
 
 function postToLogin(message) {
   try {
@@ -171,7 +172,24 @@ $w.onReady(async function () {
     }
 
     if (message.type === 'BUYER_FORGOT_PASSWORD') {
-      authentication.promptForgotPassword().catch(() => {});
+      const email = String(message.email || '').trim();
+      if (passwordResetPending) return;
+      if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        postToLogin({ type: 'BUYER_PASSWORD_RESET_RESULT', ok: false });
+        return;
+      }
+      passwordResetPending = true;
+      let ok = true;
+      try {
+        await authentication.sendResetPasswordEmail(email);
+      } catch (error) {
+        const status = Number(error?.httpStatus || error?.statusCode || error?.status);
+        const code = String(error?.details?.applicationError?.code || error?.code || '');
+        ok = status === 404 || code === 'MEMBER_NOT_FOUND';
+      } finally {
+        passwordResetPending = false;
+      }
+      postToLogin({ type: 'BUYER_PASSWORD_RESET_RESULT', ok });
       return;
     }
 
