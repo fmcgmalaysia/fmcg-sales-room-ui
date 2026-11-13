@@ -1,7 +1,7 @@
 {
   "master-shared/desk-delivery.js": {
     "before": "19bb437256833ded6ce795996c4e8f2985230dbfb992e72eec08184fe961fd32",
-    "after": "9e0d4f9adb3bb1f4f815d97246a74eefe4d20e776d9768c336ac525b1c59caa2",
+    "after": "b43495b1c1d95086b6e5e7f4ddface84e55697af9f7ac3e2dad58421b40604e6",
     "hunks": [
       {
         "index": 89,
@@ -20,7 +20,10 @@
           "   if(lines.some(line=>line.resolution?.issue))return ['Support review','review'];",
           "   if(!list.batchComplete&&lines.some(canLoadLine))return ['Ready for loading','ready'];",
           "   if(!lines.length||lines.every(line=>!line.quantity&&!line.resolution?.resolved))return ['Pending allocation','pending'];",
-          "   if(lines.every(line=>line.resolution?.resolved||Boolean(line.loadedConfirmedAt)&&line.loaded>=(line.resolution?.maximum??line.quantity)))return ['Loaded','ready'];",
+          "   if(lines.every(line=>line.resolution?.resolved||Boolean(line.loadedConfirmedAt)&&line.loaded>=(line.resolution?.maximum??line.quantity))){",
+          "    const loaded=lines.some(line=>line.loadedConfirmedAt&&line.loaded>0);",
+          "    return loaded?['Loaded','ready']:['Closed · 0 loaded','closed'];",
+          "   }",
           "   return ['Waiting for stock','pending'];",
           "  }",
           "  const image=line=>/^https:\\/\\//i.test(line.productImageUrl||'')?'<img class=\"dd-zoom-image\" src=\"'+esc(line.productImageUrl)+'\" alt=\"'+esc(line.name)+'\" loading=\"lazy\">':'<span class=\"dd-image-empty\" aria-label=\"No product image\">□</span>';"
@@ -109,7 +112,7 @@
   },
   "warehouse-room/style.css": {
     "before": "e21cbacbcf1620b774547ec4551f61a6e6b42a5734c17cd2f8478b765adf80ce",
-    "after": "64e611914c3c5f3d7f18eecb54141cfb4872fe6411d2d6a1560be580d812712e",
+    "after": "45de2f218017a51d08899cc0bdb2895a4b014c2dd5cfe3f697a9708a751c68b4",
     "hunks": [
       {
         "index": 8,
@@ -129,6 +132,7 @@
           ".dd-customers .dd-list-state small{margin-left:0;white-space:nowrap}",
           ".dd-list-status{border-radius:10px;padding:2px 7px;background:#e6f0ff;color:#1257c7}",
           ".dd-list-status.pending{background:#fff0d6;color:#8a4b00}",
+          ".dd-list-status.closed{background:#e8edf2;color:#475b70}",
           ".dd-list-status.review{background:#ffe3e6;color:#ad1730}",
           ".dd-list-arrow{color:#2563eb;transition:transform .16s ease}",
           ".dd-customer:is(:hover,:focus-visible) .dd-list-arrow{transform:translateX(3px)}",
