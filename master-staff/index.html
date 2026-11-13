@@ -144,17 +144,21 @@
     const visible = employees.filter(employee => [employee.name, employee.email].some(value => value.toLowerCase().includes(term)));
     const rows = visible.map(employee => {
       const row = document.createElement('tr');
+      const administrator = employee.role === 'SUPER ADMIN';
       const access = Object.entries(employee.access.departmentAccess)
         .map(([department, level]) => department + ' · ' + level).join(', ');
       const status = employee.status === 'PENDING' ? 'Pending verification' : employee.status;
       const nameCell = row.insertCell();
-      if (employee.role === 'SUPER ADMIN') nameCell.textContent = employee.name;
+      if (administrator) nameCell.textContent = employee.name;
       else {
         const button = document.createElement('button');
         button.type = 'button'; button.className = 'employee-link'; button.textContent = employee.name;
         button.addEventListener('click', () => openEmployee(employee)); nameCell.append(button);
       }
-      for (const value of [employee.email, access || '—', employee.access.salesRoom ? employee.access.salesFunction + ' · ' + employee.access.salesRoom : '—', status]) {
+      const masterAccess = administrator ? 'Super Admin' : access || '—';
+      const salesAccess = administrator ? 'Super Admin' : employee.access.salesRoom
+        ? employee.access.salesFunction + ' · ' + employee.access.salesRoom : '—';
+      for (const value of [employee.email, masterAccess, salesAccess, status]) {
         row.insertCell().textContent = value;
       }
       return row;
