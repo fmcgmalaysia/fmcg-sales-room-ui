@@ -1,8 +1,17 @@
 {
   "warehouse-room/app.js": {
     "before": "b8e18d11a166cad00e7b06022cfccd16e244cbc89a55eb5ce1e8ac07012483b8",
-    "after": "e63406c3aebec930d090a0d786b758540725f6e9335afe845af2ec03f4fa0682",
+    "after": "eb06a61cbe3c5d76c8ac630cbe0d7141a4069b3aca44866665def27f790d9c63",
     "hunks": [
+      {
+        "index": 100,
+        "before": [
+          " const hasDraft=receiptPhotos.size||[...$('entryLines').querySelectorAll('[data-field=\"accepted\"],[data-field=\"rejected\"],[data-field=\"kind\"]')].some(input=>input.dataset.field==='kind'?input.value!=='DELIVERY':Number(input.value)!==0||input.validity.badInput);"
+        ],
+        "after": [
+          " const hasDraft=receiptPhotos.size||[...$('entryLines').querySelectorAll('[data-field=\"accepted\"],[data-field=\"rejected\"],[data-field=\"kind\"]')].some(input=>input.dataset.field==='kind'?input.value!=='DELIVERY':input.validity.badInput||(input.dataset.field==='accepted'?input.value.trim()!=='':Number(input.value)!==0));"
+        ]
+      },
       {
         "index": 106,
         "before": [
