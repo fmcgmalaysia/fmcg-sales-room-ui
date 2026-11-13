@@ -3,7 +3,7 @@ import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { prepareStaffRegistration, prepareStaffUpdate, projectManagedStaff, requireStaffManager } from 'backend/staffManagementPolicy.js';
-import { writeStaffManagement } from 'backend/staffManagementWrite.js';
+import { readStaffSaveStatus, writeStaffManagement } from 'backend/staffManagementWrite.js';
 import { requestSupportCustomers } from 'backend/supportCustomerClient.js';
 
 const collection = 'StaffMasterAccess';
@@ -25,6 +25,14 @@ async function directoryForManager() {
   requireStaffManager(member, rows);
   return rows.filter(row => row.staffStatus !== 'CONTROL');
 }
+
+export const getManagedStaffSaveStatus = webMethod(Permissions.SiteMember, async () => {
+  const member = await currentMember.getMember({ fieldsets: ['FULL'] });
+  if (!member?._id) throw Error('Sign in with your approved staff account.');
+  const identity = await wixData.query(collection).eq('description', member._id).limit(2).find(readOptions);
+  requireStaffManager(member, identity.items);
+  return readStaffSaveStatus();
+});
 
 export const getManagedStaffDirectory = webMethod(Permissions.SiteMember, async () => {
   const rows = await directoryForManager();

@@ -1,4 +1,4 @@
-import { getManagedStaffDirectory, registerPendingStaff, updateManagedStaff, getManagedCustomerDirectory } from 'backend/staffManagement.web';
+import { getManagedStaffDirectory, getManagedStaffSaveStatus, registerPendingStaff, updateManagedStaff, getManagedCustomerDirectory } from 'backend/staffManagement.web';
 import { authentication } from 'wix-members-frontend';
 
 const FRAME_URL = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-staff/?v=master-staff-management-v1';
@@ -20,12 +20,13 @@ $w.onReady(() => {
         return;
       }
       const rows = data.action === 'LIST_STAFF' ? await getManagedStaffDirectory() : undefined;
+      const saveStatus = data.action === 'LIST_STAFF' ? await getManagedStaffSaveStatus() : undefined;
       const customers = data.action === 'LIST_CUSTOMERS' ? await getManagedCustomerDirectory() : undefined;
       const input = { requestId: data.saveRequestId, name: data.name, email: data.email, access: data.access,
         staffId: data.staffId, revision: data.revision, status: data.status };
       const employee = data.action === 'REGISTER_STAFF' ? await registerPendingStaff(input) :
         data.action === 'UPDATE_STAFF' ? await updateManagedStaff(input) : undefined;
-      frame.postMessage({ ...reply, ok: true, rows, employee, customers });
+      frame.postMessage({ ...reply, ok: true, rows, saveStatus, employee, customers });
     } catch (error) {
       frame.postMessage({ ...reply, ok: false, error: error?.message || 'Staff request failed.' });
     }

@@ -27,8 +27,8 @@ function fixture(options = {}) {
   };
   const source = fs.readFileSync(path.join(__dirname,'../backend/staffManagementWrite.js'),'utf8')
     .replace(/^import .+;\r?$/gm,'').replace(/^export /gm,'');
-  const write = vm.runInNewContext(source+'\nwriteStaffManagement',{wixData});
-  return {rows,calls,write};
+  const {write,readStatus} = vm.runInNewContext(source+'\n({write:writeStaffManagement,readStatus:readStaffSaveStatus})',{wixData});
+  return {rows,calls,write,readStatus};
 }
 
 function request(overrides={}) {
@@ -56,6 +56,20 @@ test('a committed write with a lost response recovers without writing twice',asy
   assert.equal(f.rows.has('staff-management-write-lock'),false);
   await f.write(input);
   assert.equal(f.calls.filter(call=>call[0]==='update').length,1);
+});
+
+test('save status distinguishes clear, unconfirmed and confirmed locks without writing', async () => {
+  const f = fixture({failBefore:true}), input = request();
+  assert.equal((await f.readStatus()).state, 'CLEAR');
+  await assert.rejects(f.write(input), /awaiting confirmation/);
+  assert.equal((await f.readStatus()).state, 'UNCONFIRMED');
+  f.rows.set('employee', {staffManagementRequestId:input.requestId,staffManagementFingerprint:input.fingerprint});
+  const writes = f.calls.length;
+  const status = await f.readStatus();
+  assert.equal(status.state, 'CONFIRMED_LOCK_HELD');
+  assert.equal(status.requestId, input.requestId);
+  assert.equal(f.calls.length, writes);
+  assert.equal(f.rows.has('staff-management-write-lock'), true);
 });
 
 test('an unconfirmed write stays blocked and a different request cannot steal the lock',async()=>{

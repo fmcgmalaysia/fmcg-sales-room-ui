@@ -5,6 +5,16 @@ const lockId = 'staff-management-write-lock';
 const readOptions = { suppressAuth: true, consistentRead: true };
 const writeOptions = { suppressAuth: true };
 
+export async function readStaffSaveStatus() {
+  const locks = await wixData.query(collection).eq('_id', lockId).limit(1).find(readOptions);
+  const lock = locks.items[0];
+  if (!lock) return { state: 'CLEAR' };
+  const result = await wixData.query(collection).eq('staffManagementRequestId', lock.requestId).limit(2).find(readOptions);
+  const row = result.items[0];
+  const confirmed = result.items.length === 1 && row.staffManagementFingerprint === lock.fingerprint;
+  return { state: confirmed ? 'CONFIRMED_LOCK_HELD' : 'UNCONFIRMED', requestId: lock.requestId };
+}
+
 // One short-lived serialization record, in the existing employee collection.
 // No timeout-based lock stealing: a delayed write must not race a newer grant.
 // An uncertain write retains the lock. Only the invocation which inserted the

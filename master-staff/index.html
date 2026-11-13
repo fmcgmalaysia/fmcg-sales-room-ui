@@ -281,6 +281,14 @@
       id('sign-in').hidden = true;
       id('status').className = '';
       render();
+      if (result.saveStatus && result.saveStatus.state !== 'CLEAR') {
+        const { state, requestId } = result.saveStatus;
+        const message = state === 'CONFIRMED_LOCK_HELD'
+          ? 'The previous save was recorded. Its confirmation lock is still held.'
+          : 'The previous save could not be confirmed.';
+        id('status').className = 'error';
+        id('status').textContent = message + ' Check the original request before starting another save. Request: ' + requestId;
+      }
     } catch (error) {
       employees.length = 0;
       id('employees').replaceChildren();
