@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 
 const build = '20261113-shipment-delivery-v1';
+const warehouseTableBuild = '20261113-warehouse-delivery-compact-v1';
 const previousSupport = '20261113-support-standalone-dn-v3';
 const previousWarehouse = '20261111-warehouse-desk-workflow-history-v2';
 const previousDelivery = '20261111-warehouse-desk-workflow-v1';
@@ -102,14 +103,16 @@ const deliveryCss = '\n'+[
   '.dd-desk-overview{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:5px}',
   '.dd-desk-overview .dd-shipment{margin:0;gap:7px 18px}.dd-totals{display:flex;gap:14px;margin:0;color:#203047}',
   '.dd-totals div{border-left:1px solid #d5dee7;padding-left:10px}.dd-totals dt{color:#59708a;font-size:10px}.dd-totals dd{margin:0;font-weight:600;white-space:nowrap}.dd-totals small{font-weight:400;color:#59708a}',
-  '.dd-task-table{min-width:740px}.dd-task-table td.dd-row-no{font-weight:600}.dd-task-table td,.dd-task-table th{padding-left:6px;padding-right:6px}',
-  '.dd-task-table th:nth-child(4),.dd-task-table th:nth-child(5){width:66px}.dd-task-table th:nth-child(6){width:94px}.dd-task-table th:nth-child(7){width:65px}.dd-task-table th:nth-child(8){width:72px}.dd-task-table th:nth-child(9){width:19%;text-align:left}',
-  '.dd-task-table .dd-description small,.dd-task-table .dd-description strong{display:block;line-height:1.24;margin:0}.dd-task-table .dd-description strong{margin:2px 0;overflow-wrap:anywhere}',
+  '.dd-task-table{min-width:740px}.dd-task-table td,.dd-task-table th{padding:5px 7px;vertical-align:middle}.dd-task-table th{white-space:nowrap}.dd-task-table td.dd-row-no{font-weight:600}',
+  '.dd-task-table th:nth-child(2),.dd-task-table td:nth-child(2){width:48px;text-align:center}.dd-task-table .dd-product-image img{width:38px;height:38px;margin-inline:auto}',
+  '.dd-task-table th:nth-child(4),.dd-task-table th:nth-child(5){width:68px;text-align:center}.dd-task-table td:nth-child(4),.dd-task-table td:nth-child(5){text-align:center}',
+  '.dd-task-table th:nth-child(6){width:98px}.dd-task-table th:nth-child(7){width:68px;text-align:right}.dd-task-table th:nth-child(8){width:72px;text-align:center}.dd-task-table td.dd-expiry{text-align:center}.dd-task-table th:nth-child(9){width:clamp(160px,24vw,400px);text-align:left}',
+  '.dd-task-table .dd-description small,.dd-task-table .dd-description strong{display:block;line-height:1.2;margin:0}.dd-task-table .dd-description strong{margin:1px 0;overflow-wrap:anywhere}',
   '.dd-task-table .dd-pic span{font-weight:600;color:#203047}.dd-task-table .dd-pic small{margin:2px 0 0}',
-  '.dd-task-table .dd-expiry button.dd-expiry-date{font:inherit;padding:0;position:relative}.dd-expiry-date:not(:disabled)::after{position:absolute;content:"";background:currentColor;height:1px;inset:auto 0 0;transform:scaleX(0);transform-origin:left;transition:transform .16s ease}.dd-expiry-date:not(:disabled):is(:hover,:focus-visible)::after{transform:scaleX(1)}',
-  '.dd-task-table .tc-cell{display:flex;flex-direction:row-reverse;justify-content:flex-end;align-items:flex-start;gap:6px;text-align:left;min-width:0}.dd-task-table .tc-snippet{min-width:0;text-align:left;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}.dd-task-table .tc-peer{min-width:28px;width:28px;height:21px;padding:0!important;font-size:10px}',
+  '.dd-task-table .dd-expiry button.dd-expiry-date{font:inherit;padding:0;position:relative;transition:transform .16s ease}.dd-expiry-date:not(:disabled):is(:hover,:focus-visible){transform:translateY(-1px)}.dd-expiry-date:not(:disabled)::after{position:absolute;content:"";background:currentColor;height:1px;inset:auto 0 0;transform:scaleX(0);transform-origin:left;transition:transform .16s ease}.dd-expiry-date:not(:disabled):is(:hover,:focus-visible)::after{transform:scaleX(1)}',
+  '.dd-task-table .tc-cell{display:flex;flex-direction:row-reverse;justify-content:flex-end;align-items:flex-start;gap:6px;text-align:left;min-width:0}.dd-task-table .tc-actions{padding:0}.dd-task-table .tc-snippet{min-width:0;text-align:left;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:11px}.dd-task-table .tc-peer{min-width:24px;height:17px;font-size:10px;padding:0 4px!important}.dd-task-table .tc-peer:after{left:4px;border-top-width:4px;border-right-width:5px}',
   '@media(max-width:740px){.dd-totals{flex-wrap:wrap;gap:6px 12px}.dd-totals div{border:0;padding:0}.dd-desk-overview{align-items:flex-start;gap:8px}}',
-  '@media(prefers-reduced-motion:reduce){.dd-expiry-date::after{transition:none}}'
+  '@media(prefers-reduced-motion:reduce){.dd-task-table .dd-expiry button.dd-expiry-date,.dd-expiry-date::after{transition:none}.dd-expiry-date:not(:disabled):is(:hover,:focus-visible){transform:none}}'
 ].join('\n')+'\n';
 
 const hashes = {
@@ -131,7 +134,7 @@ function stage(site) {
     'support-room/workroom.html': supportHtml(read('support-room/workroom.html')).replaceAll(previousSupport,build),
     'support-room/workroom.js': supportDetails(supportScript(read('support-room/workroom.js'))),
     'support-room/workroom.css': read('support-room/workroom.css')+supportCss,
-    'warehouse-room/index.html': read('warehouse-room/index.html').replace('name="build" content="'+previousWarehouse+'"','name="build" content="'+build+'"').replace('href="style.css?v='+previousDelivery,'href="style.css?v='+build).replaceAll('desk-delivery.css?v='+previousDelivery,'desk-delivery.css?v='+build).replaceAll('desk-delivery.js?v='+previousDelivery,'desk-delivery.js?v='+build),
+    'warehouse-room/index.html': read('warehouse-room/index.html').replace('name="build" content="'+previousWarehouse+'"','name="build" content="'+warehouseTableBuild+'"').replace('href="style.css?v='+previousDelivery,'href="style.css?v='+build).replaceAll('desk-delivery.css?v='+previousDelivery,'desk-delivery.css?v='+warehouseTableBuild).replaceAll('desk-delivery.js?v='+previousDelivery,'desk-delivery.js?v='+build),
     'warehouse-room/style.css': read('warehouse-room/style.css')+'\n.department-header #company{border-color:#e6aa63;background-color:#fff2df}\n',
     'master-shared/desk-delivery.css': read('master-shared/desk-delivery.css')+deliveryCss,
     'master-shared/desk-delivery.js': warehouseScript(read('master-shared/desk-delivery.js')),
