@@ -2,8 +2,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
+const { compactHeader, compactOverview, compactTransactions, chargeInvoiceForm, css } = require('./support-compact-document-header.cjs');
 
-const build = '20261113-support-desk-label-v1';
+const build = '20261113-support-workroom-compact-v1';
 const previousBuild = '20261111-support-split-quantity-v1';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const originals = {
@@ -42,14 +43,16 @@ function stageSupportDeskLabel(site) {
     assert.equal(hash(bytes), sha, name);
     return [name, bytes.toString('utf8')];
   }));
-  sources['workroom.js'] = patchScript(sources['workroom.js']);
+  sources['workroom.js'] = chargeInvoiceForm(compactTransactions(compactOverview(compactHeader(patchScript(sources['workroom.js'])))));
   sources['workroom.css'] += `
 .desk-cell .desk-portions{display:inline-grid;gap:3px;text-align:left;padding:3px 5px}
 .desk-portion{white-space:nowrap;font-size:11px;line-height:14px}
 .desk-portion-pending{color:#fff;background:#f58a00;border-radius:4px;padding:0 3px}
 .desk-portions:disabled .desk-portion-pending{color:#875000;background:#fff0d6}
 `;
-  sources['workroom.html'] = sources['workroom.html'].replaceAll(previousBuild, build);
+  sources['workroom.css'] += css + '\n';
+  sources['workroom.html'] = sources['workroom.html'].replaceAll(previousBuild, build)
+    .replace('data-view="transactions">Transactions</button>', 'data-view="transactions">Invoices &amp; Payments</button>');
   for (const [name, content] of Object.entries(sources)) fs.writeFileSync(path.join(directory, name), content);
 }
 
