@@ -38,7 +38,36 @@ function patchSupportScript(source) {
   source = replace(source, '<path d="M14 4h6v16h-6M3 12h13m-5-5 5 5-5 5"/>', '<path d="M4 12h15m-6-6 6 6-6 6"/>');
   source = replace(source, '<circle cx="9" cy="7" r="3"/><path d="M3 19v-3a6 6 0 0 1 11-3m1 7 5-5-2-2-5 5-1 3z"/>', '<circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2z"/>');
   source = replace(source, "lines:viewLines(order),canSend:", "lines:viewLines(order),showOpenedTime:true,canSend:");
-  return patchInvoices(source);
+  return patchCompactWorkspace(patchInvoices(source));
+}
+
+function patchCompactWorkspace(source) {
+  const pencil = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M8 16h4L21 7a2.8 2.8 0 0 0-4-4l-9 9zM15 5l4 4"/></svg>';
+  source = replace(source, "+(canEdit?'':'disabled')+'>✎</button></div>'", "+(canEdit?'':'disabled')+'>"+pencil+"</button></div>'");
+  source = replace(source, "documentGuides.map(([code,label])=>{const count=activeDesk?", "documentGuides.filter(([code])=>code!=='DN').map(([code,label])=>{const count=activeDesk?");
+  source = replace(source, "documentContext={code,customerId,", "$('documents').classList.toggle('charge-form',charge);documentContext={code,customerId,");
+  source = replace(source, "+read('Currency',currency,'desk-currency')", "");
+  source = replace(source, `+'</h2><div class="desk-switcher">`, `+'</h2><span class="desk-currency" aria-label="Invoice currency">'+esc(currencies.length===1?currency:currencies.length>1?'Mixed currencies':currency||'—')+'</span><div class="desk-switcher">`);
+  const footerStart = source.indexOf(`      '<div class="shipment-compact-footer">'`);
+  const footerEnd = source.indexOf("\n", footerStart);
+  assert.ok(footerStart>=0 && footerEnd>footerStart);
+  const footer = source.slice(footerStart, footerEnd);
+  source = replace(source, footer+"\n", "");
+  source = replace(source, `      '<div class="shipment-columns">`, footer+"\n"+`      '<div class="shipment-columns">`);
+  source = replace(source, "[['Profile'],['Customer'],['Country'],['Port Name'],['Currency'],['Desk'],['']],rows.map(row=>{", "[['No.'],['Profile'],['Customer'],['Country'],['Port Name'],['Currency'],['Desk'],['']],rows.map((row,index)=>{");
+  source = replace(source, '<tr data-customer-row><td class="overview-profile-cell">', `<tr data-customer-row><td class="overview-number">'+String(index+1).padStart(3,'0')+'</td><td class="overview-profile-cell">`);
+  source = replace(source, "$('invoice-month').hidden=view!=='invoiceRegister';", "$('invoice-period').hidden=view!=='invoiceRegister';");
+  source = replace(source, "document.body.classList.toggle('support-customers-view',view==='customers');", "document.body.classList.toggle('support-customers-view',view==='customers');document.body.classList.toggle('support-invoices-view',view==='transactions');");
+  return replace(source, "$('invoice-month').onchange=render;", `const yearLabel=$('invoice-year'),monthSelect=$('invoice-month-select');
+  const setInvoicePeriod=(year,month)=>{
+    $('invoice-month').value=year+'-'+month;
+    yearLabel.textContent=year;monthSelect.value=month;
+  };
+  setInvoicePeriod(monthParts.year,monthParts.month);
+  monthSelect.onchange=()=>{setInvoicePeriod(yearLabel.textContent,monthSelect.value);render();};
+  for(const button of $('invoice-period').querySelectorAll('button'))button.onclick=()=>{
+    setInvoicePeriod(Number(yearLabel.textContent)+Number(button.dataset.yearStep),monthSelect.value);render();
+  };`);
 }
 
 function patchDocuments(source) {
@@ -115,7 +144,10 @@ function patchDeskDelivery(source) {
 function patchSupportHtml(source, previousBuild, build) {
   source = source.replaceAll(previousBuild, build);
   source = replace(source, '<button data-view="transactions">Invoices &amp; Payments</button>', '<button data-view="transactions">Invoices &amp; Payments</button><button data-view="invoiceRegister">Invoice Register</button>');
-  source = replace(source, '<select id="order-filter"', '<input id="invoice-month" type="month" aria-label="Invoice month" hidden><select id="order-filter"');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  source = replace(source, '<select id="order-filter"', '<div id="invoice-period" hidden><select id="invoice-month-select" aria-label="Invoice month">'+
+    months.map((month,index)=>'<option value="'+String(index+1).padStart(2,'0')+'">'+month+'</option>').join('')+
+    '</select><button type="button" data-year-step="-1" aria-label="Previous invoice year">‹</button><span id="invoice-year" aria-live="polite"></span><button type="button" data-year-step="1" aria-label="Next invoice year">›</button><input id="invoice-month" type="hidden"></div><select id="order-filter"');
   source = replace(source, 'task-chat.js?v=20261103-department-chat-prompts-v1', 'task-chat.js?v='+build);
   return replace(source, 'desk-delivery.js?v=20261111-warehouse-desk-workflow-v1', 'desk-delivery.js?v='+build);
 }
@@ -125,16 +157,24 @@ function patchTaskChat(source) {
 }
 
 const css = `
-.shipment-compact .desk-currency strong{font-size:24px;line-height:1.1;font-weight:800;color:#e51b2b}
-.shipment-compact .shipment-doc-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(6,auto);grid-auto-flow:column}
+.shipment-compact .desk-currency{display:inline-flex;align-items:center;min-height:30px;padding:2px 8px;border-radius:5px;background:#fff0d4;color:#804500;font-size:23px;line-height:1.1;font-weight:800}
+.shipment-compact .shipment-customer-desk{flex-wrap:wrap;gap:7px 12px}
+.shipment-compact .shipment-doc-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(5,auto);grid-auto-flow:column}
 .shipment-compact .shipment-doc-grid>div:nth-child(n+6){grid-column:2}
+.shipment-compact .shipment-section-pencil{display:inline-grid;place-items:center}
+.shipment-compact .shipment-columns h3{color:#28465e;font-weight:700;letter-spacing:.045em}
+.shipment-compact .desk-switcher{border-color:#e7a34e;background:#fff0d4;color:#804500}
+.shipment-compact .desk-switcher button:not(:disabled){color:#a95400}
+.shipment-compact .shipment-section-pencil svg{transition:transform .16s ease}
+.shipment-compact .shipment-section-pencil:not(:disabled):is(:hover,:focus-visible) svg{transform:translate(1px,-2px) rotate(-9deg)}
+@media(prefers-reduced-motion:reduce){.shipment-compact .shipment-section-pencil svg{transition:none;transform:none!important}}
 #desk-details{width:365px}
 #desk-details #desk-details-fields{display:block}
 #desk-details[data-section="order"] #desk-details-fields>section:nth-child(2),
 #desk-details[data-section="shipment"] #desk-details-fields>section:first-child,
 #desk-details[data-section="shipment"] #desk-details-fields>section:nth-child(2)>label:nth-of-type(2){display:none}
 #desk-details #desk-details-fields h3{display:none}
-.shipment-compact .shipment-compact-footer{background:#173651;padding:9px 15px}
+.shipment-compact .shipment-compact-footer{background:#173651;padding:6px 14px}
 .shipment-compact .shipment-totals{justify-content:flex-start;gap:9px 19px;border:0;color:#fff;padding:0}
 .shipment-compact .shipment-totals :is(dt,small,.desk-amount>span,.shipment-invoice>span){color:#d8e7f4}
 .shipment-compact .shipment-totals .quantity-basis>b{color:#fff}
@@ -153,6 +193,7 @@ const css = `
 .order-tasks [data-tc-cell="sources"] .tc-peer{min-width:24px;height:17px;font-size:10px;padding:0 4px!important}
 .order-tasks [data-tc-cell="sources"] .tc-peer:after{left:4px;border-top-width:4px;border-right-width:5px}
 .order-tasks [data-tc-cell="sources"] .tc-snippet{font-size:11px}
+.overview-number{width:36px;color:#536d87;font-variant-numeric:tabular-nums}
 .overview-profile-cell,.overview-entry-cell{text-align:center;width:44px}
 .overview-profile{margin:0}
 .overview-profile svg{fill:currentColor;stroke:none}
@@ -163,7 +204,26 @@ tr[data-customer-row]{cursor:pointer}
 tr[data-customer-row]:is(:hover,:focus-within)>td{background:#f6faff}
 tr[data-customer-row]:hover .customer-order-entry svg,.customer-order-entry:focus-visible svg{transform:translateX(3px)}
 @media(prefers-reduced-motion:reduce){tr[data-customer-row] .customer-order-entry svg{transition:none;transform:none!important}}
-.invoice-toolbar .invoice-add{grid-column:2}
+.invoice-toolbar{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:4px 8px;margin:0}
+.invoice-toolbar .invoice-add{grid-column:2;grid-row:1;min-height:28px;padding:3px 8px}
+.invoice-toolbar .invoice-legend{grid-column:1;grid-row:1;gap:3px 9px}
+body.support-workroom.support-invoices-view .heading{min-height:0;margin-bottom:8px}
+body.support-workroom.support-invoices-view .tools{padding:5px 8px;gap:8px;margin-bottom:5px}
+#documents.charge-form{width:470px}
+#documents.charge-form #document-fields{display:grid;gap:8px;margin-top:8px}
+#documents.charge-form #document-fields>label{margin:0}
+#documents.charge-form #document-fields>label[hidden],
+#documents.charge-form #document-amount-label small,
+#documents.charge-form #document-fields>label:has(#document-file)+small{display:none}
+#documents.charge-form #charge-lines{grid-row:2}
+#documents.charge-form #document-amount-label{grid-row:3}
+#documents.charge-form #document-amount{width:120px;margin-left:auto;text-align:right}
+#documents.charge-form #document-amount-label{display:flex;align-items:center;gap:8px}
+#documents.charge-form #document-status{font-size:11px;margin:6px 0;color:#536d87}
+#invoice-period:not([hidden]){display:flex;align-items:center;gap:6px}
+.tools #invoice-month-select{min-width:62px}
+#invoice-period button{min-width:26px;min-height:28px}
+#invoice-year{min-width:4ch;text-align:center;font-variant-numeric:tabular-nums}
 .invoice-list :is(th,td):last-child{min-width:366px}
 .invoice-list .doc-strip{width:max-content;flex-wrap:nowrap}
 .invoice-list .doc-strip>*{box-sizing:border-box;flex:0 0 28px}
