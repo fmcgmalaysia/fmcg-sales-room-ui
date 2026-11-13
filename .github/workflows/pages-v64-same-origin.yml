@@ -1018,6 +1018,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only' && inputs.master_staff_management && inputs.support_desk_label && inputs.shipment_delivery
         run: node integration/releases/support-shipment-delivery.cjs "$RUNNER_TEMP/warehouse-desk-workflow-site"
 
+      - name: Preserve Purchase drafts when switching companies
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only' && inputs.master_staff_management && inputs.support_desk_label && inputs.shipment_delivery
+        run: node integration/releases/stage-purchase-company-switch.cjs "$RUNNER_TEMP/warehouse-desk-workflow-site"
+
       - name: Upload Warehouse Desk workflow
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-desk-workflow-only'
         uses: actions/upload-pages-artifact@v5
