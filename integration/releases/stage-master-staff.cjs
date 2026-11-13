@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
+const { execFileSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '../..');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -20,6 +21,13 @@ function stageMasterStaff(site) {
 
   const additions = ['ltpos/index.html', 'ltpos/ltpos-team.jpg', 'master-staff/index.html']
     .map(file => ({ file, bytes: fs.readFileSync(path.join(root, file)) }));
+  const buyerResetSource = execFileSync('git', [
+    'show', 'e007684e441e52d545d5774b6f8c49729b26f771:buyer-login.html'
+  ], { cwd: root, encoding: 'utf8' });
+  const buyerReset = Buffer.from(buyerResetSource.replace(/\r\n/g, '\n'));
+  assert.equal(hash(buyerReset), 'e4a2f0cdb8627a4e4d50bfd3f84bebfe941c227b7d9165ca58e6e94a10e8b472',
+    'Retain the published Buyer password reset page referenced by Wix.');
+  additions.push({ file: 'buyer-login-20261113.html', bytes: buyerReset });
   assert.match(additions[0].bytes.toString('utf8'), /name="build" content="ltpos-staff-portal-v2"/);
   assert.equal(additions[1].bytes.readUInt16BE(0), 0xffd8);
   assert.match(additions[2].bytes.toString('utf8'), /name="build" content="master-staff-management-v1"/);
