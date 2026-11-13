@@ -8,7 +8,7 @@ function fixture({scope = null, buyerRows = {}, verified = true} = {}) {
   const calls = [];
   const source = fs.readFileSync(path.join(__dirname,'../../backend/http-functions.js'),'utf8')
     .replace(/^import .+;\r?$/gm,'').replace(/^export /gm,'');
-  const api = vm.runInNewContext(source+'\n({get_googleStaffAuth,authorizeQuotationSync})',{
+  const api = vm.runInNewContext(source+'\n({get_googleStaffAuth,get_googleBuyerAuthStart,get_googleStaffAuthStart,authorizeQuotationSync})',{
     URLSearchParams,
     response: result => result,
     createNctReceiver: () => () => {},
@@ -20,8 +20,13 @@ function fixture({scope = null, buyerRows = {}, verified = true} = {}) {
       return scope;
     },
     staffMayAccessCustomer: (staff, action, id) => staff.authorized && staff.customerScope.customerActions[action]?.includes(id),
-    fetch: async url => ({ok:true,json:async () => url.includes('/userinfo')
-      ? {email:'employee@example.com',email_verified:verified} : {access_token:'fixture-token'}}),
+    fetch: async (url, options) => {
+      if (url.includes('/token')) {
+        assert.equal(new URLSearchParams(options.body).get('redirect_uri'), canonicalCallback);
+      }
+      return {ok:true,json:async () => url.includes('/userinfo')
+        ? {email:'employee@example.com',email_verified:verified} : {access_token:'fixture-token'}};
+    },
     authentication: {generateSessionToken:async () => {calls.push('session');return 'fixture-session';}},
     wixData: {query(name) {
       assert.ok(name in buyerRows,'staff login must not read a local employee authority');
@@ -34,6 +39,7 @@ function fixture({scope = null, buyerRows = {}, verified = true} = {}) {
 
 const request = state => ({query:{state,code:'fixture-code'}});
 const staffState = 'a'.repeat(48);
+const canonicalCallback = 'https://www.fmcgmalaysia.com/_functions/googleStaffAuth';
 const employee = {staffId:'staff-a',customerScope:{customerActions:{VIEW:['customer-a'],PUBLISH_QUOTATION:[]}}};
 
 test('Google staff callback issues a session only after MASTER confirms access',async()=>{
@@ -55,8 +61,22 @@ test('unverified Google email cannot reach MASTER or start a staff session',asyn
 test('Buyer Google callback still uses the customer directory',async()=>{
   const f=fixture({buyerRows:{WixCustomerUsers:[{customerId:'customer-a',status:'ACTIVE'}],WixCustomers:[{customerId:'customer-a'}]}});
   const result=await f.api.get_googleStaffAuth(request('B_'+staffState));
-  assert.match(result.headers.Location,/buyer-room-login\?oauth=success/);
+  const destination = new URL(result.headers.Location);
+  assert.equal(destination.origin, 'https://www.fmcgmalaysia.com');
+  assert.equal(destination.pathname, '/');
+  assert.equal(destination.searchParams.get('oauth'), 'success');
   assert.deepEqual(f.calls,['session']);
+});
+
+test('Both public sign-in routes retain the published Google callback', async () => {
+  const { api } = fixture();
+  for (const [start, state] of [
+    [api.get_googleBuyerAuthStart, 'B_' + staffState],
+    [api.get_googleStaffAuthStart, staffState]
+  ]) {
+    const response = await start({ query: { state } });
+    assert.equal(new URL(response.headers.Location).searchParams.get('redirect_uri'), canonicalCallback);
+  }
 });
 
 test('Google quotation sync requires MASTER publishing permission for that customer',async()=>{
