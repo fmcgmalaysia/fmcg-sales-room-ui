@@ -11,10 +11,10 @@ import { buildBuyerSelectionDownload } from 'backend/buyerSelectionDownload.js';
 import { verifyBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
 
-const SITE_BASE = 'https://fmcg999.wixstudio.com/fmcgmalaysia';
+const SITE_BASE = 'https://www.fmcgmalaysia.com';
 const CALLBACK_URL = SITE_BASE + '/_functions/googleStaffAuth';
 const LOGIN_URL = SITE_BASE + '/sales-room-login';
-const BUYER_LOGIN_URL = SITE_BASE + '/buyer-room-login';
+const BUYER_LOGIN_URL = SITE_BASE + '/';
 const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
