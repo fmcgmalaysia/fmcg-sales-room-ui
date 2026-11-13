@@ -7,7 +7,10 @@ const root = path.resolve(__dirname, '../..');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
 function stageMasterStaff(site) {
-  const previous = JSON.parse(fs.readFileSync(path.join(site, 'warehouse-desk-workflow-release.json')));
+  const manifest = fs.readFileSync(path.join(site, 'warehouse-desk-workflow-release.json'));
+  assert.equal(hash(manifest), '0669981b074a1832d0624876b6b06544839366452e9a349155eb8740d6ca49a5',
+    'The package must start from the verified production manifest.');
+  const previous = JSON.parse(manifest);
   assert.equal(previous.build, '20261112-support-warehouse-polish-v1');
   assert.equal(previous.resources.length, 96);
   assert.equal(new Set(previous.resources.map(item => item.path)).size, 96);
