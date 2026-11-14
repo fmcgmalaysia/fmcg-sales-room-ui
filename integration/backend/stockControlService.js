@@ -21,6 +21,7 @@ export function validateStockListInput(input) { criteria(input); }
 export function projectStockControlPage(context, input = {}, readAt = new Date().toISOString(), extensions = null) {
   const query = criteria(input), projected = projectStockCard(context);
   const customers = new Map((context.customers || []).map(row => [row.id, row.name]));
+  const tasksById = new Map(context.tasks.map(task => [task.id, task]));
   let items = projected.items.map(row => ({
     key: row.key, company: row.company, barcode: row.barcode, name: row.name, packing: row.packing, ea: row.ea,
     onHand: row.onHand, reservedUsable: row.reservedUsable, available: row.available, isolated: row.isolated,
@@ -33,7 +34,7 @@ export function projectStockControlPage(context, input = {}, readAt = new Date()
       awaitingDisposal: source.awaitingDisposal, physicalCustody: source.physicalCustody,
       shortage: source.shortage, ownershipBasis: source.ownershipBasis, issues: [...source.issues],
       reservations: source.reservations.filter(entry => entry.remaining > 0).map(entry => ({
-        taskId: entry.taskId, customerName: customers.get(context.tasks.find(task => task.id === entry.taskId)?.customerId) || '',
+        taskId: entry.taskId, customerName: customers.get(tasksById.get(entry.taskId)?.customerId) || '',
         outstandingQuantity: entry.remaining
       }))
     }))
@@ -49,7 +50,15 @@ export function projectStockControlPage(context, input = {}, readAt = new Date()
     || query.filter === 'REVIEW' && row.reviewRequired);
   const offset = query.cursor?.offset || 0;
   if (offset > visible.length) throw Error('Stock page changed. Refresh the stock list.');
-  const page = visible.slice(offset, offset + query.pageSize);
+  const projectedByKey = extensions ? null : new Map(projected.items.map(row => [row.key, row]));
+  const page = visible.slice(offset, offset + query.pageSize).map(row => {
+    if (extensions) return row;
+    const sources = projectedByKey.get(row.key).sources;
+    const productImageUrl = sources.flatMap(source => [tasksById.get(source.sourceTaskId), tasksById.get(source.customerDemandTaskId)])
+      .filter(task => task?.barcode === row.barcode && task.packing === row.packing && task.ea === row.ea)
+      .map(task => task.productImageUrl).find(url => typeof url === 'string' && /^https:\/\/[^\s<>"']+$/i.test(url));
+    return productImageUrl ? { ...row, productImageUrl } : row;
+  });
   const summary = { products: visible.length };
   for (const field of ['onHand', 'reservedUsable', 'available', 'isolated']) {
     summary[field] = { quantity: visible.reduce((total, row) => total + (row[field] ?? 0), 0),
