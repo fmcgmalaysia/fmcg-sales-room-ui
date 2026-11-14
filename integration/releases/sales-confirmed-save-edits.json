@@ -1,0 +1,126 @@
+{
+  "index.html": {
+    "before": "e313c6de8577bca4912d0b7ddbbb0f03b5c9410c515bc273a207a208b416935f",
+    "after": "fec4fb4f1255d1bdb1861bf2ab0c5484f114822ddb53c9d1977a1e82c32aec65",
+    "hunks": [
+      {
+        "index": 24,
+        "before": [
+          "<head>",
+          "<meta charset=\"utf-8\">",
+          "<meta name=\"build-version\" content=\"20261111-warehouse-desk-workflow-v1\">",
+          "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">",
+          "<link href=\"https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap\" rel=\"stylesheet\">"
+        ],
+        "after": [
+          "<head>",
+          "<meta charset=\"utf-8\">",
+          "<meta name=\"build-version\" content=\"20261114-sales-confirmed-save-v1\">",
+          "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">",
+          "<link href=\"https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap\" rel=\"stylesheet\">"
+        ]
+      },
+      {
+        "index": 879,
+        "before": [
+          "  if(staff.canViewAllCustomers){",
+          "    const section=document.createElement('section');section.className='detail-section selection-allowance';",
+          "    section.innerHTML='<div class=\"detail-section-head\"><h3>My Selection allowance</h3><span class=\"admin-only-chip\">ADMIN ONLY</span></div><p>Set how many active products this customer may keep for quotation. Removed products do not count.</p><div class=\"allowance-controls\"><select id=\"customerSelectionLimit\" aria-label=\"Customer selection allowance\">'+[100,300,500,700].map(limit=>'<option value=\"'+limit+'\"'+(limit===currentLimit?' selected':'')+'>'+limit+' products</option>').join('')+'</select><button class=\"primary\" id=\"saveSelectionLimit\" type=\"button\" disabled>Save limit</button></div><small class=\"allowance-note\">Changing to a lower limit keeps existing selections; new additions are paused until the count is below the new limit.</small><div id=\"selectionLimitStatus\" class=\"detail-status\" aria-live=\"polite\"></div>';",
+          "    area.querySelector('.account-admin')?.before(section);",
+          "    const select=section.querySelector('#customerSelectionLimit'),save=section.querySelector('#saveSelectionLimit'),status=section.querySelector('#selectionLimitStatus');",
+          "    select.onchange=()=>{save.disabled=Number(select.value)===currentLimit;status.textContent='';status.className='detail-status'};",
+          "    save.onclick=()=>{save.disabled=true;select.disabled=true;status.textContent='Saving selection allowance…';status.className='detail-status show';window.parent.postMessage({type:'SALES_ROOM_SELECTION_LIMIT_SAVE',customerId:currentCustomerId,selectionLimit:Number(select.value)},'*')};",
+          "  }"
+        ],
+        "after": [
+          "  if(staff.canViewAllCustomers){",
+          "    const section=document.createElement('section');section.className='detail-section selection-allowance';",
+          "    section.innerHTML='<div class=\"detail-section-head\"><h3>My Selection allowance</h3><span class=\"admin-only-chip\">ADMIN ONLY</span></div><p>Set how many active products this customer may keep for quotation. Removed products do not count.</p><div class=\"allowance-controls\"><select id=\"customerSelectionLimit\" aria-label=\"Customer selection allowance\">'+[100,300,500,700].map(limit=>'<option value=\"'+limit+'\"'+(limit===currentLimit?' selected':'')+'>'+limit+' products</option>').join('')+'</select><button class=\"primary\" id=\"saveSelectionLimit\" type=\"button\" disabled hidden>Save limit</button></div><small class=\"allowance-note\">Changing to a lower limit keeps existing selections; new additions are paused until the count is below the new limit.</small><div id=\"selectionLimitStatus\" class=\"detail-status\" aria-live=\"polite\"></div>';",
+          "    area.querySelector('.account-admin')?.before(section);",
+          "    const select=section.querySelector('#customerSelectionLimit'),save=section.querySelector('#saveSelectionLimit'),status=section.querySelector('#selectionLimitStatus');",
+          "    section.dataset.savedLimit=String(currentLimit);",
+          "    select.onchange=()=>{save.disabled=select.value===section.dataset.savedLimit;save.hidden=save.disabled;status.textContent='';status.className='detail-status'};",
+          "    save.onclick=()=>{save.disabled=true;select.disabled=true;status.textContent='Saving selection allowance…';status.className='detail-status show';window.parent.postMessage({type:'SALES_ROOM_SELECTION_LIMIT_SAVE',customerId:currentCustomerId,selectionLimit:Number(select.value)},'*')};",
+          "  }"
+        ]
+      },
+      {
+        "index": 976,
+        "before": [
+          "  }",
+          "  if(m.type==='SALES_ROOM_SELECTION_LIMIT_RESULT'){",
+          "    const box=document.getElementById('selectionLimitStatus');",
+          "    const save=document.getElementById('saveSelectionLimit');",
+          "    const select=document.getElementById('customerSelectionLimit');",
+          "    if(m.ok){",
+          "      const savedCustomerId=String(m.customerId||currentCustomerId),savedLimit=Number(m.selectionLimit??m.result?.selectionLimit??select?.value);",
+          "      if([100,300,500,700].includes(savedLimit)){",
+          "        pendingSelectionLimits.set(savedCustomerId,savedLimit);",
+          "        customerRecords=customerRecords.map(c=>String(c.customerId||'')===savedCustomerId?{...c,selectionLimit:savedLimit}:c);",
+          "        const q=document.getElementById('customerSearch').value.trim().toUpperCase();",
+          "        renderCustomerList(customerRecords.filter(c=>!q||[c.customerId,c.companyName,c.country].some(v=>String(v||'').toUpperCase().includes(q))));",
+          "        if(select){select.value=String(savedLimit);select.disabled=false}",
+          "        if(save)save.disabled=true;",
+          "      }",
+          "      if(box){box.textContent='Selection allowance saved and updated in Workspace.';box.className='detail-status show ok'}",
+          "      window.parent.postMessage({type:'SALES_ROOM_CUSTOMER_DETAIL_REQUEST',customerId:savedCustomerId},'*');",
+          "      window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*');",
+          "    }else{",
+          "      if(box){box.textContent=m.error||'Selection allowance could not be saved.';box.className='detail-status show err'}",
+          "      if(select)select.disabled=false;"
+        ],
+        "after": [
+          "  }",
+          "  if(m.type==='SALES_ROOM_SELECTION_LIMIT_RESULT'){",
+          "    const savedCustomerId=String(m.customerId||'');",
+          "    const sameCustomer=savedCustomerId===currentCustomerId;",
+          "    const box=document.getElementById('selectionLimitStatus');",
+          "    const save=document.getElementById('saveSelectionLimit');",
+          "    const select=document.getElementById('customerSelectionLimit');",
+          "    const savedLimit=Number(m.selectionLimit??m.result?.selectionLimit);",
+          "    if(m.ok&&savedCustomerId&&[100,300,500,700].includes(savedLimit)){",
+          "        pendingSelectionLimits.set(savedCustomerId,savedLimit);",
+          "        customerRecords=customerRecords.map(c=>String(c.customerId||'')===savedCustomerId?{...c,selectionLimit:savedLimit}:c);",
+          "        const q=document.getElementById('customerSearch').value.trim().toUpperCase();",
+          "        renderCustomerList(customerRecords.filter(c=>!q||[c.customerId,c.companyName,c.country].some(v=>String(v||'').toUpperCase().includes(q))));",
+          "        if(sameCustomer&&select){select.closest('.selection-allowance').dataset.savedLimit=String(savedLimit);select.value=String(savedLimit);select.disabled=false}",
+          "        if(sameCustomer&&save){save.disabled=true;save.hidden=true}",
+          "      if(sameCustomer&&box){box.textContent='Selection allowance saved and updated in Workspace.';box.className='detail-status show ok'}",
+          "      if(sameCustomer)window.parent.postMessage({type:'SALES_ROOM_CUSTOMER_DETAIL_REQUEST',customerId:savedCustomerId},'*');",
+          "      window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*');",
+          "    }else if(sameCustomer){",
+          "      if(box){box.textContent=m.error||'Selection allowance could not be saved.';box.className='detail-status show err'}",
+          "      if(select)select.disabled=false;"
+        ]
+      },
+      {
+        "index": 1378,
+        "before": [
+          "function setFxStatusV33(copy,isError=false){const box=document.getElementById('fxSyncResult');box.textContent=copy;box.className='fx-sync-result show'+(isError?' error':'')}",
+          "function validateFxRatesV33(){const rates=fxRatesPayloadV33();if(!rates.length||rates.some(item=>!/^[A-Z]{3}$/.test(item.currency)||!Number.isFinite(item.rateToMyr)||item.rateToMyr<=0))throw new Error('Every currency requires a valid rate above 0.00.');return rates}",
+          "function openFxRatesV33(){if(!staff.canViewAllCustomers)return;document.getElementById('fxRateModal').hidden=false;document.body.style.overflow='hidden';setFxStatusV33('Loading saved FX rates…');fxRequestV33=crypto.randomUUID();window.parent.postMessage({type:'SALES_ROOM_FX_RATES_REQUEST',requestId:fxRequestV33},'*')}",
+          "function closeFxRatesV33(){document.getElementById('fxRateModal').hidden=true;document.body.style.overflow=''}",
+          "document.getElementById('fxRateSettingsBtn').onclick=openFxRatesV33;document.getElementById('fxRateClose').onclick=closeFxRatesV33;document.getElementById('fxRateCancel').onclick=closeFxRatesV33;document.getElementById('fxRateModal').onclick=e=>{if(e.target.id==='fxRateModal')closeFxRatesV33()};",
+          "document.getElementById('fxAddCurrency').onclick=()=>{const existing=new Set(fxRatesPayloadV33().map(item=>item.currency)),next=['RMB','JPY'].find(code=>!existing.has(code));if(!next){setFxStatusV33('All currently supported transaction currencies are already listed.',true);return}fxRatesV33=fxRatesPayloadV33().concat({currency:next,rateToMyr:0});renderFxRatesV33(fxRatesV33);document.querySelector('[data-fx-currency=\"'+next+'\"] input')?.focus()};",
+          "document.getElementById('fxRateSave').onclick=()=>{try{const rates=validateFxRatesV33(),button=document.getElementById('fxRateSave');button.disabled=true;button.textContent='SAVING & UPDATING…';setFxStatusV33('Saving rates and updating verified QDs…');fxRequestV33=crypto.randomUUID();window.parent.postMessage({type:'SALES_ROOM_FX_RATES_APPLY',requestId:fxRequestV33,rates},'*')}catch(error){setFxStatusV33(error.message,true)}};",
+          "window.addEventListener('message',event=>{const message=event.data||{};if(!['SALES_ROOM_FX_RATES_DATA','SALES_ROOM_FX_RATES_APPLY_RESULT'].includes(message.type))return;if(message.requestId&&fxRequestV33&&message.requestId!==fxRequestV33)return;const save=document.getElementById('fxRateSave');save.disabled=false;save.textContent='SAVE & UPDATE ALL QDs';if(!message.ok){setFxStatusV33(message.error||'Unable to save and update the FX rates.',true);return}if(Array.isArray(message.rates))renderFxRatesV33(message.rates);if(message.type==='SALES_ROOM_FX_RATES_DATA'){const last=message.lastSyncAt?new Date(message.lastSyncAt).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}):'No previous update';setFxStatusV33('Last update: '+last+(message.lastSyncSummary?' · '+message.lastSyncSummary:''));return}const result=message.result||{};const summary='Rates saved · '+(Number(result.updated)||0)+' QDs updated · '+(Number(result.skipped)||0)+' skipped · '+(Number(result.failed)||0)+' failed';setFxStatusV33(summary,(Number(result.failed)||0)>0)});",
+          "renderFxRatesV33(fxRatesV33);",
+          ""
+        ],
+        "after": [
+          "function setFxStatusV33(copy,isError=false){const box=document.getElementById('fxSyncResult');box.textContent=copy;box.className='fx-sync-result show'+(isError?' error':'')}",
+          "function validateFxRatesV33(){const rates=fxRatesPayloadV33();if(!rates.length||rates.some(item=>!/^[A-Z]{3}$/.test(item.currency)||!Number.isFinite(item.rateToMyr)||item.rateToMyr<=0))throw new Error('Every currency requires a valid rate above 0.00.');return rates}",
+          "function openFxRatesV33(){if(!staff.canViewAllCustomers)return;document.getElementById('fxRateModal').hidden=false;document.getElementById('fxRateSave').hidden=false;document.body.style.overflow='hidden';setFxStatusV33('Loading saved FX rates…');fxRequestV33=crypto.randomUUID();window.parent.postMessage({type:'SALES_ROOM_FX_RATES_REQUEST',requestId:fxRequestV33},'*')}",
+          "function closeFxRatesV33(){document.getElementById('fxRateModal').hidden=true;document.body.style.overflow=''}",
+          "document.getElementById('fxRateSettingsBtn').onclick=openFxRatesV33;document.getElementById('fxRateClose').onclick=closeFxRatesV33;document.getElementById('fxRateCancel').onclick=closeFxRatesV33;document.getElementById('fxRateModal').onclick=e=>{if(e.target.id==='fxRateModal')closeFxRatesV33()};",
+          "document.getElementById('fxAddCurrency').onclick=()=>{const existing=new Set(fxRatesPayloadV33().map(item=>item.currency)),next=['RMB','JPY'].find(code=>!existing.has(code));if(!next){setFxStatusV33('All currently supported transaction currencies are already listed.',true);return}fxRatesV33=fxRatesPayloadV33().concat({currency:next,rateToMyr:0});renderFxRatesV33(fxRatesV33);document.getElementById('fxRateSave').hidden=false;document.querySelector('[data-fx-currency=\"'+next+'\"] input')?.focus()};",
+          "document.getElementById('fxRateRows').addEventListener('input',()=>{document.getElementById('fxRateSave').hidden=false;});",
+          "document.getElementById('fxRateSave').onclick=()=>{if(document.getElementById('fxRateSave').hidden)return;try{const rates=validateFxRatesV33(),button=document.getElementById('fxRateSave');button.disabled=true;button.textContent='SAVING & UPDATING…';setFxStatusV33('Saving rates and updating verified QDs…');fxRequestV33=crypto.randomUUID();window.parent.postMessage({type:'SALES_ROOM_FX_RATES_APPLY',requestId:fxRequestV33,rates},'*')}catch(error){setFxStatusV33(error.message,true)}};",
+          "window.addEventListener('message',event=>{const message=event.data||{};if(!['SALES_ROOM_FX_RATES_DATA','SALES_ROOM_FX_RATES_APPLY_RESULT'].includes(message.type))return;if(message.requestId&&fxRequestV33&&message.requestId!==fxRequestV33)return;const save=document.getElementById('fxRateSave');save.disabled=false;save.hidden=false;save.textContent='SAVE & UPDATE ALL QDs';if(!message.ok){setFxStatusV33(message.error||'Unable to save and update the FX rates.',true);return}if(Array.isArray(message.rates))renderFxRatesV33(message.rates);if(message.type==='SALES_ROOM_FX_RATES_DATA'){const last=message.lastSyncAt?new Date(message.lastSyncAt).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}):'No previous update';setFxStatusV33('Last update: '+last+(message.lastSyncSummary?' · '+message.lastSyncSummary:''));return}const result=message.result||{};const summary='Rates saved · '+(Number(result.updated)||0)+' QDs updated · '+(Number(result.skipped)||0)+' skipped · '+(Number(result.failed)||0)+' failed';const failed=(Number(result.failed)||0)>0;save.hidden=!failed;setFxStatusV33(summary,failed)});",
+          "renderFxRatesV33(fxRatesV33);",
+          ""
+        ]
+      }
+    ]
+  }
+}
