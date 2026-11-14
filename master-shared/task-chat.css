@@ -4,3 +4,9 @@
 .po-submission-workspace .po-ledger th:nth-child(5),.po-submission-workspace .po-ledger th:nth-child(7){text-align:left;padding-right:8px}.po-submission-workspace .po-ledger th:nth-child(6){text-align:center}
 .po-submission-workspace .po-ledger th:nth-child(4),.po-submission-workspace .po-ledger td:nth-child(4),#app .payment-workspace .po-ledger th:nth-child(4),#app .payment-workspace .po-ledger td.pf-amount{text-align:right!important;padding-right:12px}.po-submission-workspace .po-ledger th,.po-submission-workspace .po-ledger td{padding-left:8px;padding-right:8px}.po-submission-workspace .po-ledger td:nth-child(2) small{display:block;margin-top:4px;white-space:normal}.po-submission-workspace .po-ledger .po-payment-request{text-align:center}.account-purchases .acc-doc.waiting{background:#B8C4D0;color:#fff}
 .tc-sales-inbox{float:right;margin:8px 16px 8px 8px!important}.tc-sales-inbox[hidden]{display:none!important}
+td:has(>.tc-cell){vertical-align:middle}
+td>.tc-cell{align-items:center;gap:6px}
+td>.tc-cell .tc-actions{padding:0}
+td>.tc-cell .tc-peer{min-width:24px;height:17px;margin-bottom:3px;padding:0 4px!important;font-size:10px}
+td>.tc-cell .tc-peer::after{left:4px;border-top-width:4px;border-right-width:5px}
+@media(max-width:600px){td>.tc-cell .tc-peer{min-width:32px;height:26px}}
