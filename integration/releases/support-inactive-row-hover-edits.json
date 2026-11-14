@@ -1,0 +1,30 @@
+{
+  "support-room/workroom.html": {
+    "before": "23c1dab5d5c5b9eba75939335b6784f8019c1bbeea582744c85c405c02ff143f",
+    "after": "fbb876bd91a8c23b20dee988a31dd504cb05ec3d2b7ab3567672de739ad9d9e8",
+    "hunks": [
+      {
+        "index": 1,
+        "before": [
+          "<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261114-support-manual-desk-archive-v1\"><title>Support Department</title><link rel=\"stylesheet\" href=\"draft.css?v=20261021-support-preview-v1\"><link rel=\"stylesheet\" href=\"draft-compact.css?v=20261021-support-preview-v1\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-department-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261114-support-desk-header-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261111-warehouse-desk-workflow-v1\"></head>"
+        ],
+        "after": [
+          "<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261114-support-manual-desk-archive-v1\"><title>Support Department</title><link rel=\"stylesheet\" href=\"draft.css?v=20261021-support-preview-v1\"><link rel=\"stylesheet\" href=\"draft-compact.css?v=20261021-support-preview-v1\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-department-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261114-support-inactive-row-hover-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261111-warehouse-desk-workflow-v1\"></head>"
+        ]
+      }
+    ]
+  },
+  "support-room/workroom.css": {
+    "before": "3389b8d3d2575c7b1f6a3f30bfcc55ae13e0f75870fd54fddf1fb55c82e10762",
+    "after": "5560081701ae5dc1d19272c94261dac5d5eff93b7703cfaf439fbef33cebd9b6",
+    "hunks": [
+      {
+        "index": 272,
+        "before": [],
+        "after": [
+          ".support-customers-view .work-table tbody tr:not([data-customer-row]):hover{background:transparent}"
+        ]
+      }
+    ]
+  }
+}
