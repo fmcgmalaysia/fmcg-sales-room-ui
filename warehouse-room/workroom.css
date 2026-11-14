@@ -247,3 +247,21 @@ nav[aria-label="Warehouse navigation"]>.preview,nav[aria-label="Warehouse naviga
 }
 #entry input[type=number][data-field=accepted]:out-of-range{border-color:#E51B2B;color:#991b1b;background:#fff1f2}
 #entry #entryWarning[data-excess]{color:#b91c1c;background:#fff1f2;border-color:#f4bdc4}
+
+/* Mouse-only previews for Warehouse receipt and shipment photos. */
+.warehouse-image-hover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(200px, calc(100vw - 24px));
+  height: min(200px, calc(100vh - 24px));
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #b8c4d0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgb(23 43 77 / 18%);
+  pointer-events: none;
+}
+.warehouse-image-hover img { display: block; width: 100%; height: 100%; object-fit: contain; }
+#entry img.receipt-thumb { cursor: zoom-in; }
