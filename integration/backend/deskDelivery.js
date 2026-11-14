@@ -3,7 +3,7 @@ import { changePackingList, packingAvailability } from 'backend/packingListModel
 import { readSupportDesks, supportDeskForTask, currentSupportDeskLocks, currentSupportDeskState, supportDeskBatchId } from 'backend/supportDesk.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { shortloadStatus, deskTaskPortions, readDeskCommitments, deskMembershipHold, adjustableDeliveryLine } from 'backend/shortloadResolutionModel.js';
+import { shortloadStatus, deskTaskPortions, readDeskCommitments, deskMembershipHold, hasDeskMembership, adjustableDeliveryLine } from 'backend/shortloadResolutionModel.js';
 
 const copy=value=>JSON.parse(JSON.stringify(value));
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
@@ -42,7 +42,7 @@ export function projectOpenDeskDelivery(context,list){
  const flows=readPhysicalOutflows(physical.activity);
  const membership=deskMembershipHold(state,list),membershipIds=new Set(Object.keys(membership?.membershipChanges||{}));
  const existing=new Set(list.lines.map(line=>line.taskId));
- const added=physical.tasks.filter(task=>membershipIds.has(task.id)&&!existing.has(task.id)&&!task.archived&&!task.procurementSource&&!task.specialPurchase&&task.customerId===list.customerId&&task.transactionCurrency===list.currency).map(task=>({
+ const added=physical.tasks.filter(task=>hasDeskMembership(state,list,task.id)&&!existing.has(task.id)&&!task.archived&&!task.procurementSource&&!task.specialPurchase&&task.customerId===list.customerId&&task.transactionCurrency===list.currency).map(task=>({
   taskId:task.id,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',productImageUrl:task.productImageUrl||'',
   quantity:0,requestedQuantity:0,packed:0,loaded:0,reason:'',photos:[],orderId:task.orderId,orderQty:task.requested??task.ord,
   pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,
@@ -55,14 +55,14 @@ export function projectOpenDeskDelivery(context,list){
   const disposition=shortloadStatus(physical.activity,list,line);
   const allocated=disposition.revision?line.quantity:readDeskCommitments(physical.activity,physical.company,task.id,task,state,flows).batches.find(row=>row.id===list.id)?.quantity||line.loaded;
   const prior=readDeskCommitments(physical.activity,physical.company,task.id).batches.filter(row=>row.id!==list.id&&row.desk===list.desk.number).reduce((sum,row)=>sum+row.quantity,0);
-  const modified=membershipIds.has(line.taskId)&&adjustableDeliveryLine(physical.activity,list,line);
+  const modified=(!existing.has(line.taskId)||membershipIds.has(line.taskId))&&adjustableDeliveryLine(physical.activity,list,line);
   const target=Math.max(0,(part?.quantity||0)-prior),requestedQuantity=disposition.revision?line.requestedQuantity:Math.max(line.loaded,modified?target:Math.min(line.requestedQuantity,target));
   if(modified&&!requestedQuantity&&!line.loaded&&!line.packed){
    if(existing.has(line.taskId)&&(line.expiryDate||line.photos?.length||line.loadedConfirmedAt))retiredLines.push({...line,retiredAt:list.sentAt});
    return [];
   }
   const next={...line,quantity:allocated,requestedQuantity,authorizedTotal:task.supplyAllocation?.planned??task.inc,
-   ...(membershipIds.has(line.taskId)?{membershipVersion:operationId(list.id,line.taskId,membership.membershipChanges[line.taskId],requestedQuantity,allocated)}:{})};
+   ...(!existing.has(line.taskId)||membershipIds.has(line.taskId)?{membershipVersion:operationId(list.id,line.taskId,membership.membershipChanges?.[line.taskId]||'',requestedQuantity,allocated)}:{})};
   if(allocated>line.quantity&&line.loadedConfirmedAt&&line.loaded===line.quantity){next.lastLoadedAt=line.loadedConfirmedAt;delete next.loadedConfirmedAt;}
   next.resolution=shortloadStatus(physical.activity,{...list,lines:[next]},next);
   return next;

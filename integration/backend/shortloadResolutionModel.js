@@ -4,7 +4,15 @@ const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
 const desk=value=>Number.isSafeInteger(value)&&value>=1&&value<=3;
 export function deskMembershipHold(state,list){
  if(list.desk?.taskScope!=='ALL'||list.status==='CANCELLED'||!state||list.customerId!==state.customerId)return;
- return state.deliveryHolds?.find(hold=>hold.listId===list.id&&hold.membershipChanges);
+ return state.deliveryHolds?.find(hold=>hold.listId===list.id);
+}
+function belongsToDesk(state,list,taskId){
+ const assignment=state?.assignments?.find(row=>row.taskId===taskId);
+ return assignment&&(assignment.parts?assignment.parts.some(part=>part.desk===list.desk.number&&part.quantity>0):assignment.desk===list.desk.number);
+}
+export function hasDeskMembership(state,list,taskId){
+ const hold=deskMembershipHold(state,list);
+ return Boolean(hold&&(Object.hasOwn(hold.membershipChanges||{},taskId)||belongsToDesk(state,list,taskId)));
 }
 export function adjustableDeliveryLine(activity,list,line){
  return !line||(!line.loadedConfirmedAt||line.loaded===line.quantity)&&!shortloadStatus(activity,list,line).revision;
@@ -12,7 +20,7 @@ export function adjustableDeliveryLine(activity,list,line){
 function listsForTask(activity,company,taskId,state){
  return activity.filter(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT').map(row=>row.details?.list)
   .filter(list=>list?.company===company&&list.desk&&list.status!=='CANCELLED'&&list.status!=='DRAFT'
-   &&(list.lines?.some(line=>line.taskId===taskId)||Object.hasOwn(deskMembershipHold(state,list)?.membershipChanges||{},taskId)));
+   &&(list.lines?.some(line=>line.taskId===taskId)||hasDeskMembership(state,list,taskId)));
 }
 // Customer commitment is the confirmed Desk instruction, not a procurement quote
 // or an unconfirmed Desk draft. Transfer removals count once at their origin.
@@ -30,7 +38,7 @@ export function readDeskCommitments(activity,company,taskId,task=null,state=null
   let quantity=status.maximum;
   if(portions&&list.desk.taskScope==='ALL'&&state.deliveryHolds?.some(hold=>hold.listId===list.id)&&!state.locks?.some(lock=>lock.desk===list.desk.number)&&!status.revision&&!(line.loadedConfirmedAt&&line.loaded<status.maximum)){
    const planned=portions.find(part=>part.desk===list.desk.number)?.planned||0;
-   const prior=priorRequested(list),membership=Object.hasOwn(deskMembershipHold(state,list)?.membershipChanges||{},taskId);
+   const prior=priorRequested(list),membership=!savedLine(list)||Object.hasOwn(deskMembershipHold(state,list)?.membershipChanges||{},taskId);
    const requested=membership?Math.max(0,(portions.find(part=>part.desk===list.desk.number)?.quantity||0)-prior):line.requestedQuantity;
    quantity=Math.max(line.loaded,Math.min(requested,Math.max(0,planned-prior)));
   }
@@ -78,7 +86,7 @@ export function deskTaskPortions(activity,state,task,flows=[]){
  const quantities=assignment?.parts?new Map(assignment.parts.map(part=>[part.desk,part.quantity])):new Map([[assigned,(task.requested??task.ord??0)+cancelled]]);
  const wholeDeskOpen=activity.some(event=>{
   const list=event.action==='SUPPORT_PACKING_LIST_CURRENT'&&event.details?.list;
-  return list?.desk?.taskScope==='ALL'&&list.status!=='CANCELLED'&&state?.deliveryHolds?.some(hold=>hold.listId===list.id&&(Object.hasOwn(hold.membershipChanges||{},task.id)||list.lines.some(line=>line.taskId===task.id)));
+  return list?.desk?.taskScope==='ALL'&&list.status!=='CANCELLED'&&deskMembershipHold(state,list)&&(hasDeskMembership(state,list,task.id)||list.lines.some(line=>line.taskId===task.id));
  });
  if(!assignment?.parts&&!records.length&&!wholeDeskOpen&&['NCT','GHR'].includes(state?.company||task.company)){const confirmed=readDeskCommitments(activity,state?.company||task.company,task.id);if(confirmed.quantity>0&&confirmed.quantity<(task.requested??task.ord??0)){quantities.clear();for(const batch of confirmed.batches)quantities.set(batch.desk,(quantities.get(batch.desk)||0)+batch.quantity);quantities.set(0,(task.requested??task.ord)-confirmed.quantity);}}
  for(const record of records)for(const part of record.parts){if(part.mode==='CONTINUE')continue;quantities.set(record.desk,(quantities.get(record.desk)||0)-part.quantity);if(part.mode==='TRANSFER')quantities.set(part.desk,(quantities.get(part.desk)||0)+part.quantity);}

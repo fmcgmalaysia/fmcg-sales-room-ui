@@ -191,3 +191,16 @@ test('split an opened line to Pending and keep only the retained quantity availa
  await assert.rejects(f.send({action:'DESK_LOAD',id:sent.id,revision:sent.revision,taskId:'A',loaded:100},'WAREHOUSE'),/Authorized task changed/);
  assert.equal((await f.stock()).onHand,150);
 });
+test('already-open Desk picks up its legacy assigned rows without any new save',async()=>{
+ const f=openDeskFixture(),base=f.tasks[0];
+ await f.move({});
+ const sent=await f.open(1,[{taskId:'A',quantity:100}]);
+ f.tasks.push({...base,id:'C',orderId:'ORDER-C',sourceLineId:'LINE-C',inc:0,warehouse:{hasPhysicalReceipt:false,accepted:0}});
+ const state=await f.state(), record=f.records.get('N/'+state.revision);
+ record.details.state.assignments.push({taskId:'C',desk:1,parts:[{desk:1,quantity:70},{desk:0,quantity:30}]});
+ const count=f.records.size, list=await f.read(sent.id);
+ const line=list.lines.find(row=>row.taskId==='C');
+ assert.equal(line.requestedQuantity,70);
+ assert.equal(line.quantity,0);
+ assert.equal(f.records.size,count);
+});
