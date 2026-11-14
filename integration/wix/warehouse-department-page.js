@@ -51,5 +51,5 @@ $w.onReady(()=>{
     try{let result;if(message.type==='WAREHOUSE_ORDERS_REQUEST'){if(receivingRead?.company!==message.company||receivingRead?.requestId!==message.requestId)receivingRead={company:message.company,requestId:message.requestId,promise:getWarehouseOrders(message.company)};result=await receivingRead.promise;}else result=await saveWarehouseReceipt(message.company,message.requestId,message.input);room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});}
     catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'});}
   });
-  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261114-warehouse-delivery-queue-v1';
+  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261114-warehouse-delivery-heading-v1';
 });
