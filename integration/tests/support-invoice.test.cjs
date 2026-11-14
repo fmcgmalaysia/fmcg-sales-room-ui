@@ -32,16 +32,27 @@ test('Support combines loaded lines from two order dates into one invoice withou
 
 const {createSupportDeskOperations,readSupportDesks,readSupportDeskLocks}=load('supportDesk.js');
 async function assigned(f,desk=1){const move=createSupportDeskOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context,now:()=>new Date('2026-10-31T08:00:00Z')});const r=await move({company:'NCT',staff:f.staff,requestId:'eeeeeeee-1111-4111-8111-111111111111',input:{action:'DESK_ASSIGN',customerId:'C1',taskId:'T1',desk,revision:''}});return {move,revision:r.deskState.revision};}
-test('canonical SI releases its workbench after lost acknowledgement while its original retry and historical batch remain fixed',async()=>{
+test('an issued SI stays on its Desk until manual archive, and retry preserves its historical batch',async()=>{
  const f=fixture();await f.setLoad(100);const {move,revision}=await assigned(f),request=await f.request(100);request.input.desk={number:1,revision};f.lose();await assert.rejects(f.save(request),/lost acknowledgement/);
  const context=await f.context(),state=readSupportDesks(context.activity,'NCT')[0],before=JSON.stringify(readCustomerShipments(context.activity));
- await assert.rejects(move({company:'NCT',staff:f.staff,requestId:'dddddddd-1111-4111-8111-111111111111',input:{action:'DESK_ASSIGN',taskId:'T1',desk:2,customerId:'C1',revision:state.revision}}),/split/);
- await move({company:'NCT',staff:f.staff,requestId:'cccccccc-1111-4111-8111-111111111111',input:{action:'DESK_SHIPMENT',desk:1,transport:'LAND',date:'2026-11-01',arrival:'',customerId:'C1',revision:state.revision}});
- await f.save(request);await f.save(request);assert.equal(JSON.stringify(readCustomerShipments((await f.context()).activity)),before);assert.equal(readSupportDeskLocks(await f.context())[0].status,'ISSUED');
+ await assert.rejects(move({company:'NCT',staff:f.staff,requestId:'dddddddd-1111-4111-8111-111111111111',input:{action:'DESK_ASSIGN',taskId:'T1',desk:2,customerId:'C1',revision:state.revision}}),/locked by its Sales Invoice/);
+ const issued=readSupportDeskLocks(context)[0];
+ assert.equal(issued.status,'ISSUED');
+ assert.equal(issued.archiveRequired,true);
+ await f.save(request);await f.save(request);
+ const archive={company:'NCT',staff:f.staff,requestId:'cccccccc-1111-4111-8111-111111111111',input:{action:'DESK_ARCHIVE',desk:1,customerId:'C1',revision:state.revision,invoiceId:issued.invoiceId,batchId:issued.snapshot.batchId}};
+ const archived=await move(archive);
+ assert.equal(archived.archivedInvoiceId,issued.invoiceId);
+ const replay=await move(archive);
+ assert.equal(replay.archivedInvoiceId,archived.archivedInvoiceId);
+ assert.equal(replay.deskState.revision,archived.deskState.revision);
+ assert.equal(archived.deskState.locks.length,0);
+ assert.notEqual(archived.deskState.batches.find(batch=>batch.desk===1).id,issued.snapshot.batchId);
+ assert.equal(JSON.stringify(readCustomerShipments((await f.context()).activity)),before);
 });
 
 test('partial loading must be resolved before Desk confirmation',async()=>{const f=fixture();await f.setLoad(80);const {revision}=await assigned(f),request=await f.request(80);request.input.desk={number:1,revision};await assert.rejects(f.save(request),/Resolve the remaining/);assert.equal([...f.records.values()].some(row=>row.action==='SUPPORT_INVOICE_PREPARED'),false);assert.equal(readSupportDeskLocks(await f.context()).length,0);});
-test('unassigned tasks cannot be invoiced through a numbered Desk',async()=>{const f=fixture();await f.setLoad(100);const request=await f.request(100);request.input.desk={number:1,revision:''};await assert.rejects(f.save(request),/match the current Desk/);assert.equal(readSupportDeskLocks(await f.context()).length,0);});
+test('unassigned tasks cannot be invoiced through a numbered Desk',async()=>{const f=fixture();await f.setLoad(100);const request=await f.request(100);request.input.desk={number:1,revision:''};await assert.rejects(f.save(request),/Complete receiving for every line on this Desk/);assert.equal(readSupportDeskLocks(await f.context()).length,0);assert.equal(readCustomerShipments((await f.context()).activity).length,0);});
 test('a stale Desk cannot prepare an invoice',async()=>{const f=fixture();await f.setLoad(100);await assigned(f);const request=await f.request(100);request.input.desk={number:1,revision:''};await assert.rejects(f.save(request),/classification changed/);});
 test('known cancellation releases its Desk hold but keeps its original invoice number bound to that Desk',async()=>{const f=fixture();await f.setLoad(100);const {revision}=await assigned(f),request=await f.request(100);request.input.desk={number:1,revision};f.afterSelect(()=>{const entry=[...f.records.values()].find(row=>row.action==='WAREHOUSE_PREPARATION_SAVED'&&row.details.action==='LOAD');entry.details.state.loaded=20;entry.details.state.physicalSources=[{sourceTaskId:'T1',quantity:20}];});await assert.rejects(f.save(request),/loading changed/);const cancel={company:'NCT',staff:f.staff,requestId:'cccccccc-1111-4111-8111-111111111111',input:{invoiceRequestId:request.requestId}};assert.equal((await f.cancel(cancel)).cancelled,true);assert.equal((await f.cancel(cancel)).cancelled,true);assert.equal(readSupportDeskLocks(await f.context()).length,0);});
 test('invoice number cannot be reserved for a second Desk even before first invoice finishes',async()=>{const f=fixture();await f.setLoad(100);const {revision}=await assigned(f),request=await f.request(100);request.input.desk={number:1,revision};f.afterSelect(()=>{const entry=[...f.records.values()].find(row=>row.action==='WAREHOUSE_PREPARATION_SAVED'&&row.details.action==='LOAD');entry.details.state.loaded=20;entry.details.state.physicalSources=[{sourceTaskId:'T1',quantity:20}];});await assert.rejects(f.save(request),/loading changed/);const claim=[...f.records.values()].find(row=>row.action==='SUPPORT_INVOICE_NUMBER_RESERVED');assert.equal(claim.details.desk,1);const context=await f.context(),current=readSupportDesks(context.activity,'NCT')[0];await assert.rejects(load('supportDesk.js').reserveSupportDeskInvoice({store:f.store,names:{NCT:{activity:'N'}},context,staff:f.staff,requestId:'ffffffff-1111-4111-8111-111111111111',input:{...request.input,desk:{number:2,revision:current.revision}},digest:'another',snapshot:{number:2},now:()=>new Date()}),/another Desk/);});

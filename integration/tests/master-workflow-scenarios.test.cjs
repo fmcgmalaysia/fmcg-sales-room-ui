@@ -130,7 +130,9 @@ test('A180+B10: stopping unplaced ten never clears later short-receipt ten or pu
  await f.decideQuantity('RECEIPT','STOP','REFUND');
  const workspace=await f.context(),requests=[{orderId:row.orderId,submissionId:'SUB-NCT'}];
  const customer=projectPurchaseQuantities({customerId:'C',requests,workspace,orders:await f.store.all(f.names.orders),tasks:await f.store.all(f.names.tasks),activity:workspace.activity,purchaseOrders:await f.allPos()});
- assert.equal(customer.orders[0].lines[0].committedQtyCtn,200);assert.equal(customer.orders[0].lines[0].receivedQtyCtn,180);assert.equal(customer.orders[0].lines[0].fulfilment.decision,'STOP');assert.doesNotMatch(JSON.stringify(customer),/Internal supplier finding|REFUND|SUPPLIER B/);
+ const line=customer.orders[0].lines[0];
+ assert.equal(line.orderedQtyCtn,200);assert.equal(line.committedQtyCtn,0,'no Desk commitment was confirmed');
+ assert.equal(line.receivedQtyCtn,180);assert.equal(line.fulfilment.decision,'STOP');assert.doesNotMatch(JSON.stringify(customer),/Internal supplier finding|REFUND|SUPPLIER B/);
  await f.upload('INV',1800000);await f.upload('DO');await f.upload('CN',100000);await f.amounts();await assert.rejects(f.finance({action:'CHECK',enabled:true}),/overpayment|shortage/);
  await f.pay(100000,'REFUND-A','REFUND');await f.claim(100000);await f.finance({action:'CHECK',enabled:true});assert.equal((await f.po()).invoiceChecked,true);assert.equal((await f.task()).ord,200);
 });
@@ -140,8 +142,8 @@ for (const company of ['NCT','GHR']) test(company + ': prepay in two instalments
   await f.upload('PI'); await f.pay(300000, 'PAY-1');
   assert.equal((await f.po()).creditorActive, true); assert.equal((await f.po()).prepaymentPending, true);
   await f.pay(700000, 'PAY-2'); await f.delivery(60, 'PARTIAL');
-  assert.equal((await f.task()).inc, 0, 'warehouse receipt waits for planner allocation');
-  await f.allocate(60); assert.equal((await f.task()).inc, 60); assert.equal((await f.task()).ord, 100);
+  assert.equal((await f.task()).inc, 60, 'the first receipt automatically supplies its customer order');
+  assert.equal((await f.task()).ord, 100);
   await f.delivery(40, 'DELIVERY'); await f.allocate(100);
   await f.upload('INV', 1000000); await f.upload('DO'); await f.amounts();
   assert.notEqual((await f.po()).documentStatus, 'COMPLETE');
@@ -175,7 +177,7 @@ test('short first delivery and later replacement preserve the first partial invo
   await f.delivery(90, 'SHORT'); await f.allocate(90); await f.shortage('WAIT', 'REPLENISH');
   const first = await f.invoice(90); await f.dispatch(first);
   assert.equal((await f.po()).financialRisk, true); assert.equal((await f.task()).ord, 100);
-  await f.delivery(10, 'DELIVERY', true); await f.allocate(100);
+  await f.delivery(10, 'DELIVERY', true);
   assert.equal((await f.task()).inc, 100); assert.equal((await f.po()).financialRisk, true);
   const second = await f.invoice(10); await f.dispatch(second);
   await f.upload('INV', 1000000); await f.upload('DO'); await f.amounts();
