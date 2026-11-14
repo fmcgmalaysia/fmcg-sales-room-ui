@@ -1,0 +1,44 @@
+{
+  "purchase-live/index.html": {
+    "before": "d1a2996d3b743e1ce6cbc5c072e9aa6135b9ce1d7ca00238944055ef5c66d6ae",
+    "after": "520303727297f8ce76cadb714740040ed76576c0bb9326af76c5fde8cd3d2b5d",
+    "hunks": [
+      {
+        "index": 13,
+        "before": [
+          "<dialog id=\"modal\"><div id=\"dialogContent\"></div></dialog><script src=\"display-rows.js?v=20261106-purchase-receipt-ux-v2\"></script><script src=\"task-info.js?v=20261111-warehouse-receipt-evidence-v1\"></script><script src=\"task-grid.js?v=20261111-purchase-workflow-polish-v1\"></script><script src=\"supplier-allocation.js?v=20261114-purchase-confirmed-save-v1\"></script><script src=\"dashboard.js?v=20261111-purchase-workflow-polish-v1\"></script><script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"../master-shared/desk-delivery.js?v=20261114-support-manual-desk-archive-v1\"></script><script src=\"customer-allocation-plan.js?v=20261106-purchase-waiting-borrow-v1\"></script><script src=\"customer-allocation.js?v=20261111-purchase-workflow-polish-v1\"></script><script src=\"app.js?v=20261114-purchase-company-switch-v1\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261101-customer-loaded-records-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script><script src=\"active-layout.js?v=20261114-purchase-active-header-v1\"></script></body></html>"
+        ],
+        "after": [
+          "<dialog id=\"modal\"><div id=\"dialogContent\"></div></dialog><script src=\"display-rows.js?v=20261106-purchase-receipt-ux-v2\"></script><script src=\"task-info.js?v=20261111-warehouse-receipt-evidence-v1\"></script><script src=\"task-grid.js?v=20261111-purchase-workflow-polish-v1\"></script><script src=\"supplier-allocation.js?v=20261114-purchase-supplier-photo-preview-v1\"></script><script src=\"dashboard.js?v=20261111-purchase-workflow-polish-v1\"></script><script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"../master-shared/desk-delivery.js?v=20261114-support-manual-desk-archive-v1\"></script><script src=\"customer-allocation-plan.js?v=20261106-purchase-waiting-borrow-v1\"></script><script src=\"customer-allocation.js?v=20261111-purchase-workflow-polish-v1\"></script><script src=\"app.js?v=20261114-purchase-company-switch-v1\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261101-customer-loaded-records-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script><script src=\"active-layout.js?v=20261114-purchase-active-header-v1\"></script></body></html>"
+        ]
+      }
+    ]
+  },
+  "purchase-live/supplier-allocation.js": {
+    "before": "951a8d17ab79648a0692ab7b48e4193fa9db9a87139f2ef8256c2c2e99cfc472",
+    "after": "17d083e031078a5cec7f2ab0862fe07600885592cf9ca791f7f7c8b3c9661773",
+    "hunks": [
+      {
+        "index": 104,
+        "before": [
+          "            preview.style.cssText='position:fixed;z-index:5;box-sizing:border-box;width:min(286px,calc(100vw - 24px));height:min(286px,calc(100vh - 24px));object-fit:contain;padding:10px;background:#fff;border:1px solid #b8c4d0;border-radius:10px;box-shadow:0 16px 38px rgba(23,43,77,.18);pointer-events:none';",
+          "            thumbnail.after(preview);",
+          "          }",
+          "          const {width,height}=preview.getBoundingClientRect();",
+          "          preview.style.left=Math.max(10,event.clientX+14+width>innerWidth-10?event.clientX-width-14:event.clientX+14)+'px';",
+          "          preview.style.top=Math.max(10,event.clientY+14+height>innerHeight-10?event.clientY-height-14:event.clientY+14)+'px';"
+        ],
+        "after": [
+          "            preview.style.cssText='position:fixed;z-index:5;box-sizing:border-box;width:min(172px,calc(100vw - 24px));height:min(172px,calc(100vh - 24px));object-fit:contain;padding:10px;background:#fff;border:1px solid #b8c4d0;border-radius:10px;box-shadow:0 16px 38px rgba(23,43,77,.18);pointer-events:none';",
+          "            thumbnail.after(preview);",
+          "          }",
+          "          const {width,height}=preview.getBoundingClientRect();",
+          "          const tile=thumbnail.getBoundingClientRect(),gap=10,edge=12;",
+          "          const left=tile.right+gap+width<=innerWidth-edge?tile.right+gap:tile.left-gap-width;",
+          "          preview.style.left=Math.max(edge,Math.min(left,innerWidth-width-edge))+'px';",
+          "          preview.style.top=Math.max(edge,Math.min(tile.top,innerHeight-height-edge))+'px';"
+        ]
+      }
+    ]
+  }
+}
