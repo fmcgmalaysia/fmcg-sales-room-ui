@@ -111,8 +111,11 @@ test('real Desk: 480 authorized, 300 Loaded, isolate10; Purchase corrects only t
  let serial=10000;const request=async(input,department='SUPPORT')=>({company:'NCT',staff:{memberId:department,staffId:department,staffName:department,packingDepartment:department},requestId:String(++serial).padStart(8,'0')+'-1111-4111-8111-111111111111',input:{version:packingVersion(await f.packingContext()),...input}});
  const desk=async()=>readSupportDesks((await f.context()).activity,'NCT')[0];
  await deskOps(await request({action:'DESK_ASSIGN',customerId:'C',taskId:f.id,desk:1,revision:''}));
- const sent=await f.packingSave(await request({action:'DESK_SEND',customerId:'C',desk:1,deskRevision:(await desk()).revision,lines:[{taskId:f.id,quantity:480}]}));
+ await assert.rejects(f.packingSave(await request({action:'DESK_SEND',customerId:'C',desk:1,deskRevision:(await desk()).revision,lines:[{taskId:f.id,quantity:480}]})),/Desk allocation changed/);
+ const sent=await f.packingSave(await request({action:'DESK_SEND',customerId:'C',desk:1,deskRevision:(await desk()).revision,lines:[{taskId:f.id,quantity:500}]}));
  const current=async()=>(await f.packingContext()).lists.find(l=>l.id===sent.id);
+ assert.equal((await current()).lines[0].requestedQuantity,500);
+ assert.equal((await current()).lines[0].quantity,480);
  await f.packingSave(await request({action:'DESK_LOAD',id:sent.id,revision:(await current()).revision,taskId:f.id,loaded:300,reasonCodes:['INSUFFICIENT']},'WAREHOUSE'));
  await f.quarantine(10,'INTERNAL_DAMAGE');
  const paid=JSON.stringify((await f.po()).finance.payments),events=(await f.context()).activity.filter(e=>e.action==='WAREHOUSE_RECEIPT_SAVED');
