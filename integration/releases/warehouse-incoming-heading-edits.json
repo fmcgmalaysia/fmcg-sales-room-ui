@@ -1,0 +1,41 @@
+{
+  "warehouse-room/workroom.js": {
+    "before": "cef8b2673e0dc834be7315e29ca724807e4ea82145374963f00f7c9687f215d6",
+    "after": "68769a4eb1dc19e0d6cbce2dc12188d5ad495a433825401c89458cb250fea8a1",
+    "hunks": [
+      {
+        "index": 16,
+        "before": [
+          " return '<section class=\"warehouse-section panel\"><h2>'+esc(title)+' · '+visible.length+'</h2><div class=\"table-scroll\"><table class=\"wh-incoming\"><colgroup><col style=\"width:10%\"><col style=\"width:21%\"><col style=\"width:13%\"><col style=\"width:7%\"><col style=\"width:10%\"><col style=\"width:23%\"><col style=\"width:11%\"><col style=\"width:5%\"></colgroup><thead><tr>'+['Since','Supplier Name','Our PO No.','Receiving','Task Qty','Message','Received','D.O.'].map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+visible.map(r=>{"
+        ],
+        "after": [
+          " return '<section class=\"warehouse-section panel\">'+(title.startsWith('Receiving History')?'<h2>'+esc(title)+' · '+visible.length+'</h2>':'')+'<div class=\"table-scroll\"><table class=\"wh-incoming\"><colgroup><col style=\"width:10%\"><col style=\"width:21%\"><col style=\"width:13%\"><col style=\"width:7%\"><col style=\"width:10%\"><col style=\"width:23%\"><col style=\"width:11%\"><col style=\"width:5%\"></colgroup><thead><tr>'+['Since','Supplier Name','Our PO No.','Receiving','Task Qty','Message','Received','D.O.'].map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+visible.map(r=>{"
+        ]
+      }
+    ]
+  },
+  "warehouse-room/index.html": {
+    "before": "bcba9ffd8ac42e0901613c6f6241e3de0d78f478fb1faf855c2d08323cea7b83",
+    "after": "7b1f55e684a852ee9d84649921250f7160ba64722db78936d2fa03fa6151dc20",
+    "hunks": [
+      {
+        "index": 2,
+        "before": [
+          "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261114-warehouse-stock-issues-v1\"><title>Warehouse Department</title><link rel=\"stylesheet\" href=\"../account-room/style.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"style.css?v=20261114-warehouse-delivery-options-v1\"><link rel=\"stylesheet\" href=\"../master-shared/task-signals.css?v=20261018-warehouse-workroom-v1\"><script src=\"../master-shared/task-signals.js?v=20261018-task-chat-drive-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/stock-exceptions.css?v=20261114-warehouse-stock-issues-v1\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-warehouse-workroom-v1\"><script defer src=\"../master-shared/fixed-header.js?v=20261018-warehouse-workroom-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261020-sales-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261114-warehouse-receipt-input-v1\"><link rel=\"stylesheet\" href=\"../master-shared/mobile-menu.css?v=20261018-department-mobile-qty-v1\"><link rel=\"stylesheet\" href=\"../master-shared/quantity-alignment.css?v=20261018-department-mobile-qty-v1\"><script src=\"../master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/action-affordances.css?v=20261020-action-affordances-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261113-warehouse-delivery-compact-v2\"></head>"
+        ],
+        "after": [
+          "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261114-warehouse-incoming-heading-v1\"><title>Warehouse Department</title><link rel=\"stylesheet\" href=\"../account-room/style.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"style.css?v=20261114-warehouse-delivery-options-v1\"><link rel=\"stylesheet\" href=\"../master-shared/task-signals.css?v=20261018-warehouse-workroom-v1\"><script src=\"../master-shared/task-signals.js?v=20261018-task-chat-drive-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/stock-exceptions.css?v=20261114-warehouse-stock-issues-v1\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-warehouse-workroom-v1\"><script defer src=\"../master-shared/fixed-header.js?v=20261018-warehouse-workroom-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261020-sales-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261114-warehouse-receipt-input-v1\"><link rel=\"stylesheet\" href=\"../master-shared/mobile-menu.css?v=20261018-department-mobile-qty-v1\"><link rel=\"stylesheet\" href=\"../master-shared/quantity-alignment.css?v=20261018-department-mobile-qty-v1\"><script src=\"../master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/action-affordances.css?v=20261020-action-affordances-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261113-warehouse-delivery-compact-v2\"></head>"
+        ]
+      },
+      {
+        "index": 12,
+        "before": [
+          "<script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"workroom.js?v=20261111-warehouse-desk-workflow-v1\"></script><script src=\"dispatch.js?v=20261018-warehouse-workroom-v1\"></script><script src=\"stock-control-link.js?v=20261114-warehouse-stock-list-v1\"></script><script src=\"../master-shared/desk-delivery.js?v=20261114-warehouse-delivery-heading-v1\"></script><script src=\"app.js?v=20261114-warehouse-stock-issues-v1\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261114-warehouse-stock-issues-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script></body></html>"
+        ],
+        "after": [
+          "<script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"workroom.js?v=20261114-warehouse-incoming-heading-v1\"></script><script src=\"dispatch.js?v=20261018-warehouse-workroom-v1\"></script><script src=\"stock-control-link.js?v=20261114-warehouse-stock-list-v1\"></script><script src=\"../master-shared/desk-delivery.js?v=20261114-warehouse-delivery-heading-v1\"></script><script src=\"app.js?v=20261114-warehouse-stock-issues-v1\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261114-warehouse-stock-issues-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script></body></html>"
+        ]
+      }
+    ]
+  }
+}
