@@ -480,23 +480,23 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     context.replaceChildren(customer,subtitle);
   }
   function autoCountRows(lines,mode){
-    if(mode==='loaded'&&lines.some(line=>line.loadedQty!==line.invoiceReadyQty||line.invoiceReadyQty<line.orderQty)){
+    const invoice=mode==='SI';
+    if(invoice&&lines.some(line=>line.loadedQty!==line.invoiceReadyQty||line.invoiceReadyQty<line.orderQty)){
       throw Error('Complete or resolve the remaining Desk quantities before copying Loaded Qty.');
     }
-    const quantity=mode==='loaded'?'invoiceReadyQty':'orderQty';
+    const quantity=invoice?'invoiceReadyQty':'orderQty';
     if(lines.some(line=>!Number.isSafeInteger(line[quantity])||line[quantity]<0))throw Error('Check the carton quantities on this Desk.');
     const details=lines.filter(line=>line[quantity]>0);
     if(!details.length)throw Error('This Desk has no cartons to copy.');
     const currency=details[0].currency;
     if(!/^[A-Z]{3}$/.test(currency||'')||details.some(line=>line.currency!==currency))throw Error('Check the currency on this Desk.');
-    if(details.some(line=>!/^\d{1,15}$/.test(line.barcode||'')||!Number.isFinite(line.priceCtn)||line.priceCtn<=0)){
-      throw Error('Check the product barcodes and carton prices on this Desk.');
-    }
+    if(details.some(line=>!/^\d{1,15}$/.test(line.barcode||'')))throw Error('Check the product barcodes on this Desk.');
+    if(invoice&&details.some(line=>!Number.isFinite(line.priceCtn)||line.priceCtn<=0))throw Error('Check the carton prices on this Desk.');
     const text=details.map(line=>{
-      const cells=Array(13).fill('');
+      const cells=Array(invoice?13:11).fill('');
       cells[0]=line.barcode;
       cells[10]=line[quantity];
-      cells[12]=line.priceCtn.toFixed(2);
+      if(invoice)cells[12]=line.priceCtn.toFixed(2);
       return cells.join('\t');
     }).join('\r\n');
     return {currency,text};
@@ -504,7 +504,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
   function openAutoCount(){
     const order=activeOrder();
     if(!order||!activeDesk||deskLock()||deskPending()||deskBusy||invoiceBusy)return;
-    info('Copy to AutoCount','<p id="autocount-context"></p><div class="autocount-actions"><button type="button" data-copy-qty="order">Customer Order Qty · SO</button><button type="button" data-copy-qty="loaded">Loaded Qty · SI</button></div><p id="autocount-status" role="status"></p><textarea id="autocount-data" hidden readonly aria-label="AutoCount rows"></textarea>');
+    info('Copy to AutoCount','<p id="autocount-context"></p><div class="autocount-actions"><button type="button" data-copy-qty="DO">Delivery Order · Order Qty</button><button type="button" data-copy-qty="SI">Sales Invoice · Loaded Qty</button></div><p id="autocount-status" role="status"></p><textarea id="autocount-data" hidden readonly aria-label="AutoCount rows"></textarea>');
     dialogCustomer('autocount-context',order.customerName,'Desk '+activeDesk+' · '+order.currency);
     const lines=viewLines(order);
     $('information-body').querySelectorAll('[data-copy-qty]').forEach(button=>{
