@@ -15,7 +15,10 @@ async function setup(){
 test('only current allocated Desk members become one authorized task, without physical outflow',async()=>{
  const f=await setup(),request=await f.sendRequest(),first=await f.packingSave(request),again=await f.packingSave(request);
  assert.equal(first.list.desk.number,1);assert.deepEqual(Array.from(first.list.lines,l=>l.taskId),['A']);assert.equal(first.list.status,'SENT');assert.equal(first.id,again.id);assert(first.deskState.revision);assert.equal((await f.stock()).onHand,150);
- assert.equal((await f.packingContext('NCT')).lists.length,1);await assert.rejects(f.assign(2),/authorized to Warehouse/);
+ assert.equal((await f.packingContext('NCT')).lists.length,1);
+ await f.assign(2);
+ assert.equal((await f.packingContext('NCT')).lists[0].lines.length,0);
+ assert.equal((await f.stock()).onHand,150);
 });
 test('stale Desk, stale displayed allocation, wrong department and wrong company cannot send',async()=>{
  const f=await setup(),request=await f.sendRequest();

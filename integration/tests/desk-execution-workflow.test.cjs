@@ -113,9 +113,13 @@ test('splitting an unallocated open Desk leaves the split quantity pending witho
   assert.equal((await f.stock()).onHand,150);
 });
 
-test('confirmed Desk allocation cannot be moved to pending by a split',async()=>{
-  const f=await setup();f.receive(60);await f.send();
-  await assert.rejects(f.assign(await f.request({action:'DESK_SPLIT',customerId:'CUSTOMER-C',taskId:'C',desk:1,revision:(await f.state()).revision,parts:[{desk:1,quantity:59},{desk:0,quantity:41}]},'SUPPORT')),/confirmed|committed|below/i);
+test('received but unloaded allocation follows a pre-invoice split into Pending',async()=>{
+  const f=await setup();f.receive(60);const opened=await f.send();
+  await f.assign(await f.request({action:'DESK_SPLIT',customerId:'CUSTOMER-C',taskId:'C',desk:1,revision:(await f.state()).revision,parts:[{desk:1,quantity:59},{desk:0,quantity:41}]},'SUPPORT'));
+  const [line]=(await f.current(opened.id)).lines;
+  assert.equal(line.requestedQuantity,59);
+  assert.equal(line.quantity,59);
+  assert.equal(line.loaded,0);
 });
 
 test('a lost container-photo receipt resumes the original file and adds no stock outflow',async()=>{
