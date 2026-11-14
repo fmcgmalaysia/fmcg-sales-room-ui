@@ -17,10 +17,14 @@
   preview.append(image);
   document.body.append(preview);
   let source;
+  const watchThumbnail = new MutationObserver(() => {
+    if (source && !source.isConnected) hide();
+  });
 
   function hide() {
     if (!source) return;
     source = undefined;
+    watchThumbnail.disconnect();
     if (preview.matches(':popover-open')) preview.hidePopover();
     image.removeAttribute('src');
   }
@@ -39,6 +43,7 @@
       image.referrerPolicy = thumbnail.referrerPolicy;
       image.src = thumbnail.currentSrc || thumbnail.src;
       preview.showPopover();
+      watchThumbnail.observe(document.body, { childList: true, subtree: true });
     }
 
     const gap = 14;
