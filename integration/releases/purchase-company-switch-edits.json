@@ -1,0 +1,38 @@
+{
+  "purchase-live/app.js": {
+    "before": "556b75ab684a0632e50eca9449c7a6042e817f0cf6a48b31f63ab39782ba5470",
+    "after": "1865825f32a443519a9f462f2a54086df8bb2bad7ec131f9e42790775e75903b",
+    "edits": [
+      [
+        "  let poData=null,poLoading=false,poLoadError='',poTab='ACTIVE',poSearch='',poSupplier='';",
+        "  let poData=null,poLoading=null,poLoadError='',poTab='ACTIVE',poSearch='',poSupplier='';"
+      ],
+      [
+        "  function loadPurchaseOrders(){if(poLoading)return;poLoading=true;poLoadError='';if(poData&&data&&['dashboard','po','pohistory','payments','history'].includes(view))render();const requestedCompany=company,requestedBundle=data?.purchaseOrders;readOperation('PURCHASE_ORDERS_REQUEST').then(result=>{if(company!==requestedCompany||data?.purchaseOrders!==requestedBundle)return;if(result.company!==company||!Array.isArray(result.orders))throw Error('采购单回执不完整。');poData=result;renderTaskSignals();}).catch(error=>{if(company===requestedCompany&&data?.purchaseOrders===requestedBundle)poLoadError=error.message;}).finally(()=>{poLoading=false;if(company===requestedCompany&&['dashboard','po','pohistory','payments','history'].includes(view))render();});}",
+        "  function loadPurchaseOrders(){\n    if(poLoading)return;\n    const loading={company,bundle:data?.purchaseOrders};\n    poLoading=loading;poLoadError='';\n    const listVisible=()=>['dashboard','po','pohistory','payments','history'].includes(view);\n    const ownsRead=()=>poLoading===loading&&company===loading.company&&data?.purchaseOrders===loading.bundle;\n    if(poData&&data&&listVisible())render();\n    readOperation('PURCHASE_ORDERS_REQUEST').then(result=>{\n      if(!ownsRead())return;\n      if(result.company!==loading.company||!Array.isArray(result.orders))throw Error('采购单回执不完整。');\n      poData=result;renderTaskSignals();\n    }).catch(error=>{\n      if(ownsRead())poLoadError=error.message;\n    }).finally(()=>{\n      if(poLoading!==loading)return;\n      poLoading=null;\n      if(company===loading.company&&listVisible())render();\n    });\n  }"
+      ],
+      [
+        "  function cacheDraft(){if(!draftKey||typeof sessionStorage==='undefined')return;try{if(!drafts.size&&!sequenceDraft&&!savePending&&!allocationUi()?.dirty()){sessionStorage.removeItem(draftKey);return;}sessionStorage.setItem(draftKey,JSON.stringify({customerId,drafts:[...drafts],sequenceDraft,sequenceVersions,sequenceCustomerId,displaySequenceDraft,displayOrderVersion,savePending,saveAttemptCount,saveOrigin,saveIssue,supplierAllocation:allocationUi()?.serialize()}));}catch{showStatus('此浏览器无法暂存草稿，请完成保存后再关闭网页。',true);}}",
+        "  function cacheDraft(){if(!draftKey||typeof sessionStorage==='undefined')return false;try{if(!drafts.size&&!sequenceDraft&&!savePending&&!allocationUi()?.dirty()){sessionStorage.removeItem(draftKey);return true;}sessionStorage.setItem(draftKey,JSON.stringify({customerId,drafts:[...drafts],sequenceDraft,sequenceVersions,sequenceCustomerId,displaySequenceDraft,displayOrderVersion,savePending,saveAttemptCount,saveOrigin,saveIssue,supplierAllocation:allocationUi()?.serialize()}));return true;}catch{showStatus('此浏览器无法暂存草稿，请完成保存后再关闭网页。',true);return false;}}"
+      ],
+      [
+        "  document.querySelector('#companySelect').addEventListener('change',event=>{if(costRetry||savePending||drafts.size||sequenceDraft||allocationUi()?.dirty()){event.target.value=company;showStatus('请先保存或取消当前修改。',true);return;}restoredDraft=false;draftKey=null;poData=null;poLoadError='';poSupplier='';poHistoryMonth='';poHistoryYear='';activityStaff='';activityType='';activityFrom='';activityTo='';activitySearch='';company=event.target.value;view='dashboard';customerId='';activeCustomer='';expandedTasks.clear();selectedDisplayRows.clear();selected.clear();selectedSources.clear();document.querySelector('#workspaceCompany').textContent=company;modal.close();request();});",
+        "  document.querySelector('#companySelect').addEventListener('change',event=>{if(costRetry||savePending){event.target.value=company;showStatus('正在确认已提交的操作，请稍后切换公司。',true);return;}if((drafts.size||sequenceDraft||allocationUi()?.dirty())&&!cacheDraft()){event.target.value=company;showStatus('此浏览器无法暂存当前草稿。',true);return;}drafts.clear();sequenceDraft=null;sequenceVersions=null;sequenceCustomerId='';displaySequenceDraft=null;displayOrderVersion=null;draftConflict=false;reviewAfterRefresh=false;supplierAllocation=null;restoredDraft=false;draftKey=null;poData=null;poLoading=null;poLoadError='';poSupplier='';poHistoryMonth='';poHistoryYear='';activityStaff='';activityType='';activityFrom='';activityTo='';activitySearch='';company=event.target.value;view='dashboard';customerId='';activeCustomer='';expandedTasks.clear();selectedDisplayRows.clear();selected.clear();selectedSources.clear();document.querySelector('#workspaceCompany').textContent=company;reopenSourcesTaskId=null;modal.close();modal.classList.remove('supplier-allocation-dialog');request();});"
+      ]
+    ]
+  },
+  "purchase-live/index.html": {
+    "before": "32c499d94b4ea50a2a8b7c8b6b5dc3d652b11415a5508bbdaa35e161e276bb95",
+    "after": "53ada0ecfe67dca121bfca2dbd7ed2eb00198d2f9869d0776de068c7b1e4b395",
+    "edits": [
+      [
+        "name=\"build\" content=\"20261111-warehouse-desk-workflow-v1",
+        "name=\"build\" content=\"20261114-purchase-company-switch-v1"
+      ],
+      [
+        "src=\"app.js?v=20261111-warehouse-desk-workflow-v1",
+        "src=\"app.js?v=20261114-purchase-company-switch-v1"
+      ]
+    ]
+  }
+}
