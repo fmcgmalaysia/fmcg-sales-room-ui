@@ -153,7 +153,7 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
      const hold=state.deliveryHolds?.find(row=>row.desk===desk),list=hold&&lists.find(row=>row.id===hold.listId);
      if(hold&&!list)throw Error('Desk authorization is still processing. Retry its original save first.');
      const line=list?.lines.find(row=>row.taskId===task.id),loaded=flows.filter(flow=>(flow.desk??supportDeskForTask(before,task.id))===desk).reduce((n,flow)=>n+flow.quantity,0);
-     const adjustable=list?.desk?.taskScope==='ALL'&&list.status!=='CANCELLED'&&adjustableDeliveryLine(context.activity,list,line);
+     const adjustable=list?.desk?.number===desk&&list.status!=='CANCELLED'&&adjustableDeliveryLine(context.activity,list,line);
      const fixed=committed.batches.filter(batch=>batch.desk===desk&&(!adjustable||batch.id!==list.id)).reduce((n,batch)=>n+batch.quantity,0);
      if(wanted<Math.max(fixed,loaded,line?.packed||0)||locks.some(lock=>lock.desk===desk))throw Error('Confirmed, loaded or invoiced Desk quantities cannot be moved. Resolve its delivery remainder first.');
      if(list?.status!=='CANCELLED'&&list&&(!adjustable||list.currency!==task.transactionCurrency))throw Error('This Desk has saved Warehouse work or uses a different currency. Resolve it before changing this task.');

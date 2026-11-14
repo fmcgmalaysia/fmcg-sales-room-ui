@@ -35,14 +35,14 @@ export function planDeskDelivery({context,input,actor,id,revision,at}){
 // The existing Desk instruction owns visibility. Allocation is derived from the
 // same current procurement state and is never posted by this read projection.
 export function projectOpenDeskDelivery(context,list){
- if(list.desk?.taskScope!=='ALL'||list.status==='CANCELLED')return list;
+ if(!list.desk||['DRAFT','CANCELLED'].includes(list.status))return list;
  const physical=context.physicalContext,saved=readSupportDesks(physical.activity,physical.company).find(row=>row.customerId===list.customerId),state=saved&&currentSupportDeskState(physical,saved);
  if(!state?.deliveryHolds?.some(hold=>hold.listId===list.id))return list;
  if(currentSupportDeskLocks(physical).some(lock=>lock.status==='ISSUED'&&lock.customerId===list.customerId&&lock.desk===list.desk.number))return list;
  const flows=readPhysicalOutflows(physical.activity);
  const membership=deskMembershipHold(state,list),membershipIds=new Set(Object.keys(membership?.membershipChanges||{}));
  const existing=new Set(list.lines.map(line=>line.taskId));
- const added=physical.tasks.filter(task=>hasDeskMembership(state,list,task.id)&&!existing.has(task.id)&&!task.archived&&!task.procurementSource&&!task.specialPurchase&&task.customerId===list.customerId&&task.transactionCurrency===list.currency).map(task=>({
+ const added=physical.tasks.filter(task=>hasDeskMembership(state,list,task.id,physical.activity)&&!existing.has(task.id)&&!task.archived&&!task.procurementSource&&!task.specialPurchase&&task.customerId===list.customerId&&task.transactionCurrency===list.currency).map(task=>({
   taskId:task.id,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',productImageUrl:task.productImageUrl||'',
   quantity:0,requestedQuantity:0,packed:0,loaded:0,reason:'',photos:[],orderId:task.orderId,orderQty:task.requested??task.ord,
   pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,
@@ -56,7 +56,7 @@ export function projectOpenDeskDelivery(context,list){
   const allocated=disposition.revision?line.quantity:readDeskCommitments(physical.activity,physical.company,task.id,task,state,flows).batches.find(row=>row.id===list.id)?.quantity||line.loaded;
   const prior=readDeskCommitments(physical.activity,physical.company,task.id).batches.filter(row=>row.id!==list.id&&row.desk===list.desk.number).reduce((sum,row)=>sum+row.quantity,0);
   const modified=(!existing.has(line.taskId)||membershipIds.has(line.taskId))&&adjustableDeliveryLine(physical.activity,list,line);
-  const target=Math.max(0,(part?.quantity||0)-prior),requestedQuantity=disposition.revision?line.requestedQuantity:Math.max(line.loaded,modified?target:Math.min(line.requestedQuantity,target));
+  const originalRequested=line.requestedQuantity??line.quantity,target=Math.max(0,(part?.quantity||0)-prior),requestedQuantity=disposition.revision?originalRequested:Math.max(line.loaded,modified?target:Math.min(originalRequested,target));
   if(modified&&!requestedQuantity&&!line.loaded&&!line.packed){
    if(existing.has(line.taskId)&&(line.expiryDate||line.photos?.length||line.loadedConfirmedAt))retiredLines.push({...line,retiredAt:list.sentAt});
    return [];
@@ -70,7 +70,7 @@ export function projectOpenDeskDelivery(context,list){
  if(!membership)return {...list,lines};
  if(!lines.length)return {...list,lines,retiredLines};
  const reopened=list.status==='COMPLETED'&&lines.some(line=>line.requestedQuantity>line.loaded&&!line.loadedConfirmedAt);
- return {...list,lines,retiredLines,...(reopened?{status:'PROCESSING',completedAt:null}:{})};
+ return {...list,desk:{...list.desk,taskScope:'ALL'},lines,retiredLines,...(reopened?{status:'PROCESSING',completedAt:null}:{})};
 }
 export function changeDeskDelivery({context,list,input,actor,id,revision,at}){
  if(!list?.desk||list.company!==context.company||!Number.isSafeInteger(list.desk.number))throw Error('Desk-authorized delivery task is required.');

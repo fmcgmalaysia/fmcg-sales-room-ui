@@ -196,6 +196,9 @@ test('already-open Desk picks up its legacy assigned rows without any new save',
  await f.move({});
  const sent=await f.open(1,[{taskId:'A',quantity:100}]);
  f.tasks.push({...base,id:'C',orderId:'ORDER-C',sourceLineId:'LINE-C',inc:0,warehouse:{hasPhysicalReceipt:false,accepted:0}});
+ const oldList=[...f.records.values()].find(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT').details.list;
+ delete oldList.desk.taskScope;
+ delete oldList.lines[0].requestedQuantity;
  const state=await f.state(), record=f.records.get('N/'+state.revision);
  record.details.state.assignments.push({taskId:'C',desk:1,parts:[{desk:1,quantity:70},{desk:0,quantity:30}]});
  const count=f.records.size, list=await f.read(sent.id);
