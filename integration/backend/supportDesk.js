@@ -59,18 +59,34 @@ export async function reserveSupportDeskDelivery({store,names,context,staff,requ
 export function createSupportDeskOperations({store,names,readContext,now=()=>new Date()}){
  return async({company,staff,requestId,input})=>{
   if(!['NCT','GHR'].includes(company)||!names[company]||staff?.packingDepartment!=='SUPPORT'||!staff.memberId||!staff.staffId||!staff.staffName)throw Error('Support access is required.');
-  if(!/^[a-f0-9-]{36}$/i.test(requestId||'')||!input||!textValid(input.customerId)||!(deskValid(input.desk)||['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)&&input.desk===0)||typeof input.revision!=='string'||input.revision.length>100||!['DESK_ASSIGN','DESK_SPLIT','DESK_SHIPMENT','DESK_REFERENCES'].includes(input.action))throw Error('Select a customer and Desk 1, 2 or 3.');
+  if(!/^[a-f0-9-]{36}$/i.test(requestId||'')||!input||!textValid(input.customerId)||!(deskValid(input.desk)||['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)&&input.desk===0)||typeof input.revision!=='string'||input.revision.length>100||!['DESK_ASSIGN','DESK_SPLIT','DESK_SHIPMENT','DESK_REFERENCES','DESK_ARCHIVE'].includes(input.action))throw Error('Select a customer and Desk 1, 2 or 3.');
   let normalized;
   if(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)){if(!textValid(input.taskId)||input.action==='DESK_SPLIT'&&!validParts(input.parts))throw Error('Select an active customer task and valid Desk quantities.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,taskId:input.taskId,...(input.action==='DESK_SPLIT'?{parts:input.parts.map(part=>({desk:part.desk,quantity:part.quantity})).sort((a,b)=>a.desk-b.desk)}:{})};}
   else if(input.action==='DESK_SHIPMENT'){
    if(input.details){if(!detailShipmentValid(input)||!['poNo','soNo'].every(key=>referenceText(input.details[key]))||!detailReferenceValid(input.details))throw Error('Enter valid Desk references, deposit details and shipment dates.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,transport:input.transport,date:input.date,arrival:input.arrival,lastGateIn:input.lastGateIn,departureDate:input.departureDate,details:{poNo:input.details.poNo.trim(),soNo:input.details.soNo.trim(),invoiceNoDraft:input.details.invoiceNoDraft.trim(),depositAmountCents:input.details.depositAmountCents,depositDate:input.details.depositDate,depositCurrency:input.details.depositCurrency}};}
    else{if(!transports.includes(input.transport)||!dateValid(input.date)||!(input.arrival===''||dateValid(input.arrival)&&input.arrival>=input.date))throw Error('Enter valid shipment and arrival dates.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,transport:input.transport,date:input.date,arrival:input.arrival};}
   }
+  else if(input.action==='DESK_ARCHIVE'){
+   if(!textValid(input.invoiceId)||!textValid(input.batchId))throw Error('Select the issued invoice for this Desk batch.');
+   normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,invoiceId:input.invoiceId,batchId:input.batchId};
+  }
   else{if(['soNo','poNo'].some(k=>typeof input[k]!=='string'||input[k].length>100||/[\x00-\x1f]/.test(input[k])))throw Error('Enter valid SO and customer PO references.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,soNo:input.soNo.trim(),poNo:input.poNo.trim()};}
   const context=await readContext(company,staff);if(context.company!==company)throw Error('Company changed. Refresh before saving.');
   const digest=operationId(normalized),prior=context.activity.filter(row=>row.action===ACTION&&row.result==='SAVED'&&row.details?.memberId===staff.memberId&&row.details?.requestId===requestId);
   if(prior.length>1)throw Error('Desk save receipt requires review.');
-  if(prior.length){if(prior[0].details.digest!==digest)throw Error('This save was already used for different Desk details.');return {ok:true,company,requestId,deskState:{...copy(prior[0].details.state),revision:prior[0].title}};}
+  if(prior.length){if(prior[0].details.digest!==digest)throw Error('This save was already used for different Desk details.');return {ok:true,company,requestId,deskState:{...copy(prior[0].details.state),revision:prior[0].title},...(normalized.action==='DESK_ARCHIVE'?{archivedInvoiceId:normalized.invoiceId}:{})};}
+  if(normalized.action==='DESK_ARCHIVE'){
+   const stored=readSupportDesks(context.activity,company).find(row=>row.customerId===normalized.customerId);
+   const locks=readSupportDeskLocks(context);
+   const issued=locks.find(lock=>lock.customerId===normalized.customerId&&lock.desk===normalized.desk
+    &&lock.status==='ISSUED'&&lock.archiveRequired===true&&lock.invoiceId===normalized.invoiceId&&lock.snapshot.batchId===normalized.batchId);
+   if(!stored||stored.revision!==normalized.revision||supportDeskBatchId(stored,normalized.desk)!==normalized.batchId
+    ||!issued||!stored.locks?.some(lock=>lock.requestId===issued.requestId&&lock.memberId===issued.memberId))throw Error('Issued Desk batch changed or was already archived. Refresh before continuing.');
+   const state=currentSupportDeskState(context,stored,locks.map(lock=>lock===issued?{...lock,archiveRequired:false}:lock));
+   delete state.revision;
+   const saved=await appendInvoiceDeskState({store,collection:names[company].activity,company,staff,requestId,before:stored,state,kind:'archived',digest,now});
+   return {ok:true,company,requestId,deskState:{...saved.state,revision:saved.revision},archivedInvoiceId:normalized.invoiceId};
+  }
   if(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action))requireConfirmedProcurement(context,[input.taskId]);
   const tasks=context.tasks.filter(row=>row.customerId===input.customerId&&!row.archived&&!row.procurementSource&&!row.specialPurchase);
   if(!tasks.length||['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)&&!tasks.some(row=>row.id===input.taskId))throw Error('Select an active customer task.');
@@ -149,13 +165,13 @@ export function readSupportDeskLocks(context){
  }
  return locks;
 }
-// Canonical issued SI remains available for receipt recovery and Transactions;
-// only an unfinished invoice preparation occupies an operational workbench.
-export function currentSupportDeskLocks(context){return readSupportDeskLocks(context).filter(row=>row.status!=='ISSUED');}
-// Derive the next use from the prior confirmed invoice, without a read-time write.
-// The next ordinary Desk save persists this metadata in the existing revision chain.
+// Existing invoices retain automatic release. New issued batches stay on the
+// Desk until Support records the archive action against the issued invoice.
+export function currentSupportDeskLocks(context){return readSupportDeskLocks(context).filter(row=>row.status!=='ISSUED'||row.archiveRequired===true);}
+// Derive the next use for legacy issued invoices without a read-time write.
+// The explicit archive path also uses this same transition.
 export function currentSupportDeskState(context,state,locks=readSupportDeskLocks(context)){
- const closed=(state.locks||[]).map(held=>locks.find(row=>row.customerId===state.customerId&&row.requestId===held.requestId&&row.memberId===held.memberId&&row.status==='ISSUED')).filter(Boolean);
+ const closed=(state.locks||[]).map(held=>locks.find(row=>row.customerId===state.customerId&&row.requestId===held.requestId&&row.memberId===held.memberId&&row.status==='ISSUED'&&row.archiveRequired!==true)).filter(Boolean);
  if(!closed.length)return state;
  const next=copy(state),numbers=new Set(closed.map(row=>row.desk));
  if(context.tasks){const flows=readPhysicalOutflows(context.activity);next.assignments=next.assignments.map(assignment=>{
@@ -170,11 +186,11 @@ export function currentSupportDeskState(context,state,locks=readSupportDeskLocks
  next.batches=(next.batches||[]).filter(row=>!numbers.has(row.desk)).concat(closed.map(row=>({desk:row.desk,id:operationId(context.company,state.customerId,row.invoiceId,'NEXT_DESK_BATCH')})));
  return next;
 }
-async function appendInvoiceDeskState({store,collection,company,staff,requestId,before,state,kind,now}){
- const entityId=identity(company,state.customerId),id=operationId(entityId,before.revision,'NEXT'),digest=operationId(kind,state);
+async function appendInvoiceDeskState({store,collection,company,staff,requestId,before,state,kind,now,digest=operationId(kind,state)}){
+ const entityId=identity(company,state.customerId),id=operationId(entityId,before.revision,'NEXT');
  const event={_id:id,title:id,description:entityId,image:state.customerId,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:now(),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support '+kind+' Desk invoice',details:{beforeRevision:before.revision,memberId:staff.memberId,requestId,digest,state}};
  try{await store.insert(collection,event);}catch(error){const retained=await store.read(collection,id);if(!retained||retained.details?.digest!==digest||retained.details?.requestId!==requestId||retained.details?.memberId!==staff.memberId)throw Error('Desk details changed. Refresh before invoicing.');}
- const receipt=await store.read(collection,id);if(!receipt||receipt.details?.digest!==digest)throw Error('Desk invoice hold is not confirmed. Retry the same confirmation.');
+ const receipt=await store.read(collection,id);if(!receipt||receipt.details?.digest!==digest||receipt.details?.memberId!==staff.memberId||receipt.details?.requestId!==requestId||operationId(receiptState(receipt.details.state))!==operationId(receiptState(state)))throw Error('Desk invoice hold is not confirmed. Retry the same confirmation.');
  return {revision:id,state};
 }
 export async function reserveSupportDeskInvoice({store,names,context,staff,requestId,input,digest,snapshot,now}){
@@ -187,7 +203,7 @@ export async function reserveSupportDeskInvoice({store,names,context,staff,reque
  const sameNumber=row=>row?.action===numberRecord.action&&row.details?.customerId===input.customerId&&row.details?.desk===input.desk.number;
  try{await store.insert(collection,numberRecord);}catch(error){if(!sameNumber(await store.read(collection,numberId)))throw Error('Sales Invoice number already belongs to another Desk.');}
  if(!sameNumber(await store.read(collection,numberId)))throw Error('Invoice number reservation is not confirmed. Retry the same confirmation.');
- const state=copy(before);delete state.revision;state.locks=(state.locks||[]).concat({desk:input.desk.number,memberId:staff.memberId,requestId,digest,number:input.number.trim(),taskIds:input.lines.map(row=>row.taskId),input:copy(input),snapshot:copy(snapshot)});
+ const state=copy(before);delete state.revision;state.locks=(state.locks||[]).concat({desk:input.desk.number,memberId:staff.memberId,requestId,digest,number:input.number.trim(),taskIds:input.lines.map(row=>row.taskId),input:copy(input),snapshot:copy(snapshot),archiveRequired:true});
  await appendInvoiceDeskState({store,collection,company,staff,requestId,before,state,kind:'reserved',now});
 }
 export async function releaseCancelledSupportDeskInvoice({store,names,context,staff,requestId,intent,now}){

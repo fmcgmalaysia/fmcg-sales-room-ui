@@ -57,6 +57,7 @@ export function projectOpenDeskDelivery(context,list){
 export function changeDeskDelivery({context,list,input,actor,id,revision,at}){
  if(!list?.desk||list.company!==context.company||!Number.isSafeInteger(list.desk.number))throw Error('Desk-authorized delivery task is required.');
  if(input.revision!==list.revision)throw Error('Desk delivery task changed. Refresh before confirming.');
+ if(currentSupportDeskLocks(context.physicalContext).some(lock=>lock.status==='ISSUED'&&lock.customerId===list.customerId&&lock.desk===list.desk.number))throw Error('This Desk is locked by its Sales Invoice.');
  if(input.action==='DESK_RECALL'){
   if(actor!=='SUPPORT'||list.status==='CANCELLED'||list.lines.some(line=>line.loaded>0)||typeof input.reason!=='string'||!input.reason.trim()||input.reason.length>1000)throw Error('Desk recall requires Support, zero Loaded cartons and a reason.');
   return {...copy(list),status:'CANCELLED',revision,cancelledAt:at,cancelReason:input.reason.trim()};
