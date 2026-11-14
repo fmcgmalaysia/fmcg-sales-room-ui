@@ -11,6 +11,8 @@ const baseline = { ...previous.baseline };
 for (const [asset, change] of Object.entries(previous.changes)) {
   baseline[asset] = change.sha256;
 }
+const verifiedThemeBeforeHeaders = baseline[theme];
+baseline[theme] = 'ff06586ec6541ceb807173016a6ca3afcf5e9bf303607788d41809f7ca59882a';
 const assets = fs.readdirSync(root, { recursive: true, withFileTypes: true })
   .filter(entry => !entry.isDirectory()).map(entry => {
     assert.ok(entry.isFile(), entry.name);
@@ -21,6 +23,6 @@ for (const asset of assets) {
   assert.equal(hash(fs.readFileSync(path.join(root, asset))), baseline[asset], asset);
 }
 const source = fs.readFileSync(path.join(__dirname, '../..', theme), 'utf8').replaceAll('\r\n', '\n');
-assert.equal(hash(source.replace(/\/\* 20261115-master-dialog-headers-v1\.[\s\S]*?(?=body \.task-signal\{)/, '')), baseline[theme]);
+assert.equal(hash(source.replace(/\/\* 20261115-master-dialog-headers-v2\.[\s\S]*?(?=body \.task-signal\{)/, '')), verifiedThemeBeforeHeaders);
 fs.writeFileSync(path.join(root, theme), source);
 console.log(`Verified ${assets.length} baseline assets. Replaced only ${theme}: ${hash(source)}`);

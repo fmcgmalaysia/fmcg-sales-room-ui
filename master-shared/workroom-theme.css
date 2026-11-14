@@ -27,8 +27,9 @@ body :is(.dialogfoot,dialog footer) button{font-size:11px;min-height:30px}
 body .dialog-header>div:has(#entrySupplier,#invoiceCustomer){display:flex;flex-direction:column;gap:3px}
 body .dialog-header :is(#entrySupplier,#invoiceCustomer){order:-1;display:block;font-size:20px;line-height:26px;font-weight:800;color:var(--master-text)}
 body .dialog-header>div:has(#entrySupplier,#invoiceCustomer) h2{margin:0}
-/* 20261115-master-dialog-headers-v1. Shared light-blue dialog headers. */
+/* 20261115-master-dialog-headers-v2. Shared light-blue dialog headers. */
 body dialog:not(:has(.po-review)) > :is(.dialoghead, .dialog-header),
+body #modal:not(:has(.po-review)) > #dialogContent > .dialoghead,
 body dialog:is(.stock-dialog, .task-signals-dialog) > header {
   box-sizing: border-box;
   display: flex;
@@ -40,47 +41,54 @@ body dialog:is(.stock-dialog, .task-signals-dialog) > header {
   padding: 7px 16px !important;
 }
 
-body dialog:not(:has(.po-review)) > :is(.dialoghead, .dialog-header) > div {
+body dialog:not(:has(.po-review)) > :is(.dialoghead, .dialog-header) > div,
+body #modal:not(:has(.po-review)) > #dialogContent > .dialoghead > div {
   min-inline-size: 0;
   overflow-wrap: anywhere;
 }
 
 body dialog:not(:has(.po-review), .supplier-allocation-dialog, #entry)
-  > :is(.dialoghead, .dialog-header):has(> div > :is(p, .muted, strong):not([hidden], :empty)) {
+  > :is(.dialoghead, .dialog-header):has(> div > :is(p, .muted, strong):not([hidden], :empty)),
+body #modal:not(:has(.po-review), .supplier-allocation-dialog) > #dialogContent
+  > .dialoghead:has(> div > :is(.muted, strong):not([hidden], :empty)) {
   min-block-size: 64px;
 }
 
 body dialog:not(:has(.po-review)) > :is(.dialoghead, .dialog-header) h2,
+body #modal:not(:has(.po-review)) > #dialogContent > .dialoghead h2,
 body dialog:is(.stock-dialog, .task-signals-dialog) > header > strong {
   margin: 0 !important;
   font: 700 18px/24px var(--master-font) !important;
   overflow-wrap: anywhere;
 }
 
-body dialog:not(:has(.po-review)) > :is(.dialoghead, .dialog-header) :is(p, .muted) {
+body dialog:not(:has(.po-review)) > :is(.dialoghead, .dialog-header) :is(p, .muted),
+body #modal:not(:has(.po-review)) > #dialogContent > .dialoghead .muted {
   margin-block: 0 !important;
   font-size: 12px !important;
   line-height: 16px;
 }
 
-body dialog:not(:has(.po-review)) > :is(.dialoghead, .dialog-header) > div:has(> h2) > strong {
+body dialog:not(:has(.po-review)) > :is(.dialoghead, .dialog-header) > div:has(> h2) > strong,
+body #modal:not(:has(.po-review)) > #dialogContent > .dialoghead .po-dialog-supplier {
   font: 800 18px/24px var(--master-font) !important;
   overflow-wrap: anywhere;
 }
 
-body #modal:has(#poNumber) > .dialoghead h2,
+body #modal:has(#poNumber) > #dialogContent > .dialoghead h2,
 body dialog:not(:has(.po-review)) > .dialog-header > div:has(> strong:not([hidden], :empty)) > h2 {
   font: 600 12px/16px var(--master-font) !important;
 }
 
 body dialog:not(:has(.po-review)) > :is(.dialoghead, .dialog-header) > button,
+body #modal:not(:has(.po-review)) > #dialogContent > .dialoghead > button,
 body dialog:is(.stock-dialog, .task-signals-dialog) > header > button {
   inline-size: 32px !important;
   block-size: 32px !important;
   flex: 0 0 32px;
 }
 
-body dialog.supplier-allocation-dialog > .dialoghead > div,
+body #modal.supplier-allocation-dialog > #dialogContent > .dialoghead > div,
 body dialog#entry > .dialog-header > div {
   flex-flow: row wrap;
   align-items: baseline;
