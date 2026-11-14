@@ -118,10 +118,40 @@
   };
   function preferenceKey(order){return 'support-row-order|'+company+'|'+order.id;}
   function viewLines(order){const key=preferenceKey(order);let saved=activeDesk?(deskLock()?.snapshot?.rowOrder??deskState().rowOrders?.find(row=>row.desk===activeDesk&&row.batchId===deskBatch())?.taskIds??[]):rowPreferences.get(key);if(!saved){try{saved=JSON.parse(localStorage.getItem(key)||'[]');}catch(_){saved=[];}if(!Array.isArray(saved))saved=[];}const ids=Array.from(new Set(saved.filter(id=>order.lines.some(line=>line.taskId===id))));const newIds=order.lines.map(line=>line.taskId).filter(id=>!ids.includes(id));if(activeDesk)newIds.sort((a,b)=>a<b?-1:a>b?1:0);ids.push(...newIds);return ids.map(id=>order.lines.find(line=>line.taskId===id));}
-  document.addEventListener('dragstart',event=>{const handle=event.target.closest('[data-drag-task]');if(!handle)return;if(handle.disabled)return;dragContext={company,orderId:activeOrder()?.id,taskId:handle.dataset.dragTask,desk:activeDesk};event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',handle.dataset.dragTask);});
-  document.addEventListener('dragover',event=>{if(dragContext&&event.target.closest('tr[data-task]'))event.preventDefault();});
-  document.addEventListener('drop',event=>{const row=event.target.closest('tr[data-task]'),order=activeOrder();if(!row||!order||!dragContext||dragContext.company!==company||dragContext.orderId!==order.id||dragContext.desk!==activeDesk)return;event.preventDefault();const ids=viewLines(order).map(line=>line.taskId),from=ids.indexOf(dragContext.taskId),to=ids.indexOf(row.dataset.task);dragContext=null;if(from<0||to<0||from===to)return;const moved=ids.splice(from,1)[0];ids.splice(to,0,moved);if(activeDesk){if(deskBusy||deskPending()||invoiceBusy||deskLock())return;void saveDeskChange({action:'DESK_ORDER',customerId:selectedCustomer,desk:activeDesk,revision:deskState().revision,batchId:deskBatch(),taskIds:ids});return;}const key=preferenceKey(order);rowPreferences.set(key,ids);try{localStorage.setItem(key,JSON.stringify(ids));}catch(_){}render();});
+  function reorderDeskRow(order,taskId,targetIndex){
+    const ids=viewLines(order).map(line=>line.taskId),from=ids.indexOf(taskId);
+    if(from<0||targetIndex<0||targetIndex>=ids.length||from===targetIndex)return;
+    ids.splice(targetIndex,0,ids.splice(from,1)[0]);
+    if(activeDesk){
+      if(deskBusy||deskPending()||invoiceBusy||deskLock())return;
+      void saveDeskChange({action:'DESK_ORDER',customerId:selectedCustomer,desk:activeDesk,revision:deskState().revision,batchId:deskBatch(),taskIds:ids});
+      return;
+    }
+    const key=preferenceKey(order);rowPreferences.set(key,ids);
+    try{localStorage.setItem(key,JSON.stringify(ids));}catch(_){}render();
+  }
+  document.addEventListener('dragstart',event=>{
+    const handle=event.target.closest('[data-drag-task]');
+    if(!handle||handle.disabled)return;
+    dragContext={company,orderId:activeOrder()?.id,taskId:handle.dataset.dragTask,desk:activeDesk};
+    event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',handle.dataset.dragTask);
+  });
+  document.addEventListener('dragover',event=>{
+    if(dragContext&&event.target.closest('tr[data-task]')){event.preventDefault();event.dataTransfer.dropEffect='move';}
+  });
+  document.addEventListener('drop',event=>{
+    const row=event.target.closest('tr[data-task]'),order=activeOrder(),drag=dragContext;dragContext=null;
+    if(!row||!order||!drag||drag.company!==company||drag.orderId!==order.id||drag.desk!==activeDesk)return;
+    event.preventDefault();reorderDeskRow(order,drag.taskId,viewLines(order).findIndex(line=>line.taskId===row.dataset.task));
+  });
   document.addEventListener('dragend',()=>dragContext=null);
+  document.addEventListener('keydown',event=>{
+    const handle=event.target.closest('[data-drag-task]'),order=activeOrder();
+    if(!handle||handle.disabled||!order||!event.altKey||!['ArrowUp','ArrowDown'].includes(event.key))return;
+    event.preventDefault();
+    const index=viewLines(order).findIndex(line=>line.taskId===handle.dataset.dragTask);
+    if(index>=0)reorderDeskRow(order,handle.dataset.dragTask,index+(event.key==='ArrowUp'?-1:1));
+  });
   function selectedReview(order){return order?viewLines(order).filter(line=>line.invoiceReadyQty>0).map(line=>({...line,quantity:line.invoiceReadyQty})):[];}
   function reviewTotal(){const attempt=invoiceAttempts.get(company+'|'+reviewOrder),order=activeOrder(),lines=attempt?.review||selectedReview(order);let total=0;for(const line of lines){const value=Number(document.querySelector('[data-invoice-qty="'+line.taskId+'"]')?.value);total+=Math.round(value*line.priceCtn*100);} $('invoice-total').textContent=(lines[0]?.currency||order?.currency||'')+' '+number(total/100,2);}
   function openInvoiceReview(id){
@@ -488,7 +518,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
 
   function orderContent(order){
     const lines=viewLines(order),invoiced=Boolean(currentDeskInvoice());$('count').textContent=lines.length+' tasks';
-    return deskHeader(order,lines)+'<div class="desk-task-table">'+table([[''],['Desk'],['Descriptions'],['Price',true],['Order Qty',true],['Alloc Qty',true],['Loaded Qty',true],['Line CBM',true],['Line Amount',true],['Expiry'],['Message']],lines.map(line=>{const planned=quantityTotals([line],'allocQty'),loaded=quantityTotals([line],'loadedQty'),locked=(data.deskLocks||[]).some(hold=>hold.customerId===selectedCustomer&&hold.desk===(line.portionDesk??taskDesk(line.taskId))&&(hold.status!=='ISSUED'||hold.archiveRequired===true)),hasSplit=Boolean(data.desks?.some(state=>state.customerId===selectedCustomer&&state.assignments.some(row=>row.taskId===line.taskId&&row.parts))||line.deskPortions?.length>1);return '<tr data-task="'+esc(line.taskId)+'"><td class="desk-drag-cell"><button type="button" class="row-drag" data-drag-task="'+esc(line.taskId)+'" draggable="'+(!invoiced&&(!activeDesk||!deskBusy&&!deskPending()&&!deskLock()))+'" '+(invoiced||activeDesk&&(deskBusy||deskPending()||deskLock())?'disabled':'')+' aria-label="Move row">⠿</button></td><td class="desk-cell">'+(hasSplit?'<button type="button" class="desk-portions" title="Manage split shipment 分批出货" data-desk-split="'+esc(line.taskId)+'" '+(!data.deskAvailable||deskBusy||deskPending()||invoiceBusy?'disabled':'')+'>'+splitDeskLabel(line)+'</button>':'<select class="'+(taskDesk(line.taskId)===0?'unassigned':'')+'" data-desk-task="'+esc(line.taskId)+'" aria-label="Desk for '+esc(line.name||line.taskId)+'" '+(!data.deskAvailable||data.deskMetadataVersion<2||deskBusy||deskPending()||invoiceBusy||locked||invoiceAttempts.has(company+'|'+order.id)?'disabled':'')+'><option value="0" '+(taskDesk(line.taskId)===0?'selected':'')+'>—</option>'+[1,2,3].map(desk=>'<option value="'+desk+'" '+(taskDesk(line.taskId)===desk?'selected':'')+' '+(deskLock(desk)&&taskDesk(line.taskId)!==desk?'disabled':'')+'>'+desk+'</option>').join('')+'<option value="SPLIT">Split… 分批</option></select>')+'</td><td class="description"><small>'+esc(line.barcode)+'</small><strong>'+esc(line.name)+'</strong><small>'+esc(line.packing)+'</small></td><td class="num price-cell"><span>'+number(line.pricePc,2)+'</span><span>'+number(line.priceCtn,2)+'</span></td><td class="num">'+number(line.orderQty)+'</td><td class="num">'+number(line.allocQty)+'</td><td class="num">'+number(line.loadedQty)+'</td><td class="num">'+quantityPair(planned.cbm,loaded.cbm,4,'',invoiced,!(line.cbm>0))+'</td><td class="num">'+quantityPair(planned.amount,loaded.amount,2,'',invoiced)+'</td><td>'+esc((line.expiryDates||[]).map(expiryDay).join(' · ')||'—')+'</td><td>'+(window.departmentMessages?.sourceCell([line.taskId])||'')+'</td></tr>'; }),'detail order-tasks')+'</div>';
+    return deskHeader(order,lines)+'<div class="desk-task-table">'+table([[''],['Desk'],['Descriptions'],['Price',true],['Order Qty',true],['Alloc Qty',true],['Loaded Qty',true],['Line CBM',true],['Line Amount',true],['Expiry'],['Message']],lines.map(line=>{const planned=quantityTotals([line],'allocQty'),loaded=quantityTotals([line],'loadedQty'),locked=(data.deskLocks||[]).some(hold=>hold.customerId===selectedCustomer&&hold.desk===(line.portionDesk??taskDesk(line.taskId))&&(hold.status!=='ISSUED'||hold.archiveRequired===true)),hasSplit=Boolean(data.desks?.some(state=>state.customerId===selectedCustomer&&state.assignments.some(row=>row.taskId===line.taskId&&row.parts))||line.deskPortions?.length>1);return '<tr data-task="'+esc(line.taskId)+'"><td class="desk-drag-cell"><button type="button" class="row-drag" data-drag-task="'+esc(line.taskId)+'" draggable="'+(!invoiced&&(!activeDesk||!deskBusy&&!deskPending()&&!deskLock()))+'" '+(invoiced||activeDesk&&(deskBusy||deskPending()||deskLock())?'disabled':'')+' aria-label="Move row" title="Drag, or press Alt + Up or Down">⠿</button></td><td class="desk-cell">'+(hasSplit?'<button type="button" class="desk-portions" title="Manage split shipment 分批出货" data-desk-split="'+esc(line.taskId)+'" '+(!data.deskAvailable||deskBusy||deskPending()||invoiceBusy?'disabled':'')+'>'+splitDeskLabel(line)+'</button>':'<select class="'+(taskDesk(line.taskId)===0?'unassigned':'')+'" data-desk-task="'+esc(line.taskId)+'" aria-label="Desk for '+esc(line.name||line.taskId)+'" '+(!data.deskAvailable||data.deskMetadataVersion<2||deskBusy||deskPending()||invoiceBusy||locked||invoiceAttempts.has(company+'|'+order.id)?'disabled':'')+'><option value="0" '+(taskDesk(line.taskId)===0?'selected':'')+'>—</option>'+[1,2,3].map(desk=>'<option value="'+desk+'" '+(taskDesk(line.taskId)===desk?'selected':'')+' '+(deskLock(desk)&&taskDesk(line.taskId)!==desk?'disabled':'')+'>'+desk+'</option>').join('')+'<option value="SPLIT">Split… 分批</option></select>')+'</td><td class="description"><small>'+esc(line.barcode)+'</small><strong>'+esc(line.name)+'</strong><small>'+esc(line.packing)+'</small></td><td class="num price-cell"><span>'+number(line.pricePc,2)+'</span><span>'+number(line.priceCtn,2)+'</span></td><td class="num">'+number(line.orderQty)+'</td><td class="num">'+number(line.allocQty)+'</td><td class="num">'+number(line.loadedQty)+'</td><td class="num">'+quantityPair(planned.cbm,loaded.cbm,4,'',invoiced,!(line.cbm>0))+'</td><td class="num">'+quantityPair(planned.amount,loaded.amount,2,'',invoiced)+'</td><td>'+esc((line.expiryDates||[]).map(expiryDay).join(' · ')||'—')+'</td><td>'+(window.departmentMessages?.sourceCell([line.taskId])||'')+'</td></tr>'; }),'detail order-tasks')+'</div>';
   }
 
   function render(){
@@ -567,7 +597,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
   let lastWarehouseRefresh=0;
   function refreshWarehouseWhenIdle(){
     if(view!=='orders'||!selectedCustomer||document.hidden||!data||busy||deskBusy||invoiceBusy||documentBusy
-      ||deskAttempts.size||invoiceAttempts.size||document.querySelector('dialog[open]')
+      ||dragContext||deskAttempts.size||invoiceAttempts.size||document.querySelector('dialog[open]')
       ||document.activeElement?.matches('input,select,textarea')||Date.now()-lastWarehouseRefresh<30000)return;
     lastWarehouseRefresh=Date.now();
     load([1,2],true);
