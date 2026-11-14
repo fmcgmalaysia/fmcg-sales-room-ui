@@ -6,5 +6,27 @@ test('packing uses the existing member/email/staff binding and department bounda
 test('packing preserves the established Warehouse TOP MANAGEMENT entitlement without granting Support access',()=>{const manager={...record,role:'TOP MANAGEMENT',departments:[]};assert.equal(requirePackingStaff(member,[manager],'WAREHOUSE').packingDepartment,'WAREHOUSE');assert.throws(()=>requirePackingStaff(member,[manager],'SUPPORT'),/not authorized/);assert.throws(()=>requirePackingStaff(member,[{...manager,description:'OTHER'}],'WAREHOUSE'),/not configured/);assert.equal(load('warehouseReceiving.js').requireWarehouseStaff(member,[manager]).staffId,'S');});
 test('packing availability takes actual customer ready stock and keeps unknown dimensions unknown',()=>{const value=projectPackingContext(context()).tasks[0];assert.equal(value.ready,50);assert.equal(value.remaining,50);assert.equal(value.cbm,null);assert.equal(value.weight,null);assert.equal(value.review,false);});
 test('incoming-only procurement cannot masquerade as physical stock',()=>{const c=context();delete c.tasks[0].warehouse;assert.equal(projectPackingContext(c).tasks[0].ready,0);});
+test('packing context reuses one physical outflow projection for each task total', () => {
+  const physical = load('physicalOutflow.js');
+  let measuredTotals = 0;
+  const measured = load('packingListContext.js', {
+    'physicalOutflow.js': {
+      ...physical,
+      physicalOutflowQuantity(activity, criteria, flows) {
+        measuredTotals++;
+        assert.ok(Array.isArray(flows), 'task totals reuse the already validated outflows');
+        return physical.physicalOutflowQuantity(activity, criteria, flows);
+      },
+    },
+  });
+  const c = context();
+  c.tasks = Array.from({ length: 100 }, (_, index) => ({
+    ...c.tasks[0], id: 'T' + index, orderId: 'O' + index, sourceLineId: 'L' + index,
+  }));
+  const baseline = projectPackingContext(c);
+  const result = measured.projectPackingContext(c);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.tasks)), JSON.parse(JSON.stringify(baseline.tasks)));
+  assert.equal(measuredTotals, 100);
+});
 test('a recorded receipt with an unknown physical balance is flagged instead of offered as usable stock',()=>{const c=context();delete c.tasks[0].warehouse.stock.availablePhysical;assert.equal(projectPackingContext(c).tasks[0].review,true);});
 test('legacy loaded or packed evidence is flagged for explicit handling rather than silently adopted',()=>{const c=context(),loadPrep=load('warehousePreparation.js');const row=loadPrep.projectPreparation(c)[0];c.activity.push({title:'PREP',description:row.id,action:'WAREHOUSE_PREPARATION_SAVED',result:'SAVED',activityTime:'2026-10-21T00:00:00Z',initiatedByStaffId:'S',details:{beforeRevision:'',state:{id:row.id,taskId:'T',customerId:'C',company:'NCT',quantity:50,loaded:40,prepared:true,signature:row.signature,photos:[]}}});assert.throws(()=>projectPackingContext(c),/source reconciliation/);});

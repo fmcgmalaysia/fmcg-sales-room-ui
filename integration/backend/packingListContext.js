@@ -17,7 +17,7 @@ export function requirePackingStaff(member,records,department){
 export function projectPackingContext(context){
  const preparation=projectPreparation(context),shipments=readCustomerShipments(context.activity),customers=new Map((context.customers||[]).map(row=>[row.id,row.name])),desks=readSupportDesks(context.activity,context.company).map(state=>currentSupportDeskState(context,state)),flows=readPhysicalOutflows(context.activity);
  const tasks=context.tasks.filter(task=>!task.procurementSource&&!task.specialPurchase&&!task.archived).map(task=>{
-  const rows=preparation.filter(row=>row.taskId===task.id),sent=physicalOutflowQuantity(context.activity,{taskId:task.id});
+  const rows=preparation.filter(row=>row.taskId===task.id),sent=physicalOutflowQuantity(context.activity,{taskId:task.id},flows);
   const legacy=shipments.some(row=>row.status!=='CANCELLED'&&row.status!=='DISPATCHED'&&row.lines.some(line=>line.taskId===task.id&&line.physicalOutflowRefs===undefined));
   const related=context.tasks.filter(source=>source.id===task.id||source.customerDemandTaskId===task.id||(context.allocations||[]).some(allocation=>allocation.sourceTaskId===source.id&&allocation.targets.some(target=>target.taskId===task.id&&target.quantity>0)));
   const unknownPhysical=related.some(source=>source.warehouse?.hasPhysicalReceipt===true&&(!Number.isSafeInteger(source.warehouse.stock?.availablePhysical)||source.warehouse.stock.availablePhysical<0));
