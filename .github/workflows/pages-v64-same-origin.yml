@@ -1140,18 +1140,18 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 43624101887
+          run-id: 43628478596
           github-token: ${{ github.token }}
           path: ${{ format('{0}/warehouse-image-hover-baseline', runner.temp) }}
 
-      - name: Apply and verify only the warehouse-image-hover patch
+      - name: Apply and verify only the Warehouse delivery refresh patch
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-image-hover-only'
         run: |
           mkdir "$RUNNER_TEMP/warehouse-image-hover-site"
           tar --extract --file "$RUNNER_TEMP/warehouse-image-hover-baseline/artifact.tar" --directory "$RUNNER_TEMP/warehouse-image-hover-site"
           node integration/releases/stage-warehouse-image-hover.cjs "$RUNNER_TEMP/warehouse-image-hover-site"
 
-      - name: Upload the verified warehouse-image-hover bundle
+      - name: Upload the verified Warehouse delivery refresh bundle
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-image-hover-only'
         uses: actions/upload-pages-artifact@v5
         with:
