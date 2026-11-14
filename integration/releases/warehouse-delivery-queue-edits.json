@@ -1,0 +1,149 @@
+{
+  "master-shared/desk-delivery.js": {
+    "before": "19bb437256833ded6ce795996c4e8f2985230dbfb992e72eec08184fe961fd32",
+    "after": "b43495b1c1d95086b6e5e7f4ddface84e55697af9f7ac3e2dad58421b40604e6",
+    "hunks": [
+      {
+        "index": 89,
+        "before": [
+          "  const image=line=>/^https:\\/\\//i.test(line.productImageUrl||'')?'<img src=\"'+esc(line.productImageUrl)+'\" alt=\"'+esc(line.name)+'\" loading=\"lazy\">':'<span class=\"dd-image-empty\" aria-label=\"No product image\">□</span>';"
+        ],
+        "after": [
+          "  function canLoadLine(line){",
+          "   if(!(line.readyQuantity>0)||line.resolution?.resolved)return false;",
+          "   if(!line.loadedConfirmedAt)return true;",
+          "   const maximum=line.resolution?.maximum??line.quantity;",
+          "   return Boolean(line.resolution?.pending||(line.resolution?.issue??line.loaded!==maximum));",
+          "  }",
+          "  function deliveryStatus(list){",
+          "   const lines=list.lines;",
+          "   if(lines.some(line=>line.resolution?.issue))return ['Support review','review'];",
+          "   if(!list.batchComplete&&lines.some(canLoadLine))return ['Ready for loading','ready'];",
+          "   if(!lines.length||lines.every(line=>!line.quantity&&!line.resolution?.resolved))return ['Pending allocation','pending'];",
+          "   if(lines.every(line=>line.resolution?.resolved||Boolean(line.loadedConfirmedAt)&&line.loaded>=(line.resolution?.maximum??line.quantity))){",
+          "    const loaded=lines.some(line=>line.loadedConfirmedAt&&line.loaded>0);",
+          "    return loaded?['Loaded','ready']:['Closed · 0 loaded','closed'];",
+          "   }",
+          "   return ['Waiting for stock','pending'];",
+          "  }",
+          "  const image=line=>/^https:\\/\\//i.test(line.productImageUrl||'')?'<img class=\"dd-zoom-image\" src=\"'+esc(line.productImageUrl)+'\" alt=\"'+esc(line.name)+'\" loading=\"lazy\">':'<span class=\"dd-image-empty\" aria-label=\"No product image\">□</span>';"
+        ]
+      },
+      {
+        "index": 101,
+        "before": [
+          "   else if(!selected)html+='<div class=\"dd-customers\">'+active.map(list=>'<button type=\"button\" class=\"dd-customer\" data-dd-open=\"'+esc(list.id)+'\"><strong>'+esc(list.customerName)+'</strong><b>Desk '+list.desk.number+'</b><span>'+list.lines.length+' items</span><small>'+esc(state.history?stamp(list.completedAt||list.updatedAt):list.lines.some(line=>line.resolution?.issue)?'Support review 待处理':list.lines.some(line=>!line.quantity)?'Pending 待配货':'Ready for loading 待装货')+'</small></button>').join('')+(active.length?'':'<p class=\"dd-empty\">No tasks 暂无任务</p>')+'</div>';"
+        ],
+        "after": [
+          "   else if(!selected){",
+          "    const cards=active.map(list=>{",
+          "     const shipment=list.currentDesk?.shipment??list.desk.shipment;",
+          "     const status=deliveryStatus(list);",
+          "     const opened=list.sentAt?age(list.sentAt):\"\";",
+          "     const timing=state.history?stamp(list.completedAt||list.updatedAt||list.sentAt):opened;",
+          "     return `<button type=\"button\" class=\"dd-customer\" data-dd-open=\"${esc(list.id)}\"><span class=\"dd-list-name\"><strong>${esc(list.customerName)}</strong><b>Desk ${esc(list.desk.number)}</b></span><span class=\"dd-list-meta\"><span>ETD <strong>${esc(date(shipment?.date))}</strong></span><span>${number(list.lines.length)} ${list.lines.length===1?\"item\":\"items\"}</span></span><span class=\"dd-list-state\">${state.history?\"\":`<span class=\"dd-list-status ${status[1]}\">${status[0]}</span>`}${timing?`<small>${esc(timing)}</small>`:\"\"}</span><span class=\"dd-list-arrow\" aria-hidden=\"true\">→</span></button>`;",
+          "    });",
+          "    html+='<div class=\"dd-customers\">'+(cards.join('')||'<p class=\"dd-empty\">No tasks 暂无任务</p>')+'</div>';",
+          "   }"
+        ]
+      },
+      {
+        "index": 115,
+        "before": [
+          "     const canLoad=!state.history&&line.readyQuantity>0&&!line.resolution?.resolved&&!pending&&(!confirmed||difference||line.resolution?.pending);"
+        ],
+        "after": [
+          "     const canLoad=!state.history&&!selected.batchComplete&&!pending&&canLoadLine(line);"
+        ]
+      },
+      {
+        "index": 122,
+        "before": [],
+        "after": [
+          "   state.container.querySelector(\".dd-image-preview\")?.remove();"
+        ]
+      },
+      {
+        "index": 123,
+        "before": [],
+        "after": [
+          "   for(const thumbnail of state.container.querySelectorAll(\".dd-zoom-image\")){",
+          "    thumbnail.onpointermove=event=>{",
+          "     if(event.pointerType!==\"mouse\"||!thumbnail.complete||!thumbnail.naturalWidth)return;",
+          "     let preview=state.container.querySelector(\".dd-image-preview\");",
+          "     if(!preview){",
+          "      preview=document.createElement(\"div\");preview.className=\"dd-image-preview\";preview.setAttribute(\"aria-hidden\",\"true\");",
+          "      const image=thumbnail.cloneNode();image.removeAttribute(\"loading\");image.alt=\"\";preview.append(image);state.container.append(preview);",
+          "     }",
+          "     const {width,height}=preview.getBoundingClientRect(),gap=14,edge=10;",
+          "     const left=event.clientX+gap+width>innerWidth-edge?event.clientX-width-gap:event.clientX+gap;",
+          "     const top=event.clientY+gap+height>innerHeight-edge?event.clientY-height-gap:event.clientY+gap;",
+          "     preview.style.left=Math.max(edge,left)+\"px\";preview.style.top=Math.max(edge,top)+\"px\";",
+          "    };",
+          "    thumbnail.onpointerleave=()=>state.container.querySelector(\".dd-image-preview\")?.remove();",
+          "   }"
+        ]
+      }
+    ]
+  },
+  "warehouse-room/index.html": {
+    "before": "b5adbb41ca918450fe45c54f4c2e5080af1b975ad2453f54a25a745d3650e6a3",
+    "after": "461afff9284ea61b2cbf133f2aa097d075b55ad89c5415b587250a9be11f2b8f",
+    "hunks": [
+      {
+        "index": 2,
+        "before": [
+          "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261113-warehouse-delivery-compact-v2\"><title>Warehouse Department</title><link rel=\"stylesheet\" href=\"../account-room/style.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"style.css?v=20261113-shipment-delivery-v1\"><link rel=\"stylesheet\" href=\"../master-shared/task-signals.css?v=20261018-warehouse-workroom-v1\"><script src=\"../master-shared/task-signals.js?v=20261018-task-chat-drive-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/stock-exceptions.css?v=20261101-month-end-stock-loss-v2\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-warehouse-workroom-v1\"><script defer src=\"../master-shared/fixed-header.js?v=20261018-warehouse-workroom-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261020-sales-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"../master-shared/mobile-menu.css?v=20261018-department-mobile-qty-v1\"><link rel=\"stylesheet\" href=\"../master-shared/quantity-alignment.css?v=20261018-department-mobile-qty-v1\"><script src=\"../master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/action-affordances.css?v=20261020-action-affordances-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261113-warehouse-delivery-compact-v2\"></head>"
+        ],
+        "after": [
+          "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"build\" content=\"20261114-warehouse-delivery-queue-v1\"><title>Warehouse Department</title><link rel=\"stylesheet\" href=\"../account-room/style.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"style.css?v=20261114-warehouse-delivery-queue-v1\"><link rel=\"stylesheet\" href=\"../master-shared/task-signals.css?v=20261018-warehouse-workroom-v1\"><script src=\"../master-shared/task-signals.js?v=20261018-task-chat-drive-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/stock-exceptions.css?v=20261101-month-end-stock-loss-v2\"><link rel=\"stylesheet\" href=\"../master-shared/workroom-theme.css?v=20261018-warehouse-workroom-v1\"><script defer src=\"../master-shared/fixed-header.js?v=20261018-warehouse-workroom-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261020-sales-messages-v1\"><link rel=\"stylesheet\" href=\"workroom.css?v=20261111-warehouse-desk-workflow-v1\"><link rel=\"stylesheet\" href=\"../master-shared/mobile-menu.css?v=20261018-department-mobile-qty-v1\"><link rel=\"stylesheet\" href=\"../master-shared/quantity-alignment.css?v=20261018-department-mobile-qty-v1\"><script src=\"../master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1\"></script><link rel=\"stylesheet\" href=\"../master-shared/action-affordances.css?v=20261020-action-affordances-v1\"><link rel=\"stylesheet\" href=\"../master-shared/desk-delivery.css?v=20261113-warehouse-delivery-compact-v2\"></head>"
+        ]
+      },
+      {
+        "index": 12,
+        "before": [
+          "<script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"workroom.js?v=20261111-warehouse-desk-workflow-v1\"></script><script src=\"dispatch.js?v=20261018-warehouse-workroom-v1\"></script><script src=\"stock-control-link.js?v=20261101-month-end-stock-loss-v2\"></script><script src=\"../master-shared/desk-delivery.js?v=20261113-shipment-delivery-v1\"></script><script src=\"app.js?v=20261111-warehouse-desk-workflow-history-v2\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261101-customer-loaded-records-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script></body></html>"
+        ],
+        "after": [
+          "<script src=\"../master-shared/task-chat.js?v=20261103-department-chat-prompts-v1\"></script><script src=\"workroom.js?v=20261111-warehouse-desk-workflow-v1\"></script><script src=\"dispatch.js?v=20261018-warehouse-workroom-v1\"></script><script src=\"stock-control-link.js?v=20261101-month-end-stock-loss-v2\"></script><script src=\"../master-shared/desk-delivery.js?v=20261114-warehouse-delivery-queue-v1\"></script><script src=\"app.js?v=20261111-warehouse-desk-workflow-history-v2\"></script><script src=\"../master-shared/stock-exceptions.js?v=20261101-customer-loaded-records-v1\"></script><script src=\"../master-shared/mobile-menu.js?v=20261018-department-mobile-qty-v1\"></script></body></html>"
+        ]
+      }
+    ]
+  },
+  "warehouse-room/style.css": {
+    "before": "e21cbacbcf1620b774547ec4551f61a6e6b42a5734c17cd2f8478b765adf80ce",
+    "after": "45de2f218017a51d08899cc0bdb2895a4b014c2dd5cfe3f697a9708a751c68b4",
+    "hunks": [
+      {
+        "index": 8,
+        "before": [
+          ".department-header #company{border-color:#e6aa63;background-color:#fff2df}"
+        ],
+        "after": [
+          ".dd-heading select[data-dd-select]{border-color:#e6aa63;background-color:#fff2df}",
+          "",
+          ".dd-customers .dd-customer{display:grid;grid-template-columns:minmax(155px,2fr) minmax(115px,1fr) minmax(130px,1fr) 18px;gap:12px;padding:10px 12px}",
+          ".dd-customers .dd-customer:is(:hover,:focus-visible){background:#f5f9ff;border-color:#a5bfdd}",
+          ".dd-list-name,.dd-list-meta,.dd-list-state{display:flex;gap:5px 10px;align-items:center;flex-wrap:wrap;min-width:0}",
+          ".dd-customers .dd-list-name strong{font-size:13px;color:#203047;overflow-wrap:anywhere}",
+          ".dd-customers .dd-list-name b{padding:3px 7px;white-space:nowrap}",
+          ".dd-customers .dd-list-meta strong,.dd-list-meta,.dd-list-status,.dd-list-state small{font-size:11px}",
+          ".dd-customers .dd-list-meta strong{color:inherit}",
+          ".dd-customers .dd-list-state small{margin-left:0;white-space:nowrap}",
+          ".dd-list-status{border-radius:10px;padding:2px 7px;background:#e6f0ff;color:#1257c7}",
+          ".dd-list-status.pending{background:#fff0d6;color:#8a4b00}",
+          ".dd-list-status.closed{background:#e8edf2;color:#475b70}",
+          ".dd-list-status.review{background:#ffe3e6;color:#ad1730}",
+          ".dd-list-arrow{color:#2563eb;transition:transform .16s ease}",
+          ".dd-customer:is(:hover,:focus-visible) .dd-list-arrow{transform:translateX(3px)}",
+          ".dd-zoom-image{cursor:zoom-in}",
+          ".dd-image-preview{position:fixed;z-index:65;box-sizing:border-box;width:min(286px,calc(100vw - 24px));height:min(286px,calc(100vh - 24px));padding:10px;background:#fff;border:1px solid #b8c4d0;border-radius:10px;box-shadow:0 16px 38px rgba(23,43,77,.18);pointer-events:none}",
+          ".dd-image-preview img{width:100%;height:100%;display:block;object-fit:contain}",
+          ".dd-task-table th:nth-child(6),.dd-task-table td.dd-pic{padding-left:13px}",
+          "@media(max-width:600px){.dd-customers .dd-customer{grid-template-columns:minmax(0,1fr) auto 18px;gap:4px 10px}.dd-list-meta{grid-row:2;grid-column:1}.dd-list-state{grid-row:1/3;grid-column:2;flex-direction:column;align-items:flex-end}.dd-list-arrow{grid-row:1/3;grid-column:3}}",
+          "@media(prefers-reduced-motion:reduce){.dd-list-arrow{transition:none}}"
+        ]
+      }
+    ]
+  }
+}
