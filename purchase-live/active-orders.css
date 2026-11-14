@@ -98,9 +98,12 @@ body:has(#app>.active-order-heading) #taskSignals .task-signal.urgent.has-work b
 body:has(#app>.active-order-heading) #taskSignals .task-signal b::before{content:none}
 body:has(#app>.active-order-heading) #taskSignals .task-signal:is(:hover,:focus-visible){border-color:#376aa5;background:#f2f6fb}
 /* One task scroll area; shared column header remains visible during row work. */
-#app .active-task-scroll{max-height:clamp(220px,calc(100dvh - 280px),740px);overflow:auto;overscroll-behavior:contain;padding-right:0;scrollbar-gutter:auto}
+#app .active-task-scroll{max-height:none;overflow:visible;padding-right:0}
+@media(width < 1400px){#app .active-task-scroll{overflow-x:auto}}
+@media(min-width:1400px){#app>.panel:has(>.active-task-scroll){overflow:clip}}
 #app .active-task-scroll .active-order-table{border-collapse:separate;border-spacing:0}
 #app .active-task-scroll .active-order-table thead th{position:sticky;top:0;z-index:3;box-shadow:0 1px 0 #abc2d8}
+@media(min-width:1400px){#app .active-task-scroll .active-order-table thead th{top:calc(var(--master-header-height,0px) + var(--master-nav-height,0px))}}
 #app .active-task-scroll .active-order-table :is(th,td):nth-child(9),#app .active-task-scroll .active-order-table :is(th,td):nth-child(10){text-align:center!important}
 #app .active-order-table .purchase-realloc{color:#E51B2B!important}
 

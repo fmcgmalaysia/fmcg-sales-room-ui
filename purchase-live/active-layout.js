@@ -109,7 +109,6 @@
     cell.dataset.quantityAligned='true';
   }
   const scroll=table.parentElement;scroll.classList.add('active-task-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label','Active customer tasks');
-  scroll.style.maxHeight=Math.max(180,window.innerHeight-scroll.getBoundingClientRect().top-20)+'px';
   table.classList.add('draft-column-layout');
  }
  const observer=new MutationObserver(()=>{observer.disconnect();apply();observer.observe(root,{childList:true,subtree:true});});
