@@ -3,7 +3,7 @@ import { changePackingList, packingAvailability } from 'backend/packingListModel
 import { readSupportDesks, supportDeskForTask, currentSupportDeskLocks, currentSupportDeskState, supportDeskBatchId } from 'backend/supportDesk.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { shortloadStatus, deskTaskPortions, readDeskCommitments } from 'backend/shortloadResolutionModel.js';
+import { shortloadStatus, deskTaskPortions, readDeskCommitments, deskMembershipHold, hasDeskMembership, adjustableDeliveryLine } from 'backend/shortloadResolutionModel.js';
 
 const copy=value=>JSON.parse(JSON.stringify(value));
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
@@ -35,24 +35,42 @@ export function planDeskDelivery({context,input,actor,id,revision,at}){
 // The existing Desk instruction owns visibility. Allocation is derived from the
 // same current procurement state and is never posted by this read projection.
 export function projectOpenDeskDelivery(context,list){
- if(list.desk?.taskScope!=='ALL'||list.status==='CANCELLED')return list;
+ if(!list.desk||['DRAFT','CANCELLED'].includes(list.status))return list;
  const physical=context.physicalContext,saved=readSupportDesks(physical.activity,physical.company).find(row=>row.customerId===list.customerId),state=saved&&currentSupportDeskState(physical,saved);
  if(!state?.deliveryHolds?.some(hold=>hold.listId===list.id))return list;
+ if(currentSupportDeskLocks(physical).some(lock=>lock.status==='ISSUED'&&lock.customerId===list.customerId&&lock.desk===list.desk.number))return list;
  const flows=readPhysicalOutflows(physical.activity);
- const lines=list.lines.map(line=>{
+ const membership=deskMembershipHold(state,list),membershipIds=new Set(Object.keys(membership?.membershipChanges||{}));
+ const existing=new Set(list.lines.map(line=>line.taskId));
+ const added=physical.tasks.filter(task=>hasDeskMembership(state,list,task.id,physical.activity)&&!existing.has(task.id)&&!task.archived&&!task.procurementSource&&!task.specialPurchase&&task.customerId===list.customerId&&task.transactionCurrency===list.currency).map(task=>({
+  taskId:task.id,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',productImageUrl:task.productImageUrl||'',
+  quantity:0,requestedQuantity:0,packed:0,loaded:0,reason:'',photos:[],orderId:task.orderId,orderQty:task.requested??task.ord,
+  pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,
+  cbm:warehouseCbm(physical.company,task,physical.activity)
+ }));
+ const retiredLines=[...(list.retiredLines||[])],lines=list.lines.concat(added).flatMap(line=>{
   const task=physical.tasks.find(row=>row.id===line.taskId);
   if(!task)return line;
   const parts=deskTaskPortions(physical.activity,state,task,flows),part=parts.find(row=>row.desk===list.desk.number);
   const disposition=shortloadStatus(physical.activity,list,line);
   const allocated=disposition.revision?line.quantity:readDeskCommitments(physical.activity,physical.company,task.id,task,state,flows).batches.find(row=>row.id===list.id)?.quantity||line.loaded;
   const prior=readDeskCommitments(physical.activity,physical.company,task.id).batches.filter(row=>row.id!==list.id&&row.desk===list.desk.number).reduce((sum,row)=>sum+row.quantity,0);
-  const requestedQuantity=disposition.revision?line.requestedQuantity:Math.max(line.loaded,Math.min(line.requestedQuantity,Math.max(0,(part?.quantity||0)-prior)));
-  const next={...line,quantity:allocated,requestedQuantity,authorizedTotal:task.supplyAllocation?.planned??task.inc};
+  const modified=(!existing.has(line.taskId)||membershipIds.has(line.taskId))&&adjustableDeliveryLine(physical.activity,list,line);
+  const originalRequested=line.requestedQuantity??line.quantity,target=Math.max(0,(part?.quantity||0)-prior),requestedQuantity=disposition.revision?originalRequested:Math.max(line.loaded,modified?target:Math.min(originalRequested,target));
+  if(modified&&!requestedQuantity&&!line.loaded&&!line.packed){
+   if(existing.has(line.taskId)&&(line.expiryDate||line.photos?.length||line.loadedConfirmedAt))retiredLines.push({...line,retiredAt:list.sentAt});
+   return [];
+  }
+  const next={...line,quantity:allocated,requestedQuantity,authorizedTotal:task.supplyAllocation?.planned??task.inc,
+   ...(!existing.has(line.taskId)||membershipIds.has(line.taskId)?{membershipVersion:operationId(list.id,line.taskId,membership.membershipChanges?.[line.taskId]||'',requestedQuantity,allocated)}:{})};
   if(allocated>line.quantity&&line.loadedConfirmedAt&&line.loaded===line.quantity){next.lastLoadedAt=line.loadedConfirmedAt;delete next.loadedConfirmedAt;}
   next.resolution=shortloadStatus(physical.activity,{...list,lines:[next]},next);
   return next;
  });
- return {...list,lines};
+ if(!membership)return {...list,lines};
+ if(!lines.length)return {...list,lines,retiredLines};
+ const reopened=list.status==='COMPLETED'&&lines.some(line=>line.requestedQuantity>line.loaded&&!line.loadedConfirmedAt);
+ return {...list,desk:{...list.desk,taskScope:'ALL'},lines,retiredLines,...(reopened?{status:'PROCESSING',completedAt:null}:{})};
 }
 export function changeDeskDelivery({context,list,input,actor,id,revision,at}){
  if(!list?.desk||list.company!==context.company||!Number.isSafeInteger(list.desk.number))throw Error('Desk-authorized delivery task is required.');
@@ -64,11 +82,13 @@ export function changeDeskDelivery({context,list,input,actor,id,revision,at}){
  }
  if(actor!=='WAREHOUSE'||!['DESK_LOAD','DESK_EXPIRY','DESK_PHOTOS'].includes(input.action))throw Error('Desk loading requires Warehouse and valid cumulative cartons.');
  if(!readSupportDesks(context.physicalContext.activity,context.company).map(state=>currentSupportDeskState(context.physicalContext,state)).some(state=>state.customerId===list.customerId&&state.deliveryHolds?.some(hold=>hold.desk===list.desk.number&&hold.listId===list.id)))throw Error('Desk delivery is no longer open to Warehouse. Refresh before confirming.');
+ if(!list.lines.length)throw Error('Authorized task changed. Refresh and confirm again.');
  if(input.action==='DESK_PHOTOS'){
   if(!Array.isArray(input.attachments)||!input.attachments.length||input.attachments.length>3||(list.photos?.length||0)+input.attachments.length>30)throw Error('Desk accepts at most thirty container photos.');
   return {...copy(list),photos:[...(list.photos||[]),...copy(input.attachments)],revision,updatedAt:at};
  }
  const current=list.lines.find(line=>line.taskId===input.taskId),codes=input.reasonCodes||[],note=typeof input.note==='string'?input.note.trim():'';
+ if(!current||(current.membershipVersion||'')!==(input.membershipVersion||''))throw Error('Authorized task changed. Refresh and confirm again.');
  if(input.action==='DESK_EXPIRY'){
   const date=input.expiryDate;
   if(!current||typeof date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(date)||date<'1900-01-01'||!Number.isFinite(Date.parse(date))||new Date(date).toISOString().slice(0,10)!==date)throw Error('Desk enter a valid expiry date.');
