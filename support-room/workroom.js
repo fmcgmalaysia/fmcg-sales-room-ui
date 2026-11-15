@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  document.documentElement.dataset.supportBuild='20261105-support-transaction-context-v1';
+  document.documentElement.dataset.supportBuild='20261115-support-shared-activity-v1';
   const $=id=>document.getElementById(id),esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const number=(value,places=0)=>typeof value==='number'&&Number.isFinite(value)?value.toLocaleString('en-GB',{minimumFractionDigits:places,maximumFractionDigits:places}):'—';
   const supportDayFormat=new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'2-digit',timeZone:'UTC'});
@@ -635,7 +635,18 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     if(!quiet){$('notice').textContent='Loading customer orders…';render();}
     const requested=new Set(Array.isArray(parts)&&cache?parts:[0,1,2,3,4,5]);for(const active of activeReadSets.values())for(const index of active)requested.add(index);activeReadSets.set(sequence,requested);
     const types=['FULFILMENT_READ_REQUEST','PACKING_READ_REQUEST','SUPPORT_BOOKING_READ_REQUEST','SUPPORT_INVOICE_READ_REQUEST','SUPPORT_DOCUMENT_READ_REQUEST','SUPPORT_CUSTOMER_READ_REQUEST'];
-    const results=await Promise.all(types.map((type,index)=>cache&&!requested.has(index)?cache.results[index]:send(type).then(value=>({status:'fulfilled',value}),reason=>({status:'rejected',reason}))));
+    const settled=promise=>promise.then(value=>({status:'fulfilled',value}),reason=>({status:'rejected',reason}));
+    const deskRefresh=quiet&&cache&&requested.has(1)&&requested.has(2)
+      ?settled(send('SUPPORT_DESK_REFRESH_READ_REQUEST')):null;
+    const results=await Promise.all(types.map((type,index)=>{
+      if(cache&&!requested.has(index))return cache.results[index];
+      if(!deskRefresh||(index!==1&&index!==2))return settled(send(type));
+      return deskRefresh.then(result=>{
+        if(result.status==='rejected')return result;
+        const section=result.value?.[index===1?'packing':'bookings'];
+        return section?.ok===true?{status:'fulfilled',value:section.value}:{status:'rejected'};
+      });
+    }));
     activeReadSets.delete(sequence);if(sequence!==readSequence)return;
     if(epoch!==deskReceiptEpoch&&readCache?.company===company){results[2]=readCache.results[2];results[1]=readCache.results[1];}
     if(quiet&&cache){

@@ -12,10 +12,12 @@ import { readSupportInvoiceState, createSupportInvoiceOperations, createSupportI
 import { readCurrentAdminFx } from 'backend/adminFxClient.js';
 import { readSupportDocuments, supportDocumentVersion, pendingSupportDocumentUploads, createSupportDocumentOperations, supportCustomerFiles, createSupportCustomerDeliveryOperations } from 'backend/supportDocuments.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
+import { readPackingWorkroom } from 'backend/packingListService.js';
 async function supportStaff(){return requirePackingStaff(await currentMember.getMember({fieldsets:['FULL']}),await fulfilmentStore.all('StaffMasterAccess'),'SUPPORT');}
 const saveDesk=createSupportDeskOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
 const save=createSupportBookingOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
-export const getSupportBookings=webMethod(Permissions.SiteMember,async company=>{const staff=await supportStaff();if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');const activity=await fulfilmentStore.all(PURCHASE_COLLECTIONS[company].activity),deskLocks=readSupportDeskLocks({company,activity});
+function projectSupportBookings(company,staff,activity){
+  const deskLocks=readSupportDeskLocks({company,activity});
   const preparedInvoices=activity.filter(row=>row.action==='SUPPORT_INVOICE_PREPARED'&&row.details?.desk)
     .map(row=>({row,readyId:operationId(row._id,'SUPPORT_INVOICE_INPUT_SAVED')}));
   const invoiceInputs=new Map(preparedInvoices.map(({readyId})=>[readyId,null]));
@@ -25,7 +27,24 @@ export const getSupportBookings=webMethod(Permissions.SiteMember,async company=>
       if(invoiceInputs.get(title)===null) invoiceInputs.set(title,row);
     }
   }
-  const invoiceDesks=preparedInvoices.flatMap(({row,readyId})=>{const ready=invoiceInputs.get(readyId);return ready?[{invoiceId:ready.description,desk:{...row.details.desk,batchId:row.details.desk.batchId||supportDeskBatchId({company,customerId:row.image},row.details.desk.number)}}]:[];});return {company,bookings:readSupportBookings(activity,company),desks:readSupportDesks(activity,company).map(state=>{const current=currentSupportDeskState({company,activity},state,deskLocks);return {...current,batches:[1,2,3].map(desk=>({desk,id:supportDeskBatchId(current,desk),initialId:supportDeskBatchId({company,customerId:current.customerId},desk)}))};}),deskLocks,pendingDeskInvoices:deskLocks.filter(row=>row.status==='PENDING'&&row.memberId===staff.memberId&&row.input).map(row=>({customerId:row.customerId,desk:row.desk,requestId:row.requestId,input:row.input})),deskMetadataVersion:2,invoiceDesks};});
+  const invoiceDesks=preparedInvoices.flatMap(({row,readyId})=>{const ready=invoiceInputs.get(readyId);return ready?[{invoiceId:ready.description,desk:{...row.details.desk,batchId:row.details.desk.batchId||supportDeskBatchId({company,customerId:row.image},row.details.desk.number)}}]:[];});return {company,bookings:readSupportBookings(activity,company),desks:readSupportDesks(activity,company).map(state=>{const current=currentSupportDeskState({company,activity},state,deskLocks);return {...current,batches:[1,2,3].map(desk=>({desk,id:supportDeskBatchId(current,desk),initialId:supportDeskBatchId({company,customerId:current.customerId},desk)}))};}),deskLocks,pendingDeskInvoices:deskLocks.filter(row=>row.status==='PENDING'&&row.memberId===staff.memberId&&row.input).map(row=>({customerId:row.customerId,desk:row.desk,requestId:row.requestId,input:row.input})),deskMetadataVersion:2,invoiceDesks};
+}
+export const getSupportBookings=webMethod(Permissions.SiteMember,async company=>{
+  const staff=await supportStaff();
+  if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');
+  return projectSupportBookings(company,staff,await fulfilmentStore.all(PURCHASE_COLLECTIONS[company].activity));
+});
+export const getSupportDeskRefresh=webMethod(Permissions.SiteMember,async company=>{
+  const staff=await supportStaff();
+  if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');
+  const activityRead=fulfilmentStore.all(PURCHASE_COLLECTIONS[company].activity);
+  const [packing,bookings]=await Promise.allSettled([
+    readPackingWorkroom(company,staff,{activityRead}),
+    activityRead.then(activity=>projectSupportBookings(company,staff,activity))
+  ]);
+  const response=outcome=>outcome.status==='fulfilled'?{ok:true,value:outcome.value}:{ok:false};
+  return {packing:response(packing),bookings:response(bookings)};
+});
 export const saveSupportBooking=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{const staff=await supportStaff();try{return await (['DESK_ASSIGN','DESK_SPLIT','DESK_SHIPMENT','DESK_REFERENCES','DESK_ARCHIVE','DESK_ORDER'].includes(input?.action)?saveDesk:save)({company,staff,requestId,input});}catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};throw error;}});
 
 const invoiceDependencies={store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,saveFulfilment:saveCustomerFulfilment,readRates:readCurrentAdminFx};
