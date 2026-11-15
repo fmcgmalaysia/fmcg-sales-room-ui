@@ -42,5 +42,13 @@ function supportProductRequest({ readAccess, readContext, fetchPointbase, store 
 const runSupportProductRequest=supportProductRequest({
  readAccess:readManagedCompanyAccess,readContext:readFulfilmentContext,fetchPointbase:capturePointbaseCosts,store:fulfilmentStore
 });
-export const handleSupportProduct=webMethod(Permissions.SiteMember,async (company,requestId,input)=>
- runSupportProductRequest(company,requestId,input));
+export const handleSupportProduct=webMethod(Permissions.SiteMember,async (company,requestId,input)=>{
+ try{
+  return await runSupportProductRequest(company,requestId,input);
+ }catch(error){
+  if(input?.action==='CBM_PREVIEW'&&error?.message==='CBM is still missing in Pointbase.'){
+   return {ok:false,error:'CBM is still missing in Pointbase. Ask Super Admin to update it, then fetch again.'};
+  }
+  throw error;
+ }
+});
