@@ -14,15 +14,14 @@ const INTENT='SUPPORT_INVOICE_PREPARED',READY='SUPPORT_INVOICE_INPUT_SAVED';
 const uuid=value=>/^[a-f0-9-]{36}$/i.test(value||'');
 const derived=(...parts)=>{const h=operationId(...parts);return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);};
 const known=value=>typeof value==='number'&&Number.isFinite(value);
-const paymentTermDays=new Map([['30%+70%',7],['7 Days',7],['14 Days',14],['21 Days',21],['30 Days',30],['45 Days',45],['60 Days',60]]);
+const paymentTermDays=new Map([['COD',0],['30%+70%',7],['7 Days',7],['14 Days',14],['21 Days',21],['30 Days',30],['45 Days',45],['60 Days',60]]);
 async function invoicePaymentSchedule(readPaymentTerm,customer,date){
  if(!readPaymentTerm)return undefined;
  let paymentTerm;
  try{paymentTerm=await readPaymentTerm(customer);}catch{return {status:'UNVERIFIED'};}
  if(paymentTerm==='')return {status:'UNSET'};
- if(paymentTerm==='COD')return {status:'AWAITING_COD_DATE',paymentTerm};
  const days=paymentTermDays.get(paymentTerm);
- if(!days)return {status:'UNVERIFIED'};
+ if(days===undefined)return {status:'UNVERIFIED'};
  const dueDate=new Date(Date.parse(date+'T00:00:00Z')+days*86400000).toISOString().slice(0,10);
  return {status:'CONFIRMED',paymentTerm,dueDate};
 }

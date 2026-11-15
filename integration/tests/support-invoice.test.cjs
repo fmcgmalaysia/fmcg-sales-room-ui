@@ -36,8 +36,8 @@ test('Finance uses the original invoice term even after a lost acknowledgement a
  assert.equal(projection.invoices[0].dueCents,300000);
  assert.equal(customerInvoiceFacts('GHR',shipments,[]).length,0);
 });
-test('unset, unavailable, and COD terms leave the invoice due date unset',async()=>{
- for(const scenario of [{term:'',status:'UNSET'},{term:'COD',status:'AWAITING_COD_DATE'},{status:'UNVERIFIED'}]){
+test('unset and unavailable terms leave the invoice due date unset',async()=>{
+ for(const scenario of [{term:'',status:'UNSET'},{status:'UNVERIFIED'}]){
   const f=fixture(async()=>{if(scenario.term===undefined)throw Error('Directory unavailable');return scenario.term;});
   await f.setLoad(100);
   await f.save(await f.request(100));
@@ -45,6 +45,25 @@ test('unset, unavailable, and COD terms leave the invoice due date unset',async(
   assert.equal(shipments[0].invoice.paymentSchedule.status,scenario.status);
   assert.equal(load('customerInvoicePayments.js').customerInvoiceFacts('NCT',shipments,[])[0].dueDate,undefined);
  }
+});
+test('COD is due on the Malaysia invoice date and keeps that date after dispatch',async()=>{
+ const f=fixture(async()=> 'COD');
+ await f.setLoad(100);
+ await f.save(await f.request(100));
+ let {activity}=await f.context();
+ const before=readCustomerShipments(activity)[0];
+ const {customerInvoiceFacts}=load('customerInvoicePayments.js');
+ const opened=customerInvoiceFacts('NCT',[before],[])[0];
+ assert.equal(opened.paymentTerm,'COD');
+ assert.equal(opened.dueDate,'2026-10-27');
+ assert.equal(opened.amountCents,300000);
+ const {shipmentVersion}=load('customerFulfilment.js');
+ const dispatch=createCustomerFulfilmentOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context,now:()=>new Date('2026-10-27T17:15:00Z')});
+ await dispatch({company:'NCT',staff:{...f.staff,canDispatchShipment:true},requestId:'bbbbbbbb-1111-4111-8111-111111111111',input:{action:'DISPATCH',id:before.id,version:shipmentVersion(await f.context()),reference:'TEST',reason:'Actual shipment'}});
+ ({activity}=await f.context());
+ const after=readCustomerShipments(activity)[0];
+ assert.deepEqual(after.invoice,before.invoice);
+ assert.equal(customerInvoiceFacts('NCT',[after],[])[0].dueDate,opened.dueDate);
 });
 test('unloaded quantity, another customer/order and spoofed department cannot invoice',async()=>{const f=fixture();await f.setLoad(50);await assert.rejects(f.save(await f.request(51)),/exceeds/);const r=await f.request(40);await assert.rejects(f.save({...r,input:{...r.input,customerId:'C2'}}),/exceeds/);await assert.rejects(f.save({...r,staff:{...r.staff,packingDepartment:'WAREHOUSE'}}),/Support invoice/);assert.equal(readCustomerShipments((await f.context()).activity).length,0);});
 test('changed loading and duplicate invoice number are rejected by original guards',async()=>{const f=fixture();await f.setLoad(80);const stale=await f.request(80);await f.setLoad(100);await assert.rejects(f.save(stale),/changed/);await f.save(await f.request(40));const r=await f.request(30);await assert.rejects(f.save({...r,requestId:'bbbbbbbb-1111-4111-8111-111111111111'}),/already exists/);});
