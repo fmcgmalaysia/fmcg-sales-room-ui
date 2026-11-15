@@ -14,11 +14,13 @@ function planMissingCbm(context, taskId) {
   const belongs = task => task.company === undefined || task.company === company;
   const anchor = tasks.find(task => task.id === taskId && belongs(task));
   if (!anchor?.barcode) throw Error('The current customer task is unavailable.');
-  const pending = new Set(readSupportDeskLocks(context)
+  let shipments;
+  const readShipments = () => shipments ??= readCustomerShipments(activity);
+  const pending = new Set(readSupportDeskLocks(context, readShipments)
     .filter(lock => lock.status === 'PENDING')
     .flatMap(lock => lock.taskIds || []));
   const reserved = new Map();
-  for (const shipment of readCustomerShipments(activity)) {
+  for (const shipment of readShipments()) {
     if (shipment.company !== company || shipment.status === 'CANCELLED') continue;
     for (const line of shipment.lines) {
       reserved.set(line.taskId, (reserved.get(line.taskId) || 0) + line.quantity);

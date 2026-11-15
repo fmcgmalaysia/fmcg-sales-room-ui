@@ -213,9 +213,9 @@ export function checkSupportDeskInvoice(context,readiness,input,owner){
 
 // Invoice admission shares the Desk revision chain with task moves and shipment edits.
 // This is a business hold, never a timeout-expiring application lock.
-export function readSupportDeskLocks(context){
+export function readSupportDeskLocks(context,readShipments=readCustomerShipments){
  const locks=readSupportDesks(context.activity,context.company).flatMap(state=>(state.locks||[]).map(lock=>({...copy(lock),customerId:state.customerId,status:'PENDING'})));
- const shipments=readCustomerShipments(context.activity);
+ const shipments=readShipments(context.activity);
  for(const intent of context.activity.filter(row=>row.action==='SUPPORT_INVOICE_PREPARED'&&row.details?.desk)){
   const ready=context.activity.find(row=>row.title===operationId(intent._id,'SUPPORT_INVOICE_INPUT_SAVED')),shipment=ready&&shipments.find(row=>row.id===ready.description);
   if(shipment?.status==='CANCELLED')continue;
