@@ -347,7 +347,7 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .allocation-reason{margin-top:6px;gap:7px}
 
 /* PO occupies the final column so all primary controls share one baseline. */
-.supplier-allocation-dialog .allocation-table th:last-child,.supplier-allocation-dialog .allocation-table td.allocation-po-cell{text-align:left}
+.supplier-allocation-dialog .allocation-table th:last-child,.supplier-allocation-dialog .allocation-table td.allocation-po-cell,.supplier-allocation-dialog .allocation-table tr.allocation-locked>td:last-child{text-align:left}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po{padding:0;font-size:10px;overflow-wrap:anywhere}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po-time{margin-top:3px}
 
@@ -355,7 +355,7 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog #allocationStockNote[hidden]{display:none}
 .supplier-allocation .allocation-save{display:block;margin-top:3px;padding:2px 5px;border:1px solid #b8cbdc;border-radius:3px;background:#fff;color:#0078d4;font:inherit;cursor:pointer}
 .supplier-allocation .allocation-save:disabled{color:#63758a;border-color:transparent;cursor:default}
-.supplier-allocation-dialog .allocation-table th:last-child,.supplier-allocation-dialog #allocationRows>tr>td.allocation-po-cell{padding-left:12px}
+.supplier-allocation-dialog .allocation-table th:last-child,.supplier-allocation-dialog #allocationRows>tr>td.allocation-po-cell,.supplier-allocation-dialog #allocationRows>tr.allocation-locked>td:last-child{padding-left:12px}
 .supplier-allocation-dialog .allocation-table th:nth-last-child(2),.supplier-allocation-dialog #allocationRows>tr>td.amount:nth-last-child(2){padding-right:8px}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po{font-size:11px;line-height:16px;white-space:nowrap;overflow-wrap:normal}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po.pending{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:24px;padding:0 8px;border-radius:4px;background:#F58A00;color:#fff;font-weight:600}
