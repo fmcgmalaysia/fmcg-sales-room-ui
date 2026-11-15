@@ -492,7 +492,19 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     if(!/^[A-Z]{3}$/.test(currency||'')||details.some(line=>line.currency!==currency))throw Error('Check the currency on this Desk.');
     if(details.some(line=>!/^\d{1,15}$/.test(line.barcode||'')))throw Error('Check the product barcodes on this Desk.');
     if(invoice&&details.some(line=>!Number.isFinite(line.priceCtn)||line.priceCtn<=0))throw Error('Check the carton prices on this Desk.');
-    const text=details.map(line=>{
+    let exportLines=details;
+    if(invoice){
+      const grouped=new Map();
+      for(const line of details){
+        const key=JSON.stringify([line.barcode,line.priceCtn,line.packing||'']);
+        const previous=grouped.get(key);
+        const cartons=(previous?.[quantity]??0)+line[quantity];
+        if(!Number.isSafeInteger(cartons))throw Error('Check the carton quantities on this Desk.');
+        grouped.set(key,previous?{...previous,[quantity]:cartons}:line);
+      }
+      exportLines=[...grouped.values()];
+    }
+    const text=exportLines.map(line=>{
       const cells=Array(invoice?13:11).fill('');
       cells[0]=line.barcode;
       cells[10]=line[quantity];
