@@ -3,7 +3,7 @@ const {createHash}=require('node:crypto');
 const source=fs.readFileSync(path.join(__dirname,'../backend/purchaseCostRetry.js'),'utf8').replace(/^import .*;\r?$/gm,'').replace(/^export /gm,'');
 const {acceptedSpecialTask}=require('./load-master-module.cjs')('purchaseTaskIdentity.js');
 const {createPurchaseCostRetry}=vm.runInNewContext('(function(){'+source+'\nreturn {createPurchaseCostRetry};})()',{
-  createHash,acceptedSpecialTask,PURCHASE_COLLECTIONS:{NCT:{orders:'Orders',tasks:'Tasks',activity:'Activity'}},Date,JSON,Error,Object,Array,Number,Promise,Set});
+  ...require("./load-master-module.cjs")("warehouseCbm.js"),createHash,acceptedSpecialTask,PURCHASE_COLLECTIONS:{NCT:{orders:'Orders',tasks:'Tasks',activity:'Activity'}},Date,JSON,Error,Object,Array,Number,Promise,Set});
 const copy=value=>JSON.parse(JSON.stringify(value));
 function fixture(){
   const taskId='a'.repeat(32),requestId='11111111-1111-4111-8111-111111111111',rows=new Map();let captures=0;
@@ -36,6 +36,19 @@ test('existing and explicitly manual prices are retained even when a new referen
 test('customer invoice lock rejects before cost service or any history writes',async()=>{
   const f=fixture();f.rows.get('Orders/O').salesInvoiceNumber='INVOICE';
   await assert.rejects(f.retry(f.input),/locked/);assert.equal(f.captures(),0);assert.equal(f.rows.size,3);
+});
+test('cost retry preserves the confirmed Support CBM and still loads missing prices',async()=>{
+  const f=fixture(),{warehouseCbmRecordId}=require('./load-master-module.cjs')('warehouseCbm.js');
+  const id=warehouseCbmRecordId('NCT',f.input.taskId);
+  f.rows.set('Activity/'+id,{_id:id,imageAltText:f.input.taskId,description:'ORDER',result:'SAVED',
+    action:'WAREHOUSE_CBM_CAPTURED',details:{company:'NCT',sourceLineId:'LINE',barcode:'B',supportRefresh:true,cbmPerCtn:.05}});
+  const result=await f.retry(f.input);
+  assert.equal(result.ok,true);
+  assert.equal(f.task().lpPc,1);
+  assert.equal(f.task().disc3,2);
+  assert.equal(f.rows.get('Orders/O').sellingPricePc,14.66);
+  assert.equal(f.rows.get('Orders/O').cbmCtn,null);
+  assert.equal(f.rows.get('Activity/'+id).details.cbmPerCtn,.05);
 });
 test('incomplete intake cannot be repaired through cost retry',async()=>{
   const f=fixture();f.rows.delete('Activity/R');await assert.rejects(f.retry(f.input),/receipt is not complete/);assert.equal(f.captures(),0);

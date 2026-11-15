@@ -29,6 +29,71 @@
     if(message.ok!==true||message.result?.ok===false){const error=Error(message.error||message.result?.error||'Could not load current orders.');error.retryable=message.result?.retryable;request.reject(error);}
     else request.resolve(message.result);
   });
+  let productCbm=null,productOrder=null,holdProductOrder=false;
+  function productOrderKey(){return JSON.stringify([company,selectedCustomer,activeDesk,activeDesk?deskBatch():null]);}
+  function productDeskLines(rows,invoiced){
+    if(invoiced||productOrder?.key!==productOrderKey())return rows;
+    const rank=new Map(productOrder.ids.map((id,index)=>[id,index]));
+    return [...rows].sort((a,b)=>(rank.get(a.taskId)??rank.size)-(rank.get(b.taskId)??rank.size));
+  }
+  async function sortProductDesk(button){
+    const key=productOrderKey();
+    if(productOrder?.key===key){productOrder=null;render();return;}
+    const order=activeOrder();
+    if(!order||deskLock()||button.disabled)return;
+    const ids=viewLines(order).map(line=>line.taskId);
+    button.disabled=true;
+    try{
+      const result=await send('SUPPORT_PRODUCT_REQUEST',{action:'SORT',taskIds:ids});
+      if(key!==productOrderKey()||deskLock())return;
+      if(!Array.isArray(result.taskIds)||result.taskIds.length!==ids.length||new Set(result.taskIds).size!==ids.length||
+         result.taskIds.some(id=>!ids.includes(id)))throw Error('Product order could not be confirmed.');
+      const current=activeOrder();
+      if(!current||viewLines(current).map(line=>line.taskId).join('|')!==ids.join('|'))throw Error('The Desk changed. Sort it again.');
+      if(!result.matched)throw Error('Pointbase product order was unavailable for these rows.');
+      productOrder={key,ids:result.taskIds};
+      render();
+    }catch(error){if(key===productOrderKey())$('notice').textContent=error.message;}
+    finally{button.disabled=false;}
+  }
+  function openProductCbm(taskId){
+    const row=activeOrder()?.lines.find(line=>line.taskId===taskId);
+    if(!row||row.cbm>0||currentDeskInvoice())return;
+    productCbm={taskId,key:productOrderKey(),preview:null};
+    info('Missing CBM','<p><strong>'+esc(row.name)+'</strong> · '+esc(row.barcode)+'</p>'+
+      '<p>Ask Super Admin to update CBM / CTN in Pointbase first.</p><p id="product-cbm-status" role="status"></p>'+
+      '<button type="button" data-product-cbm="CBM_PREVIEW">Fetch from Pointbase</button>');
+  }
+  async function runProductCbm(button){
+    const context=productCbm,action=button.dataset.productCbm,status=$('product-cbm-status');
+    if(!context||context.key!==productOrderKey()||button.disabled||!status)return;
+    button.disabled=true;
+    status.textContent=action==='CBM_PREVIEW'?'Checking Pointbase…':'Confirming CBM…';
+    const current=()=>productCbm===context&&context.key===productOrderKey()&&$('information').open;
+    try{
+      const result=await send('SUPPORT_PRODUCT_REQUEST',{action,taskId:context.taskId,...(action==='CBM_APPLY'?{preview:context.preview}:{})});
+      if(action==='CBM_APPLY'){
+        if(context.key===productOrderKey())await load([0,1]);
+        if(!current())return;
+        const saved=result.results.filter(row=>row.status!=='unconfirmed').length;
+        const remaining=result.results.length-saved;
+        status.textContent=saved+' task'+(saved===1?'':'s')+' updated.'+(remaining?' '+remaining+' unconfirmed. Refresh and reopen remaining red CBM alerts.':'');
+        button.hidden=true;
+        return;
+      }
+      if(!current())return;
+      context.preview={revision:result.revision,cbmPerCtn:result.cbmPerCtn};
+      status.textContent=number(result.cbmPerCtn,4)+' m³ / CTN · '+result.affected.length+' active task'+(result.affected.length===1?'':'s');
+      button.dataset.productCbm='CBM_APPLY';
+      button.textContent='Apply CBM';
+    }catch(error){
+      if(current()){
+        status.textContent=error.message;
+        button.dataset.productCbm='CBM_PREVIEW';
+        button.textContent='Fetch again';
+      }
+    }finally{button.disabled=false;}
+  }
   function info(title,html){$('print-saved-invoice').hidden=true;$('information-title').textContent=title;$('information-body').innerHTML=html;$('information').showModal();}
   function matching(rows,filterCustomer=true){const query=$('search').value.trim().toLowerCase(),customer=filterCustomer?$('customer-filter').value:'';return rows.filter(row=>(!customer||row.customerId===customer||row.id===customer)&&(!query||[row.customerName,row.name,row.orderId,row.number,row.currency,...(row.invoices||[]).map(invoice=>invoice.number)].filter(Boolean).join(' ').toLowerCase().includes(query)));}
   function table(headers,rows,cls=''){return '<table class="work-table '+cls+'"><thead><tr>'+headers.map(([label,num])=>'<th'+(num?' class="num"':'')+'>'+label+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+(rows.length?'':'<tr><td class="empty" colspan="'+headers.length+'">No matching records</td></tr>')+'</tbody></table>';}
@@ -259,7 +324,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
   function activeOrder(){
     const orders=data.orders.filter(row=>row.customerId===selectedCustomer),customer=data.customers.find(row=>row.id===selectedCustomer);if(!customer)return null;
     const hold=deskLock(),invoice=currentDeskInvoice(),all=orders.flatMap(row=>row.lines),open=all.filter(line=>line.invoicedQty<(line.orderQty??0));
-    const frozen=invoice?invoice.lines.map(part=>{const source=all.find(row=>row.taskId===part.taskId)||{},ea=source.pricePc>0&&source.priceCtn>0?source.priceCtn/source.pricePc:null;return {...source,...part,orderQty:part.quantity,allocQty:part.quantity,loadedQty:part.quantity,invoiceReadyQty:0,invoicedQty:part.quantity,priceCtn:part.sellingPriceCtn,pricePc:ea?part.sellingPriceCtn/ea:null,currency:invoice.currency};}):null;
+    const frozen=invoice?invoice.lines.map(part=>{const source=all.find(row=>row.taskId===part.taskId)||{},ea=source.pricePc>0&&source.priceCtn>0?source.priceCtn/source.pricePc:null;return {...source,...part,cbm:Number.isFinite(part.cbm)&&part.cbm>0?part.cbm:null,orderQty:part.quantity,allocQty:part.quantity,loadedQty:part.quantity,invoiceReadyQty:0,invoicedQty:part.quantity,priceCtn:part.sellingPriceCtn,pricePc:ea?part.sellingPriceCtn/ea:null,currency:invoice.currency};}):null;
     const lines=frozen||open.flatMap(line=>{if(!activeDesk)return [{...line,orderQty:Math.max(0,line.orderQty-line.invoicedQty),allocQty:Math.max(0,line.allocQty-line.invoicedQty),loadedQty:Math.max(0,line.loadedQty-line.invoicedQty),invoicedQty:0}];if(line.deskPortions?.length){const part=line.deskPortions.find(row=>row.desk===activeDesk);return part&&part.quantity>(part.invoiced||0)?[{...line,portionDesk:part.desk,orderQty:part.quantity-(part.invoiced||0),allocQty:Math.max(0,(part.planned??part.allocated)-(part.invoiced||0)),loadedQty:Math.max(0,part.loaded-(part.invoiced||0)),invoicedQty:0,invoiceReadyQty:part.invoiceReadyQty}]:[];}return taskDesk(line.taskId)===activeDesk?[line]:[];}),currencies=[...new Set(lines.map(line=>line.currency).filter(Boolean))];
     return {...(orders[0]||{}),id:'TASKS:'+selectedCustomer+':DESK:'+activeDesk,customerId:selectedCustomer,customerName:customer.name,country:customer.country||orders[0]?.country||'',port:customer.port||orders[0]?.port||'',orders,lines,currency:currencies.length===1?currencies[0]:currencies.length?currencies.join(', '):customer.currency||orders[0]?.currency||''};
   }
@@ -542,9 +607,9 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
       cbm:quantitiesKnown&&lines.every(line=>line[key]===0||valid(line.cbm)&&line.cbm>0)?lines.reduce((sum,line)=>sum+(line[key]===0?0:line[key]*line.cbm),0):null,
       amount:quantitiesKnown&&currencyKnown&&lines.every(line=>line[key]===0||valid(line.priceCtn))?lines.reduce((sum,line)=>sum+(line[key]===0?0:Math.round(line[key]*line.priceCtn*100)),0)/100:null};
   }
-  function quantityPair(planned,loaded,places,unit='',invoiced=false,missingCbm=false){
+  function quantityPair(planned,loaded,places,unit='',invoiced=false,missingCbm=false,cbmTaskId=''){
     const value=item=>item===null?'Incomplete':number(item,places);
-    const basis=(item,missing)=>missing&&item===null?'<button type="button" class="cbm-issue-pill" data-cbm aria-label="Missing CBM" title="CBM unavailable">'+number(0,3)+'</button>':value(item);
+    const basis=(item,missing)=>missing&&cbmTaskId?'<button type="button" class="cbm-issue-pill" data-cbm="'+esc(cbmTaskId)+'" aria-label="Missing CBM" title="CBM unavailable">'+number(0,3)+'</button>':value(item);
     const part=(label,item,missing=false)=>'<span class="quantity-basis"><small>'+label+'</small><b>'+basis(item,missing)+(unit?' <small>'+unit+'</small>':'')+'</b></span>';
     return '<span class="quantity-comparison">'+(invoiced?'':part('Planned',planned,missingCbm))+part(invoiced?'Invoiced':'Loaded',loaded,missingCbm&&invoiced)+'</span>';
   }
@@ -562,7 +627,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
       '<div class="shipment-columns '+(activeDesk?'':'shipment-overview')+'"><section class="shipment-details"><h3>Customer Details</h3>'+read('Country',countryLabel(order.country))+read('Port Name',order.port)+(activeDesk?'<div class="shipment-invoice"><span>Sales Invoice No.</span><button type="button" class="invoice-number-link '+(!invoice&&!hold?.number&&!references.invoiceNoDraft?'invoice-prefix':'invoice-assigned')+'" '+(invoice?'data-invoice="'+esc(invoice.id)+'"':'data-edit-invoice-number')+' '+(invoice||canEdit&&deskReceiptsComplete(order)?'':'disabled')+(!invoice&&activeDesk&&!deskReceiptsComplete(order)?' aria-describedby="desk-invoice-wait"':'')+'>'+esc(invoiceLabel)+'</button>'+(!invoice&&activeDesk&&!deskReceiptsComplete(order)?'<small id="desk-invoice-wait">Awaiting complete receipt 待收齐</small>':'')+'</div>':'')+'</section>'+
       (activeDesk?'<section class="shipment-order">'+section('Order Details','order')+read('PO',activeDesk?references.poNo:'Per Desk')+read('SO',activeDesk?references.soNo:'Per Desk')+read('Deposit Amount',activeDesk?depositAmount:'Per Desk')+read('Deposit Date',activeDesk?day(references.depositDate):'Per Desk')+read('ETD',activeDesk?day(shipment?.date):'Per Desk')+'</section>'+
       '<section class="shipment-shipping">'+section('Shipment Details','shipment')+read('Logistic',activeDesk?transportLabel(shipment?.transport):'Per Desk')+read('Booked By',activeDesk?shipment?.bookedBy:'Per Desk')+read('Last Gate In',activeDesk&&shipment?.lastGateIn?day(shipment.lastGateIn)+' · '+shipment.lastGateIn.slice(11,16):activeDesk?'—':'Per Desk')+read('Departure Date',activeDesk?day(shipment?.departureDate):'Per Desk')+read('ETA',activeDesk?day(shipment?.arrival):'Per Desk')+'</section>':'')+headerTotals(planned,loaded,currency,invoice)+'</div>'+(activeDesk?headerDocuments(order):'')+(hold?.status==='ISSUED'&&hold.archiveRequired===true?'<div class="shipment-save-retry"><button type="button" class="primary" data-archive-desk>Archive &amp; Free Desk</button></div>':'')+
-      '<div class="shipment-authorization-status" role="status"></div>'+(pendingDesk?'<div class="shipment-save-retry"><button type="button" class="link" data-retry-desk '+(deskBusy?'disabled':'')+'>Retry Desk Save</button></div>':'')+'</article><div class="shipment-task-count"><span>'+lines.length+(lines.length===1?' task':' tasks')+'</span>'+(hold?'<span>Desk locked · Documents and payments remain available</span>':'')+copyAction+'</div>';
+      '<div class="shipment-authorization-status" role="status"></div>'+(pendingDesk?'<div class="shipment-save-retry"><button type="button" class="link" data-retry-desk '+(deskBusy?'disabled':'')+'>Retry Desk Save</button></div>':'')+'</article><div class="shipment-task-count"><span>'+lines.length+(lines.length===1?' task':' tasks')+'</span>'+(hold?'<span>Desk locked · Documents and payments remain available</span>':'')+(!hold&&lines.length>1?'<button type="button" class="link" data-product-sort>'+(productOrder?.key===productOrderKey()?'Restore Desk Order':'Sort by Product Order')+'</button>':'')+copyAction+'</div>';
   }
 
   function splitDeskLabel(line){
@@ -576,8 +641,8 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
   }
 
   function orderContent(order){
-    const lines=viewLines(order),invoiced=Boolean(currentDeskInvoice());$('count').textContent=lines.length+' tasks';
-    return deskHeader(order,lines)+'<div class="desk-task-table">'+table([[''],['Desk'],['Descriptions'],['Price',true],['Order Qty',true],['Alloc Qty',true],['Loaded Qty',true],['Line CBM',true],['Line Amount',true],['Expiry'],['Message']],lines.map(line=>{const planned=quantityTotals([line],'allocQty'),loaded=quantityTotals([line],'loadedQty'),locked=(data.deskLocks||[]).some(hold=>hold.customerId===selectedCustomer&&hold.desk===(line.portionDesk??taskDesk(line.taskId))&&(hold.status!=='ISSUED'||hold.archiveRequired===true)),hasSplit=Boolean(data.desks?.some(state=>state.customerId===selectedCustomer&&state.assignments.some(row=>row.taskId===line.taskId&&row.parts))||line.deskPortions?.length>1);return '<tr data-task="'+esc(line.taskId)+'"><td class="desk-drag-cell"><button type="button" class="row-drag" data-drag-task="'+esc(line.taskId)+'" draggable="'+(!invoiced&&(!activeDesk||!deskBusy&&!deskPending()&&!deskLock()))+'" '+(invoiced||activeDesk&&(deskBusy||deskPending()||deskLock())?'disabled':'')+' aria-label="Move row" title="Drag, or press Alt + Up or Down">⠿</button></td><td class="desk-cell">'+(hasSplit?'<button type="button" class="desk-portions" title="Manage split shipment 分批出货" data-desk-split="'+esc(line.taskId)+'" '+(!data.deskAvailable||deskBusy||deskPending()||invoiceBusy?'disabled':'')+'>'+splitDeskLabel(line)+'</button>':'<select class="'+(taskDesk(line.taskId)===0?'unassigned':'')+'" data-desk-task="'+esc(line.taskId)+'" aria-label="Desk for '+esc(line.name||line.taskId)+'" '+(!data.deskAvailable||data.deskMetadataVersion<2||deskBusy||deskPending()||invoiceBusy||locked||invoiceAttempts.has(company+'|'+order.id)?'disabled':'')+'><option value="0" '+(taskDesk(line.taskId)===0?'selected':'')+'>—</option>'+[1,2,3].map(desk=>'<option value="'+desk+'" '+(taskDesk(line.taskId)===desk?'selected':'')+' '+(deskLock(desk)&&taskDesk(line.taskId)!==desk?'disabled':'')+'>'+desk+'</option>').join('')+'<option value="SPLIT">Split… 分批</option></select>')+'</td><td class="description"><small>'+esc(line.barcode)+'</small><strong>'+esc(line.name)+'</strong><small>'+esc(line.packing)+'</small></td><td class="num price-cell"><span>'+number(line.pricePc,2)+'</span><span>'+number(line.priceCtn,2)+'</span></td><td class="num">'+number(line.orderQty)+'</td><td class="num">'+number(line.allocQty)+'</td><td class="num">'+number(line.loadedQty)+'</td><td class="num">'+quantityPair(planned.cbm,loaded.cbm,4,'',invoiced,!(line.cbm>0))+'</td><td class="num">'+quantityPair(planned.amount,loaded.amount,2,'',invoiced)+'</td><td>'+esc((line.expiryDates||[]).map(expiryDay).join(' · ')||'—')+'</td><td>'+(window.departmentMessages?.sourceCell([line.taskId])||'')+'</td></tr>'; }),'detail order-tasks')+'</div>';
+    const invoiced=Boolean(currentDeskInvoice()),sorted=productOrder?.key===productOrderKey(),lines=productDeskLines(viewLines(order),invoiced);holdProductOrder=sorted&&!invoiced;$('count').textContent=lines.length+' tasks';
+    return deskHeader(order,lines)+'<div class="desk-task-table">'+table([[''],['Desk'],['Descriptions'],['Price',true],['Order Qty',true],['Alloc Qty',true],['Loaded Qty',true],['Line CBM',true],['Line Amount',true],['Expiry'],['Message']],lines.map(line=>{const planned=quantityTotals([line],'allocQty'),loaded=quantityTotals([line],'loadedQty'),locked=(data.deskLocks||[]).some(hold=>hold.customerId===selectedCustomer&&hold.desk===(line.portionDesk??taskDesk(line.taskId))&&(hold.status!=='ISSUED'||hold.archiveRequired===true)),hasSplit=Boolean(data.desks?.some(state=>state.customerId===selectedCustomer&&state.assignments.some(row=>row.taskId===line.taskId&&row.parts))||line.deskPortions?.length>1);return '<tr data-task="'+esc(line.taskId)+'"><td class="desk-drag-cell"><button type="button" class="row-drag" data-drag-task="'+esc(line.taskId)+'" draggable="'+(!holdProductOrder&&!invoiced&&(!activeDesk||!deskBusy&&!deskPending()&&!deskLock()))+'" '+(holdProductOrder||invoiced||activeDesk&&(deskBusy||deskPending()||deskLock())?'disabled':'')+' aria-label="Move row" title="Drag, or press Alt + Up or Down">⠿</button></td><td class="desk-cell">'+(hasSplit?'<button type="button" class="desk-portions" title="Manage split shipment 分批出货" data-desk-split="'+esc(line.taskId)+'" '+(!data.deskAvailable||deskBusy||deskPending()||invoiceBusy?'disabled':'')+'>'+splitDeskLabel(line)+'</button>':'<select class="'+(taskDesk(line.taskId)===0?'unassigned':'')+'" data-desk-task="'+esc(line.taskId)+'" aria-label="Desk for '+esc(line.name||line.taskId)+'" '+(!data.deskAvailable||data.deskMetadataVersion<2||deskBusy||deskPending()||invoiceBusy||locked||invoiceAttempts.has(company+'|'+order.id)?'disabled':'')+'><option value="0" '+(taskDesk(line.taskId)===0?'selected':'')+'>—</option>'+[1,2,3].map(desk=>'<option value="'+desk+'" '+(taskDesk(line.taskId)===desk?'selected':'')+' '+(deskLock(desk)&&taskDesk(line.taskId)!==desk?'disabled':'')+'>'+desk+'</option>').join('')+'<option value="SPLIT">Split… 分批</option></select>')+'</td><td class="description"><small>'+esc(line.barcode)+'</small><strong>'+esc(line.name)+'</strong><small>'+esc(line.packing)+'</small></td><td class="num price-cell"><span>'+number(line.pricePc,2)+'</span><span>'+number(line.priceCtn,2)+'</span></td><td class="num">'+number(line.orderQty)+'</td><td class="num">'+number(line.allocQty)+'</td><td class="num">'+number(line.loadedQty)+'</td><td class="num">'+quantityPair(planned.cbm,loaded.cbm,4,'',invoiced,line.orderQty>0&&!(line.cbm>0),invoiced||locked?'':line.taskId)+'</td><td class="num">'+quantityPair(planned.amount,loaded.amount,2,'',invoiced)+'</td><td>'+esc((line.expiryDates||[]).map(expiryDay).join(' · ')||'—')+'</td><td>'+(window.departmentMessages?.sourceCell([line.taskId])||'')+'</td></tr>'; }),'detail order-tasks')+'</div>';
   }
 
   function render(){
@@ -694,7 +759,9 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     if(button.hasAttribute('data-retry-desk')){const attempt=deskPending();if(attempt){if(attempt.input.action==='DESK_ARCHIVE')openDeskArchive();else if(attempt.input.action==='DESK_REFERENCES'&&referenceEdit?.customerId===attempt.input.customerId)saveReferenceDraft(true);else saveDeskChange(attempt.input);}}
     if(button.hasAttribute('data-create-invoice')){const invoice=currentDeskInvoice();if(invoice)showInvoice(invoice.id);else openInvoiceReview(activeOrder()?.id);}
     if(button.dataset.tab){tab=button.dataset.tab;render();}
-    if(button.hasAttribute('data-cbm'))info('CBM Required','<p>Please contact Warehouse to update the product data as soon as possible.</p><p>请尽快联系货仓以更新产品数据。</p>');
+    if(button.dataset.cbm)openProductCbm(button.dataset.cbm);
+    if(button.dataset.productCbm)void runProductCbm(button);
+    if(button.hasAttribute('data-product-sort'))void sortProductDesk(button);
     if(button.hasAttribute('data-booking-picker')){const order=activeOrder();info('Shipment Details',order.orders.map(item=>'<p><button class="link" data-shipment="'+esc(item.id)+'">'+day(item.orderDate)+' · '+esc(item.currency)+' · '+esc(transportLabel(item.booking?.transport))+' · '+day(item.booking?.date)+'</button></p>').join(''));}
     if(button.dataset.shipment){$('information').close();openBooking(button.dataset.shipment);}
     if(button.dataset.newCharge)info('Add document','<div class="charge-document-choice"><button type="button" class="primary" data-charge-choice="CHARGE" data-customer="'+esc(button.dataset.newCharge)+'">Invoice</button><button type="button" data-charge-choice="STANDALONE_DN" data-customer="'+esc(button.dataset.newCharge)+'">Debit Note</button></div>');

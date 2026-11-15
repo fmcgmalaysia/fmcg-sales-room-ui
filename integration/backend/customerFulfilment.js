@@ -6,6 +6,7 @@ import { stockPosition, readStockExceptions } from 'backend/inventoryExceptions.
 import { calculateGrossProfitMargin } from 'backend/grossProfitMargin.js';
 import { physicalOutflowVersion, selectLoadedForInvoice, validateInvoiceOutflows } from 'backend/physicalOutflow.js';
 import { readCustomerAccountDocuments } from 'backend/customerAccountLedger.js';
+import { validCbm, warehouseCbm } from 'backend/warehouseCbm.js';
 const text=value=>String(value??'').trim();
 const qty=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
@@ -44,7 +45,11 @@ export function createCustomerFulfilmentOperations({store,names,readContext,read
      const rates=await readRates([current.currency]),rate=rates.filter(row=>row.currency===current.currency);if(rate.length!==1||!(rate[0].rateToMyr>0))throw Error('Current Admin exchange rate is unavailable.');
      shipment.lines=current.lines.map(line=>{const task=context.tasks.find(row=>row.id===line.taskId);if(!task||!Number.isFinite(task.sellingPricePc)||task.sellingPricePc<=0||!qty(task.ea))throw Error('Sales price or packing is incomplete.');
       const costSources=line.sources.map(source=>{const stock=context.tasks.find(row=>row.id===source.sourceTaskId);if(!stock||!Number.isFinite(stock.netCostCtn)||stock.netCostCtn<0)throw Error('Allocated stock cost is incomplete.');return {...source,netCostCtn:stock.netCostCtn};}),netCostCtn=costSources.reduce((sum,source)=>sum+source.quantity*source.netCostCtn,0)/line.quantity;
-      return {...line,costSources,sellingPricePc:task.sellingPricePc,eaPerCtn:task.ea,sellingPriceCtn:task.sellingPricePc*task.ea,rateToMyr:rate[0].rateToMyr,gp:calculateGrossProfitMargin({sellingPricePc:task.sellingPricePc,eaPerCtn:task.ea,netCostCtn,rateToMyr:rate[0].rateToMyr})};});
+      let cbm=null;
+      if(staff.packingDepartment==='SUPPORT'){
+       try{cbm=warehouseCbm(company,task,context.activity);}catch(error){if(!/^Warehouse CBM (history|identity) requires review\.$/.test(error?.message||''))throw error;}
+      }
+      return {...line,...(validCbm(cbm)?{cbm}:{}),costSources,sellingPricePc:task.sellingPricePc,eaPerCtn:task.ea,sellingPriceCtn:task.sellingPricePc*task.ea,rateToMyr:rate[0].rateToMyr,gp:calculateGrossProfitMargin({sellingPricePc:task.sellingPricePc,eaPerCtn:task.ea,netCostCtn,rateToMyr:rate[0].rateToMyr})};});
      shipment.status='INVOICED';shipment.invoice={number:text(input.number),date:input.date,amountCents:input.amountCents,currency:current.currency,rateToMyr:rate[0].rateToMyr,fxUpdatedAt:rate[0].updatedAt||null,at,by:staff.staffName,byStaffId:staff.staffId,reason};
     }
     if(input.action==='DISPATCH'){if(current.status!=='INVOICED')throw Error('Sales Invoice is required before dispatch.');if(!text(input.reference)||text(input.reference).length>120)throw Error('Dispatch reference is required (maximum 120 characters).');shipment.status='DISPATCHED';shipment.dispatch={at,by:staff.staffName,byStaffId:staff.staffId,reference:text(input.reference),reason};}

@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { PURCHASE_COLLECTIONS } from 'backend/purchaseProjection.js';
 import { acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
+import { warehouseCbm, warehouseCbmRecordId } from 'backend/warehouseCbm.js';
 const clone = value => JSON.parse(JSON.stringify(value));
 const id = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32);
 const priceFields = ['lpPc', 'lpCtn', 'disc1', 'disc2', 'disc3'];
@@ -58,8 +59,13 @@ export function createPurchaseCostRetry({ store, captureCosts, now = () => new D
       }
       await store.update(names.tasks, updates);
       if (order.cbmCtn == null && typeof cost.cbmPerCtn === 'number' && cost.cbmPerCtn > 0) {
-        const freshOrder = await store.read(names.orders, order._id);
-        if (freshOrder?.cbmCtn == null) { await store.update(names.orders, { ...freshOrder, cbmCtn: cost.cbmPerCtn }); changed.push('cbmCtn'); }
+        const cbmRecord = await store.read(names.activity, warehouseCbmRecordId(company, taskId));
+        const confirmedCbm = cbmRecord && warehouseCbm(company, { id: taskId, orderId: task.description, sourceLineId: task.imageAltText, barcode: order.description, cbmPerCtn: null }, [cbmRecord]);
+        if (confirmedCbm) retained.push('cbmCtn');
+        else {
+          const freshOrder = await store.read(names.orders, order._id);
+          if (freshOrder && !freshOrder.salesInvoiceNumber && freshOrder.cbmCtn == null) { await store.update(names.orders, { ...freshOrder, cbmCtn: cost.cbmPerCtn }); changed.push('cbmCtn'); }
+        }
       }
       const outcome = { ok: true, requestId, company, taskId, costStatus: cost.costStatus, costIssues: [...cost.costIssues],
         capturedAt: cost.capturedAt, changedFields: changed, retainedFields: retained };
