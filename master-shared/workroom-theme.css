@@ -95,7 +95,7 @@ body dialog#entry > .dialog-header > div {
   gap: 2px 12px;
 }
 
-/* Compact headers for delivery actions and Finance receiving review. */
+/* 20261115-master-dialog-headers-v3. Compact delivery and Finance dialogs. */
 body dialog:is(.dd-execution-modal, .acc-receipt-dialog) > header {
   box-sizing: border-box;
   height: auto;
