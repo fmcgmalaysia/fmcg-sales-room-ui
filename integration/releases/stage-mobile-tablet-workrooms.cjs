@@ -19,7 +19,7 @@ for (const file of files) {
   assert.equal(hash(fs.readFileSync(path.join(site, file))), baseline[file], file);
 }
 
-assert.equal(Object.keys(replacements).length, 11);
+assert.deepEqual(Object.keys(replacements), ['index.html', 'master-shared/mobile-menu.css']);
 const updated = Object.entries(replacements).map(([file, expected]) => {
   assert.ok(Object.hasOwn(baseline, file), file);
   const contents = fs.readFileSync(path.join(__dirname, '../..', file), 'utf8').replaceAll('\r\n', '\n');

@@ -79,7 +79,9 @@
  .touch-sales .room-title{font-size:11px;margin:0;padding-inline:0}
  .touch-sales .top .spacer{min-width:0}
  .touch-sales .sales-account{min-width:0;gap:6px}
- .touch-sales .sales-account .staff{max-width:12ch;overflow-wrap:anywhere}
+ .touch-sales .sales-account .staff{min-width:0;width:auto;max-width:12ch;padding-inline-start:0;overflow-wrap:anywhere}
+ .touch-sales .sales-account .staff::before{display:none}
+ .touch-sales .sales-account #staffTop{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .touch-sales .main,.touch-buyer .content{padding-inline:10px!important}
  .touch-sales :is(.workspace-command-modal,.customer-profile-modal,.fx-modal),
  .touch-buyer :is(.order-review,.reduction-dialog){max-width:calc(100% - 20px);max-height:calc(100dvh - 24px);overflow:auto}
