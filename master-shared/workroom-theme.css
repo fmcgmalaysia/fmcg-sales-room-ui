@@ -95,6 +95,65 @@ body dialog#entry > .dialog-header > div {
   gap: 2px 12px;
 }
 
+/* Compact headers for delivery actions and Finance receiving review. */
+body dialog:is(.dd-execution-modal, .acc-receipt-dialog) > header {
+  box-sizing: border-box;
+  height: auto;
+  min-block-size: 48px;
+  padding: 7px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #dceaf7;
+  border-bottom: 1px solid #b4cce1;
+  color: #234768;
+}
+body dialog.acc-receipt-dialog > header {
+  min-block-size: 64px;
+}
+body dialog:is(.dd-execution-modal, .acc-receipt-dialog) > header :is(strong, h2) {
+  margin: 0;
+  font: 700 18px/24px var(--master-font);
+  overflow-wrap: anywhere;
+}
+body dialog:is(.dd-execution-modal, .acc-receipt-dialog) > header > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  inline-size: 32px;
+  block-size: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #234768;
+  font-size: 22px;
+  line-height: 1;
+}
+body dialog.acc-receipt-dialog > header small {
+  font: 400 12px/16px var(--master-font);
+  color: var(--master-muted);
+}
+
+/* Supplier identity stays primary while related labels share two lines. */
+body:has(.account-purchases) dialog#documents > .dialog-header > div:has(> strong + h2 + p + small) {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+body:has(.account-purchases) dialog#documents > .dialog-header > div:has(> strong + h2 + p + small) > strong {
+  flex: 0 0 100%;
+  margin: 0;
+}
+body:has(.account-purchases) dialog#documents > .dialog-header > div:has(> strong + h2 + p + small) > small {
+  max-inline-size: 100%;
+  font: 400 11px/16px var(--master-font);
+  color: var(--master-muted);
+}
+
 body .task-signal{font-family:var(--master-font);font-size:11px;background:#fff;color:var(--master-text);border-color:var(--master-line)}
 body .task-signal b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e7eef5;color:#173557;font-size:12px;line-height:1}
 body .task-signal.has-work b{background:var(--master-orange);color:#fff}
