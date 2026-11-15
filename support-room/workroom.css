@@ -98,7 +98,7 @@ body.support-orders-view #content{border:0;border-radius:0;background:transparen
 .desk-invoice-action .primary:disabled{background:#e8eef3;border-color:#d5e0e9;color:#8292a3;cursor:not-allowed}.desk-retry{display:block;margin-top:8px;margin-left:auto}
 .desk-task-table{overflow-x:auto;border:1px solid #b9d0e4;border-radius:6px;background:#fff;margin-top:12px}
 body.support-workroom .desk-task-table table.order-tasks{min-width:1080px}.desk-task-table .order-tasks :is(th,td):first-child{width:50px;text-align:center;min-width:50px;padding-left:6px;padding-right:6px}
-.desk-cell select{width:38px!important;min-width:38px;max-width:38px;font:600 11px/14px var(--master-font);color:#2563eb;min-height:28px;padding:4px 1px 4px 4px;background:#fff;border:1px solid #b7cde3;border-radius:4px}
+.desk-cell select{width:86px!important;max-width:100%;font:600 11px/14px var(--master-font);color:#2563eb;min-height:28px;padding:4px 1px 4px 4px;background:#fff;border:1px solid #b7cde3;border-radius:4px}
 .desk-cell select:disabled{color:#8292a3;background:#eef3f7;cursor:not-allowed}.desk-description{display:flex;align-items:center;gap:5px}.desk-description .row-drag{font-size:17px;flex:0 0 auto;padding-right:0}
 .desk-task-table .order-tasks td:nth-child(2){min-width:220px}.desk-task-table .order-tasks td:nth-child(3){min-width:75px}.desk-task-table .order-tasks td:nth-child(4){min-width:75px}.desk-task-table .order-tasks td:nth-child(9){white-space:nowrap}.desk-task-table .order-tasks td:nth-child(10){min-width:190px;white-space:normal}
 #booking-arrival{display:block;width:100%;margin-top:7px}#booking .date-label[hidden]{display:none}
@@ -150,7 +150,7 @@ body.support-workroom>nav .orders-tab.active{color:#3766a2;border-bottom:3px sol
 .shipment-task-count+.desk-task-table{margin-top:0}
 body.support-workroom .desk-task-table .order-tasks{min-width:1100px}
 .desk-task-table .order-tasks :is(th,td):first-child{width:24px;min-width:24px;padding:0 2px 0 8px;text-align:left}
-.desk-task-table .order-tasks :is(th,td):nth-child(2){min-width:46px;width:46px;padding-left:3px;padding-right:5px}
+.desk-task-table .order-tasks :is(th,td):nth-child(2){min-width:100px;width:100px;padding-left:3px;padding-right:5px}
 .desk-task-table .order-tasks :is(th,td):nth-child(3){min-width:220px;width:auto}
 .desk-task-table .order-tasks td:nth-child(4){min-width:75px}.desk-task-table .order-tasks td:nth-child(10){min-width:82px;white-space:nowrap}.desk-task-table .order-tasks td:nth-child(11){min-width:190px;white-space:normal}
 .desk-drag-cell .row-drag{font-size:17px;padding:0;min-width:16px}.desk-drag-cell .row-drag:disabled{color:#b8c4d0;cursor:default}

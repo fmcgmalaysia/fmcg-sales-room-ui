@@ -2,7 +2,10 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { baseline, replacements } = require('./support-pointbase-cbm.json');
+const mode = process.argv[3];
+assert.ok(mode === undefined || mode === 'desk-labels');
+const deskLabels = mode === 'desk-labels';
+const { baseline, replacements } = deskLabels ? require('./support-desk-labels.json') : require('./support-pointbase-cbm.json');
 
 const site = path.resolve(process.argv[2]);
 const hash = contents => createHash('sha256').update(contents).digest('hex');
@@ -19,7 +22,7 @@ for (const file of files) {
   assert.equal(hash(fs.readFileSync(path.join(site, file))), baseline[file], file);
 }
 
-assert.deepEqual(Object.keys(replacements), ["support-room/workroom-model.js","support-room/workroom.html","support-room/workroom.js"]);
+assert.deepEqual(Object.keys(replacements), [deskLabels ? 'support-room/workroom.css' : 'support-room/workroom-model.js', 'support-room/workroom.html', 'support-room/workroom.js']);
 const updated = Object.entries(replacements).map(([file, expected]) => {
   assert.ok(Object.hasOwn(baseline, file), file);
   const contents = fs.readFileSync(path.join(__dirname, '../..', file), 'utf8').replaceAll('\r\n', '\n');
@@ -27,4 +30,4 @@ const updated = Object.entries(replacements).map(([file, expected]) => {
   return { file, contents };
 });
 for (const { file, contents } of updated) fs.writeFileSync(path.join(site, file), contents);
-console.log('Verified all ' + files.length + ' files and changed only ' + updated.length + ' Support Pointbase CBM assets.');
+console.log('Verified all ' + files.length + ' files and changed only ' + updated.length + ' Support ' + (deskLabels ? 'Desk label' : 'Pointbase CBM') + ' assets.');
