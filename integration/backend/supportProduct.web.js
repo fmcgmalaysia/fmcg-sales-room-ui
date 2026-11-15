@@ -5,9 +5,10 @@ import { capturePointbaseCosts } from 'backend/pointbaseCostClient.js';
 import { applyMissingCbm, previewMissingCbm, sortByProductOrder } from 'backend/supportCbm.js';
 
 function supportProductRequest({ readAccess, readContext, fetchPointbase, store }) {
- return async (company, requestId, input) => {
+ return async (company, requestId, input, reportStage) => {
   const sorting=input?.action==='SORT';
   if(!sorting&&!['CBM_PREVIEW','CBM_APPLY'].includes(input?.action))throw Error('Select a Support product action.');
+  reportStage?.('access');
   const level=sorting?'VIEW':'EDIT',access=await readAccess(company);
   if(!access.enter('SUPPORT',level))throw Error('Support product access is unavailable.');
   const staff={...access.staff,packingDepartment:'SUPPORT'};
@@ -34,21 +35,35 @@ function supportProductRequest({ readAccess, readContext, fetchPointbase, store 
    return {taskIds:sortByProductOrder(rows,metadata).map(row=>row.id),matched:metadata.size};
   }
   if(!/^[a-f0-9]{32}$/i.test(input.taskId||''))throw Error('Select an active Support task.');
-  return input.action==='CBM_PREVIEW'
-   ? previewMissingCbm(await scopedContext(),input.taskId,fetchPointbase)
-   : applyMissingCbm({company,taskId:input.taskId,preview:input.preview,staff,readContext:scopedContext,fetchPointbase,store});
+  if(input.action==='CBM_APPLY')return applyMissingCbm({company,taskId:input.taskId,preview:input.preview,staff,readContext:scopedContext,fetchPointbase,store});
+  reportStage('tasks');
+  const context=await scopedContext();
+  reportStage('eligibility');
+  return previewMissingCbm(context,input.taskId,async barcodes=>{
+   reportStage('pointbase');
+   const source=await fetchPointbase(barcodes);
+   reportStage('result');
+   return source;
+  });
  };
 }
 const runSupportProductRequest=supportProductRequest({
  readAccess:readManagedCompanyAccess,readContext:readFulfilmentContext,fetchPointbase:capturePointbaseCosts,store:fulfilmentStore
 });
 export const handleSupportProduct=webMethod(Permissions.SiteMember,async (company,requestId,input)=>{
+ if(input?.action!=='CBM_PREVIEW')return runSupportProductRequest(company,requestId,input);
+ let stage='request';
  try{
-  return await runSupportProductRequest(company,requestId,input);
+  return await runSupportProductRequest(company,requestId,input,value=>{stage=value;});
  }catch(error){
-  if(input?.action==='CBM_PREVIEW'&&error?.message==='CBM is still missing in Pointbase.'){
-   return {ok:false,error:'CBM is still missing in Pointbase. Ask Super Admin to update it, then fetch again.'};
-  }
-  throw error;
+  const expected={
+   'CBM is still missing in Pointbase.':'CBM is still missing in Pointbase. Ask Super Admin to update it, then fetch again.',
+   'Pointbase could not confirm a unique barcode.':'Pointbase could not confirm a unique barcode.',
+   'This task no longer needs CBM.':'This task no longer needs CBM. Refresh the Desk and check again.'
+  };
+  const phase={request:'The selected task could not be validated.',access:'Support edit access could not be confirmed.',
+   tasks:'Support could not read the current tasks.',eligibility:'Support could not check the task and invoice history.',
+   pointbase:'Support could not read Pointbase.',result:'Support could not validate the Pointbase result.'};
+  return {ok:false,error:Object.hasOwn(expected,error?.message)?expected[error.message]:phase[stage]};
  }
 });
