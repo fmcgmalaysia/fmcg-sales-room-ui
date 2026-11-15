@@ -35,14 +35,14 @@
  function current(data,customerId,draft){return reconcile(data,customerId,draft||(scope?preferences.get(customerId):null)||data.purchaseDisplayOrder?.[customerId]?.rows||[]);}
  function taskSequence(data,customerId,rows){const ids=[];for(const rowKey of rows){const id=JSON.parse(rowKey)[0];if(!ids.includes(id))ids.push(id);}const tasks=data.tasks.filter(task=>!task.archived&&task.customerId===customerId);return ids.flatMap(id=>[id,...tasks.filter(task=>task.customerDemandTaskId===id).map(task=>task.id)]);}
  function forTaskOrder(data,customerId,taskIds){const rows=current(data,customerId);return taskIds.filter(id=>data.tasks.some(task=>task.id===id&&!task.procurementSource)).flatMap(id=>rows.filter(rowKey=>JSON.parse(rowKey)[0]===id));}
- function decorate(markup,{tasks,shipmentPlans=[],purchaseDisplayOrder={},draft=null,selected=new Set(),canMove=true}){
+ function decorate(markup,{tasks,shipmentPlans=[],purchaseDisplayOrder={},draft=null,selected=new Set(),canMove=true,inquiry=false}){
   const data={tasks,shipmentPlans,purchaseDisplayOrder},groups=[];
   for(const html of markup.match(/<tr\b[\s\S]*?<\/tr>/g)||[]){const parent=attr(html,'data-split-parent')||attr(html,'data-id');if(parent){const task=tasks.find(task=>task.id===parent),batch=attr(html,'data-split-batch');groups.push({html,task,key:key(parent,batch),batch,index:groups.length});}else if(groups.length)groups[groups.length-1].html+=html;}
   const ranks=new Map();for(const customerId of new Set(groups.map(group=>group.task.customerId))){const ordered=current(data,customerId,draft?.customerId===customerId?draft.rows:null);ordered.forEach((id,index)=>ranks.set(id,index));}
   const customers=[...new Set(groups.map(group=>group.task.customerId))];
   groups.sort((a,b)=>a.task.customerId===b.task.customerId?(ranks.get(a.key)??a.index)-(ranks.get(b.key)??b.index):customers.indexOf(a.task.customerId)-customers.indexOf(b.task.customerId));
   return groups.map((group,index)=>{let html=group.html;html=html.replace(/^<tr\b/,'<tr data-display-key="'+esc(group.key)+'"');html=html.replace(/<td class="row-number">[^<]*<\/td>/,'<td class="row-number">'+String(index+1).padStart(3,'0')+'</td>');
-   const cell=html.match(/<td\b[\s\S]*?<\/td>/)?.[0]||'',checkbox=group.batch?'<input class="check rowcheck" type="checkbox" data-select-batch="'+esc(group.key)+'" aria-label="Select shipment row for moving 选择发货行以移动 '+esc(group.task.name)+'" '+(selected.has(group.key)?'checked':'')+'>':cell.match(/<input\b[^>]*>/)?.[0]||'';
+   const cell=html.match(/<td\b[\s\S]*?<\/td>/)?.[0]||'',checkbox=group.batch&&!inquiry?'<input class="check rowcheck" type="checkbox" data-select-batch="'+esc(group.key)+'" aria-label="Select shipment row for moving 选择发货行以移动 '+esc(group.task.name)+'" '+(selected.has(group.key)?'checked':'')+'>':cell.match(/<input\b[^>]*>/)?.[0]||'';
    const handle=canMove?'<button class="handle" style="touch-action:none" data-display-drag="'+esc(group.key)+'" aria-label="Move shipment row 移动发货行 '+esc(group.task.name)+'">⠿</button>':'';
    return html.replace(cell,'<td><div class="row-controls">'+handle+checkbox+'</div></td>');
   }).join('');
