@@ -1,4 +1,4 @@
-import { warehouseCbm } from 'backend/warehouseCbm.js';
+import { indexWarehouseCbm, warehouseCbm } from 'backend/warehouseCbm.js';
 import { changePackingList, packingAvailability } from 'backend/packingListModel.js';
 import { readSupportDesks, supportDeskForTask, currentSupportDeskLocks, currentSupportDeskState, supportDeskBatchId } from 'backend/supportDesk.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
@@ -29,7 +29,8 @@ export function planDeskDelivery({context,input,actor,id,revision,at}){
  draft.lines=draft.lines.map(line=>({...line,requestedQuantity:line.quantity,quantity:selected.find(row=>row.task.id===line.taskId).allocated}));
  const next=changePackingList({list:draft,input:{action:'SEND',revision},context,actor,id,revision,at});
  next.desk={number:input.desk,taskScope:'ALL',revision:state.revision,batchId:supportDeskBatchId(state,input.desk),references:copy((state.references||[]).find(row=>row.desk===input.desk)||null),shipment:copy(state.shipments.find(row=>row.desk===input.desk)||null)};
- next.lines=next.lines.map(line=>{const task=selected.find(row=>row.task.id===line.taskId).task;return {...line,...(task.productImageUrl?{productImageUrl:task.productImageUrl}:{}),orderId:task.orderId,orderQty:task.requested??task.ord,authorizedTotal:task.supplyAllocation?.planned??task.inc,pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,cbm:warehouseCbm(physical.company,task,physical.activity)};});
+ const cbmEvidence=indexWarehouseCbm(physical.activity);
+ next.lines=next.lines.map(line=>{const task=selected.find(row=>row.task.id===line.taskId).task;return {...line,...(task.productImageUrl?{productImageUrl:task.productImageUrl}:{}),orderId:task.orderId,orderQty:task.requested??task.ord,authorizedTotal:task.supplyAllocation?.planned??task.inc,pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,cbm:warehouseCbm(physical.company,task,cbmEvidence)};});
  return next;
 }
 // The existing Desk instruction owns visibility. Allocation is derived from the
@@ -41,12 +42,13 @@ export function projectOpenDeskDelivery(context,list){
  if(currentSupportDeskLocks(physical).some(lock=>lock.status==='ISSUED'&&lock.customerId===list.customerId&&lock.desk===list.desk.number))return list;
  const flows=readPhysicalOutflows(physical.activity);
  const membership=deskMembershipHold(state,list),membershipIds=new Set(Object.keys(membership?.membershipChanges||{}));
+ const cbmEvidence=indexWarehouseCbm(physical.activity);
  const existing=new Set(list.lines.map(line=>line.taskId));
  const added=physical.tasks.filter(task=>hasDeskMembership(state,list,task.id,physical.activity)&&!existing.has(task.id)&&!task.archived&&!task.procurementSource&&!task.specialPurchase&&task.customerId===list.customerId&&task.transactionCurrency===list.currency).map(task=>({
   taskId:task.id,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',productImageUrl:task.productImageUrl||'',
   quantity:0,requestedQuantity:0,packed:0,loaded:0,reason:'',photos:[],orderId:task.orderId,orderQty:task.requested??task.ord,
   pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,
-  cbm:warehouseCbm(physical.company,task,physical.activity)
+  cbm:warehouseCbm(physical.company,task,cbmEvidence)
  }));
  const retiredLines=[...(list.retiredLines||[])],lines=list.lines.concat(added).flatMap(line=>{
   const task=physical.tasks.find(row=>row.id===line.taskId);

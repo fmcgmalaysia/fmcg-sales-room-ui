@@ -1,14 +1,24 @@
 import { operationId } from 'backend/purchaseOperationJournal.js';
 export const CBM_ACTION='WAREHOUSE_CBM_CAPTURED';
 export const validCbm=value=>typeof value==='number'&&Number.isFinite(value)&&value>0;
-const key=(company,taskId)=>operationId(company,taskId,CBM_ACTION);
+export const warehouseCbmRecordId=(company,taskId)=>operationId(company,taskId,CBM_ACTION);
+export function indexWarehouseCbm(activity){
+ const byTask=new Map();
+ for(const event of activity){
+  if(event.action!==CBM_ACTION)continue;
+  const rows=byTask.get(event.imageAltText);
+  if(rows)rows.push(event);
+  else byTask.set(event.imageAltText,[event]);
+ }
+ return byTask;
+}
 export function warehouseCbm(company,task,activity){
- if(validCbm(task.cbmPerCtn))return task.cbmPerCtn;
- const rows=activity.filter(e=>e.action===CBM_ACTION&&e.imageAltText===task.id);
+ const rows=Array.isArray(activity)?activity.filter(e=>e.action===CBM_ACTION&&e.imageAltText===task.id):activity.get(task.id)||[];
+ if(validCbm(task.cbmPerCtn)&&!rows.some(row=>row.details?.supportRefresh===true))return task.cbmPerCtn;
  if(!rows.length)return null;
  if(rows.length!==1)throw Error('Warehouse CBM history requires review.');
  const e=rows[0],d=e.details;
- if(e._id!==key(company,task.id)||e.result!=='SAVED'||e.description!==task.orderId||d?.company!==company||d.sourceLineId!==task.sourceLineId||d.barcode!==task.barcode||!validCbm(d.cbmPerCtn))throw Error('Warehouse CBM identity requires review.');
+ if(e._id!==warehouseCbmRecordId(company,task.id)||e.result!=='SAVED'||e.description!==task.orderId||d?.company!==company||d.sourceLineId!==task.sourceLineId||d.barcode!==task.barcode||!validCbm(d.cbmPerCtn))throw Error('Warehouse CBM identity requires review.');
  return d.cbmPerCtn;
 }
 export function createWarehouseCbmCapture({store,names,readData,captureCosts,now=()=>new Date()}){
@@ -22,7 +32,7 @@ export function createWarehouseCbmCapture({store,names,readData,captureCosts,now
   const first=item;item=await active();
   if(item.orderId!==first.orderId||item.sourceLineId!==first.sourceLineId||item.barcode!==first.barcode)throw Error('Warehouse CBM task changed. Refresh before retrying.');
   if(validCbm(item.cbmPerCtn))return {ok:true,requestId,taskId,cbmPerCtn:item.cbmPerCtn,retained:true};
-  const id=key(company,taskId),event={_id:id,title:id,description:item.orderId,imageAltText:taskId,action:CBM_ACTION,result:'SAVED',actorType:'STAFF',activityTime:now(),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Missing CBM captured from POINTBASE',details:{company,sourceLineId:item.sourceLineId,barcode:item.barcode,cbmPerCtn:value.cbmPerCtn,capturedAt:value.capturedAt,source:value.source}};
+  const id=warehouseCbmRecordId(company,taskId),event={_id:id,title:id,description:item.orderId,imageAltText:taskId,action:CBM_ACTION,result:'SAVED',actorType:'STAFF',activityTime:now(),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Missing CBM captured from POINTBASE',details:{company,sourceLineId:item.sourceLineId,barcode:item.barcode,cbmPerCtn:value.cbmPerCtn,capturedAt:value.capturedAt,source:value.source}};
   try{await store.insert(names[company].activity,event);}catch(error){const existing=await store.read(names[company].activity,id);if(!existing)throw error;}
   const confirmed=await active();
   if(!validCbm(confirmed.cbmPerCtn))throw Error('Warehouse CBM save is unconfirmed. Retry the same request.');
