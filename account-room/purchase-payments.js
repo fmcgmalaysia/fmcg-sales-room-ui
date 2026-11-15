@@ -22,6 +22,7 @@
   document.querySelector('.staff').textContent=data?data.staff.staffName:'Verifying staff…';
   document.querySelector('.preview').textContent=data?'Master CMS · '+stamp(data.readAt):'Master CMS';
   window.masterTaskSignals?.mount(document.querySelector('#taskSignals'),'ACCOUNT',{orders:data?.orders||[]},entry=>{if(save||window.accountSettlement.busy())return;const row=data?.orders.find(row=>row.id===entry.id);if(row)files(row);});
+  if(view==='dashboard'&&window.accountFinanceOverview){window.accountFinanceOverview.render({root:app,company,data,error,stamp});return;}
   app.innerHTML=window.accountPaymentLayout.render({view,company,data,rows:rows(),search,supplier,filter,historyMonth,dateFrom,dateTo,stamp,purchaseNote,error});
  }
  function renderIndexMaintenance(){app.innerHTML='<section><h1>Account Read Index</h1><p>'+esc(maintenanceCompany+' · '+maintenanceAction)+'</p><pre id="accountIndexResult"></pre></section>';document.querySelector('#accountIndexResult').textContent=indexResult?JSON.stringify(indexResult,null,2):'Running verified server comparison…';}
@@ -43,7 +44,7 @@
   if(message.type==='ACCOUNT_CHECK_RESULT'&&save&&message.company===company&&message.requestId===save.requestId){saving=false;if(message.ok&&message.result?.ok&&message.result.requestId===save.requestId){save=null;document.querySelector('#company').disabled=false;dialog.close();request();}else{dialog.querySelectorAll('button,textarea').forEach(el=>el.disabled=false);const messageError=message.error||message.result?.error||'Save not confirmed. Please retry.';document.querySelector('#accountSaveError').textContent=messageError;if(!/confirmed|processing|timeout|network|fetch/i.test(messageError)){save=null;document.querySelector('#company').disabled=false;}else{const button=dialog.querySelector('[data-account-confirm]');if(button)button.textContent='Retry';}}}
  });
  document.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;
-  if(button.id==='accountRefresh'){cursors=[];request();return;}if(button.id==='accountLogin'){window.parent.postMessage({type:'ACCOUNT_LOGIN_REQUEST'},'*');return;}if(button.id==='accountDialogDone'){if(!save)dialog.close();return;}
+  if(button.id==='accountRefresh'){cursors=[];request();if(view==='dashboard'&&data?.company===company)window.accountFinanceOverview?.refresh();return;}if(button.id==='accountLogin'){window.parent.postMessage({type:'ACCOUNT_LOGIN_REQUEST'},'*');return;}if(button.id==='accountDialogDone'){if(!save)dialog.close();return;}
   if(button.dataset.accountState){if(save||window.accountSettlement.busy())return;filter=button.dataset.accountState;cursors=[];request();return;}
   if(button.dataset.accountPage==='next'&&data?.pageInfo?.nextCursor){const next=data.pageInfo.nextCursor;cursors.push(data.currentCursor||null);request(false,next);return;}
   if(button.dataset.accountPage==='previous'&&cursors.length){const cursor=cursors.pop();request(false,cursor);return;}
