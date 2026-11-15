@@ -39,6 +39,8 @@ function supportProductRequest({ readAccess, readContext, fetchPointbase, store 
    : applyMissingCbm({company,taskId:input.taskId,preview:input.preview,staff,readContext:scopedContext,fetchPointbase,store});
  };
 }
-export const handleSupportProduct=webMethod(Permissions.SiteMember,supportProductRequest({
+const runSupportProductRequest=supportProductRequest({
  readAccess:readManagedCompanyAccess,readContext:readFulfilmentContext,fetchPointbase:capturePointbaseCosts,store:fulfilmentStore
-}));
+});
+export const handleSupportProduct=webMethod(Permissions.SiteMember,async (company,requestId,input)=>
+ runSupportProductRequest(company,requestId,input));
