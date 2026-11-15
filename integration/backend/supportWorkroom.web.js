@@ -1,7 +1,7 @@
 import { PROCUREMENT_SAVE_PENDING } from 'backend/purchasePlan.js';
 import { createSupportDeskOperations, readSupportDesks, readSupportDeskLocks, currentSupportDeskState, supportDeskBatchId } from 'backend/supportDesk.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { requestSupportCustomers } from 'backend/supportCustomerClient.js';
+import { requestSupportCustomers, readSupportCustomerPaymentTerm } from 'backend/supportCustomerClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import { fulfilmentStore, readFulfilmentContext, saveCustomerFulfilment } from 'backend/customerFulfilmentService.js';
@@ -47,7 +47,7 @@ export const getSupportDeskRefresh=webMethod(Permissions.SiteMember,async compan
 });
 export const saveSupportBooking=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{const staff=await supportStaff();try{return await (['DESK_ASSIGN','DESK_SPLIT','DESK_SHIPMENT','DESK_REFERENCES','DESK_ARCHIVE','DESK_ORDER'].includes(input?.action)?saveDesk:save)({company,staff,requestId,input});}catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};throw error;}});
 
-const invoiceDependencies={store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,saveFulfilment:saveCustomerFulfilment,readRates:readCurrentAdminFx};
+const invoiceDependencies={store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,saveFulfilment:saveCustomerFulfilment,readRates:readCurrentAdminFx,readPaymentTerm:readSupportCustomerPaymentTerm};
 const saveInvoice=createSupportInvoiceOperations(invoiceDependencies),cancelInvoice=createSupportInvoiceCancellation(invoiceDependencies);
 export const getSupportInvoiceState=webMethod(Permissions.SiteMember,async company=>{const staff=await supportStaff();if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');return readSupportInvoiceState(await readFulfilmentContext(company,staff),readCurrentAdminFx);});
 export const issueSupportInvoice=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{try{return await saveInvoice({company,staff:await supportStaff(),requestId,input});}catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};throw error;}});

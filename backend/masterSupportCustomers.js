@@ -6,6 +6,7 @@ const options={suppressAuth:true,consistentRead:true};
 const read=async(collection,id)=>{const result=await wixData.query(collection).eq('_id',id).limit(2).find(options);if(result.items.length>1)throw Error('Duplicate record.');return result.items[0]||null;};
 const operate=createSupportCustomerOperations({store:{
  async customers(){let page=await wixData.query('WixCustomers').limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
+ async customerById(id){const page=await wixData.query('WixCustomers').eq('customerId',id).limit(2).find(options);if(page.items.length>1)throw Error('Customer identity requires review.');return page.items[0]||null;},
  customer:id=>read('WixCustomers',id),audit:id=>read('CustomerProfileAudit',id),
  updateCustomer:row=>wixData.update('WixCustomers',row,{suppressAuth:true}),insertAudit:row=>wixData.insert('CustomerProfileAudit',row,{suppressAuth:true})
 }});

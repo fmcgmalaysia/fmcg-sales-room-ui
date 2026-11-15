@@ -122,7 +122,8 @@ test('Support scopes every directory, document and invoice read to authorized cu
     readSupportDocuments:()=>rows,supportCustomerFiles:()=>rows,supportDocumentVersion:()=> 'original-version',
     pendingSupportDocumentUploads:()=>rows.map(row=>({context:{customerId:row.customerId}})),
     createSupportDocumentOperations:()=>save,createSupportCustomerDeliveryOperations:()=>save,
-    requestPurchaseDocument(){},requestSupportCustomers:async request=>request.input?save():({company:'NCT',customers:rows})
+    requestPurchaseDocument(){},requestSupportCustomers:async request=>request.input?save():({company:'NCT',customers:rows}),
+    readSupportCustomerPaymentTerm:async()=> ''
   },['getSupportBookings','getSupportInvoiceState','getSupportDocuments','getSupportCustomers',
     'saveSupportBooking','issueSupportInvoice','withdrawSupportInvoice','uploadSupportDocument','saveSupportCustomer']);
   assert.equal((await api.getSupportCustomers('NCT')).customers.length,1);

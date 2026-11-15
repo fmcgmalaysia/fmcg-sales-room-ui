@@ -13,5 +13,19 @@ test('profile writes same authoritative customer and audit, with retry recovery'
 test('a later Sales edit rejects a stale Support form',async()=>{const f=fixture();f.change({destinationPortName:'Hong Kong'});await assert.rejects(f.operate(f.request),/profile changed/);assert.equal(f.updates(),0);assert.equal(f.audit.size,0);});
 test('saved request cannot be reused for another value or actor',async()=>{const f=fixture();await f.operate(f.request);await assert.rejects(f.operate({...f.request,input:{...f.request.input,patch:{destinationPortName:'Other'}}}),/different changes/);await assert.rejects(f.operate({...f.request,staff:{...f.request.staff,staffId:'S2'}}),/different changes/);assert.equal(f.updates(),1);});
 test('customer edit denies missing Support authority and never changes orders/invoices',async()=>{const f=fixture();await assert.rejects(f.operate({...f.request,staff:{...f.request.staff,department:'WAREHOUSE'}}),/Support access/);assert.equal(f.updates(),0);});
+test('invoice term reads use one customer lookup and expose only the confirmed term',async()=>{
+ let reads=0;
+ const operate=createSupportCustomerOperations({store:{
+  async customerById(id){reads++;return id==='C1'?{customerId:id,paymentTerm:'14 Days',primaryEmail:'private@example.test'}:null;},
+  async customers(){throw Error('Directory scan is not allowed for this query.');}
+ }});
+ const request={action:'READ_TERM',company:'GHR',staff:{department:'SUPPORT',memberId:'M',staffId:'S',staffName:'Staff'},input:{customerId:'C1'}};
+ await assert.rejects(operate({...request,staff:{...request.staff,department:'WAREHOUSE'}}),/Support access/);
+ assert.equal(reads,0);
+ const result=await operate(request);
+ assert.equal(JSON.stringify(result),JSON.stringify({company:'GHR',customerId:'C1',paymentTerm:'14 Days'}));
+ assert.equal(reads,1);
+ await assert.rejects(operate({...request,input:{customerId:'missing'}}),/Customer was not found/);
+});
 
 test('order dates use Malaysia calendar date and current demand/allocation remain distinct from loading',()=>{const f=base();f.lines[0]={...f.lines[0],orderDate:'2026-10-26T18:00:00Z',originalRequested:70,requested:60,allocated:50};const m=project(f,null,null,{company:'NCT',version:'V',lines:[{taskId:'T1',loadedQty:40,maxInvoiceQty:40}]});assert.equal(m.orders[0].orderDate,'2026-10-27');assert.equal(m.orders[0].lines[0].orderQty,70);assert.equal(m.orders[0].lines[0].allocQty,50);assert.equal(m.orders[0].lines[0].loadedQty,40);});

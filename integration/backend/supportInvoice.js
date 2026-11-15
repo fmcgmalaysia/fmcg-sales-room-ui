@@ -14,6 +14,18 @@ const INTENT='SUPPORT_INVOICE_PREPARED',READY='SUPPORT_INVOICE_INPUT_SAVED';
 const uuid=value=>/^[a-f0-9-]{36}$/i.test(value||'');
 const derived=(...parts)=>{const h=operationId(...parts);return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);};
 const known=value=>typeof value==='number'&&Number.isFinite(value);
+const paymentTermDays=new Map([['30%+70%',7],['7 Days',7],['14 Days',14],['21 Days',21],['30 Days',30],['45 Days',45],['60 Days',60]]);
+async function invoicePaymentSchedule(readPaymentTerm,customer,date){
+ if(!readPaymentTerm)return undefined;
+ let paymentTerm;
+ try{paymentTerm=await readPaymentTerm(customer);}catch{return {status:'UNVERIFIED'};}
+ if(paymentTerm==='')return {status:'UNSET'};
+ if(paymentTerm==='COD')return {status:'AWAITING_COD_DATE',paymentTerm};
+ const days=paymentTermDays.get(paymentTerm);
+ if(!days)return {status:'UNVERIFIED'};
+ const dueDate=new Date(Date.parse(date+'T00:00:00Z')+days*86400000).toISOString().slice(0,10);
+ return {status:'CONFIRMED',paymentTerm,dueDate};
+}
 export function supportInvoiceState(context){
  const preparation=projectPreparation(context),outflows=readPhysicalOutflows(context.activity),lines=context.tasks.filter(row=>!row.archived&&!row.specialPurchase&&!row.procurementSource).map(task=>{
   const items=preparation.filter(row=>row.taskId===task.id),loaded=outflows.filter(row=>row.taskId===task.id&&(row.invoiceReady||row.kind==='HISTORICAL')).reduce((n,row)=>n+row.quantity,0),reserved=reservedCartons(task.id,context.activity),held=packingTaskHeld(context,task.id),completedPacking=outflows.filter(row=>row.taskId===task.id&&row.kind==='PACKING'&&row.invoiceReady).reduce((n,row)=>n+row.quantity,0);
@@ -31,7 +43,7 @@ export function supportInvoiceState(context){
 }
 // Compose the original SELECT and INVOICE operations. Their stock, FX and financial guards remain authoritative.
 // Durable inputs retain both original operation versions across a lost acknowledgement.
-export function createSupportInvoiceOperations({store,names,readContext,saveFulfilment,readRates,now=()=>new Date()}){
+export function createSupportInvoiceOperations({store,names,readContext,saveFulfilment,readRates,readPaymentTerm,now=()=>new Date()}){
  return async({company,staff,requestId,input})=>{
   if(!['NCT','GHR'].includes(company)||!names[company]||staff?.packingDepartment!=='SUPPORT'||!staff.memberId||!staff.staffId||!staff.staffName)throw Error('Support invoice access is required.');
   if(!uuid(requestId)||!input||typeof input.version!=='string'||typeof input.orderId!=='string'||!input.orderId||typeof input.customerId!=='string'||!input.customerId||typeof input.number!=='string'||!input.number.trim()||input.number.trim().length>100||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>300||new Set(input.lines.map(row=>row.taskId)).size!==input.lines.length)throw Error('Select order lines and enter a Sales Invoice number.');
@@ -53,11 +65,13 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
    if(input.orderIds&&new Set(normalized.lines.map(line=>context.tasks.find(task=>task.id===line.taskId).orderId)).size!==orderIds.length)throw Error('Selected order dates do not match invoice lines.');
    if(currencies.size!==1||!(/^[A-Z]{3}$/).test([...currencies][0]||'')||!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>999999999999)throw Error('Invoice currency or total is invalid.');
    if(readCustomerShipments(context.activity).some(row=>row.invoice?.number.toUpperCase()===normalized.number.toUpperCase())||readCustomerAccountDocuments(context.activity).some(row=>row.company===company&&row.type==='CHARGE_INV'&&row.number.toUpperCase()===normalized.number.toUpperCase()))throw Error('Sales Invoice number already exists.');
+   const at=now().toISOString(),date=new Date(Date.parse(at)+8*60*60*1000).toISOString().slice(0,10);
+   const paymentSchedule=await invoicePaymentSchedule(readPaymentTerm,{company,staff,customerId:input.customerId},date);
    await reserveSupportDeskInvoice({store,names,context,staff,requestId,input:normalized,digest,snapshot:desk,now});
    const scoped=desk&&normalized.lines.some(line=>state.deskLines.some(row=>row.taskId===line.taskId&&row.desk===desk.number));
-   const at=now().toISOString(),date=new Date(now().getTime()+8*60*60*1000).toISOString().slice(0,10),select={action:'SELECT',customerId:input.customerId,lines:normalized.lines,...(scoped?{desk:desk.number}:{}),version:shipmentVersion(context),reason:'Support selected confirmed loading for Sales Invoice '+normalized.number};
+   const select={action:'SELECT',customerId:input.customerId,lines:normalized.lines,...(scoped?{desk:desk.number}:{}),version:shipmentVersion(context),reason:'Support selected confirmed loading for Sales Invoice '+normalized.number};
    const shipmentDetails=desk?.shipment||null;
-   const record={_id:id,title:id,description:input.orderId,image:input.customerId,action:INTENT,result:'PREPARED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support prepared Sales Invoice',details:{digest,memberId:staff.memberId,requestId,...(desk?{desk}:{}),customerDetails:{transport:shipmentDetails?.transport||'',departureDate:shipmentDetails?.departureDate||''},select,invoice:{action:'INVOICE',number:normalized.number,date,amountCents,reason:'Support issued Sales Invoice '+normalized.number}}};
+   const record={_id:id,title:id,description:input.orderId,image:input.customerId,action:INTENT,result:'PREPARED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support prepared Sales Invoice',details:{digest,memberId:staff.memberId,requestId,...(desk?{desk}:{}),...(paymentSchedule?{paymentSchedule}:{}),customerDetails:{transport:shipmentDetails?.transport||'',departureDate:shipmentDetails?.departureDate||''},select,invoice:{action:'INVOICE',number:normalized.number,date,amountCents,reason:'Support issued Sales Invoice '+normalized.number}}};
    try{intent=await store.insert(collection,record);}catch(error){intent=await store.read(collection,id);if(!intent)throw error;}
   }
   if(intent.details?.digest!==digest||intent.details?.memberId!==staff.memberId)throw Error('This invoice save was already used for different details.');
@@ -70,7 +84,7 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
     for(const line of selected){const scope=intent.details.select.desk,current=(scope&&state.deskLines.find(row=>row.taskId===line.taskId&&row.desk===scope))||state.lines.find(row=>row.taskId===line.taskId),reserved=scope?deskLoadedInvoiceQuantity(context,line.taskId,scope).reserved:reservedCartons(line.taskId,context.activity);if(!current||current.reason&&current.reason!=='No uninvoiced loaded quantity'||(request.input.action==='SELECT'?line.quantity>current.maxInvoiceQty:reserved>current.loadedQty))throw Error('Warehouse loading changed. Review before invoicing.');}
     return context;
    };
-   const original=createCustomerFulfilmentOperations({store,names,readContext:checkedContext,readRates,now});
+   const original=createCustomerFulfilmentOperations({store,names,readContext:checkedContext,readRates,paymentSchedule:intent.details.paymentSchedule,now});
    const result=await original(request);
    // Reuse the original post-invoice cache confirmation with the exact completed operation identity.
    return request.input.action==='INVOICE'?saveFulfilment(request):result;

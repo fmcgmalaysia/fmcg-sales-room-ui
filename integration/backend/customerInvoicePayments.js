@@ -8,7 +8,10 @@ export function normalizeChargeLines(value){
  return value.map(row=>{const description=String(row?.description||'').trim();if(!description||description.length>200||!Number.isSafeInteger(row.amountCents)||row.amountCents<0||row.amountCents>999999999999)throw Error('Enter a charge description and valid amount.');return {description,amountCents:row.amountCents};});
 }
 export function customerInvoiceFacts(company,shipments,documents){
- return shipments.filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status)).map(row=>({id:row.id,company,customerId:row.customerId,number:row.invoice.number,date:row.invoice.date,currency:row.invoice.currency,amountCents:row.invoice.amountCents,at:row.invoice.at,by:row.invoice.by,quantity:row.lines.reduce((n,line)=>n+line.quantity,0),kind:'GOODS'})).concat(documents.filter(row=>row.company===company&&(row.type==='CHARGE_INV'||isStandaloneDebitNote(row))).map(row=>({...row,quantity:null,kind:isStandaloneDebitNote(row)?'DEBIT_NOTE':'CHARGE'})));
+ return shipments.filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status)).map(row=>{
+  const {number,date,currency,amountCents,at,by,paymentSchedule}=row.invoice;
+  return {id:row.id,company,customerId:row.customerId,number,date,currency,amountCents,at,by,quantity:row.lines.reduce((n,line)=>n+line.quantity,0),kind:'GOODS',...(paymentSchedule?.paymentTerm?{paymentTerm:paymentSchedule.paymentTerm}:{}),...(paymentSchedule?.dueDate?{dueDate:paymentSchedule.dueDate}:{})};
+ }).concat(documents.filter(row=>row.company===company&&(row.type==='CHARGE_INV'||isStandaloneDebitNote(row))).map(row=>({...row,quantity:null,kind:isStandaloneDebitNote(row)?'DEBIT_NOTE':'CHARGE'})));
 }
 export function normalizeInvoiceAllocations(value=[]){
  if(!Array.isArray(value)||value.length>200)throw Error('Select at most 200 invoice allocations.');

@@ -13,7 +13,7 @@ const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value
 const cents=value=>Number.isSafeInteger(value)&&value>0&&value<=999999999999;
 import { FULFILMENT_ACTION, readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
 export function shipmentVersion(context){return packingGuardVersion(context,operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.sourceLineId,row.ord,row.inc,row.barcode,row.packing,row.ea,row.netCostCtn,row.sellingPricePc,row.transactionCurrency]),readAllocations(context.activity),readCustomerShipments(context.activity),readStockExceptions(context.activity),physicalOutflowVersion(context.activity)));}
-export function createCustomerFulfilmentOperations({store,names,readContext,readRates,now=()=>new Date()}){
+export function createCustomerFulfilmentOperations({store,names,readContext,readRates,paymentSchedule,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{
   const permission={SELECT:'canSelectShipment',CANCEL:'canSelectShipment',INVOICE:'canInvoiceShipment',DISPATCH:'canDispatchShipment'}[input?.action];
@@ -50,7 +50,7 @@ export function createCustomerFulfilmentOperations({store,names,readContext,read
        try{cbm=warehouseCbm(company,task,context.activity);}catch(error){if(!/^Warehouse CBM (history|identity) requires review\.$/.test(error?.message||''))throw error;}
       }
       return {...line,...(validCbm(cbm)?{cbm}:{}),costSources,sellingPricePc:task.sellingPricePc,eaPerCtn:task.ea,sellingPriceCtn:task.sellingPricePc*task.ea,rateToMyr:rate[0].rateToMyr,gp:calculateGrossProfitMargin({sellingPricePc:task.sellingPricePc,eaPerCtn:task.ea,netCostCtn,rateToMyr:rate[0].rateToMyr})};});
-     shipment.status='INVOICED';shipment.invoice={number:text(input.number),date:input.date,amountCents:input.amountCents,currency:current.currency,rateToMyr:rate[0].rateToMyr,fxUpdatedAt:rate[0].updatedAt||null,at,by:staff.staffName,byStaffId:staff.staffId,reason};
+     shipment.status='INVOICED';shipment.invoice={number:text(input.number),date:input.date,amountCents:input.amountCents,currency:current.currency,rateToMyr:rate[0].rateToMyr,fxUpdatedAt:rate[0].updatedAt||null,at,by:staff.staffName,byStaffId:staff.staffId,reason,...(paymentSchedule?{paymentSchedule}:{})};
     }
     if(input.action==='DISPATCH'){if(current.status!=='INVOICED')throw Error('Sales Invoice is required before dispatch.');if(!text(input.reference)||text(input.reference).length>120)throw Error('Dispatch reference is required (maximum 120 characters).');shipment.status='DISPATCHED';shipment.dispatch={at,by:staff.staffName,byStaffId:staff.staffId,reference:text(input.reference),reason};}
    }

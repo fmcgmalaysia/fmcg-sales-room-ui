@@ -1,13 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
 const {createSupportInvoiceOperations,createSupportInvoiceCancellation,supportInvoiceState}=load('supportInvoice.js'),{createCustomerFulfilmentOperations}=load('customerFulfilment.js'),{projectPreparation,createPreparationOperations}=load('warehousePreparation.js'),{readAllocations}=load('plannerAllocation.js'),{readCustomerShipments}=load('customerShipmentLedger.js');
 function seedCharge(f){f.records.set('N/CHARGE',{_id:'CHARGE',action:'CUSTOMER_ACCOUNT_DOCUMENT_SAVED',result:'SAVED',details:{document:{id:'CHARGE',company:'NCT',customerId:'C1',type:'CHARGE_INV',number:'SI-001',date:'2026-10-27',currency:'USD',amountCents:10000,fileId:'charge-file-123',sha256:'a'.repeat(64),sourceDocumentId:'PROOF',confirmedByFinance:true,chargeLines:[{description:'Freight',amountCents:10000}]}}});}
-function fixture(){
+function fixture(readPaymentTerm){
  const records=new Map(),copy=v=>structuredClone(v),tasks=[{id:'T1',customerId:'C1',orderId:'O1',sourceLineId:'L1',barcode:'123',name:'Product',packing:'24x1',ea:24,ord:100,requested:100,inc:100,sellingPricePc:1.25,transactionCurrency:'USD',netCostCtn:60,warehouse:{accepted:100,hasPhysicalReceipt:true,stock:{availablePhysical:100}},procurement:{customerCtn:100,totalCtn:100}}];let lost=false,selectionFailure=false,afterSelect;
  const store={all:async()=>copy([...records.values()]),read:async(c,id)=>copy(records.get(c+'/'+id)||null),insert:async(c,row)=>{const key=c+'/'+row._id;if(selectionFailure&&row.action==='CUSTOMER_SHIPMENT_CHANGED'&&row.details.shipment.status==='REQUESTED')throw Error('synthetic selection failure');if(records.has(key))throw Error('duplicate');records.set(key,copy(row));if(row.action==='SUPPORT_INVOICE_INPUT_SAVED'&&afterSelect)afterSelect();if(lost&&row.action==='CUSTOMER_SHIPMENT_CHANGED'&&row.details.shipment.status==='INVOICED'){lost=false;throw Error('lost acknowledgement');}return copy(row);},remove:async(c,id)=>records.delete(c+'/'+id)};
  const context=async(company='NCT')=>{const activity=await store.all();return {company,customers:[{id:'C1',name:'Customer A'}],tasks:copy(tasks).map(task=>({...task,warehouse:{...task.warehouse,stock:load('inventoryExceptions.js').stockPosition(task.id,task.warehouse.accepted,activity)}})),activity,allocations:readAllocations(activity)};};
  records.set('N/ALLOC',{_id:'ALLOC',title:'ALLOC',imageAltText:'T1',action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',activityTime:'2026-10-27T00:00:00Z',details:{beforeRevision:'',targets:[{taskId:'T1',quantity:100}]}});
  const names={NCT:{activity:'N'}},now=()=>new Date('2026-10-27T00:30:00Z'),rates=async()=>[{currency:'USD',rateToMyr:4}],original=createCustomerFulfilmentOperations({store,names,readContext:context,readRates:rates,now});
- const save=createSupportInvoiceOperations({store,names,readContext:context,saveFulfilment:original,readRates:rates,now}),cancel=createSupportInvoiceCancellation({store,names,readContext:context,saveFulfilment:original,now});
+ const save=createSupportInvoiceOperations({store,names,readContext:context,saveFulfilment:original,readRates:rates,readPaymentTerm,now}),cancel=createSupportInvoiceCancellation({store,names,readContext:context,saveFulfilment:original,now});
  const staff={packingDepartment:'SUPPORT',memberId:'M',staffId:'S',staffName:'Support'};
  const prepare=createPreparationOperations({store,names,readContext:context,now});let n=0;
  const setLoad=async loaded=>{let item=projectPreparation(await context())[0];if(!item.prepared)await prepare({company:'NCT',staff:{...staff,canPrepareWarehouse:true},requestId:'00000000-1111-4111-8111-'+String(++n).padStart(12,'0'),input:{action:'PACK',id:item.id,version:item.version}});item=projectPreparation(await context())[0];await prepare({company:'NCT',staff:{...staff,canPrepareWarehouse:true},requestId:'00000000-1111-4111-8111-'+String(++n).padStart(12,'0'),input:{action:'LOAD',id:item.id,version:item.version,loaded,note:loaded<100?'Partial loading':''}});};
@@ -16,6 +16,36 @@ function fixture(){
 }
 test('selected loaded cartons become one original invoice; remaining demand is untouched',async()=>{const f=fixture();await f.setLoad(80);const input=await f.request(60),result=await f.save(input);assert.equal(result.number,'SI-001');const shipment=readCustomerShipments((await f.context()).activity)[0];assert.equal(shipment.status,'INVOICED');assert.equal(shipment.lines[0].quantity,60);assert.equal(shipment.invoice.amountCents,180000);assert.equal(shipment.invoice.date,'2026-10-27');assert.equal(f.tasks[0].requested,100);assert.equal(f.tasks[0].inc,100);assert.equal(supportInvoiceState(await f.context()).lines[0].maxInvoiceQty,20);});
 test('lost acknowledgement and repeated confirmation do not issue another invoice',async()=>{const f=fixture();await f.setLoad(100);const request=await f.request(100);f.lose();await assert.rejects(f.save(request),/lost acknowledgement/);await f.save(request);await f.save(request);const rows=readCustomerShipments((await f.context()).activity);assert.equal(rows.length,1);assert.equal(rows[0].status,'INVOICED');assert.equal((await f.context()).activity.filter(row=>row.action==='CUSTOMER_SHIPMENT_CHANGED').length,2);});
+test('Finance uses the original invoice term even after a lost acknowledgement and a customer term change',async()=>{
+ let paymentTerm='30%+70%',reads=0;
+ const f=fixture(async ({company,customerId})=>{assert.equal(company,'NCT');assert.equal(customerId,'C1');reads++;return paymentTerm;});
+ await f.setLoad(100);
+ const request=await f.request(100);
+ f.lose();
+ await assert.rejects(f.save(request),/lost acknowledgement/);
+ paymentTerm='60 Days';
+ await f.save(request);
+ const {activity}=await f.context(),shipments=readCustomerShipments(activity);
+ const {customerInvoiceFacts,projectInvoicePayments}=load('customerInvoicePayments.js');
+ const invoices=customerInvoiceFacts('NCT',shipments,[]);
+ const projection=projectInvoicePayments({company:'NCT',documents:[],invoices,activity});
+ assert.equal(reads,1);
+ assert.equal(invoices.length,1);
+ assert.equal(projection.invoices[0].paymentTerm,'30%+70%');
+ assert.equal(projection.invoices[0].dueDate,'2026-11-03');
+ assert.equal(projection.invoices[0].dueCents,300000);
+ assert.equal(customerInvoiceFacts('GHR',shipments,[]).length,0);
+});
+test('unset, unavailable, and COD terms leave the invoice due date unset',async()=>{
+ for(const scenario of [{term:'',status:'UNSET'},{term:'COD',status:'AWAITING_COD_DATE'},{status:'UNVERIFIED'}]){
+  const f=fixture(async()=>{if(scenario.term===undefined)throw Error('Directory unavailable');return scenario.term;});
+  await f.setLoad(100);
+  await f.save(await f.request(100));
+  const shipments=readCustomerShipments((await f.context()).activity);
+  assert.equal(shipments[0].invoice.paymentSchedule.status,scenario.status);
+  assert.equal(load('customerInvoicePayments.js').customerInvoiceFacts('NCT',shipments,[])[0].dueDate,undefined);
+ }
+});
 test('unloaded quantity, another customer/order and spoofed department cannot invoice',async()=>{const f=fixture();await f.setLoad(50);await assert.rejects(f.save(await f.request(51)),/exceeds/);const r=await f.request(40);await assert.rejects(f.save({...r,input:{...r.input,customerId:'C2'}}),/exceeds/);await assert.rejects(f.save({...r,staff:{...r.staff,packingDepartment:'WAREHOUSE'}}),/Support invoice/);assert.equal(readCustomerShipments((await f.context()).activity).length,0);});
 test('changed loading and duplicate invoice number are rejected by original guards',async()=>{const f=fixture();await f.setLoad(80);const stale=await f.request(80);await f.setLoad(100);await assert.rejects(f.save(stale),/changed/);await f.save(await f.request(40));const r=await f.request(30);await assert.rejects(f.save({...r,requestId:'bbbbbbbb-1111-4111-8111-111111111111'}),/already exists/);});
 test('a charge invoice number cannot be reused for goods, including after goods selection',async()=>{for(const delayed of [false,true]){const f=fixture();await f.setLoad(100);if(delayed)f.afterSelect(()=>seedCharge(f));else seedCharge(f);await assert.rejects(f.save(await f.request(40)),/already exists/);assert.equal(readCustomerShipments((await f.context()).activity).some(row=>row.invoice),false);assert.equal(f.tasks[0].requested,100);}});

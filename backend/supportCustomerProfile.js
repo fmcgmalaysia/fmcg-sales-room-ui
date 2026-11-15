@@ -21,6 +21,15 @@ export function supportCustomerView(row){
 export function createSupportCustomerOperations({store,now=()=>new Date()}){
  return async({action,company,staff,requestId,input})=>{
   if(!['NCT','GHR'].includes(company)||staff?.department!=='SUPPORT'||!text(staff.memberId)||!text(staff.staffId)||!text(staff.staffName))throw Error('Support access is required.');
+  if(action==='READ_TERM'){
+   const customerId=text(input?.customerId);
+   if(!customerId||customerId.length>160)throw Error('Select a customer to read the payment term.');
+   const row=await store.customerById(customerId);
+   if(!row||row.customerId!==customerId)throw Error('Customer was not found.');
+   const paymentTerm=text(row.paymentTerm);
+   if(!paymentTerms.includes(paymentTerm))throw Error('Customer payment term requires review.');
+   return {company,customerId,paymentTerm};
+  }
   const rows=await store.customers(),ids=rows.map(row=>row.customerId);if(ids.some(id=>!id)||new Set(ids).size!==ids.length)throw Error('Customer identities require review.');
   if(action==='READ')return {company,customers:rows.map(supportCustomerView)};
   if(action!=='SAVE'||!/^[a-f0-9-]{36}$/i.test(requestId||'')||!input||typeof input.customerId!=='string'||!/^[a-f0-9]{64}$/.test(input.revision||''))throw Error('Invalid customer profile save.');
