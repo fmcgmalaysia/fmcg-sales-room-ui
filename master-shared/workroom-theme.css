@@ -1,3 +1,4 @@
+@import url("task-tables.css?v=20261115-task-tables-v1");
 /* MASTER presentation contract. Keep all department data and event handlers intact. */
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype')}
