@@ -9,6 +9,7 @@ import { readPurchaseMargins } from 'backend/purchaseMarginRefresh.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { purchaseReceiptInfo } from 'backend/purchaseReceiptInfo.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
+import { indexWarehouseCbm, warehouseCbm } from 'backend/warehouseCbm.js';
 const options = { suppressAuth: true, consistentRead: true };
 async function all(query) {
   let page = await query.limit(1000).find(options), rows = [...page.items];
@@ -25,7 +26,7 @@ async function purchaseActivity(collection) {
 }
 export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async company => {
   if (!PURCHASE_COLLECTIONS[company]) throw Error('Select NCT or GHR.');
-  const staff = await getPurchaseStaffContext(company);
+  const staff = await getPurchaseStaffContext();
   const ids = PURCHASE_COLLECTIONS[company];
   const [orders, tasks, activity, suppliers, purchaseRecords] = await Promise.all([
     all(wixData.query(ids.orders)), all(wixData.query(ids.tasks)), purchaseActivity(ids.activity),
@@ -42,5 +43,6 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
   applyPurchaseProgress(workspace,activity,purchaseOrders);
   const receiptInfo = purchaseReceiptInfo(purchaseOrders, activity);
   const purchaseOrdersResult=purchaseOrderReadResult({company,rows:purchaseOrders,names:customerNames,customerNamesError:customerNamesError?'客户 Short Name 暂时无法读取，采购单保留已保存名称。':customerNames.some(row=>!row.shortName)?'客户 Short Name 尚未填写；该客户暂显示已保存名称。':''});
-  return { ...workspace, customerNamesError, purchaseOrders:purchaseOrdersResult, tasks: workspace.tasks.map(row => ({ ...row, receiptHistory: receiptInfo.get(row.id) || [], gp: margins.get(row.id) ?? null, sourceGp: margins.get('SOURCE:'+row.id) ?? null })) };
+  const cbmEvidence=indexWarehouseCbm(activity);
+  return { ...workspace, customerNamesError, purchaseOrders:purchaseOrdersResult, tasks: workspace.tasks.map(row => ({ ...row, ...(!row.archived&&!row.procurementSource&&!row.specialPurchase&&cbmEvidence.has(row.id)?{cbmPerCtn:warehouseCbm(company,row,cbmEvidence)}:{}), receiptHistory: receiptInfo.get(row.id) || [], gp: margins.get(row.id) ?? null, sourceGp: margins.get('SOURCE:'+row.id) ?? null })) };
 });

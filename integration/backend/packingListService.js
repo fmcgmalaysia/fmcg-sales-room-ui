@@ -10,6 +10,7 @@ import { projectWarehouseDeliveryList, projectWarehouseDeliveryReceipt, currentD
 import { createShortloadResolutionOperations, pendingShortloadResolutions } from 'backend/shortloadResolution.js';
 import { deskTaskPortions, readShortloadResolutions, readDeskCommitments } from 'backend/shortloadResolutionModel.js';
 import { readPhysicalOutflows, deskLoadedInvoiceQuantity } from 'backend/physicalOutflow.js';
+import { indexWarehouseCbm, validCbm, warehouseCbm } from 'backend/warehouseCbm.js';
 const readContext=async(company,staff,options)=>projectPackingContext(await readFulfilmentContext(company,staff,options));
 const saveDeskOperation=createPackingListOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext,documentService:requestPurchaseDocument});
 const resolveShortload=createShortloadResolutionOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext});
@@ -29,16 +30,20 @@ export async function readPackingWorkroom(company,staff,{activityRead}={}){
  const context=await readContext(company,staff,{includeSuppliers:false,activityRead}),view=projectPackingWorkroom(context,staff.packingDepartment),locks=readSupportDeskLocks(context.physicalContext),desks=readSupportDesks(context.physicalContext.activity,company).map(state=>currentSupportDeskState(context.physicalContext,state,locks)),issued=locks.filter(row=>row.status==='ISSUED'),lists=view.lists.filter(list=>list.desk).map(list=>{const state=desks.find(row=>row.customerId===list.customerId);const currentAuthorization=Boolean(state?.deliveryHolds?.some(hold=>hold.listId===list.id));const awaitingDeskArchive=currentAuthorization&&issued.some(row=>row.archiveRequired===true&&row.customerId===list.customerId&&row.desk===list.desk.number&&row.snapshot.batchId===list.desk.batchId);return {...list,currentAuthorization,awaitingDeskArchive,batchComplete:list.status!=='CANCELLED'&&!currentAuthorization&&issued.some(row=>row.customerId===list.customerId&&row.desk===list.desk.number&&(row.snapshot.batchId||supportDeskBatchId({company,customerId:list.customerId},list.desk.number))===(list.desk.batchId||supportDeskBatchId({company,customerId:list.customerId},list.desk.number))),currentDesk:currentAuthorization?{references:state?.references?.find(row=>row.desk===list.desk.number)||null,shipment:state?.shipments.find(row=>row.desk===list.desk.number)||null}:{references:list.desk.references||null,shipment:list.desk.shipment||null}};});
  const common={company,version:view.version,readAt:view.readAt,deskDeliveryVersion:2,staff:{staffName:staff.staffName},department:staff.packingDepartment};
  if(staff.packingDepartment==='WAREHOUSE'){
-  const orderImages=new Map(context.physicalContext.tasks.filter(task=>task.productImageUrl).map(task=>[task.id,task]));
+  const cbmEvidence=indexWarehouseCbm(context.physicalContext.activity);
+  const orderTasks=new Map(context.physicalContext.tasks.map(task=>[task.id,task]));
   const authorized=currentDeskDeliveries(lists,desks).filter(list=>list.lines.length).map(list=>{
    const available=new Map(packingAvailability(context,list.id).map(row=>[row.taskId,row]));
-   const lines=list.lines.map(line=>{
-    const stock=available.get(line.taskId),orderTask=orderImages.get(line.taskId);
-    const productImageUrl=line.productImageUrl||(orderTask&&orderTask.customerId===list.customerId?orderTask.productImageUrl:'');
-    return {...line,...(productImageUrl?{productImageUrl}:{}),readyQuantity:stock&&!stock.review?Math.max(0,Math.min((line.resolution?.maximum??line.quantity)-line.loaded,stock.readyToArrange)):0};
-   });
    const state=desks.find(row=>row.customerId===list.customerId),batchId=list.desk.batchId||supportDeskBatchId(state,list.desk.number);
    const invoice=issued.find(row=>row.customerId===list.customerId&&row.desk===list.desk.number&&row.snapshot.batchId===batchId);
+   const lines=list.lines.map(line=>{
+    const stock=available.get(line.taskId),orderTask=orderTasks.get(line.taskId);
+    const productImageUrl=line.productImageUrl||(orderTask&&orderTask.customerId===list.customerId?orderTask.productImageUrl:'');
+    const canFillCbm=!invoice&&list.status!=='COMPLETED'&&!list.batchComplete&&orderTask&&orderTask.customerId===list.customerId&&!orderTask.archived&&!orderTask.procurementSource&&!orderTask.specialPurchase;
+    const confirmed=cbmEvidence.get(line.taskId)?.some(event=>event.details?.supportRefresh===true);
+    const cbm=canFillCbm&&(!validCbm(line.cbm)||confirmed)?warehouseCbm(company,orderTask,cbmEvidence):null;
+    return {...line,...(productImageUrl?{productImageUrl}:{}),...(validCbm(cbm)?{cbm}:{}),readyQuantity:stock&&!stock.review?Math.max(0,Math.min((line.resolution?.maximum??line.quantity)-line.loaded,stock.readyToArrange)):0};
+   });
    const order=invoice?.snapshot.rowOrder??state?.rowOrders?.find(row=>row.desk===list.desk.number&&row.batchId===batchId)?.taskIds??[];
    return projectWarehouseDeliveryList(invoice?.snapshot.rowOrder?issuedDeliveryRows({...list,lines},invoice):orderDeliveryRows({...list,lines},order));
   });
