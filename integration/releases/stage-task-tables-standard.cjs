@@ -7,6 +7,10 @@ const previous = require('./support-desk-summary.json');
 const baseline = { ...previous.baseline };
 for (const [file, change] of Object.entries(previous.changes)) baseline[file] = change.sha256;
 Object.assign(baseline, {
+  'account-room/index.html': '77ca1197ba8d3ea1fc5856516224b4ccdbdae5d0ababd11f6fa3b26a055152ef',
+  'account-room/purchase-payments.js': '0cd805d8cc324ece7d66a0fb26e61916fd7c0a0d41661ab91eff9f0733f895da',
+  'account-room/finance-overview.js': 'db99800152ac316a2ca0395424e031603004f87164c547bdd3bb74c900826e1a',
+  'account-room/finance-overview.css': '07ba5702ed0e17ae335d7a40bb08f92e755bfa401c9b46928baa71d2f23c90f5',
   'purchase-live/style.css': '233b595e7fc288e5e3bebefc8d660a4ab34a18d8246a3a101fe1f0579246a42a',
   'purchase-live/app.js': '72a91ca412b4dabb85c1df2fa0a3273f0c89cc949ff1e8c746211a37d256eb40',
   'purchase-live/index.html': 'c9a8b003708f87b4fff384a3a7aab4266c5efe8c1c29c5b5d43ea074a3bbc3df',
