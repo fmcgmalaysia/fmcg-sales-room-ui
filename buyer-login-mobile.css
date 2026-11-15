@@ -1,0 +1,127 @@
+.login-hero {
+  display: contents;
+}
+
+@media (max-width: 520px) {
+  body.touch-login {
+    --mobile-paper: #f8f7f3;
+    background: var(--mobile-paper);
+    padding: 14px 16px 18px !important;
+  }
+
+  .touch-login .card {
+    padding-top: 0 !important;
+  }
+
+  .touch-login .login-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 158px;
+    padding: 19px 15px;
+    border-radius: 14px;
+    background: #092a21;
+    color: #fff;
+  }
+
+  .touch-login .login-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 39%;
+    z-index: -1;
+    background: linear-gradient(90deg, #092a21, #092a2100 82%),
+      url("buyer-login-mobile-photo.jpg") right 34% / 216% auto no-repeat;
+  }
+
+  .touch-login .login-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(0deg, #06281ee6, #06281e00 80%);
+  }
+
+  .touch-login .eyebrow {
+    color: #ffd7c1;
+    margin-bottom: 10px !important;
+    font-size: 9px !important;
+    letter-spacing: .08em !important;
+    max-width: 145px;
+    line-height: 1.4;
+  }
+
+  .touch-login .eyebrow::after {
+    display: none;
+  }
+
+  .touch-login .login-hero h1 {
+    margin: 0 !important;
+    font-size: clamp(29px, 8.3vw, 42px) !important;
+    line-height: 1.02 !important;
+    letter-spacing: -.035em !important;
+    text-shadow: 0 1px 7px #06271fcc;
+  }
+
+  .touch-login .intro {
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+    margin: 12px 0 13px !important;
+  }
+
+  .touch-login :is(.google, .signin, .field input) {
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .touch-login .signin {
+    background: #b93813;
+  }
+
+  .touch-login .or {
+    gap: 11px;
+    margin: 10px 0 !important;
+    font-size: 11px;
+  }
+
+  .touch-login .field {
+    margin-bottom: 9px !important;
+  }
+
+  .touch-login .forgot-row {
+    margin: -4px 0 2px;
+  }
+
+  .touch-login .forgot {
+    font-size: 13px;
+    color: #08613d;
+    min-height: 44px;
+  }
+
+  .touch-login .toggle {
+    min-height: 44px;
+    min-width: 44px;
+    top: 2px !important;
+    right: 6px;
+  }
+
+  .touch-login .actions {
+    margin-top: 16px !important;
+    padding-top: 6px !important;
+    gap: 0 !important;
+  }
+
+  .touch-login .actions .link,
+  .touch-login .reset-actions .link {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .touch-login .note {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #59645e;
+  }
+}
