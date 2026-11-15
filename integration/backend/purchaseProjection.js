@@ -38,6 +38,8 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   if (!PURCHASE_COLLECTIONS[company]) throw Error('Select NCT or GHR.');
   const confirmed=confirmedState||confirmedPurchaseState({company,tasks,activity});
   tasks=confirmed.tasks;activity=confirmed.activity;
+  let shipmentPlans;
+  const getShipmentPlans = () => (shipmentPlans ??= readShipmentPlans(activity));
   const accepted = new Map();
   for (const event of activity) {
     if (event.action !== 'ORDER_RECEIVED' || event.result !== 'ACCEPTED') continue;
@@ -114,7 +116,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   }
   for(const root of rows.filter(row=>row.salesDemandRevision)){
     const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id);let remaining=root.requested,planned=0;
-    const plan=readShipmentPlans(activity).find(plan=>plan.customerId===root.customerId&&plan.orderId===root.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id))),baseline=plan?.sourceBaselines?.find(row=>row.taskId===root.id),matrix=plan?allocateBatchSources(batchEntries(plan,root.id),sources.map(source=>{const held=baseline?.sources.find(row=>row.id===source.id),total=source.procurement.totalCtn||0,customer=Math.max(0,total-(source.procurement.expectedExtra||0));return {id:source.id,quantity:held?Math.min(customer,held.customerCtn+Math.max(0,total-held.totalCtn)):customer,batchId:preferredSourceBatch(source.id,activity)};})):null;
+    const plan=getShipmentPlans().find(plan=>plan.customerId===root.customerId&&plan.orderId===root.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id))),baseline=plan?.sourceBaselines?.find(row=>row.taskId===root.id),matrix=plan?allocateBatchSources(batchEntries(plan,root.id),sources.map(source=>{const held=baseline?.sources.find(row=>row.id===source.id),total=source.procurement.totalCtn||0,customer=Math.max(0,total-(source.procurement.expectedExtra||0));return {id:source.id,quantity:held?Math.min(customer,held.customerCtn+Math.max(0,total-held.totalCtn)):customer,batchId:preferredSourceBatch(source.id,activity)};})):null;
     for(const source of sources){const customer=source.supplyPurpose==='STOCK'?0:matrix?matrix.reduce((sum,batch)=>sum+(batch.find(row=>row.id===source.id)?.quantity||0),0):Math.max(0,(source.procurement.totalCtn||0)-(source.procurement.expectedExtra||0));const kept=Math.min(customer,remaining);remaining-=kept;planned+=kept;source.procurement.customerCtn=kept;source.procurement.expectedExtra=(source.procurement.totalCtn||0)-kept;}
     root.salesCommittedQty=Math.min(root.requested,sources.some(row=>row.procurement.totalCtn>0)?planned:root.originalCommitment);root.sourcing.unplacedCtn=Math.max(0,root.requested-planned);
   }
@@ -151,13 +153,13 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   }
   for (const receipt of accepted.values()) if ([...receipt.ids].some(id => !seen.has(id))) throw Error('Accepted receipt is missing a task. Please contact Admin.');
   for(const root of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
-    const plan=readShipmentPlans(activity).find(plan=>plan.customerId===root.customerId&&plan.orderId===root.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id)));
+    const plan=getShipmentPlans().find(plan=>plan.customerId===root.customerId&&plan.orderId===root.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id)));
     if(plan){const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id).map(row=>({id:row.id,quantity:Math.max(0,(row.procurement.totalCtn||0)-(row.procurement.expectedExtra||0)),batchId:preferredSourceBatch(row.id,activity)}));root.batchEntitlements=resolveBatchEntitlements(plan,root.id,{committed:root.salesCommittedQty??root.ord,received:Math.max(0,root.inc||0)},sources);}
   }
   rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||
     a.orderId.localeCompare(b.orderId) || a.id.localeCompare(b.id));
   for(const root of rows.filter(row=>row.batchEntitlements)){
-    const plan=readShipmentPlans(activity).find(plan=>plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id)));
+    const plan=getShipmentPlans().find(plan=>plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id)));
     const stock=allocations.flatMap(allocation=>{const quantity=allocation.targets.find(target=>target.taskId===root.id)?.quantity;return quantity?[{id:allocation.sourceTaskId,quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,activity)}]:[];});
     if(stock.length&&root.batchEntitlements.some(row=>row.coverage)){const received=resolveBatchStock(plan,root.id,stock);root.batchEntitlements.forEach((row,index)=>{row.metrics.received=Math.min(row.metrics.committed,received[index]);});}
     const bound=allocations.flatMap(source=>{const target=source.targets.find(row=>row.taskId===root.id);return target?.batches?[target]:[];});
@@ -181,8 +183,8 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,quantityCasesVersion:quantityCasesVersion({company,tasks:rows},activity),
     suppliers: suppliers.map(row => ({ id: text(row.title), name: text(row.companyName), shortName: text(row.shortName), brands:Array.isArray(row.brands)?row.brands.filter(value=>typeof value==='string').map(text):[] }))
       .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),
-    shipmentPlans: readShipmentPlans(activity),
-    purchaseDisplayOrder:projectPurchaseDisplayOrder(company,rows,readShipmentPlans(activity),activity),
+    shipmentPlans: getShipmentPlans(),
+    purchaseDisplayOrder:projectPurchaseDisplayOrder(company,rows,getShipmentPlans(),activity),
     paymentRequestsConnected: false,
     allocationOrigins:allocationOriginInfo(activity),
     deskDeliveries:projectDeskDeliverySummaries(activity),
