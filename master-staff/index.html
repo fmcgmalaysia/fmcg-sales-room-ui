@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="build" content="master-staff-management-v2">
+<meta name="build" content="20261114-staff-save-confirmation-v1">
 <title>Staff Management · MASTER</title>
 <style>
   @font-face{font-family:"Purchase Dashboard Inter";font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fMZg.ttf) format("truetype")}
@@ -50,10 +50,12 @@
   .customer-access label{font-weight:400}
   .editor-empty{padding:18px;color:#4e6680}
   #save-status{flex:1}
+  #save[hidden]{display:none}
   @media(max-width:800px){body>header{padding:0 12px;gap:10px;font-size:12px}body>header strong{font-size:16px}body>header span{padding-left:10px}}
   @media(max-width:760px){.workspace{grid-template-columns:1fr}}
   @media(max-width:540px){main{padding:16px 12px}h1{font-size:22px}.heading{gap:8px}}
-</style>
+</style><link rel="stylesheet" href="../master-shared/mobile-menu.css?v=20261115-responsive-workrooms-v1">
+<body class="touch-staff">
 <header><strong>MASTER</strong><span>Administration 管理</span></header>
 <main>
   <div class="heading"><h1>Staff Management 员工管理</h1><button id="add" class="primary" type="button" disabled>＋ Add Employee</button></div>
@@ -254,7 +256,9 @@
     id('save').textContent=employee?'Save':'Add Employee';
     id('employee-status').hidden=!employee;
     id('registration-help').hidden = Boolean(employee);
-    showSaveStatus(saved ? 'Saved' : '');
+    showSaveStatus(saved ? 'Saved successfully 已保存' : '');
+    id('save').hidden = saved;
+    id('cancel').textContent = saved ? 'Done' : 'Cancel';
     const access=employee?.access ?? {};
     form.elements.namedItem('name').value=employee?.name ?? '';
     form.elements.namedItem('email').value=employee?.email ?? '';
@@ -283,18 +287,26 @@
   id('add').addEventListener('click', () => selectEmployee());
   id('cancel').addEventListener('click', () => {
     if (saving || pendingSave) return;
-    if (editing) { void openEmployee(editing); return; }
+    if (editing && !id('save').hidden) { void openEmployee(editing); return; }
     customerLoad++;
     dirty = false;
+    selected = editing = null;
     form.hidden = true;
     id('add-title').textContent = 'Employee access 员工权限';
     id('editor-empty').textContent = 'Select an employee to view their access.';
     id('editor-empty').hidden = false;
+    render();
   });
-  form.addEventListener('input', () => { dirty = true; showSaveStatus(''); });
+  form.addEventListener('input', () => {
+    dirty = true;
+    id('save').hidden = false;
+    id('cancel').textContent = 'Cancel';
+    showSaveStatus('');
+  });
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    if (form.hidden || saving || id('save').disabled) return;
+    if (form.hidden || saving || id('save').disabled || id('save').hidden) return;
+    const submittedWithSaveFocus = document.activeElement === id('save');
     saving = true;
     id('save').disabled = true;
     id('cancel').disabled = true;
@@ -319,7 +331,10 @@
       id('save').disabled = false;
       id('cancel').disabled = Boolean(pendingSave && !savedEmployee);
     }
-    if (savedEmployee) void openEmployee(savedEmployee, true);
+    if (savedEmployee) {
+      void openEmployee(savedEmployee, true);
+      if (submittedWithSaveFocus && document.activeElement === document.body && !form.hidden) id('cancel').focus();
+    }
   });
 
   async function loadDirectory() {
