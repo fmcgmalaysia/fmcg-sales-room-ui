@@ -37,6 +37,11 @@ function MPC_columns_(headers) {
     if (matches.length !== 1) throw new Error('POINTBASE header missing or duplicated: ' + names[key]);
     columns[key] = matches[0];
   });
+  var sortMatches = [];
+  headers.forEach(function (header, index) {
+    if (MPC_header_(header) === MPC_header_('SORT NO.')) sortMatches.push(index);
+  });
+  if (sortMatches.length === 1) columns.sortNo = sortMatches[0];
   return columns;
 }
 
@@ -53,6 +58,8 @@ function MPC_snapshot_(barcode, raw, display, columns, source, at) {
   if (typeof raw[columns.barcode] !== 'string' || MPC_text_(raw[columns.barcode]) !== barcode ||
       MPC_text_(display[columns.barcode]) !== barcode) return MPC_failure_(barcode, at, 'BARCODE_NOT_STORED_AS_TEXT');
   result.source = source;
+  var sortId = Number.isInteger(columns.sortNo) ? MPC_text_(display[columns.sortNo]) : '';
+  if (sortId) result.sortNo = sortId;
   result.productStatus = MPC_text_(display[columns.status]).toUpperCase();
   result.itemName = MPC_text_(display[columns.itemName]);
   result.packingSize = MPC_text_(display[columns.packing]);
