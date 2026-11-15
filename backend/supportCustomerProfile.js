@@ -1,17 +1,21 @@
 import { createHash } from 'crypto';
 const text=value=>String(value??'').trim();
-// Same editable fields and validation as the existing Sales customer profile.
+// Support can also maintain payment terms; Sales profile fields keep their existing validation.
 // Identity, country, assignment, access and QD routing remain locked.
-export const SUPPORT_PROFILE_FIELDS=Object.freeze(['natureOfBusiness','picTitle','picName','mobileNo','whatsapp','preferredCurrency','destinationPortName','address1','address2','address3','primaryEmail','companyWebsite']);
+export const SUPPORT_PROFILE_FIELDS=Object.freeze(['natureOfBusiness','picTitle','picName','mobileNo','whatsapp','preferredCurrency','destinationPortName','address1','address2','address3','primaryEmail','companyWebsite','paymentTerm']);
+const paymentTerms=['','COD','30%+70%','7 Days','14 Days','21 Days','30 Days','45 Days','60 Days'];
 const choices={natureOfBusiness:['WHOLESALE','RETAIL','E-COMMERCE','SOURCING AGENT','OTHERS'],picTitle:['','MR','MRS','MS','DR'],whatsapp:['YES','NO'],preferredCurrency:['USD','MYR','SGD','RMB','JPY']};
 export const profileHash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export function supportProfilePatch(input){
  if(!input||typeof input!=='object'||Array.isArray(input)||!Object.keys(input).length||Object.keys(input).some(key=>!SUPPORT_PROFILE_FIELDS.includes(key)))throw Error('Only editable customer profile fields may be changed.');
- const patch={};for(const key of SUPPORT_PROFILE_FIELDS){if(!Object.hasOwn(input,key))continue;if(typeof input[key]!=='string'||input[key].length>500)throw Error('Invalid profile value.');let value=text(input[key]);if(choices[key]){value=value.toUpperCase();if(!choices[key].includes(value))throw Error('Invalid '+key+'.');}if(key==='primaryEmail'){value=value.toLowerCase();if(value&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))throw Error('Invalid primary email.');}if(key==='mobileNo'&&value&&value.replace(/\D/g,'').length<4)throw Error('Mobile number must contain at least 4 digits.');patch[key]=value;}return patch;
+ const patch={};for(const key of SUPPORT_PROFILE_FIELDS){if(!Object.hasOwn(input,key))continue;if(typeof input[key]!=='string'||input[key].length>500)throw Error('Invalid profile value.');let value=text(input[key]);if(choices[key]){value=value.toUpperCase();if(!choices[key].includes(value))throw Error('Invalid '+key+'.');}if(key==='paymentTerm'&&!paymentTerms.includes(value))throw Error('Invalid payment term.');if(key==='primaryEmail'){value=value.toLowerCase();if(value&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))throw Error('Invalid primary email.');}if(key==='mobileNo'&&value&&value.replace(/\D/g,'').length<4)throw Error('Mobile number must contain at least 4 digits.');patch[key]=value;}return patch;
 }
 export function supportCustomerView(row){
  if(!row?.customerId||!row.title)throw Error('Customer profile identity is incomplete.');
- const fields=Object.fromEntries(SUPPORT_PROFILE_FIELDS.map(key=>[key,text(row[key])])),revision=profileHash([row._id,row.customerId,row._updatedDate?new Date(row._updatedDate).toISOString():'',fields]);
+ const fields=Object.fromEntries(SUPPORT_PROFILE_FIELDS.map(key=>[key,text(row[key])]));
+ // Preserve the revision of unchanged legacy profiles while the term is unset.
+ const {paymentTerm,...existingFields}=fields;
+ const revision=profileHash([row._id,row.customerId,row._updatedDate?new Date(row._updatedDate).toISOString():'',paymentTerm?fields:existingFields]);
  return {id:text(row.customerId),name:text(row.title),country:text(row.country),currency:text(row.preferredCurrency),port:text(row.destinationPortName),profile:{...fields,revision}};
 }
 export function createSupportCustomerOperations({store,now=()=>new Date()}){

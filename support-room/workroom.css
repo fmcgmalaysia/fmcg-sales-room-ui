@@ -357,3 +357,7 @@ body.support-workroom.support-invoices-view .tools{padding:5px 8px;gap:8px;margi
   .desk-task-table .order-tasks{min-width:0}
   .desk-task-table .order-tasks thead th{position:sticky;top:91px;z-index:3;box-shadow:0 1px #b6cde0}
 }
+
+.payment-term-needed,.payment-term-unset{border:1px solid #e7a746;border-radius:4px;background:#fff0d6;color:#794700}
+.payment-term-needed{min-height:28px;padding:3px 8px;font:inherit;font-weight:600;white-space:nowrap;cursor:pointer}
+.payment-term-needed:hover{background:#fce5bd}
