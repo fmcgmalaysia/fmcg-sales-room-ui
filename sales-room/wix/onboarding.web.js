@@ -9,7 +9,7 @@ import { getSecret } from 'wix-secrets-backend';
 import wixRealtimeBackend from 'wix-realtime-backend';
 import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
-import { requireStaffCustomerAccess, staffMayAccessCustomer, getMasterSalesCreationAssignees } from 'backend/masterStaffAccessClient.js';
+import { requireStaffCustomerAccess, staffMayAccessCustomer, getMasterSalesCreationAssignees, resolveMasterSalesCreationAssignee, confirmMasterInitialSalesAccess } from 'backend/masterStaffAccessClient.js';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
@@ -56,30 +56,33 @@ export const createSalesRoomCustomer = webMethod(
     const duplicateCompany = await wixData
       .query(CUSTOMER_COLLECTION)
       .eq('title', customer.companyName)
-      .limit(1)
-      .find({ suppressAuth: true });
-
-    if (duplicateCompany.items.length) {
+      .limit(2)
+      .find({ suppressAuth: true, consistentRead: true });
+    let customerRecord = duplicateCompany.items[0];
+    const canResumeReservation = duplicateCompany.items.length === 1 &&
+      /^[a-f0-9]{64}$/.test(customerRecord.salesInitialGrantRevision || '') &&
+      !customerRecord.qdFileId &&
+      ['REGISTERING', 'ACCESS RECORD ERROR'].includes(upper(customerRecord.customerStatus)) &&
+      upper(customerRecord.assignedStaffId) === staff.staffId &&
+      upper(customerRecord.customerShortName) === customer.customerShortName &&
+      normalizeEmail(customerRecord.primaryEmail) === customer.picEmail;
+    if (customerRecord && !canResumeReservation) {
       throw new Error('This company is already registered.');
     }
 
-    const duplicateShortName = await wixData
-      .query(CUSTOMER_COLLECTION)
-      .eq('customerShortName', customer.customerShortName)
-      .limit(1)
-      .find({ suppressAuth: true });
+    if (!customerRecord) {
+      const duplicateShortName = await wixData
+        .query(CUSTOMER_COLLECTION)
+        .eq('customerShortName', customer.customerShortName)
+        .limit(1)
+        .find({ suppressAuth: true });
 
-    if (duplicateShortName.items.length) {
-      throw new Error('This CUSTOMER SHORT NAME is already in use.');
-    }
+      if (duplicateShortName.items.length) {
+        throw new Error('This CUSTOMER SHORT NAME is already in use.');
+      }
 
-    const customerId = await generateUniqueCustomerId();
-    const userId = 'USR-' + customerId + '-01';
-    const now = new Date();
-
-    let customerRecord = await wixData.insert(
-      CUSTOMER_COLLECTION,
-      {
+      const customerId = await generateUniqueCustomerId();
+      customerRecord = await wixData.insert(CUSTOMER_COLLECTION, {
         title: customer.companyName,
         customerShortName: customer.customerShortName,
         customerId,
@@ -93,6 +96,7 @@ export const createSalesRoomCustomer = webMethod(
         selectionLimit: 100,
         destinationPortName: customer.destinationPort,
         assignedStaffId: staff.staffId,
+        salesInitialGrantRevision: staff.grantRevision,
         qdOwnerStaffId: staff.staffId,
         qdFileId: '',
         qdFileLabel: '',
@@ -105,15 +109,22 @@ export const createSalesRoomCustomer = webMethod(
         accessStatus: 'PENDING',
         reactivationStatus: 'NONE',
         primaryEmail: customer.picEmail
-      },
-      { suppressAuth: true }
-    );
+      }, { suppressAuth: true });
+      if (customerRecord.salesInitialGrantRevision !== staff.grantRevision) {
+        throw new Error('Customer was reserved, but initial LTPOS access could not be recorded.');
+      }
+    }
+
+    const customerId = normalize(customerRecord.customerId);
+    const userId = 'USR-' + customerId + '-01';
+    const now = new Date();
 
     let userRecord;
     try {
       userRecord = await wixData.insert(
         CUSTOMER_USER_COLLECTION,
         {
+          _id: userId,
           title: customer.picName,
           userId,
           customerId,
@@ -127,12 +138,11 @@ export const createSalesRoomCustomer = webMethod(
         { suppressAuth: true }
       );
     } catch (error) {
-      customerRecord = await updateCustomerState(
-        customerRecord,
-        'ERROR',
-        'ACCESS RECORD ERROR'
-      );
-      throw new Error('Customer was reserved, but the access record could not be created: ' + safeMessage(error));
+      userRecord = await wixData.get(CUSTOMER_USER_COLLECTION, userId, { suppressAuth: true, consistentRead: true }).catch(() => null);
+      if (!userRecord || normalize(userRecord.customerId) !== customerId || normalizeEmail(userRecord.email) !== customer.picEmail) {
+        await updateCustomerState(customerRecord, 'ERROR', 'ACCESS RECORD ERROR');
+        throw new Error('Customer was reserved, but the access record could not be created: ' + safeMessage(error));
+      }
     }
 
     const auditActor = await requireAuthorizedStaffContext();
@@ -1811,28 +1821,20 @@ async function resolveCustomerRouting(requestedAssignedStaffId) {
   if (!context.canViewAllCustomers && context.customerScope?.canCreateCustomers !== true) {
     throw new Error('Customer setup requires Sales edit access in LTPOS.');
   }
-  const routing = await getMasterSalesCreationAssignees(context.loginEmail);
-  if (!routing) throw new Error('Customer setup requires Sales edit access in LTPOS.');
-
   const requestedStaffId = upper(requestedAssignedStaffId);
-  const target = routing.mayAssignOthers
-    ? routing.assignees.find(row => row.staffId === requestedStaffId)
-    : routing.assignees[0];
+  const target = await resolveMasterSalesCreationAssignee(context.loginEmail, requestedStaffId);
   if (!target) throw new Error('Select an active salesperson from LTPOS.');
-  if (!routing.mayAssignOthers && requestedStaffId && requestedStaffId !== target.staffId) {
-    throw new Error('Sales staff cannot assign a customer to another employee.');
-  }
-  return Object.freeze({ ...target, assignedByStaffId: upper(context.staffId) });
+  return Object.freeze({ ...target, loginEmail: context.loginEmail });
 }
 
 async function resumeExistingRegistration(existingAccess, customer, staff) {
   const customerResult = await wixData
     .query(CUSTOMER_COLLECTION)
     .eq('customerId', normalize(existingAccess.customerId))
-    .limit(1)
-    .find({ suppressAuth: true });
+    .limit(2)
+    .find({ suppressAuth: true, consistentRead: true });
 
-  if (!customerResult.items.length) {
+  if (customerResult.items.length !== 1) {
     throw new Error('This email already has an access record without a customer record. Admin review is required.');
   }
 
@@ -1871,6 +1873,10 @@ function httpsFetchLike(url, options) { const send = (target, method, body) => n
   }
 
   try {
+    if (customerRecord.salesInitialGrantRevision) {
+      await confirmMasterInitialSalesAccess(staff.loginEmail, routingPayload.customerId,
+        routingPayload.assignedStaffId, customerRecord.salesInitialGrantRevision);
+    }
     const sharedSecret = await getSecret(SECRET_NAME);
     let response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
       method: 'post',
@@ -1892,6 +1898,7 @@ function httpsFetchLike(url, options) { const send = (target, method, body) => n
       returnedStatus,
       returnedStatus === 'READY' ? 'REGISTERED' : 'ACTIVATION REQUIRED',
       {
+        salesInitialGrantRevision: '',
         qdOwnerStaffId: upper(customerRecord.qdOwnerStaffId || staff.staffId),
         qdFileId: normalize(body.result?.qdFileId || customerRecord.qdFileId),
         qdFileLabel: normalize(
@@ -1997,7 +2004,7 @@ async function findCustomerUserByEmail(email) {
     .query(CUSTOMER_USER_COLLECTION)
     .eq('email', email)
     .limit(2)
-    .find({ suppressAuth: true });
+    .find({ suppressAuth: true, consistentRead: true });
 
   if (result.items.length > 1) {
     throw new Error('Duplicate customer access email. Admin review is required.');

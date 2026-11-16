@@ -5,14 +5,17 @@ const endpoint = 'https://fmcg999.wixstudio.com/master/_functions/staffAccess';
 
 // Call only after authenticating the current FMCG member and checking their
 // local member binding. Never pass an email from a browser message.
-async function requestStaffAccess(loginEmail, action, customerId, verifiedFmcgEmail = false) {
+async function requestStaffAccess(loginEmail, action, customerId, verifiedFmcgEmail = false, assignment = {}) {
   const secret = await getSecret('MASTER_STAFF_AUTH_SHARED_SECRET');
   if (!secret) throw Error('Staff authorization is unavailable.');
   const result = await fetch(endpoint, {
     method: 'post',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + secret },
-    body: JSON.stringify({ loginEmail, action, customerId, ...(verifiedFmcgEmail ? { verifiedFmcgEmail } : {}) })
+    body: JSON.stringify({ ...assignment, loginEmail, action, customerId, ...(verifiedFmcgEmail ? { verifiedFmcgEmail } : {}) })
   });
+  if (result.status === 409 && action === 'SALES_GRANT_INITIAL_ACCESS') {
+    throw Error('Salesperson access changed during registration. Review the customer grant in LTPOS.');
+  }
   if (!result.ok) throw Error('Staff authorization is unavailable.');
   return result.json();
 }
@@ -52,6 +55,23 @@ export async function getMasterSalesCreationAssignees(loginEmail) {
     throw Error('Salesperson assignment is unavailable.');
   }
   return { mayAssignOthers: result.mayAssignOthers, assignees: result.assignees };
+}
+
+export async function resolveMasterSalesCreationAssignee(loginEmail, targetStaffId) {
+  const result = await requestStaffAccess(loginEmail, 'SALES_CREATION_ASSIGNEE', undefined, false, { targetStaffId });
+  if (result.allowed !== true) return null;
+  if (typeof result.owner?.staffId !== 'string' || !/^STF-[A-Z0-9]{5,20}$/.test(result.owner.staffId) ||
+      (targetStaffId && result.owner.staffId !== targetStaffId) ||
+      typeof result.owner.staffName !== 'string' || !result.owner.staffName.trim() ||
+      typeof result.grantRevision !== 'string' || !/^[a-f0-9]{64}$/.test(result.grantRevision)) {
+    throw Error('Salesperson assignment is unavailable.');
+  }
+  return { staffId: result.owner.staffId, staffName: result.owner.staffName, grantRevision: result.grantRevision };
+}
+
+export async function confirmMasterInitialSalesAccess(loginEmail, customerId, targetStaffId, grantRevision) {
+  const result = await requestStaffAccess(loginEmail, 'SALES_GRANT_INITIAL_ACCESS', customerId, false, { targetStaffId, grantRevision });
+  if (result.allowed !== true) throw Error('Initial customer access could not be confirmed in LTPOS.');
 }
 
 export function staffMayAccessCustomer(staff, action, customerId) {

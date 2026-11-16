@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const {timingSafeEqual} = require('node:crypto');
+const {createHash, timingSafeEqual} = require('node:crypto');
 const policy = require('./load-master-module.cjs')('staffManagementPolicy.js');
 const staff = {
   title:'staff-a', description:'master-member-a', staffEmail:'staff@example.com',
@@ -12,10 +12,21 @@ const staff = {
 };
 function fixture(options = {}) {
   let reads = 0;
+  let writes = 0;
+  let ownerRows = options.assignmentRows ?? [];
+  let actorRows = options.rows ?? [staff];
   const source = fs.readFileSync(path.join(__dirname,'../backend/staffAccessGateway.js'),'utf8')
     .replace(/^import .+;\r?$/gm,'').replace(/^export /gm,'');
   const check = vm.runInNewContext(source+'\ncheckFmcgStaffAccess', {
-    ...policy, Buffer, timingSafeEqual,
+    ...policy, Buffer, createHash, timingSafeEqual,
+    writeStaffManagement: async ({prepare, project}) => {
+      const {row} = await prepare();
+      writes++;
+      ownerRows = ownerRows.map(owner=>owner.title===row.title?row:owner);
+      actorRows = actorRows.map(actor=>actor.title===row.title?row:actor);
+      if(options.lostGrantResponse) throw Error('Response lost after grant write');
+      return project(row);
+    },
     getSecret:async()=>options.secret ?? 'test-secret',
     wixData:{query:()=>({eq:(field,email)=>{
       if (field === 'staffStatus') {
@@ -26,10 +37,18 @@ function fixture(options = {}) {
           return {find:async readOptions=>{
             assert.equal(readOptions.consistentRead,true);
             reads++;
-            return {items: options.assignmentRows.filter(row=>row.staffStatus==='ACTIVE'), hasNext:()=>Boolean(options.more)};
+            return {items: ownerRows.filter(row=>row.staffStatus==='ACTIVE'), hasNext:()=>Boolean(options.more)};
           }};
         }};
       }
+      if (field === 'title') return {limit: limit => {
+        assert.equal(limit,2);
+        return {find:async readOptions=>{
+          assert.equal(readOptions.consistentRead,true);
+          reads++;
+          return {items: ownerRows.filter(row=>row.title===email)};
+        }};
+      }};
       assert.equal(field,'staffEmail');
       assert.equal(email,'staff@example.com');
       return {limit:limit=>{
@@ -38,12 +57,12 @@ function fixture(options = {}) {
           assert.equal(readOptions.consistentRead,true);
           reads++;
           if(options.queryFailure) throw Error('Database unavailable');
-          return {items:options.rows ?? [staff]};
+          return {items:actorRows};
         }};
       }};
     }})}
   });
-  return {check,get reads(){return reads;}};
+  return {check,get reads(){return reads;},get writes(){return writes;},get ownerRows(){return ownerRows;}};
 }
 const request = (input = {}, headers = {Authorization:'Bearer test-secret'}) => ({
   headers,body:{text:async()=>typeof input === 'string' ? input : JSON.stringify({
@@ -73,6 +92,40 @@ test('Super Admin may list eligible Sales Edit owners without contact details', 
   assert.equal(JSON.stringify(result.body),JSON.stringify({allowed:true,mayAssignOthers:true,assignees:[{staffId:'STF-SALES1',staffName:'Sales One'}]}));
   assert.equal((await fixture({...options,more:true}).check(forNewCustomer())).status,503);
   assert.equal((await fixture({...options,assignmentRows:[salesperson,salesperson]}).check(forNewCustomer())).status,503);
+});
+
+const newCustomerId = 'CUS-261116-TEST01';
+const resolveOwner = targetStaffId => request({action:'SALES_CREATION_ASSIGNEE',customerId:undefined,targetStaffId});
+const grantOwner = grantRevision => request({action:'SALES_GRANT_INITIAL_ACCESS',customerId:newCustomerId,targetStaffId:salesperson.title,grantRevision});
+
+test('a failed acknowledgement confirms the existing initial grant without writing twice', async()=>{
+  const f=fixture({rows:[salesperson],assignmentRows:[salesperson],lostGrantResponse:true});
+  const resolved=await f.check(resolveOwner(undefined));
+  assert.equal(resolved.body.owner.staffId,salesperson.title);
+  assert.equal((await f.check(grantOwner(resolved.body.grantRevision))).status,503);
+  assert.equal((await f.check(grantOwner(resolved.body.grantRevision))).body.allowed,true);
+  assert.equal(f.writes,1);
+  assert.equal(f.ownerRows[0].staffAccess.customerAccess[newCustomerId],'EDIT');
+});
+
+test('a changed grant cannot be silently restored by an old create retry', async()=>{
+  const initial=fixture({rows:[salesperson],assignmentRows:[salesperson]});
+  const {grantRevision}=(await initial.check(resolveOwner(undefined))).body;
+  for(const customerAccess of [{},{[newCustomerId]:'VIEW'}]) {
+    const changed={...salesperson,_updatedDate:'2026-11-16T04:15:00.000Z',staffAccess:{...salesperson.staffAccess,customerAccess}};
+    const f=fixture({rows:[changed],assignmentRows:[changed]});
+    assert.equal((await f.check(grantOwner(grantRevision))).status,409);
+    assert.equal(f.writes,0);
+  }
+});
+
+test('staff cannot resolve another assignee or grant initial access from Support', async()=>{
+  const own=fixture({rows:[salesperson],assignmentRows:[salesperson]});
+  assert.equal((await own.check(resolveOwner('STF-SALES2'))).body.allowed,false);
+  assert.equal(own.reads,1);
+  const support=fixture({rows:[staff],assignmentRows:[salesperson]});
+  assert.equal((await support.check(grantOwner('a'.repeat(64)))).body.allowed,false);
+  assert.equal(support.writes,0);
 });
 
 test('missing, duplicate and invalid credentials reject before any employee lookup', async()=>{
