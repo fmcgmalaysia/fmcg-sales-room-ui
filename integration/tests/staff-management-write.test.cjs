@@ -72,6 +72,32 @@ test('save status distinguishes clear, unconfirmed and confirmed locks without w
   assert.equal(f.rows.has('staff-management-write-lock'), true);
 });
 
+test('exact receipt survives lock release and projects only the managed employee', async () => {
+  const f = fixture({failAfter:true}), input = request();
+  await f.write(input);
+  const calls = f.calls.length;
+  const receipt = await f.readStatus(input.requestId, row => ({ staffId: row.title }));
+  assert.equal(receipt.state, 'CONFIRMED');
+  assert.equal(receipt.requestId, input.requestId);
+  assert.equal(receipt.employee.staffId, 'staff-id');
+  assert.equal(receipt.employee.staffManagementFingerprint, undefined);
+  assert.equal(f.calls.length, calls);
+});
+
+test('missing or contradictory exact receipts do not replay changes or release the lock', async () => {
+  const f = fixture({failBefore:true}), input = request();
+  await assert.rejects(f.write(input), /awaiting confirmation/);
+  const calls = f.calls.length;
+  const project = () => assert.fail('Unconfirmed employee projected');
+  assert.equal((await f.readStatus(input.requestId, project)).state, 'PENDING');
+  assert.equal((await f.readStatus(randomUUID(), project)).state, 'PENDING');
+  f.rows.set('employee', {staffManagementRequestId:input.requestId,staffManagementFingerprint:'mismatch'});
+  assert.equal((await f.readStatus(input.requestId, project)).state, 'PENDING');
+  await assert.rejects(f.readStatus('not-a-request', project), /Invalid employee save request/);
+  assert.equal(f.calls.length, calls);
+  assert.equal(f.rows.has('staff-management-write-lock'), true);
+});
+
 test('an unconfirmed write stays blocked and a different request cannot steal the lock',async()=>{
   const f=fixture({failBefore:true}), input=request();
   await assert.rejects(f.write(input),/awaiting confirmation/);

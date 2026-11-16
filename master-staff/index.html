@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="build" content="20261114-staff-save-confirmation-v1">
+<meta name="build" content="20261116-staff-save-receipt-v1">
 <title>Staff Management · MASTER</title>
 <style>
   @font-face{font-family:"Purchase Dashboard Inter";font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fMZg.ttf) format("truetype")}
@@ -114,7 +114,11 @@
   const parentOrigin = 'https://fmcg999.wixstudio.com';
   const requests = new Map();
   const employees = [];
-  let editing = null, pendingSave = null, customers = [], selected = null;
+  const pendingKey = 'master.staff.save.pending';
+  const pendingMessage = 'The system is checking this save. You can close this form. 系统正在确认保存，可以关闭表单。';
+  let editing = null, customers = [], selected = null;
+  let pendingReceipt, pendingForm = null, receiptTimer;
+  try { pendingReceipt = localStorage.getItem(pendingKey); } catch (_) {}
   let dirty = false, saving = false;
   let customerLoad = 0;
 
@@ -124,7 +128,7 @@
       const requestId = crypto.randomUUID();
       const timer = setTimeout(() => {
         requests.delete(requestId);
-        reject(Error('MASTER did not confirm the request. Reload the directory to check its status.'));
+        reject(Error('MASTER did not confirm the request.'));
       }, 15000);
       requests.set(requestId, { resolve, reject, timer });
       window.parent.postMessage({ action, requestId, ...fields }, parentOrigin);
@@ -142,7 +146,11 @@
       const error = Error('Sign in with your MASTER staff account.');
       error.signInRequired = true;
       request.reject(error);
-    } else request.reject(Error(event.data.error || 'The request was rejected.'));
+    } else {
+      const error = Error(event.data.error || 'The request was rejected.');
+      error.saveRejected = event.data.saveRejected === true;
+      request.reject(error);
+    }
   });
 
   function render() {
@@ -226,8 +234,64 @@
     output.textContent = message;
   }
 
+  function rememberReceipt(requestId) {
+    pendingReceipt = requestId;
+    clearTimeout(receiptTimer);
+    try {
+      if (requestId) localStorage.setItem(pendingKey, requestId);
+      else localStorage.removeItem(pendingKey);
+    } catch (_) {}
+    if (!requestId) id('directory-warning').hidden = true;
+  }
+
+  function showPendingReceipt() {
+    id('directory-warning').hidden = false;
+    id('directory-warning').textContent = pendingMessage;
+  }
+
+  async function findReceipt(requestId, delays) {
+    for (const delay of delays) {
+      if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+      try {
+        const { saveStatus } = await send('CHECK_STAFF_SAVE', { saveRequestId: requestId });
+        if (saveStatus?.state === 'CONFIRMED' && saveStatus.requestId === requestId && saveStatus.employee) {
+          return saveStatus.employee;
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  function showConfirmedEmployee(employee) {
+    const index = employees.findIndex(row => row.staffId === employee.staffId);
+    if (index >= 0) employees[index] = employee;
+    else employees.push(employee);
+    const matchingForm = !form.hidden && pendingForm === customerLoad;
+    rememberReceipt(null);
+    pendingForm = null;
+    if (matchingForm) void openEmployee(employee, true);
+    else {
+      if (!form.hidden && dirty) id('save').hidden = false;
+      render();
+    }
+  }
+
+  function scheduleReceipt(delay = 30000) {
+    clearTimeout(receiptTimer);
+    if (!pendingReceipt) return;
+    receiptTimer = setTimeout(async () => {
+      const requestId = pendingReceipt;
+      if (requestId && document.visibilityState !== 'hidden') {
+        const employee = await findReceipt(requestId, [0]);
+        if (requestId !== pendingReceipt) return;
+        if (employee) return showConfirmedEmployee(employee);
+      }
+      scheduleReceipt();
+    }, delay);
+  }
+
   function selectEmployee(employee = null) {
-    if (saving || pendingSave) return;
+    if (saving) return;
     if (!form.hidden && selected === employee) return;
     if (dirty) {
       showSaveStatus('Save or cancel your changes before switching employees.', true);
@@ -241,7 +305,6 @@
     selected = employee;
     editing = employee;
     dirty = false;
-    pendingSave = null;
     form.reset();
     id('add-title').textContent = employee?.name ?? 'Add Employee';
     const administrator = employee?.role === 'SUPER ADMIN';
@@ -256,8 +319,8 @@
     id('save').textContent=employee?'Save':'Add Employee';
     id('employee-status').hidden=!employee;
     id('registration-help').hidden = Boolean(employee);
-    showSaveStatus(saved ? 'Saved successfully 已保存' : '');
-    id('save').hidden = saved;
+    showSaveStatus(saved ? 'Saved successfully 已保存' : pendingReceipt ? pendingMessage : '');
+    id('save').hidden = saved || Boolean(pendingReceipt);
     id('cancel').textContent = saved ? 'Done' : 'Cancel';
     const access=employee?.access ?? {};
     form.elements.namedItem('name').value=employee?.name ?? '';
@@ -286,7 +349,7 @@
   }
   id('add').addEventListener('click', () => selectEmployee());
   id('cancel').addEventListener('click', () => {
-    if (saving || pendingSave) return;
+    if (saving) return;
     if (editing && !id('save').hidden) { void openEmployee(editing); return; }
     customerLoad++;
     dirty = false;
@@ -299,41 +362,53 @@
   });
   form.addEventListener('input', () => {
     dirty = true;
-    id('save').hidden = false;
+    id('save').hidden = Boolean(pendingReceipt);
     id('cancel').textContent = 'Cancel';
     showSaveStatus('');
   });
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    if (form.hidden || saving || id('save').disabled || id('save').hidden) return;
+    if (form.hidden || saving || pendingReceipt || id('save').disabled || id('save').hidden) return;
     const submittedWithSaveFocus = document.activeElement === id('save');
     saving = true;
     id('save').disabled = true;
     id('cancel').disabled = true;
     showSaveStatus('Saving…');
-    let savedEmployee;
+    let savedEmployee, submitted;
     try {
-      if(!pendingSave) pendingSave={...registration(),saveRequestId:crypto.randomUUID(),
+      submitted={...registration(),saveRequestId:crypto.randomUUID(),
         ...(editing?{staffId:editing.staffId,revision:editing.revision,status:form.elements.namedItem('status').value}:{})};
+      rememberReceipt(submitted.saveRequestId);
+      pendingForm = customerLoad;
       form.querySelectorAll('input,select').forEach(element => element.disabled = true);
-      const result = await send(editing?'UPDATE_STAFF':'REGISTER_STAFF', pendingSave);
-      const index=employees.findIndex(employee=>employee.staffId===result.employee.staffId);
-      if(index>=0)employees[index]=result.employee;else employees.push(result.employee);
+      const result = await send(editing?'UPDATE_STAFF':'REGISTER_STAFF', submitted);
       savedEmployee = result.employee;
+      if (!savedEmployee) savedEmployee = await findReceipt(submitted.saveRequestId, [0, 1000, 2500]);
     } catch (error) {
-      showSaveStatus(error.message, true);
-      const uncertain=/awaiting confirmation|did not confirm/i.test(error.message);
-      if(!uncertain)pendingSave=null;
-      form.querySelectorAll('input,select').forEach(element=>element.disabled=uncertain);
-      id('save').textContent=uncertain?'Check same save':editing?'Save':'Add Employee';
+      if (!submitted || error.saveRejected || error.signInRequired) {
+        rememberReceipt(null);
+        pendingForm = null;
+        showSaveStatus(error.message, true);
+        form.querySelectorAll('input,select').forEach(element => element.disabled = false);
+      } else {
+        showSaveStatus('Checking the original save… 正在核对本次保存…');
+        savedEmployee = await findReceipt(submitted.saveRequestId, [0, 1000, 2500]);
+      }
     } finally {
       saving = false;
       id('save').disabled = false;
-      id('cancel').disabled = Boolean(pendingSave && !savedEmployee);
+      id('cancel').disabled = false;
     }
     if (savedEmployee) {
-      void openEmployee(savedEmployee, true);
+      showConfirmedEmployee(savedEmployee);
       if (submittedWithSaveFocus && document.activeElement === document.body && !form.hidden) id('cancel').focus();
+    } else if (pendingReceipt) {
+      dirty = false;
+      id('save').hidden = true;
+      id('cancel').textContent = 'Done';
+      showSaveStatus(pendingMessage);
+      showPendingReceipt();
+      scheduleReceipt();
     }
   });
 
@@ -345,16 +420,15 @@
       id('search').disabled = false;
       id('sign-in').hidden = true;
       id('status').className = '';
-      id('directory-warning').hidden = true;
       render();
-      if (result.saveStatus && result.saveStatus.state !== 'CLEAR') {
-        const { state, requestId } = result.saveStatus;
-        const message = state === 'CONFIRMED_LOCK_HELD'
-          ? 'The previous save was recorded. Its confirmation lock is still held.'
-          : 'The previous save could not be confirmed.';
+      if (pendingReceipt || result.saveStatus?.state === 'UNCONFIRMED') {
+        rememberReceipt(pendingReceipt || result.saveStatus.requestId);
+        showPendingReceipt();
+        scheduleReceipt(0);
+      } else if (result.saveStatus?.state === 'CONFIRMED_LOCK_HELD') {
         id('directory-warning').hidden = false;
-        id('directory-warning').textContent = message + ' Check the original request before starting another save. Request: ' + requestId;
-      }
+        id('directory-warning').textContent = 'The save was recorded. The system is still confirming it. 保存已记录，系统正在确认。';
+      } else id('directory-warning').hidden = true;
     } catch (error) {
       employees.length = 0;
       id('employees').replaceChildren();

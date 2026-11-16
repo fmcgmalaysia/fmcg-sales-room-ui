@@ -26,12 +26,12 @@ async function directoryForManager() {
   return rows.filter(row => row.staffStatus !== 'CONTROL');
 }
 
-export const getManagedStaffSaveStatus = webMethod(Permissions.SiteMember, async () => {
+export const getManagedStaffSaveStatus = webMethod(Permissions.SiteMember, async requestId => {
   const member = await currentMember.getMember({ fieldsets: ['FULL'] });
   if (!member?._id) throw Error('Sign in with your approved staff account.');
   const identity = await wixData.query(collection).eq('description', member._id).limit(2).find(readOptions);
   requireStaffManager(member, identity.items);
-  return readStaffSaveStatus();
+  return readStaffSaveStatus(requestId, projectManagedStaff);
 });
 
 export const getManagedStaffDirectory = webMethod(Permissions.SiteMember, async () => {

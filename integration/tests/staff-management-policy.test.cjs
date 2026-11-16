@@ -162,6 +162,22 @@ test('the registration endpoint never discloses staff data or writes for an ordi
   assert.ok(queries.every(query=>query.field==='description' && query.limit===2));
 });
 
+test('exact staff receipts require the same active Super Admin authorization', async () => {
+  const requestId = require('node:crypto').randomUUID();
+  const denied = testStaffWeb(active);
+  await assert.rejects(denied.getManagedStaffSaveStatus(requestId), /Super Admin/);
+  assert.deepEqual(denied.queries.map(query => query.field), ['description']);
+  assert.equal(denied.inserts.length, 0);
+
+  const manager = testStaffWeb({...active,role:'SUPER ADMIN'});
+  const employee = await manager.registerPendingStaff({name:'New employee',email:'new@example.com',requestId});
+  const count = manager.inserts.length;
+  const status = await manager.getManagedStaffSaveStatus(requestId);
+  assert.equal(status.state, 'CONFIRMED');
+  assert.equal(status.employee.staffId, employee.staffId);
+  assert.equal(manager.inserts.length, count);
+});
+
 test('simultaneous registrations of the same email cannot both insert', async () => {
   const { getManagedStaffDirectory, registerPendingStaff, records } = testStaffWeb({...active,role:'SUPER ADMIN'});
   const results = await Promise.allSettled([
@@ -293,9 +309,9 @@ function testStaffWeb(actor) {
     .replace(/^import .+;\r?$/gm,'').replace(/^export /gm,'');
   const writeSource=fs.readFileSync(require('node:path').join(__dirname,'../backend/staffManagementWrite.js'),'utf8')
     .replace(/^import .+;\r?$/gm,'').replace(/^export /gm,'');
-  const writeStaffManagement=vm.runInNewContext(writeSource+'\nwriteStaffManagement',{wixData});
-  const api = vm.runInNewContext(script+'\n({getManagedStaffDirectory,registerPendingStaff,updateManagedStaff})',{
-    writeStaffManagement,
+  const operations=vm.runInNewContext(writeSource+'\n({writeStaffManagement,readStaffSaveStatus})',{wixData});
+  const api = vm.runInNewContext(script+'\n({getManagedStaffDirectory,getManagedStaffSaveStatus,registerPendingStaff,updateManagedStaff})',{
+    ...operations,
     createHash,randomUUID,wixData,...policy,
     currentMember:{getMember:async()=>member},
     Permissions:{SiteMember:'SiteMember'},

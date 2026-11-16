@@ -5,13 +5,23 @@ const lockId = 'staff-management-write-lock';
 const readOptions = { suppressAuth: true, consistentRead: true };
 const writeOptions = { suppressAuth: true };
 
-export async function readStaffSaveStatus() {
+export async function readStaffSaveStatus(requestId, project) {
+  const exact = requestId !== undefined;
+  if (exact && (typeof requestId !== 'string' || !/^[a-f0-9-]{36}$/i.test(requestId))) {
+    throw Error('Invalid employee save request.');
+  }
   const locks = await wixData.query(collection).eq('_id', lockId).limit(1).find(readOptions);
   const lock = locks.items[0];
-  if (!lock) return { state: 'CLEAR' };
-  const result = await wixData.query(collection).eq('staffManagementRequestId', lock.requestId).limit(2).find(readOptions);
+  if (!exact && !lock) return { state: 'CLEAR' };
+  const id = exact ? requestId : lock.requestId;
+  const result = await wixData.query(collection).eq('staffManagementRequestId', id).limit(2).find(readOptions);
   const row = result.items[0];
-  const confirmed = result.items.length === 1 && row.staffManagementFingerprint === lock.fingerprint;
+  const matchingLock = lock?.requestId === id;
+  const confirmed = result.items.length === 1 && Boolean(row.staffManagementFingerprint)
+    && (!matchingLock || row.staffManagementFingerprint === lock.fingerprint);
+  if (exact) return confirmed
+    ? { state: 'CONFIRMED', requestId: id, employee: project(row) }
+    : { state: 'PENDING', requestId: id };
   return { state: confirmed ? 'CONFIRMED_LOCK_HELD' : 'UNCONFIRMED', requestId: lock.requestId };
 }
 
