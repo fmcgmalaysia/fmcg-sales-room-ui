@@ -63,8 +63,71 @@ const payload = {
   whatsapp: 'YES', preferredCurrency: 'USD', destinationPort: 'PORT KLANG'
 };
 
+function qdFixture() {
+  const directory = 'integration/apps-script/verified-central-v16';
+  const script = name => readFileSync(join(__dirname, '../..', directory, name), 'utf8');
+  const files = new Map();
+  const valueList = 'VALUE_IN_LIST';
+  function sheet(id) {
+    const values = new Map();
+    return {
+      values,
+      getRange: cell => ({
+        setValue(value) { values.set(cell, value); return this; }, setNumberFormat() {},
+        getDisplayValue: () => values.get(cell),
+        getDataValidation: () => ({
+          getCriteriaType: () => valueList, getCriteriaValues: () => [['RFQ', 'VIEW QUOTE', 'FAILED']],
+          getAllowInvalid: () => true
+        })
+      }),
+      getSheetId: () => id, getMaxRows: () => 20, getMaxColumns: () => 10,
+      getFrozenRows: () => 5, getFrozenColumns: () => 3, getConditionalFormatRules: () => [],
+      getProtections: () => [], getDataRange: () => ({ getFormulas: () => [[]], getDataValidations: () => [[]] }),
+      showSheet() {}, hideSheet() {}
+    };
+  }
+  function book() {
+    const metadata = new Map();
+    const sheets = { 'WIX QUOTATION': sheet(1), 'DRAFT 草稿区': sheet(2), 'QD SETUP': sheet(3) };
+    return {
+      metadata, getSheetByName: name => sheets[name], setActiveSheet() {},
+      addDeveloperMetadata: (key, value) => metadata.set(key, value),
+      getDeveloperMetadata: () => Array.from(metadata, ([key, value]) => ({
+        getKey: () => key, getValue: () => value, remove: () => metadata.delete(key)
+      }))
+    };
+  }
+  const templateBook = book();
+  const template = { makeCopy(name, folder) {
+    const id = `isolated-test-file-${files.size + 1}`;
+    const worksheet = book();
+    const file = { getId: () => id, getName: () => name, setDescription() {}, worksheet };
+    assert.equal(folder, destination);
+    files.set(id, file);
+    return file;
+  } };
+  const destination = { getFilesByType() {
+    const contents = [...files.values()];
+    return { hasNext: () => contents.length > 0, next: () => contents.shift() };
+  } };
+  const properties = { WIX_ONBOARDING_SHARED_SECRET: 'fixture-qd', WIX_QD_FX_RATES_JSON: '{"USD":4.25}' };
+  const router = vm.runInNewContext(script('Code.gs') + '\n' + script('WIX_QD_ROUTER.gs') + '\ndoPost', {
+    DriveApp: { getFileById: id => files.get(id) || template, getFolderById: () => destination },
+    SpreadsheetApp: {
+      openById: id => files.get(id)?.worksheet || templateBook, flush() {},
+      DataValidationCriteria: { VALUE_IN_LIST: valueList }, ProtectionType: { SHEET: 'SHEET', RANGE: 'RANGE' }
+    },
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: name => properties[name] }) },
+    ContentService: { createTextOutput: text => ({ setMimeType: () => text }), MimeType: { JSON: 'JSON' } },
+    MimeType: { GOOGLE_SHEETS: 'SHEET' }
+  });
+  return { files, respond: input => router({ postData: { contents: JSON.stringify(input) } }) };
+}
+
 function registration({ actor = salesperson, additionalOwners = [], loseFirstQdResponse = false, failFirstAccessInsert = false } = {}) {
-  const masterWrites = [], fmcgWrites = [], qdRequests = [], files = new Map();
+  const masterWrites = [], fmcgWrites = [], qdRequests = [];
+  const qd = qdFixture();
   const employees = actor === salesperson ? [actor] : [actor, salesperson];
   const master = wixStore({ StaffMasterAccess: [...employees, ...additionalOwners] }, masterWrites);
   const fmcg = wixStore({}, fmcgWrites);
@@ -105,7 +168,7 @@ function registration({ actor = salesperson, additionalOwners = [], loseFirstQdR
     request.end = () => {
       qdRequests.push(input);
       assert.equal(master.rows('StaffMasterAccess').find(row => row.title === input.assignedStaffId).staffAccess.customerAccess[input.customerId], 'EDIT');
-      if (!files.has(input.customerId)) files.set(input.customerId, `fixture-qd-${input.customerId}`);
+      const body = qd.respond(input);
       if (loseFirstQdResponse && qdRequests.length === 1) {
         request.emit('error', new Error('Lost QD acknowledgement'));
         return;
@@ -114,7 +177,7 @@ function registration({ actor = salesperson, additionalOwners = [], loseFirstQdR
       result.statusCode = 200;
       result.setEncoding = () => {};
       respond(result);
-      result.emit('data', JSON.stringify({ ok: true, result: { qdFileId: files.get(input.customerId), qdStatus: input.action === 'VERIFY_QD' ? 'READY' : 'ACTIVATION_REQUIRED' } }));
+      result.emit('data', body);
       result.emit('end');
     };
     return request;
@@ -123,7 +186,7 @@ function registration({ actor = salesperson, additionalOwners = [], loseFirstQdR
     ...client, wixData: fmcg, webMethod: (_, handler) => handler, Permissions: { SiteMember: 'member' },
     getCurrentStaffContext: readStaff, getSecret: async () => 'fixture-qd', httpsRequest
   });
-  return { api, master, fmcg, fmcgWrites, masterWrites, qdRequests, files };
+  return { api, master, fmcg, fmcgWrites, masterWrites, qdRequests, files: qd.files };
 }
 
 test('salesperson creates without a dropdown, recovers the same customer and QD after response loss, and verifies access', async () => {
@@ -140,6 +203,16 @@ test('salesperson creates without a dropdown, recovers the same customer and QD 
   assert.equal(flow.files.size, 1);
   assert.equal(flow.masterWrites.filter(write => write.id === salesperson._id).length, 1);
   assert.equal(flow.qdRequests[0].customerId, flow.qdRequests[1].customerId);
+  const book = flow.files.get(second.result.qdFileId).worksheet;
+  assert.equal(book.metadata.get('WIX_ASSIGNED_STAFF_ID'), salesperson.title);
+  assert.equal(book.metadata.get('WIX_CUSTOMER_ID'), second.result.customerId);
+  const header = book.getSheetByName('WIX QUOTATION').values;
+  assert.equal(header.get('D1'), payload.companyName.toUpperCase());
+  assert.equal(header.get('D3'), 'USD');
+  assert.equal(header.get('D4'), 4.25);
+  assert.equal((await flow.api.verifySalesRoomCustomerQd(second.result.customerId)).qdStatus, 'ACTIVATION_REQUIRED');
+  assert.notEqual(flow.fmcg.rows('WixCustomerUsers')[0].status, 'ACTIVE');
+  book.getSheetByName('QD SETUP').values.set('B9', 'STATUS');
   const verified = await flow.api.verifySalesRoomCustomerQd(second.result.customerId);
   assert.equal(verified.qdStatus, 'READY');
   assert.equal(verified.qdFileId, second.result.qdFileId);
