@@ -563,11 +563,16 @@ function setupCatalogueWorkspace() {
             const subId = typeof message.subId === 'string' ? message.subId : '';
             const categories = (catalogueMenuMessage?.items || []).filter(item => item.mainCategory === main);
             if (principle && !catalogueWorkspaceAllProducts.some(product => product.principle.toLowerCase() === principle.toLowerCase())) return;
-            if (main && !categories.length || subId && !categories.some(item => item.id === subId)) return;
+            if ((main && !categories.length) || (subId && !categories.some(item => item.id === subId))) return;
+            try { $w('#input2').value = ''; } catch (error) {}
+            if (main) {
+                const ids = subId ? [subId] : categories.map(item => item.id);
+                await showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids));
+                return;
+            }
             catalogueWorkspaceQueryVersion += 1;
             catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
-            catalogueWorkspaceFilter = { query: '', main: subId ? main : '', subIds: subId ? [subId] : categories.map(item => item.id), principle };
-            try { $w('#input2').value = ''; } catch (error) {}
+            catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle };
             sendCatalogueWorkspaceData();
         } else if (message.type === 'catalogueWorkspaceNavigate') {
             try { await wixWindowFrontend.scrollTo(0, 0); } catch (error) {}
