@@ -1,0 +1,97 @@
+@media (max-width: 1023px) {
+    body header[data-app-header-fmcg] {
+        grid-template-columns: minmax(0,1fr) auto auto;
+        grid-template-rows: minmax(44px,auto) minmax(38px,auto);
+    }
+    body header[data-app-header-fmcg] .mobile-menu-toggle {
+        justify-self: end;
+    }
+    body header.top[data-app-header-fmcg] .brand-lockup,
+    body header.global-header[data-app-header-fmcg] .brand-room {
+        grid-area: 1 / 1;
+        min-width: 0;
+        width: min(100%,174px);
+    }
+    body header.top[data-app-header-fmcg] .room-title {
+        grid-area: 2 / 1;
+        justify-self: start;
+        line-height: 1.15;
+    }
+    body header.top[data-app-header-fmcg] .spacer { display: none; }
+    body header.top[data-app-header-fmcg] .sales-account,
+    body header.global-header[data-app-header-fmcg] .account-chip {
+        grid-area: 2 / 2 / 3 / 4;
+        justify-self: end;
+        width: auto;
+        min-width: 0;
+        max-width: min(40vw,210px);
+        text-align: right;
+    }
+    body header.top[data-app-header-fmcg] .sales-account .staff {
+        font-size: 0;
+        font-weight: 600;
+        min-width: 0;
+        max-width: 100%;
+    }
+    body header.top[data-app-header-fmcg] .sales-account #staffTop {
+        font-size: 13px;
+        line-height: 1.25;
+        max-width: min(34vw,165px);
+        min-width: 0;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    body header.top[data-app-header-fmcg].app-header-has-search .room-title { grid-area: 1 / 2; }
+    body header.top[data-app-header-fmcg].app-header-has-search .sales-account,
+    body header.global-header[data-app-header-fmcg].app-header-has-search .account-chip {
+        grid-area: 2 / 3;
+    }
+    body header.global-header[data-app-header-fmcg] .header-right { display: contents; }
+    body header.global-header[data-app-header-fmcg] .notification-wrap { grid-area: 1 / 2; }
+    body header.global-header[data-app-header-fmcg] .notification-button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    body header.global-header[data-app-header-fmcg] .mobile-menu-toggle { color: inherit; }
+    body header.global-header[data-app-header-fmcg] .account-chip {
+        display: block;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    body header.global-header[data-app-header-fmcg] .account-mark { display: none; }
+    body header.global-header[data-app-header-fmcg] .account-copy {
+        display: grid;
+        gap: 3px;
+        font-size: 12px;
+        min-width: 0;
+    }
+    body header.global-header[data-app-header-fmcg] .account-copy :is(strong,span) {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .touch-buyer .toolbar-search:has(.app-header-search-source),
+    .touch-sales .customer-toolbar .searchbar:has(.app-header-search-source) {
+        position: absolute !important;
+        width: 1px !important;
+        min-width: 0 !important;
+        height: 1px !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        clip-path: inset(50%);
+        overflow: hidden;
+    }
+    body:is(.touch-sales,.touch-buyer).touch-menu-open [data-touch-menu-panel] {
+        top: 106px;
+        max-height: calc(100dvh - 106px);
+    }
+}
+@media (max-width: 360px) {
+    body header.top[data-app-header-fmcg].app-header-has-search .room-title { font-size: 10px; }
+}
+#progressRefresh[hidden] { display: none !important; }
