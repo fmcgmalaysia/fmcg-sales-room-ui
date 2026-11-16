@@ -4,6 +4,19 @@ const roles = ['Sales Representative','Sales Manager','Director','Account Dept.'
 const fields = ['companyName','shortName','registrationNo','address','officeTel','email','companyWebsite','collectionAddress','paymentTerm','supplierStatus','notes','salesContacts','brands','bankName','bankAccountNo','registrationNoNew','tinNo','warehouseAddress','warehouseSameAsOffice'];
 const optionalTextFields = ['bankName','bankAccountNo','registrationNoNew','tinNo','warehouseAddress'];
 const version = row => operationId(fields.filter(key=>(key==='warehouseSameAsOffice'?row?.[key]===true:!optionalTextFields.includes(key)||text(row?.[key]))).map(key => [key,row?.[key] ?? null]));
+const profileText = (key, value) => ['email','companyWebsite','bankAccountNo'].includes(key) ? text(value) : text(value).toUpperCase();
+const comparableProfile = row => JSON.stringify(fields.map(key => {
+  if (key==='warehouseSameAsOffice') return row[key]===true;
+  if (key==='warehouseAddress' && row.warehouseSameAsOffice===true) return profileText(key,row.address);
+  if (key==='salesContacts') return (row[key]||[]).map(contact => ['name','role','phone','email'].map(field=>profileText(field,contact[field]))).filter(contact=>contact.some(Boolean));
+  if (key==='brands') return [...new Set((row[key]||[]).map(name=>text(name).toUpperCase()).filter(Boolean))].sort();
+  return profileText(key,row[key]);
+}));
+function targetProfile(current, patch) {
+  const target=Object.fromEntries(fields.map(key=>[key,key in patch?patch[key]:(current?.[key]??null)]));
+  if(target.warehouseSameAsOffice===true) target.warehouseAddress=target.address || '';
+  return target;
+}
 export function createSharedSupplierOperations({store, brandOptions, now = () => new Date()}) {
   const journal = createOperationJournal({store,now});
   async function profile(supplierId) {
@@ -26,7 +39,7 @@ export function createSharedSupplierOperations({store, brandOptions, now = () =>
         continue;
       }
       if(typeof values[key] !== 'string' || values[key].length > 4000) throw Error('Invalid supplier field.');
-      patch[key] = ['email','companyWebsite','bankAccountNo'].includes(key)?text(values[key]):text(values[key]).toUpperCase();
+      patch[key] = profileText(key, values[key]);
     }
     if(!patch.companyName) return {ok:false,requestId,error:'Company Name is required.'};
     if(patch.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patch.email)) throw Error('Check supplier email.');
@@ -42,7 +55,22 @@ export function createSharedSupplierOperations({store, brandOptions, now = () =>
     patch.brands = [...new Set(values.brands.map(value=>text(value).toUpperCase()))].sort();
     if(patch.brands.some(value=>!value || value.length>200)) throw Error('Invalid brand name.');
     const identity = supplierId || 'SUP-'+operationId(requestId,staff.memberId).slice(0,16).toUpperCase();
-    return journal({collection:'SharedSupplierActivity',scope:'SUPPLIER/'+identity,entityId:identity,requestId,staff,input:{supplierId:identity,expectedVersion,patch},
+    const collection='SharedSupplierActivity', scope='SUPPLIER/'+identity;
+    if (supplierId && /^[a-f0-9-]{36}$/i.test(requestId || '') && staff?.memberId && staff.staffId && staff.staffName) {
+      const current=await store.one('SharedSuppliers',{title:identity});
+      if (current && version(current)===expectedVersion && comparableProfile(current)===comparableProfile(targetProfile(current,patch))) {
+        const key=operationId(scope,requestId,staff.memberId);
+        const [prepared,receipt,lock]=await Promise.all([store.read(collection,key),store.read(collection,operationId(key,'RESULT')),store.read(collection,operationId(scope,'LOCK'))]);
+        if (!prepared && !receipt) {
+          if (lock) throw Error('A save is still processing. Refresh before retrying the same save.');
+          const latest=await store.read('SharedSuppliers',current._id);
+          if (latest && version(latest)===expectedVersion && comparableProfile(latest)===comparableProfile(targetProfile(latest,patch))) {
+            return {ok:true,unchanged:true,requestId,supplierId:identity,version:expectedVersion};
+          }
+        }
+      }
+    }
+    return journal({collection,scope,entityId:identity,requestId,staff,input:{supplierId:identity,expectedVersion,patch},
       prepare:async()=>{
         const current=await store.one('SharedSuppliers',{title:identity});
         if(supplierId && !current) throw Error('Supplier not found.');
@@ -53,8 +81,7 @@ export function createSharedSupplierOperations({store, brandOptions, now = () =>
           const available=new Set((await brandOptions()).map(value=>text(value).toUpperCase()));
           if(newBrands.some(brand=>!available.has(brand))) throw Error('A selected brand is no longer in POINTBASE. Refresh brand options.');
         }
-        const target=Object.fromEntries(fields.map(key=>[key,key in patch?patch[key]:(current?.[key]??null)]));
-        if(target.warehouseSameAsOffice===true) target.warehouseAddress=target.address || '';
+        const target=targetProfile(current,patch);
         if((text(target.bankName)||text(target.bankAccountNo))&&(!text(target.bankName)||!text(target.bankAccountNo))) throw Error('Enter both Bank Name and Account No.');
         if(text(target.bankName).length>160||text(target.bankAccountNo).length>64||/[\u0000-\u001f\u007f]/.test(text(target.bankName)+text(target.bankAccountNo))) throw Error('Check supplier bank details.');
         return {id:current?._id || operationId('SUPPLIER',identity),supplierId:identity,expected:current?version(current):null,patch:target,

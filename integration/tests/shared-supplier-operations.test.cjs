@@ -1,12 +1,12 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{createHash}=require('node:crypto');
 const read=file=>fs.readFileSync(require('node:path').join(__dirname,'../backend',file),'utf8').replace(/^import .*;\r?$/gm,'').replace(/^export /gm,'');
 const api=vm.runInNewContext('(function(){'+read('purchaseOperationJournal.js')+'\n'+read('sharedSupplierOperations.js').replace('const version =','const supplierVersion =').replaceAll('version(', 'supplierVersion(')+'\nreturn {createSharedSupplierOperations};})()', {createHash,Date,JSON,Error,Object,Array,Number,Promise,Set,String});
-function fixture(){const rows=new Map(),copy=x=>JSON.parse(JSON.stringify(x));let fail=false;
+function fixture(){const rows=new Map(),writes=[],copy=x=>JSON.parse(JSON.stringify(x));let fail=false;
  const store={read:async(c,k)=>copy(rows.get(c+'/'+k)||null),one:async(c,criteria)=>copy([...rows].filter(([key])=>key.startsWith(c+'/')).map(([,r])=>r).find(r=>Object.entries(criteria).every(([k,v])=>r[k]===v))||null),
- insert:async(c,r)=>{if(rows.has(c+'/'+r._id))throw Error('duplicate');rows.set(c+'/'+r._id,copy(r));if(fail&&c==='SharedSuppliers'){fail=false;throw Error('response lost');}return copy(r);},update:async(c,r)=>{rows.set(c+'/'+r._id,copy(r));return copy(r);},remove:async(c,k)=>rows.delete(c+'/'+k)};
+ insert:async(c,r)=>{writes.push(['insert',c]);if(rows.has(c+'/'+r._id))throw Error('duplicate');rows.set(c+'/'+r._id,copy(r));if(fail&&c==='SharedSuppliers'){fail=false;throw Error('response lost');}return copy(r);},update:async(c,r)=>{writes.push(['update',c]);rows.set(c+'/'+r._id,copy(r));return copy(r);},remove:async(c,k)=>{writes.push(['remove',c]);return rows.delete(c+'/'+k);}};
  const service=api.createSharedSupplierOperations({store,brandOptions:async()=>['CADBURY','MAGGI']});
  const input={requestId:'11111111-1111-4111-8111-111111111111',staff:{staffId:'S',staffName:'LAW',memberId:'M'},values:{companyName:'test supplier',shortName:'test',email:'KeepCase@example.com',companyWebsite:'https://example.com/CaseSensitive',salesContacts:[{name:'Alice',role:'Warehouse',phone:'123',email:'Alice@example.com'}],brands:['cadbury']}};
- return {rows,service,input,fail:()=>fail=true};}
+ return {rows,writes,store,service,input,fail:()=>fail=true};}
 test('supplier save normalizes company and roles, preserves email/URL, and replays one actual record',async()=>{const f=fixture(),result=await f.service.save(f.input);const profile=await f.service.profile(result.supplierId);assert.equal(profile.companyName,'TEST SUPPLIER');assert.equal(profile.salesContacts[0].role,'WAREHOUSE');assert.equal(profile.email,'KeepCase@example.com');assert.equal(profile.companyWebsite,'https://example.com/CaseSensitive');assert.equal(profile.version,result.version);assert.equal((await f.service.save(f.input)).supplierId,result.supplierId);assert.equal([...f.rows.keys()].filter(k=>k.startsWith('SharedSuppliers/')).length,1);});
 test('lost response resumes inserted supplier without duplication and only then records success',async()=>{const f=fixture();f.fail();await assert.rejects(f.service.save(f.input),/response lost/);const result=await f.service.save(f.input);assert.equal(result.ok,true);assert.equal([...f.rows.keys()].filter(k=>k.startsWith('SharedSuppliers/')).length,1);});
 test('stale revision and reused save identity cannot overwrite subsequent profile changes',async()=>{const f=fixture(),first=await f.service.save(f.input);const edit={...f.input,supplierId:first.supplierId,expectedVersion:first.version,requestId:'22222222-2222-4222-8222-222222222222',values:{...f.input.values,companyName:'edited'}};await f.service.save(edit);await assert.rejects(f.service.save({...edit,requestId:'33333333-3333-4333-8333-333333333333',values:{...edit.values,companyName:'stale'}}),/changed/);await assert.rejects(f.service.save({...f.input,values:{...f.input.values,companyName:'reuse'}}),/different changes/);});
@@ -70,4 +70,46 @@ test('missing company name returns an editable failure before any receipt or sup
  assert.equal(rejected.requestId,input.requestId);
  assert.equal(rows.size,0);
  assert.equal((await service.save(input)).ok,true);
+});
+
+test('unchanged supplier form creates zero writes, including journal and lock',async()=>{
+ const f=fixture();
+ const created=await f.service.save({...f.input,values:{...f.input.values,brands:['CADBURY','MAGGI']}});
+ const before=f.writes.length;
+ const edit={...f.input,supplierId:created.supplierId,expectedVersion:created.version,requestId:'22222222-2222-4222-8222-222222222222',
+   values:{...f.input.values,companyName:' TEST SUPPLIER ',brands:['MAGGI','cadbury'],tinNo:'',warehouseAddress:'',warehouseSameAsOffice:false}};
+ const result=await f.service.save(edit);
+ assert.equal(result.ok,true);
+ assert.equal(result.unchanged,true);
+ assert.equal(result.version,created.version);
+ assert.equal(f.writes.length,before);
+ const changed=await f.service.save({...edit,requestId:'33333333-3333-4333-8333-333333333333',values:{...edit.values,email:'keepcase@example.com'}});
+ assert.notEqual(changed.version,created.version);
+ assert.equal(f.writes.slice(before).filter(row=>row[0]==='update'&&row[1]==='SharedSuppliers').length,1);
+});
+
+test('a confirmed edit keeps its original receipt even if the new profile already matches',async()=>{
+ const f=fixture(),created=await f.service.save(f.input);
+ const edit={...f.input,supplierId:created.supplierId,expectedVersion:created.version,requestId:'22222222-2222-4222-8222-222222222222',values:{...f.input.values,companyName:'new name'}};
+ const result=await f.service.save(edit),writes=f.writes.length;
+ const replay=await f.service.save(edit);
+ assert.equal(replay.savedAt,result.savedAt);
+ assert.equal(replay.version,result.version);
+ assert.equal(replay.unchanged,undefined);
+ assert.equal(f.writes.length,writes);
+});
+
+test('an edit that looks unchanged cannot mask a concurrent supplier version change',async()=>{
+ const f=fixture(),created=await f.service.save(f.input);
+ const original=f.store.read;
+ let intervened=false;
+ f.store.read=async(collection,id)=>{
+  if(collection==='SharedSuppliers'&&!intervened){
+   intervened=true;
+   f.rows.get(collection+'/'+id).companyName='OTHER EDITOR CHANGE';
+  }
+  return original(collection,id);
+ };
+ await assert.rejects(f.service.save({...f.input,supplierId:created.supplierId,expectedVersion:created.version,requestId:'22222222-2222-4222-8222-222222222222'}),/Supplier changed/);
+ assert.equal((await f.service.profile(created.supplierId)).companyName,'OTHER EDITOR CHANGE');
 });
