@@ -1,0 +1,7 @@
+{
+  "baseline": "1b60a7065ca957df830e9a41fe2bec27ecf47ad3f36fde6acf0dea1f584aa1d7",
+  "candidate": "3fa24e3418703d179add365ec3e578e8f07f73fd91909b46c566b40a4887c2a8",
+  "file": "warehouse-department-page.js",
+  "before": "20261116-stock-login-status-v1",
+  "after": "20261117-warehouse-expiry-unchanged-v1"
+}

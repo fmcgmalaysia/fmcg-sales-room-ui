@@ -37,6 +37,27 @@ export function createPackingListOperations({store,names,readContext,documentSer
   const verified=photoSave?validatePackingPhotos(input.photos):[];
   const safeInput=photoSave||deskLoad?{...input,photos:verified.map(({base64,...photo})=>photo)}:input;
   const collection=names[company].activity;
+  if(input.action==='DESK_EXPIRY'&&department==='WAREHOUSE'&&/^[a-f0-9-]{36}$/i.test(requestId||'')
+    &&staff.memberId&&staff.staffId&&staff.staffName&&typeof input.id==='string'&&typeof input.taskId==='string'
+    &&typeof input.expiryDate==='string'&&input.expiryDate){
+   const record=await store.read(collection,operationId(company,input.id,'PACKING_CURRENT'));
+   const stored=record?.details?.list;
+   if(stored?.revision===input.revision&&stored.lines?.some(line=>line.taskId===input.taskId&&line.expiryDate===input.expiryDate)){
+    const key=operationId(company+'/PURCHASE',requestId,staff.memberId);
+    const [prepared,receipt]=await Promise.all([store.read(collection,key),store.read(collection,operationId(key,'RESULT'))]);
+    if(!prepared&&!receipt){
+     const context=await readContext(company,staff);
+     if(context.company!==company)throw Error('Packing workroom changed. Refresh before saving.');
+     const list=context.lists.find(row=>row.id===input.id);
+     if(list?.revision===input.revision&&list.lines.some(line=>line.taskId===input.taskId&&line.expiryDate===input.expiryDate)){
+      requireConfirmedProcurement(context,list.lines.map(line=>line.taskId));
+      changeDeskDelivery({context,list,input,actor:department,id:list.id,revision:list.revision,at:now().toISOString()});
+      return {ok:true,company,requestId,id:list.id,revision:list.revision,status:list.status,
+       list:{...list,lines:list.lines.map(line=>({...line,resolution:shortloadStatus(context.physicalContext.activity,list,line)}))},deskState:null};
+     }
+    }
+   }
+  }
   return journal({collection,scope:company+'/PURCHASE',requestId,staff,input:{packing:safeInput},prepare:async()=>{
    const context=await readContext(company,staff);
    if(context.company!==company||!deskAction&&packingVersion(context)!==input.version)throw Error('Packing workroom changed. Refresh before saving.');
