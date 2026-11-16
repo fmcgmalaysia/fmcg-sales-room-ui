@@ -1,0 +1,7 @@
+{
+  "baseline": "34d5c33a633d8ca0155ba7415bdbee99067eb7ad1523f08ffc490af3b9fa2a44",
+  "candidate": "9499f77f61a1ca50b19cb5a34f57559f0356a8d0a44deb5ad06e444d476b7fb7",
+  "file": "finance-department-page.js",
+  "before": "20261116-stock-login-status-v1",
+  "after": "20261117-finance-amounts-unchanged-v1"
+}

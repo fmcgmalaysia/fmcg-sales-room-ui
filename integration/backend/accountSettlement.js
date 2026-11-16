@@ -57,6 +57,19 @@ export function projectAccountSettlement(row,details){
     documentIssues,finance:{plan:finance.plan||[],receiptResolved:Boolean(receiptResolved),stockLossCents:(row.stockCases||[]).reduce((sum,item)=>{const approval=item.resolution?.financeApproval;return sum+(approval?.outcome==='LOSS'?approval.cents:approval?.unrecoveredCents||0);},0),amounts,quantityClaims:finance.quantityClaims||[],payments:validPayments,cnNotApplicable:finance.cnNotApplicable||null,payableCents,cashPaidCents,refundCents,paidCents,balanceCents,creditAppliedCents,creditUsedCents,supplierCreditCents,creditRecognition:credit||null,paymentCompleted,reviewVersion},
     paymentCompleted,status:paymentCompleted?(checked?'Completed':'Paid W/T Inv'):paidCents>0&&!invoices.length?'Paid W/T Inv':'Pending Payment',canArchive:archiveBlockers.length===0,archiveBlockers,state:archiveBlockers.length===0?'HISTORY':'ACTIVE',completedAt:archiveBlockers.length===0?check.at:null};
 }
+function reconciledAmounts(row,input){
+  const docs=currentDocs(row).filter(doc=>['INV','CN'].includes(doc.type));
+  if(!docs.length||!Array.isArray(input.amounts)||input.amounts.length!==docs.length||new Set(input.amounts.map(entry=>entry.fileId)).size!==docs.length)throw Error('Enter the amount for every current INV and CN.');
+  const amounts=input.amounts.map(entry=>{const doc=docs.find(doc=>doc.fileId===entry.fileId);if(!doc||!cents(entry.cents)||(doc.type==='INV'&&entry.cents===0))throw Error('Enter valid MYR document amounts.');if(doc.type==='CN'&&!['DEDUCT','ALREADY_INCLUDED'].includes(entry.treatment))throw Error('Select whether the CN is already included in the final invoice.');return {fileId:doc.fileId,sha256:doc.sha256,cents:entry.cents,...(doc.type==='CN'?{treatment:entry.treatment}:{})};});
+  if(docs.filter(doc=>doc.type==='CN').reduce((n,doc)=>{const entry=amounts.find(entry=>entry.fileId===doc.fileId);return n+(entry.treatment==='ALREADY_INCLUDED'?0:entry.cents);},0)>docs.filter(doc=>doc.type==='INV').reduce((n,doc)=>n+amounts.find(entry=>entry.fileId===doc.fileId).cents,0))throw Error('CN total exceeds the invoice total.');
+  return amounts;
+}
+function savedAmountsMatch(saved,proposed,checkDocument=true){
+  return proposed.length>0&&proposed.every(entry=>saved.some(previous=>
+   previous.fileId===entry.fileId&&previous.cents===entry.cents
+    &&(previous.treatment===entry.treatment||!checkDocument&&previous.treatment===undefined)
+    &&(!checkDocument||previous.sha256===entry.sha256)));
+}
 export function createAccountSettlementOperations({store,names,listOrders,documentService,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return {save:async({company,staff,requestId,input})=>{
@@ -95,6 +108,22 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         extraFiles=input.attachments.map(file=>{if(typeof file?.base64!=='string'||file.base64.length>4194304||!/^[A-Za-z0-9+/]+={0,2}$/.test(file.base64))throw Error('Select valid PDF files up to 3 MiB in total.');const b=Buffer.from(file.base64,'base64');total+=b.length;if(b.length<5||b.subarray(0,5).toString()!=='%PDF-'||b.toString('base64')!==file.base64||total>3*1024*1024)throw Error('Select valid PDF files up to 3 MiB in total.');return {base64:file.base64,sha256:createHash('sha256').update(b).digest('hex'),size:b.length};});
         if(new Set([journalInput.sha256,...extraFiles.map(f=>f.sha256)]).size!==extraFiles.length+1)throw Error('This payment proof is already selected.');
         journalInput.attachments=extraFiles.map(({sha256,size})=>({sha256,size}));
+      }
+    }
+    if(input.action==='AMOUNTS'&&/^[a-f0-9-]{36}$/i.test(requestId||'')&&staff?.memberId&&staff.staffId&&staff.staffName
+      &&typeof input.id==='string'&&input.id&&Array.isArray(input.amounts)&&input.amounts.every(entry=>entry&&typeof entry.fileId==='string')){
+      const saved=await store.read('PurchaseOrders',input.id);
+      const details=saved?.details||{},amounts=details.finance?.amounts||[];
+      if(saved?.company===company&&savedAmountsMatch(amounts,input.amounts,false)){
+        const collection=names[company].activity,key=operationId(company+'/PURCHASE',requestId,staff.memberId);
+        const [prepared,receipt]=await Promise.all([store.read(collection,key),store.read(collection,operationId(key,'RESULT'))]);
+        if(!prepared&&!receipt){
+          const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
+          requireConfirmedProcurement(row);
+          if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
+          if(projectAccountSettlement(row,details).supplierAccount.closed)throw Error('Select Reopen account before changing a closed supplier account.');
+          if(savedAmountsMatch(amounts,reconciledAmounts(row,input)))return {ok:true,company,requestId,poId:row.id,noChange:true};
+        }
       }
     }
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:journalInput},prepare:async()=>{
@@ -183,10 +212,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         if(plan.length&&(!Number.isSafeInteger(balance)||plan.reduce((n,p)=>n+p.cents,0)>balance))throw Error('Enter a plan within the unpaid request balance.');
         finance.plan=plan;finance.planUpdated=identity;audit.changes={before:details.finance?.plan||[],after:plan};
       }else if(input.action==='AMOUNTS'){
-        const docs=currentDocs(row).filter(doc=>['INV','CN'].includes(doc.type));
-        if(!docs.length||!Array.isArray(input.amounts)||input.amounts.length!==docs.length||new Set(input.amounts.map(entry=>entry.fileId)).size!==docs.length)throw Error('Enter the amount for every current INV and CN.');
-        finance.amounts=input.amounts.map(entry=>{const doc=docs.find(doc=>doc.fileId===entry.fileId);if(!doc||!cents(entry.cents)||(doc.type==='INV'&&entry.cents===0))throw Error('Enter valid MYR document amounts.');if(doc.type==='CN'&&!['DEDUCT','ALREADY_INCLUDED'].includes(entry.treatment))throw Error('Select whether the CN is already included in the final invoice.');return {fileId:doc.fileId,sha256:doc.sha256,cents:entry.cents,...(doc.type==='CN'?{treatment:entry.treatment}:{}),...identity};});
-        if(docs.filter(doc=>doc.type==='CN').reduce((n,doc)=>{const entry=finance.amounts.find(entry=>entry.fileId===doc.fileId);return n+(entry.treatment==='ALREADY_INCLUDED'?0:entry.cents);},0)>docs.filter(doc=>doc.type==='INV').reduce((n,doc)=>n+finance.amounts.find(entry=>entry.fileId===doc.fileId).cents,0))throw Error('CN total exceeds the invoice total.');
+        finance.amounts=reconciledAmounts(row,input).map(entry=>({...entry,...identity}));
         audit.changes={before:details.finance?.amounts||[],after:finance.amounts};
       }else if(input.action==='PAYMENT_REVIEW'){
         if(details.procurementHandoff){const state=projectProcurementHandoff(row,details);if(state.stage!=='OWNED'||state.stale)throw Error('Procurement handoff requires a current Finance-owned submission before payment review.');}
