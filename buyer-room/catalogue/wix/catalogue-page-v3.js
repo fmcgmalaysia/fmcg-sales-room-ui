@@ -28,6 +28,8 @@ let catalogueSubCategoryMainMap = new Map();
 let catalogueFoodProductIds = new Set();
 let catalogueFoodPrinciples = new Set();
 let catalogueProductsLoaded = false;
+let catalogueWorkspaceRead = null;
+let catalogueWorkspaceFullReadComplete = false;
 let catalogueCategoriesLoaded = false;
 let catalogueSelectionResolved = false;
 let catalogueWorkspaceQueryVersion = 0;
@@ -191,7 +193,15 @@ function sendCatalogueWorkspaceData() {
     } catch (error) {}
 }
 
-async function loadCatalogueWorkspaceProducts() {
+function loadCatalogueWorkspaceProducts() {
+    if (!catalogueWorkspaceRead) {
+        catalogueWorkspaceRead = readCatalogueWorkspaceProducts(catalogueWorkspaceQueryVersion)
+            .finally(() => { catalogueWorkspaceRead = null; });
+    }
+    return catalogueWorkspaceRead;
+}
+
+async function readCatalogueWorkspaceProducts(queryVersion) {
     const products = [];
     try {
         let result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').limit(1000).find();
@@ -201,10 +211,11 @@ async function loadCatalogueWorkspaceProducts() {
             products.push(...result.items);
         }
         catalogueWorkspaceAllProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
-        catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
+        catalogueWorkspaceFullReadComplete = true;
+        if (queryVersion === catalogueWorkspaceQueryVersion) catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
     } catch (error) {
         console.error('Catalogue workspace CMS load failed', error);
-        catalogueWorkspaceProducts = [];
+        if (queryVersion === catalogueWorkspaceQueryVersion) catalogueWorkspaceProducts = [];
     }
     catalogueProductsLoaded = true;
     sendCatalogueWorkspaceData();
@@ -554,8 +565,8 @@ function setupCatalogueWorkspace() {
         const message = event.data || {};
         if (message.type === 'catalogueWorkspaceReady') {
             catalogueWorkspaceReady = true;
-            if (!catalogueWorkspaceProducts.length) await loadCatalogueWorkspaceProducts();
-            else sendCatalogueWorkspaceData();
+            if (catalogueWorkspaceFullReadComplete || catalogueWorkspaceProducts.length) sendCatalogueWorkspaceData();
+            else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
             if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
         } else if (message.type === 'catalogueWorkspaceBrowse') {
             const principle = typeof message.principle === 'string' ? message.principle.trim() : '';
