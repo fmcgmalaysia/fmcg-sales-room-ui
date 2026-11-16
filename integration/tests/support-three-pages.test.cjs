@@ -10,6 +10,53 @@ const {supportCustomerView,supportProfilePatch,createSupportCustomerOperations,S
 function fixture(){let customer={_id:'1',customerId:'C1',title:'Customer A',country:'Singapore',preferredCurrency:'USD',destinationPortName:'Singapore',_updatedDate:'2026-10-27T00:00:00Z'},audit=new Map(),updates=0,lose=false;const store={customers:async()=>[structuredClone(customer)],customer:async()=>structuredClone(customer),audit:async id=>audit.get(id)||null,insertAudit:async row=>{if(audit.has(row._id))throw Error('duplicate');audit.set(row._id,structuredClone(row));},updateCustomer:async row=>{customer={...structuredClone(row),_updatedDate:'2026-10-27T01:00:00Z'};updates++;if(lose){lose=false;throw Error('lost acknowledgement');}}};const operate=createSupportCustomerOperations({store}),request={action:'SAVE',company:'NCT',staff:{department:'SUPPORT',memberId:'M1',staffId:'S1',staffName:'Staff'},requestId:'aaaaaaaa-1111-4111-8111-111111111111',input:{customerId:'C1',revision:supportCustomerView(customer).profile.revision,patch:{destinationPortName:'Port Klang'}}};return {operate,request,audit,get:()=>customer,updates:()=>updates,change:patch=>{customer={...customer,...patch};},lose:()=>lose=true};}
 test('profile adds only Payment Term to the Sales editable fields and rejects identity or QD edits',()=>{const sales=fs.readFileSync(path.join(root,'sales-room/wix/onboarding.web.js'),'utf8'),fields=sales.match(/const EDITABLE_CUSTOMER_FIELDS = Object.freeze\(\{([\s\S]*?)\}\);/)[1];assert.deepEqual([...SUPPORT_PROFILE_FIELDS].sort(),[...fields.matchAll(/^  (\w+):/gm)].map(m=>m[1]).concat('paymentTerm').sort());for(const patch of [{title:'X'},{country:'X'},{qdFileId:'X'},{preferredCurrency:'BAD'},{paymentTerm:'90 Days'},{whatsapp:'MAYBE'},{primaryEmail:'bad'}])assert.throws(()=>supportProfilePatch(patch));});
 test('profile writes same authoritative customer and audit, with retry recovery',async()=>{const f=fixture();f.lose();const first=await f.operate(f.request),again=await f.operate(f.request);assert.equal(first.saved,true);assert.equal(again.saved,true);assert.equal(f.updates(),1);assert.equal(f.get().title,'Customer A');assert.equal(f.get().country,'Singapore');assert.equal(f.get().destinationPortName,'Port Klang');assert.equal(f.audit.size,2);});
+test('an unchanged Support profile edit does not write a customer or either type of audit', async () => {
+  const f=fixture();
+  f.change({primaryEmail:'BUYER@example.test',paymentTerm:'COD'});
+  const revision=supportCustomerView(f.get()).profile.revision;
+  const result=await f.operate({...f.request,input:{customerId:'C1',revision,patch:{
+    destinationPortName:'  Singapore ',preferredCurrency:'usd',primaryEmail:'buyer@example.test',paymentTerm:'COD'
+  }}});
+  assert.equal(result.unchanged,true);
+  assert.equal(result.saved,true);
+  assert.equal(f.updates(),0);
+  assert.equal(f.audit.size,0);
+  assert.equal(f.get().primaryEmail,'BUYER@example.test');
+});
+
+test('the reviewed Support dialog disables Save when unchanged or restored', async () => {
+  const file=path.join(root,'integration/releases/support-profile-unchanged-save-20261116/static/support-room/workroom.js');
+  const text=fs.readFileSync(file,'utf8');
+  const entry=text.slice(text.indexOf('  const profileFields='),text.indexOf('  async function load(parts'));
+  const values={primaryEmail:'BUYER@example.test',paymentTerm:'COD',destinationPortName:'Singapore'};
+  const fields={querySelector(selector){return {value:values[selector.split('"')[1]]??''};},addEventListener(_,handler){this.input=handler;}};
+  const form={},save={},dialog={showModal(){},close(){this.closed=true;}};
+  const nodes={'profile-fields':fields,'profile-form':form,'profile-save':save,'customer-profile':dialog,'profile-identity':{},'profile-status':{}};
+  const messages=[];
+  const run=vm.runInNewContext(entry+'\nopenProfile;', {
+    $:id=>nodes[id], data:{customers:[{id:'C1',name:'Customer A',profile:{...values,revision:'profile-revision'}}]},
+    company:'NCT',esc:String,crypto:{randomUUID:()=> 'request-id'},
+    send:async(type,input,requestId)=>{messages.push({type,input,requestId});return {company:'NCT',customerId:'C1',requestId,saved:true};},load:async()=>{}
+  });
+  run('C1');
+  assert.equal(save.disabled,true);
+  values.primaryEmail=' buyer@example.test ';
+  fields.input();
+  assert.equal(save.disabled,true);
+  values.paymentTerm='30 Days';
+  fields.input();
+  assert.equal(save.disabled,false);
+  values.paymentTerm='COD';
+  fields.input();
+  assert.equal(save.disabled,true);
+  await form.onsubmit({preventDefault(){}});
+  assert.equal(messages.length,0);
+  values.paymentTerm='30 Days';
+  fields.input();
+  await form.onsubmit({preventDefault(){}});
+  assert.equal(JSON.stringify(messages[0].input.patch),'{"paymentTerm":"30 Days"}');
+  assert.equal(dialog.closed,true);
+});
 test('a later Sales edit rejects a stale Support form',async()=>{const f=fixture();f.change({destinationPortName:'Hong Kong'});await assert.rejects(f.operate(f.request),/profile changed/);assert.equal(f.updates(),0);assert.equal(f.audit.size,0);});
 test('saved request cannot be reused for another value or actor',async()=>{const f=fixture();await f.operate(f.request);await assert.rejects(f.operate({...f.request,input:{...f.request.input,patch:{destinationPortName:'Other'}}}),/different changes/);await assert.rejects(f.operate({...f.request,staff:{...f.request.staff,staffId:'S2'}}),/different changes/);assert.equal(f.updates(),1);});
 test('customer edit denies missing Support authority and never changes orders/invoices',async()=>{const f=fixture();await assert.rejects(f.operate({...f.request,staff:{...f.request.staff,department:'WAREHOUSE'}}),/Support access/);assert.equal(f.updates(),0);});

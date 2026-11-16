@@ -39,6 +39,14 @@ export function createSupportCustomerOperations({store,now=()=>new Date()}){
   if(intent){if(intent.afterValue!==JSON.stringify({digest,patch})||intent.customerId!==input.customerId||intent.changedByStaffId!==staff.staffId)throw Error('This save request was already used for different changes.');}
   else{
    if(supportCustomerView(row).profile.revision!==input.revision)throw Error('The customer profile changed. Close this window and refresh before editing.');
+   if(Object.entries(patch).every(([key,value])=>{
+    const current=text(row[key]);
+    return (key==='primaryEmail'?current.toLowerCase():choices[key]?current.toUpperCase():current)===value;
+   })){
+    const latest=await store.customer(row._id);
+    if(latest?.customerId!==input.customerId||supportCustomerView(latest).profile.revision!==input.revision)throw Error('The customer profile changed. Close this window and refresh before editing.');
+    return {company,requestId,customerId:row.customerId,saved:true,unchanged:true};
+   }
    intent={_id:id,title:id,auditId:id,customerId:row.customerId,entityId:row.customerId,action:'SUPPORT_PROFILE_REQUEST',fieldId:'profile',fieldLabel:'Customer Profile',beforeValue:JSON.stringify(supportCustomerView(row).profile),afterValue:JSON.stringify({digest,patch}),changedAt:now().toISOString(),changedByStaffId:staff.staffId,changedByStaffName:staff.staffName,changedByRole:'SUPPORT'};
    try{await store.insertAudit(intent);}catch(error){const saved=await store.audit(id);if(saved?.afterValue!==intent.afterValue||saved?.customerId!==intent.customerId)throw error;}
   }
