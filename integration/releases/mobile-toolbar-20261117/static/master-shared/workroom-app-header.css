@@ -1,0 +1,212 @@
+.app-header-search[hidden], .workspace-read-retry[hidden] { display: none !important; }
+.workspace-read-retry { margin: 4px 10px 8px; }
+
+@media (max-width: 1023px) {
+  body header[data-app-header-search] {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) minmax(72px,auto) auto;
+    grid-template-rows: minmax(44px,auto) minmax(28px,auto);
+    align-items: center;
+    gap: 6px 8px !important;
+    padding: 8px 10px !important;
+    height: auto !important;
+    box-sizing: border-box;
+    overflow: visible;
+  }
+  body header[data-app-header-search] :is(.master-brand,.brand) {
+    grid-area: 1 / 1;
+    font-size: 18px !important;
+    margin: 0 !important;
+  }
+  body header[data-app-header-search] :is(label,select#company) {
+    grid-area: 1 / 2;
+    min-width: 0 !important;
+    max-width: min(35vw,230px) !important;
+    margin: 0 !important;
+  }
+  body header[data-app-header-search] label select,
+  body header[data-app-header-search] select#company {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: min(35vw,230px) !important;
+    min-height: 44px !important;
+    font-size: 16px !important;
+    padding: 6px 22px 6px 7px !important;
+    box-sizing: border-box;
+  }
+  body header[data-app-header-search] :is(.company-label,.company-picker-label) { display:none !important; }
+  body header[data-app-header-search] .mobile-menu-toggle { grid-area:1 / 3; }
+  body header[data-app-header-search] :is(.department,.department-name,.dept) {
+    grid-area: 2 / 1;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.3;
+  }
+  body header[data-app-header-search] :is(#staff,.staff,.session) {
+    grid-area: 2 / 2 / 3 / 4;
+    justify-self: end;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: right;
+    overflow-wrap: anywhere;
+    font-size: 12px !important;
+    line-height: 1.3;
+    min-width: 0;
+  }
+  body header[data-app-header-search].app-header-has-search :is(.department,.department-name,.dept) {
+    position:absolute;
+    width:1px;
+    height:1px;
+    margin:-1px !important;
+    clip-path: inset(50%);
+    overflow:hidden;
+  }
+  body header[data-app-header-search] .app-header-search {
+    grid-area: 2 / 1 / 3 / 3;
+    min-width: 0;
+    width: 100%;
+    min-height: 44px;
+    padding: 6px 9px;
+    background: #fff;
+    color: #173451;
+    border: 1px solid #baccde;
+    border-radius: 7px;
+    font: 400 16px/1.2 'Segoe UI', Arial, sans-serif;
+    box-sizing: border-box;
+  }
+  body header[data-app-header-search].app-header-has-search :is(#staff,.staff,.session) { grid-area: 2 / 3; }
+  .app-header-search-source { position:absolute !important; width:1px !important; height:1px !important; clip-path:inset(50%) !important; overflow:hidden !important; }
+}
+
+/* Internal workrooms use separate space budgets for row-one actions and identity. */
+@media (max-width: 1023px) {
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) {
+    --workroom-name-width: clamp(92px, 30vw, 180px);
+    grid-template-columns: minmax(0, 1fr) 74px 74px;
+    grid-template-rows: 44px 28px;
+    gap: 6px 8px !important;
+    padding: 8px 12px !important;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]).app-header-has-search {
+    grid-template-rows: 44px 44px;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) > :is(.master-brand, .brand) {
+    align-self: start;
+    padding-block-start: 4px;
+    font-size: 17px !important;
+    line-height: 20px !important;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) > :is(.department, .department-name, .dept) {
+    grid-area: 1 / 1;
+    align-self: end;
+    justify-self: stretch;
+    position: static;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    margin: 0 0 2px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden;
+    clip-path: none;
+    font-size: 11px !important;
+    font-weight: 500;
+    line-height: 15px !important;
+    color: #dbe9f6;
+    text-overflow: ellipsis;
+    white-space: nowrap !important;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) > :is(label, select#company) {
+    grid-area: 1 / 2;
+    align-self: center;
+    width: 74px !important;
+    max-width: 74px !important;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) :is(label > select, select#company),
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) > .mobile-menu-toggle {
+    width: 74px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    border-radius: 8px;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) > .mobile-menu-toggle {
+    padding-inline: 6px;
+    font-weight: 650;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) :is(label > select, select#company) {
+    appearance: none;
+    padding: 0 26px 0 10px !important;
+    background-color: #fff;
+    color: #173451;
+    border: 1px solid #baccde;
+    background-image: linear-gradient(45deg, transparent 42%, #315775 44% 62%, transparent 64%),
+      linear-gradient(135deg, transparent 42%, #315775 44% 62%, transparent 64%);
+    background-position: right 15px center, right 10px center;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) > .company-picker::after {
+    display: none;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) > :is(#staff, .staff, .session) {
+    display: block !important;
+    grid-area: 2 / 1 / 3 / 4;
+    justify-self: end;
+    max-width: var(--workroom-name-width);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    font-weight: 650;
+    line-height: 18px !important;
+    color: #f2f7fd;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) > .app-header-search {
+    grid-area: 2 / 1 / 3 / 4;
+    justify-self: start;
+    width: calc(100% - var(--workroom-name-width) - 12px);
+    min-height: 44px;
+  }
+
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) > .app-header-search:focus-visible {
+    outline: 2px solid #a6cef8;
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 1023px) and (forced-colors: active) {
+  body > header[data-app-header-search]:not([data-app-header-fmcg]) :is(label > select, select#company) {
+    appearance: auto;
+    background-image: none;
+    padding-inline-end: 8px !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  html.warehouse-embedded body > header[data-app-header-stock] {
+    display: none !important;
+  }
+
+  html:not(.warehouse-embedded) body > header[data-app-header-stock] {
+    grid-template-columns: minmax(0, 1fr) 74px;
+  }
+
+  html:not(.warehouse-embedded) body > header[data-app-header-stock] > :is(.app-header-search, #staff) {
+    grid-column-end: 3;
+  }
+
+  html:not(.warehouse-embedded) body > header[data-app-header-stock] + nav {
+    display: none;
+  }
+}
