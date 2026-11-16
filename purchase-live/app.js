@@ -30,7 +30,7 @@
 
   function saveTaskIds(current=savePending){const input=current?.input||{};return new Set([input.taskId,input.parentTaskId,input.sourceTaskId,...(input.taskIds||[]),...(input.edits||[]).map(item=>item.taskId)].filter(Boolean));}
   function taskSaveLocked(id){return Boolean(savePending&&saveTaskIds().has(id));}
-  function paintSaveTracker(){paintPaymentSubmitStatus();paintOperationStatus();const host=document.querySelector('#saveTracker');if(!host)return;status.classList.toggle('save-pending',Boolean(savePending));host.hidden=!savePending;if(!savePending){host.innerHTML='';return;}if(isSupplierSave(savePending)){host.innerHTML='<span role="status">'+esc(supplierSavingText)+'</span>';return;}host.innerHTML='<span>'+esc(saveDiagnostic(savePending,saveCheckPending?'Checking result 正在核对':saveInFlight&&!saveIssue?'Saving 正在保存':'Result pending 结果待确认'))+'</span><div class="actions"><button class="btn" id="viewPendingSave">View save 查看保存</button><button class="btn" id="checkPendingSave" '+(saveInFlight?'disabled':'')+'>Check result 核对结果</button><button class="btn" id="retryPendingSave" '+(saveInFlight?'disabled':'')+'>Retry same save 重试原保存</button></div>';}
+  function paintSaveTracker(){paintPaymentSubmitStatus();paintOperationStatus();const host=document.querySelector('#saveTracker');if(!host)return;status.classList.toggle('save-pending',Boolean(savePending));host.hidden=!savePending;if(!savePending){host.innerHTML='';return;}if(isSupplierSave(savePending)){host.innerHTML='<span role="status">'+esc(supplierSavingText)+'</span>';return;}host.innerHTML='<span role="status">'+esc(saveDiagnostic(savePending,saveCheckPending||!saveInFlight?purchaseConfirmingText:operationFeedback(savePending)[0]))+'</span><div class="actions"><button class="btn" id="viewPendingSave">View save 查看保存</button>'+(!saveInFlight&&purchaseSaveCheck?.request===savePending&&purchaseSaveCheck.exhausted?'<button class="btn" id="retryPendingSave">Retry same save 重试原保存</button>':'')+'</div>';}
   // Keep the actual form nodes, including unsaved values, while read-only panels use the dialog.
   function parkSaveDialog(){const content=document.querySelector('#dialogContent');if(saveDialog?.content!==content||typeof document.createElement!=='function')return;const replacement=document.createElement('div');replacement.id='dialogContent';content.replaceWith(replacement);}
   function viewPendingSave(){if(!savePending)return;if(saveOrigin){view=saveOrigin.view;customerId=saveOrigin.customerId;activeCustomer=saveOrigin.activeCustomer;render();cacheDraft();}if(saveDialog?.content){modal.close();document.querySelector('#dialogContent').replaceWith(saveDialog.content);modal.className=saveDialog.className;dialogContext=saveDialog.dialogContext;supplierContext=saveDialog.supplierContext;modal.showModal();freezeDialog(true);saveButtonState(saveInFlight);paintPaymentSubmitStatus();return;}formDialog('Save result 保存结果',savePending.requestId,'<p>'+esc(saveDiagnostic(savePending,'Original submission retained 原提交内容已保留'))+'</p><details><summary>Submitted values 已提交内容</summary><pre>'+esc(JSON.stringify(savePending.input||savePending.values||{},null,2))+'</pre></details>');}
@@ -77,7 +77,7 @@
     for(const edit of completed?.input?.edits||[]){const draft=drafts.get(edit.taskId);if(draft&&draft.version===edit.version&&JSON.stringify(draft.changes)===JSON.stringify(edit.changes))drafts.delete(edit.taskId);}
     if(completed?.input?.customerId===sequenceCustomerId&&JSON.stringify(completed.input.taskIds)===JSON.stringify(sequenceDraft)){sequenceDraft=null;sequenceVersions=null;sequenceCustomerId='';displaySequenceDraft=null;displayOrderVersion=null;selectedDisplayRows.clear();}
     savePending=null;saveAttemptCount=null;saveOrigin=null;saveDialog=null;saveInFlight=false;saveCheckPending=false;saveIssue='';poData=null;cacheDraft();paintSaveTracker();document.querySelector('#companySelect').disabled=false;if(ownsDialog&&!allocationHandled)modal.close();request(true,true,false,completed);if(completed?.type==='PURCHASE_ORDER_SAVE_REQUEST'&&completed.input?.action==='REQUEST_PAYMENT')showStatus('Submitted to Account 已提交财务。正在更新申请状态…');else if(!allocationHandled){const detail=completed?.operation==='PO'?completed.input?.poNumber:completed?.input?.action==='DOCUMENT'?completed.input?.number:'';showStatus(operationFeedback(completed)[1]+(detail?' · '+detail:'')+' · Updating records 正在更新资料…');status.classList.add('complete');}}
-  function restoreDraft(){if(restoredDraft||typeof sessionStorage==='undefined')return;restoredDraft=true;try{const cached=JSON.parse(sessionStorage.getItem(draftKey)||'null');if(!cached)return;if(typeof cached.customerId==='string')customerId=cached.customerId;if(Array.isArray(cached.drafts))for(const [id,item]of cached.drafts)if(item?.version&&item.changes)drafts.set(id,item);if(Array.isArray(cached.sequenceDraft)){sequenceDraft=cached.sequenceDraft;sequenceVersions=cached.sequenceVersions;sequenceCustomerId=cached.sequenceCustomerId||cached.customerId||'';displaySequenceDraft=Array.isArray(cached.displaySequenceDraft)?cached.displaySequenceDraft:null;displayOrderVersion=cached.displayOrderVersion||null;}if(cached.savePending?.company===company&&cached.savePending.requestId){savePending=cached.savePending;saveAttemptCount=Number.isSafeInteger(cached.saveAttemptCount)&&cached.saveAttemptCount>0?cached.saveAttemptCount:2;saveIssue=typeof cached.saveIssue==='string'?cached.saveIssue:'';saveOrigin=cached.saveOrigin||{view:customerId?'room':'dashboard',customerId,activeCustomer:''};}if(customerId)view='room';if(displaySequenceDraft){view='active';activeCustomer=sequenceCustomerId;customerId=sequenceCustomerId;}allocationUi()?.restore(cached.supplierAllocation);if(savePending){document.querySelector('#companySelect').disabled=true;const current=savePending;if(isSupplierSave(current)){current.saveMemberId??=data.staff.memberId;supplierEditor(current.supplierId,current);saveDialog={content:document.querySelector('#dialogContent'),className:modal.className,dialogContext,supplierContext};freezeDialog(true);checkSupplierSave(current);return;}readOperation('PURCHASE_SAVE_CHECK_REQUEST',{saveRequestId:current.requestId,supplierId:null}).then(result=>{if(savePending!==current)return;if(result?.ok&&result.requestId===current.requestId)finishSave(result);else showStatus(saveDiagnostic(current,'之前的保存尚无完成回执；可继续浏览，点击核对结果或重试原保存。'),true);paintSaveTracker();}).catch(error=>{if(savePending===current){showStatus(saveDiagnostic(current,error.message+' 草稿保留，可继续浏览。'),true);paintSaveTracker();}});}}catch{showStatus('草稿无法恢复，请核对 Master 的实际记录后再编辑。',true);}}
+  function restoreDraft(){if(restoredDraft||typeof sessionStorage==='undefined')return;restoredDraft=true;try{const cached=JSON.parse(sessionStorage.getItem(draftKey)||'null');if(!cached)return;if(typeof cached.customerId==='string')customerId=cached.customerId;if(Array.isArray(cached.drafts))for(const [id,item]of cached.drafts)if(item?.version&&item.changes)drafts.set(id,item);if(Array.isArray(cached.sequenceDraft)){sequenceDraft=cached.sequenceDraft;sequenceVersions=cached.sequenceVersions;sequenceCustomerId=cached.sequenceCustomerId||cached.customerId||'';displaySequenceDraft=Array.isArray(cached.displaySequenceDraft)?cached.displaySequenceDraft:null;displayOrderVersion=cached.displayOrderVersion||null;}if(cached.savePending?.company===company&&cached.savePending.requestId){savePending=cached.savePending;saveAttemptCount=Number.isSafeInteger(cached.saveAttemptCount)&&cached.saveAttemptCount>0?cached.saveAttemptCount:2;saveIssue=typeof cached.saveIssue==='string'?cached.saveIssue:'';saveOrigin=cached.saveOrigin||{view:customerId?'room':'dashboard',customerId,activeCustomer:''};}if(customerId)view='room';if(displaySequenceDraft){view='active';activeCustomer=sequenceCustomerId;customerId=sequenceCustomerId;}allocationUi()?.restore(cached.supplierAllocation);if(savePending){document.querySelector('#companySelect').disabled=true;const current=savePending;if(isSupplierSave(current)){current.saveMemberId??=data.staff.memberId;supplierEditor(current.supplierId,current);saveDialog={content:document.querySelector('#dialogContent'),className:modal.className,dialogContext,supplierContext};freezeDialog(true);checkSupplierSave(current);return;}saveIssue='';checkSaveReceipt(current);}}catch{showStatus('草稿无法恢复，请核对 Master 的实际记录后再编辑。',true);}}
   function readOperation(type,args={}){const requestId=crypto.randomUUID();return new Promise((resolve,reject)=>{reads.set(requestId,{resolve,reject});window.parent.postMessage({type,requestId,company,...args},'*');setTimeout(()=>{if(reads.has(requestId)){reads.delete(requestId);reject(Error('读取超时，请重试。'));}},30000);});}
   window.addEventListener('message',event=>{if(event.source!==window.parent)return;const message=event.data||{},waiting=reads.get(message.requestId);if(!waiting||!['PURCHASE_PROFILE_RESULT','PURCHASE_BRANDS_RESULT','PURCHASE_SAVE_CHECK_RESULT','PURCHASE_ORDERS_RESULT','PURCHASE_REFERENCE_RESULT'].includes(message.type))return;reads.delete(message.requestId);message.ok?waiting.resolve(message.result):waiting.reject(Error(message.error||'读取失败。'));});
   function freezeDialog(frozen){if(saveDialog&&saveDialog.content!==document.querySelector('#dialogContent'))return;for(const field of document.querySelectorAll('#dialogContent input,#dialogContent select,#dialogContent textarea')){if(frozen){const allocationRow=field.closest?.('[data-allocation-row]');if(savePending?.allocationRowKey&&allocationRow&&allocationRow.dataset.allocationRow!==savePending.allocationRowKey)continue;if(field.dataset.saveDisabled==null)field.dataset.saveDisabled=String(field.disabled);field.disabled=true;}else if(field.dataset.saveDisabled!=null){field.disabled=field.dataset.saveDisabled==='true';delete field.dataset.saveDisabled;}}}
@@ -92,8 +92,8 @@
     const active=savePending&&!(savePending.type==='PURCHASE_ORDER_SAVE_REQUEST'&&savePending.input?.action==='REQUEST_PAYMENT');
     host.hidden=!active;if(!active){host.innerHTML='';return;}
     if(isSupplierSave(savePending)){host.textContent=supplierSavingText;return;}
-    const waiting=!saveInFlight,label=waiting?'Result pending 结果待确认':saveCheckPending?'Checking result 正在核对结果':operationFeedback(savePending)[0];
-    host.innerHTML=(waiting?'':'<span class="payment-submit-spinner" aria-hidden="true"></span>')+'<div><strong>'+esc(label)+'</strong><small>'+(waiting?'Your input is retained. Check the result or retry the same save. 输入已保留，请核对结果或重试原保存。':'Waiting for server confirmation. Please do not repeat this action. 正在等待服务器确认，请勿重复操作。')+'</small></div>';
+    const waiting=!saveInFlight;
+    host.innerHTML=(waiting?'':'<span class="payment-submit-spinner" aria-hidden="true"></span>')+'<div><strong>'+esc(waiting?'Result pending 结果待确认':saveCheckPending?purchaseConfirmingText:operationFeedback(savePending)[0])+'</strong><small>原提交内容已保留。系统会自动核对保存结果。</small></div>';
     for(const id of ['deletePurchaseDocument','sendPaymentChase','uploadPurchaseDocument','sendDocumentIssueReply']){const control=document.querySelector('#'+id);if(control){control.dataset.saveLabel=control.dataset.saveLabel||control.textContent;control.disabled=true;control.textContent=waiting?'Awaiting confirmation 待确认':saveCheckPending?'Checking 核对中…':({deletePurchaseDocument:'Deleting 删除中…',sendPaymentChase:'Sending 发送中…',uploadPurchaseDocument:'Uploading 上传中…'})[id];}}
   }
   function paintPaymentSubmitStatus(){
@@ -103,10 +103,11 @@
     host.hidden=!active;if(!active){host.innerHTML='';return;}
     const checking=saveCheckPending,pending=!saveInFlight;
     const title=pending?'Submission result pending 提交结果待确认':checking?'Checking submission result… 正在核对提交结果…':'Submitting to Account… 正在提交财务…';
-    const detail=pending?'Your input is retained. Use Check result or Retry same save above. 输入已保留，请使用上方「核对结果」或「重试原保存」。':checking?'No success receipt yet. Checking the original request. 尚未取得成功回执，正在核对原申请。':'Waiting for server confirmation. Please do not submit again. 正在等待服务器回执，请勿重复提交。';
+    const detail=pending||checking?'Your input is retained. The system checks the original request automatically. 输入已保留，系统会自动核对原申请。':'Waiting for server confirmation. 正在等待服务器回执。';
     host.innerHTML=(pending?'':'<span class="payment-submit-spinner" aria-hidden="true"></span>')+'<div><strong>'+title+'</strong><small>'+detail+'</small></div>';
     control.dataset.saveLabel=control.dataset.saveLabel||control.textContent;control.disabled=true;control.textContent=pending?'Awaiting confirmation 待确认':checking?'Checking result… 正在核对…':'Submitting… 正在提交…';
   }
+  const purchaseConfirmingText='Confirming save. Your changes are retained. 正在确认保存，已保留输入。';
   const supplierSaveCheckDelays=[5000,15000,45000,120000];
   const supplierSavingText='Confirming supplier save. Your changes are retained. 正在确认供应商保存，已保留输入。';
   const isSupplierSave=current=>current?.type==='PURCHASE_SUPPLIER_SAVE_REQUEST';
@@ -136,26 +137,59 @@
       });
   }
   function resumeSupplierSaveCheck(){
-    if(isSupplierSave(savePending)&&!saveInFlight)checkSupplierSave(savePending);
+    if(!savePending||saveInFlight)return;
+    if(isSupplierSave(savePending))checkSupplierSave(savePending);
+    else checkSaveReceipt(savePending);
   }
   window.addEventListener('online',resumeSupplierSaveCheck);
   document.addEventListener('visibilitychange',resumeSupplierSaveCheck);
-  function checkSaveReceipt(current,attempt=0){if(isSupplierSave(current))return checkSupplierSave(current,true);if(savePending!==current||saveCheckPending)return;saveCheckPending=true;saveInFlight=true;saveButtonState(true);paintSaveTracker();showStatus(saveDiagnostic(current,'正在核对保存结果，输入已保留…'));readOperation('PURCHASE_SAVE_CHECK_REQUEST',{saveRequestId:current.requestId,supplierId:null}).then(result=>{if(savePending!==current)return;if(result?.ok&&result.requestId===current.requestId){finishSave(result);return;}if(attempt<2)setTimeout(()=>checkSaveReceipt(current,attempt+1),10000);else{saveInFlight=false;saveButtonState(false);showStatus(saveDiagnostic(current,'尚未取得保存完成回执，输入已保留。可以重试同一次保存；不会创建重复操作。'),true);}}).catch(()=>{if(savePending===current){saveInFlight=false;saveButtonState(false);showStatus(saveDiagnostic(current,'保存结果暂时无法核对，输入已保留。请重试同一次保存。'),true);}}).finally(()=>{if(savePending===current){saveCheckPending=false;paintSaveTracker();}});}
-  function saveMessage(){if(saveInFlight||!savePending)return;const current=savePending;saveInFlight=true;saveAttemptCount=Math.min(2,(saveAttemptCount??1)+1);cacheDraft();freezeDialog(true);saveButtonState(true);window.parent.postMessage(current,'*');showStatus(isSupplierSave(current)?supplierSavingText:saveDiagnostic(current,'正在保存到 Master CMS，可继续浏览…'));document.querySelector('#companySelect').disabled=true;paintSaveTracker();setTimeout(()=>{if(savePending===current)checkSaveReceipt(current);},30000);}
-  function mutate(kind,args){if(savePending){showStatus(isSupplierSave(savePending)?supplierSavingText:saveDiagnostic(savePending,'此保存仍待确认；新的保存尚未提交，请使用“重试原保存”。'),true);return;}saveIssue='';saveOrigin={view,customerId,activeCustomer};saveDialog=modal.open?{content:document.querySelector('#dialogContent'),className:modal.className,dialogContext,supplierContext}:null;savePending={type:kind,company,requestId:crypto.randomUUID(),...args};saveAttemptCount=0;saveTimings.set(savePending.requestId,{started:performance.now()});if(saveTimings.size>20)saveTimings.delete(saveTimings.keys().next().value);saveMessage();}
+  let purchaseSaveCheck=null;
+  function checkSaveReceipt(current){
+    if(isSupplierSave(current))return checkSupplierSave(current,true);
+    if(savePending!==current||saveCheckPending)return;
+    if(purchaseSaveCheck?.request!==current){
+      clearTimeout(purchaseSaveCheck?.timer);
+      purchaseSaveCheck={request:current,timer:null,checks:0,exhausted:false};
+    }
+    const check=purchaseSaveCheck;
+    clearTimeout(check.timer);
+    check.timer=null;
+    saveIssue='';
+    if(document.hidden||navigator.onLine===false){
+      saveInFlight=false;saveButtonState(false);paintSaveTracker();
+      return;
+    }
+    saveCheckPending=true;saveInFlight=true;saveButtonState(true);paintSaveTracker();
+    showStatus(saveDiagnostic(current,purchaseConfirmingText));
+    readOperation('PURCHASE_SAVE_CHECK_REQUEST',{saveRequestId:current.requestId,supplierId:null})
+      .catch(()=>null).then(result=>{
+        if(savePending!==current)return;
+        saveCheckPending=false;saveInFlight=false;
+        if(result?.ok===true&&result.requestId===current.requestId&&result.company===current.company){
+          finishSave(result);return;
+        }
+        check.exhausted=check.checks>=supplierSaveCheckDelays.length;
+        saveButtonState(false);paintSaveTracker();
+        if(check.exhausted)showStatus(saveDiagnostic(current,'尚未取得保存完成回执，输入已保留。'));
+        else check.timer=setTimeout(()=>checkSaveReceipt(current),supplierSaveCheckDelays[check.checks++]);
+      });
+  }
+  function saveMessage(){if(saveInFlight||!savePending)return;const current=savePending;if(purchaseSaveCheck?.request===current){clearTimeout(purchaseSaveCheck.timer);purchaseSaveCheck=null;}saveInFlight=true;saveAttemptCount=Math.min(2,(saveAttemptCount??1)+1);cacheDraft();freezeDialog(true);saveButtonState(true);window.parent.postMessage(current,'*');showStatus(isSupplierSave(current)?supplierSavingText:saveDiagnostic(current,'正在保存到 Master CMS，可继续浏览…'));document.querySelector('#companySelect').disabled=true;paintSaveTracker();setTimeout(()=>{if(savePending===current)checkSaveReceipt(current);},30000);}
+  function mutate(kind,args){if(savePending){showStatus(isSupplierSave(savePending)?supplierSavingText:purchaseConfirmingText,true);return;}saveIssue='';saveOrigin={view,customerId,activeCustomer};saveDialog=modal.open?{content:document.querySelector('#dialogContent'),className:modal.className,dialogContext,supplierContext}:null;savePending={type:kind,company,requestId:crypto.randomUUID(),...args};saveAttemptCount=0;saveTimings.set(savePending.requestId,{started:performance.now()});if(saveTimings.size>20)saveTimings.delete(saveTimings.keys().next().value);saveMessage();}
   window.addEventListener('message',event=>{const message=event.data||{};if(event.source!==window.parent||message.type!=='PURCHASE_SAVE_RESULT'||!savePending||message.requestId!==savePending.requestId||message.company!==savePending.company)return;
     if(message.ok&&message.result?.ok===true&&message.result.requestId===savePending.requestId){finishSave(message.result);return;}
     const attemptNotStarted=message.result?.attemptNotStarted===true&&saveAttemptCount===1;const failedAllocation=savePending,error=message.error||message.result?.error||'保存未确认。';
-    const pending=!attemptNotStarted&&(message.result?.pending===true||/504|timeout|超时|network|fetch|Unable to handle|processing|pending|not.*confirmed|response lost|time limit|Retry the same upload/i.test(error));
+    const pending=!attemptNotStarted&&message.result?.retryable!==false&&(message.result?.pending===true||/504|timeout|超时|network|fetch|Unable to handle|processing|pending|not.*confirmed|response lost|time limit|Retry the same upload/i.test(error));
     const field=!saveDialog||saveDialog.content===document.querySelector('#dialogContent')?document.querySelector('#dialogError'):null;
-    if(isSupplierSave(savePending)&&pending){
+    if(pending){
+      allocationUi()?.rejected(failedAllocation,purchaseConfirmingText,false);
       saveIssue='';saveInFlight=false;if(field)field.textContent='';
-      showStatus(supplierSavingText);cacheDraft();checkSaveReceipt(savePending);return;
+      showStatus(isSupplierSave(savePending)?supplierSavingText:purchaseConfirmingText);cacheDraft();checkSaveReceipt(savePending);return;
     }
     saveIssue=error;const feedback=saveDiagnostic(savePending,error);showStatus(feedback,true);if(field)field.textContent=feedback+' 当前输入仍保留。';
     saveInFlight=false;saveButtonState(false);
     if(/changed|revision/i.test(error)){if(savePending.type==='PURCHASE_SUPPLIER_SAVE_REQUEST'&&field)field.innerHTML=esc(feedback)+' 当前输入仍保留。 <button class="btn" id="reviewSupplier">Review current data</button>';else draftConflict=true;}
-    if(!pending){if(saveDialog?.content&&saveDialog.content!==document.querySelector('#dialogContent')){viewPendingSave();const originalError=document.querySelector('#dialogError');if(originalError)originalError.textContent=feedback+' 当前输入仍保留。';}freezeDialog(false);savePending=null;saveOrigin=null;saveDialog=null;const hadRowOrder=!!sequenceDraft;migrateRowOrder();document.querySelector('#companySelect').disabled=false;if(hadRowOrder||draftConflict&&view==='room')render();}else checkSaveReceipt(savePending);allocationUi()?.rejected(failedAllocation,error,!savePending);cacheDraft();paintSaveTracker();
+    if(saveDialog?.content&&saveDialog.content!==document.querySelector('#dialogContent')){viewPendingSave();const originalError=document.querySelector('#dialogError');if(originalError)originalError.textContent=feedback+' 当前输入仍保留。';}freezeDialog(false);savePending=null;saveOrigin=null;saveDialog=null;const hadRowOrder=!!sequenceDraft;migrateRowOrder();document.querySelector('#companySelect').disabled=false;if(hadRowOrder||draftConflict&&view==='room')render();allocationUi()?.rejected(failedAllocation,error,true);cacheDraft();paintSaveTracker();
   });
   function saveEdits(){if(savePending){showStatus(saveDiagnostic(savePending,'新的修改尚未提交；先核对原保存，草稿仍保留。'),true);return;}for(const [id,item] of drafts){const row={...data.tasks.find(row=>row.id===id),...item.changes};if(['lpPc','lpCtn','disc1','disc2','disc3'].every(key=>typeof row[key]==='number'&&Number.isFinite(row[key]))){const beforeDiscount3=row.lpCtn*(1-row.disc1)*(1-row.disc2);if(beforeDiscount3-row.disc3<0){showStatus('未保存：Barcode '+row.barcode+' 的 Disc.3（MYR/CTN）超过了折后成本（约 '+num(beforeDiscount3)+'）。当前 Net Cost '+num(beforeDiscount3-row.disc3)+'，不能为负数；请修正后再 Save。',true);return;}}}if([...drafts.values()].some(item=>Object.values(item.invalid||{}).some(Boolean))){showStatus('请先修正标红的成本或折扣，输入已保留。',true);return;}if(!drafts.size)return;const edits=[...drafts].map(([taskId,item])=>({taskId,version:item.version,changes:item.changes}));const input={edits};mutate('PURCHASE_SAVE_REQUEST',{operation:'EDIT',input});}
   function roomRows(){const rows=(data?.tasks||[]).filter(row=>(view==='active'?(!activeCustomer||row.customerId===activeCustomer):row.customerId===customerId)&&!row.archived);return [...new Set(rows.map(row=>row.customerId))].flatMap(id=>{const ordered=sequenceDraft&&sequenceCustomerId===id?sequenceDraft:displayRows().taskSequence(data,id,displayRows().current(data,id)),ranks=new Map(ordered.map((key,index)=>[key,index]));return rows.filter(row=>row.customerId===id).sort((a,b)=>(ranks.get(a.id)??Infinity)-(ranks.get(b.id)??Infinity));});}
@@ -800,8 +834,7 @@ const stages=[
     if(control.id==='closeSupplierInquiry'){inquiry=null;return render();}
     if(control.id==='copySupplierInquiry')return copySupplierInquiry();
     if(control.id==='viewPendingSave')return viewPendingSave();
-    if(control.id==='checkPendingSave'){if(savePending)return checkSaveReceipt(savePending);return;}
-    if(control.id==='retryPendingSave')return saveMessage();
+    if(control.id==='retryPendingSave'&&purchaseSaveCheck?.request===savePending&&purchaseSaveCheck.exhausted)return saveMessage();
     if(savePending&&!['closeModal','refresh','saveEdits','savePrices','saveOrder'].includes(control.id)&&!['activeWork','dashboardCategory','dashboardSelect','dashboardClose','supplierShipmentAlert','view','customer','expandTask','poTab','poHistory','poDocs','paymentProof','progressTask','poView','archiveView','path','cost','stage','unavailable'].some(key=>control.dataset[key]!=null)&&!['retryPurchaseOrders','clearSelection','riskFilter','poDocsHelp'].includes(control.id)){showStatus(saveDiagnostic(savePending,'可继续浏览；新的采购操作需等原保存确认。'),true);return;}
 
     

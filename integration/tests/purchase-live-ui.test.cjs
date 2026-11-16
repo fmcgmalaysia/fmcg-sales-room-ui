@@ -80,7 +80,7 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[],rowStorage
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/customer-allocation.js'),'utf8'),{window,document:{querySelector:selector=>node(selector)}});
   vm.runInNewContext(source,{ window, document:{ getElementById:id=>node('#dialogContent').innerHTML.includes('id="'+id+'"')?node('#'+id):null, querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector==='#taskRows tr[data-id],#taskRows tr[data-source-id]'||selector==='tr[data-ledger-search]'?feedbackRows:selector.startsWith('#dialogContent input')||selector==='input[name="receiptSupplierDecision"]:checked'?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
-    crypto:{ randomUUID:()=>String(++count) }, btoa:binary=>Buffer.from(binary,'binary').toString('base64'),sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:callback=>intervals.push(callback), Date, Number, Map, Set });
+    crypto:{ randomUUID:()=>String(++count) }, btoa:binary=>Buffer.from(binary,'binary').toString('base64'),sessionStorage:storage,navigator:{onLine:true},performance,clearTimeout(){},setTimeout:callback=>timers.push(callback),setInterval:callback=>intervals.push(callback), Date, Number, Map, Set });
   function reply(workspace,request=messages.at(-1),extra={}) {
     for(const callback of listeners.get('window:message')) callback({ source:parent,data:{type:'PURCHASE_WORKSPACE_RESULT',requestId:request.requestId,company:request.company,ok:true,workspace,...extra} });
   }
@@ -90,6 +90,15 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[],rowStorage
     change(attrs){for(const callback of listeners.get('document:change')||[])callback({target:attrs});},
     click(attrs){const control={ id:attrs.controlId||'',dataset:attrs };for(const callback of listeners.get('document:click'))callback({ target:{ closest:selector=>selector==='button'?control:selector==='#closeModal'&&control.id==='closeModal'?control:selector==='[data-supplier-tab]'&&attrs.supplierTab?control:selector==='#addSupplierContact'&&control.id==='addSupplierContact'?control:null } }); },
     switchCompany(value){listeners.get('#companySelect:change')({target:{value}});} };
+}
+async function exhaustReceiptChecks(h,count=5){
+ for(let pass=0;pass<count;pass++){
+  const check=h.messages.at(-1);
+  assert.equal(check.type,'PURCHASE_SAVE_CHECK_REQUEST');
+  h.send({type:'PURCHASE_SAVE_CHECK_RESULT',company:check.company,requestId:check.requestId,ok:true,result:{ok:false,pending:true,requestId:check.saveRequestId}});
+  await new Promise(resolve=>setImmediate(resolve));
+  if(pass<count-1)h.timers.at(-1)();
+ }
 }
 const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',staffName:'ACTUAL STAFF'},fetchedAt:'2026-10-10T03:00:00Z',suppliers:[],
   customers:[{id:'C',name:'ACTUAL CUSTOMER'}],tasks:[{id:'TASK',customerId:'C',orderId:'ORDER',barcode:'00123',name:'ACTUAL PRODUCT',packing:'SIZE x16',
@@ -131,9 +140,9 @@ test('dashboard task action opens current layout and the same task editor withou
  assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.match(h.node('#app').innerHTML,/<option value="C" selected/);assert.doesNotMatch(h.node('#app').innerHTML,/class="roomhead"/);assert.equal(h.node('#modal').open,true);assert.match(h.node('#dialogContent').innerHTML,/00123/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
 });
 
-test('pre-upgrade pending room draft restores and returns through current layout with the identical save payload',()=>{
+test('pre-upgrade pending room draft restores and returns through current layout with the identical save payload',async()=>{
  const pending={type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'original-request',operation:'EDIT',input:{edits:[{taskId:'TASK',version:'REV',changes:{disc3:5}}]}},cached={customerId:'C',drafts:[['TASK',{version:'REV',changes:{disc3:5}}]],savePending:pending,saveOrigin:{view:'room',customerId:'C',activeCustomer:''}},cache=new Map([['fmcg-purchase-draft-v1/NCT/STAFF/MEMBER',JSON.stringify(cached)]]),storage={getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v),removeItem:k=>cache.delete(k)},h=harness(storage),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);
- assert.equal(h.messages.at(-1).saveRequestId,pending.requestId);assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.match(h.node('#app').innerHTML,/<option value="C" selected/);h.click({view:'payments'});h.click({controlId:'viewPendingSave'});assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.doesNotMatch(h.node('#app').innerHTML,/class="roomhead"/);h.click({controlId:'retryPendingSave'});assert.deepEqual(JSON.parse(JSON.stringify(h.messages.at(-1))),pending);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,1);
+ assert.equal(h.messages.at(-1).saveRequestId,pending.requestId);assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.match(h.node('#app').innerHTML,/<option value="C" selected/);h.click({view:'payments'});h.click({controlId:'viewPendingSave'});assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.doesNotMatch(h.node('#app').innerHTML,/class="roomhead"/);await exhaustReceiptChecks(h);h.click({controlId:'retryPendingSave'});assert.deepEqual(JSON.parse(JSON.stringify(h.messages.at(-1))),pending);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,1);
 });
 
 test('stock-only supplier receipts cannot satisfy another supplier customer shortage',()=>{
@@ -456,7 +465,7 @@ test('actual Save uses draft revision and keeps inputs after failed or ambiguous
   h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});
   const save=h.messages.at(-1);assert.equal(save.type,'PURCHASE_SAVE_REQUEST');assert.equal(save.input.edits[0].version,'REV');assert.equal(save.input.edits[0].changes.disc3,5);
   h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:false,error:'504 timeout'});
-  assert.match(h.node('#dialogError').textContent,/输入仍保留/);const check=h.messages.at(-1);assert.equal(check.type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(check.saveRequestId,save.requestId);h.click({controlId:'saveEdits'});assert.equal(h.messages.at(-1),check);
+  assert.match(h.node('#liveStatus').textContent,/已保留输入/);const check=h.messages.at(-1);assert.equal(check.type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(check.saveRequestId,save.requestId);h.click({controlId:'saveEdits'});assert.equal(h.messages.at(-1),check);
   h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:'WRONG',ok:true,result:{ok:true,requestId:'WRONG'}});assert.equal(h.node('#companySelect').disabled,true);
   h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:true,requestId:save.requestId}});assert.equal(h.messages.at(-1).type,'PURCHASE_WORKSPACE_REQUEST');assert.equal(h.node('#companySelect').disabled,false);
 });
@@ -467,7 +476,7 @@ test('one click stays busy, blocks duplicate submission and resolves a lost resp
  assert.equal(h.node('#saveEdits').disabled,true);assert.match(h.node('#saveEdits').textContent,/保存中/);
  h.click({controlId:'saveEdits'});assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,1);
  h.timers[1]();const check=h.messages.at(-1);assert.equal(check.type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(check.saveRequestId,save.requestId);
- h.send({type:'PURCHASE_SAVE_CHECK_RESULT',company:'NCT',requestId:check.requestId,ok:true,result:{ok:true,requestId:save.requestId}});
+ h.send({type:'PURCHASE_SAVE_CHECK_RESULT',company:'NCT',requestId:check.requestId,ok:true,result:{ok:true,company:'NCT',requestId:save.requestId}});
  await new Promise(resolve=>setImmediate(resolve));assert.equal(h.messages.at(-1).type,'PURCHASE_WORKSPACE_REQUEST');assert.equal(h.node('#companySelect').disabled,false);
  assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,1);
 });
@@ -477,16 +486,16 @@ test('unconfirmed CMS save keeps original identity and identifies affected tasks
  h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);
  h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:false,pending:true,errorCode:'WDE0118',error:'CMS connection WDE0118',requestId:save.requestId}});
  const check=h.messages.at(-1);assert.equal(check.type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(check.saveRequestId,save.requestId);
- assert.equal(h.node('#companySelect').disabled,true);assert.match(h.node('#liveStatus').textContent,/Barcode 00123/);assert.match(h.node('#liveStatus').textContent,/WDE0118/);assert.ok(h.node('#liveStatus').textContent.includes('Ref 操作编号: '+save.requestId));
+ assert.equal(h.node('#companySelect').disabled,true);assert.match(h.node('#liveStatus').textContent,/Barcode 00123/);assert.doesNotMatch(h.node('#liveStatus').textContent,/WDE0118/);assert.ok(h.node('#liveStatus').textContent.includes('Ref 操作编号: '+save.requestId));
  h.send({type:'PURCHASE_SAVE_CHECK_RESULT',company:'NCT',requestId:check.requestId,ok:false,error:'Read failure'});await new Promise(resolve=>setImmediate(resolve));
- assert.match(h.node('#liveStatus').textContent,/WDE0118/);assert.match(h.node('#liveStatus').textContent,/暂时无法核对/);
- h.click({controlId:'retryPendingSave'});assert.equal(h.messages.at(-1).requestId,save.requestId);assert.equal(h.messages.at(-1).input.edits[0].changes.disc3,5);
+ assert.doesNotMatch(h.node('#liveStatus').textContent,/WDE0118/);assert.match(h.node('#liveStatus').textContent,/已保留输入/);
+ h.timers.at(-1)();await exhaustReceiptChecks(h,4);h.click({controlId:'retryPendingSave'});assert.equal(h.messages.at(-1).requestId,save.requestId);assert.equal(h.messages.at(-1).input.edits[0].changes.disc3,5);
 });
 
-test('receipt checks stop after three pending results and explicit retry preserves the original save identity',async()=>{
+test('receipt checks stop after five pending results and explicit retry preserves the original save identity',async()=>{
  const h=harness(),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);h.click({customer:'C'});
  h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);h.timers[1]();
- for(let attempt=0;attempt<3;attempt++){const check=h.messages.at(-1);h.send({type:'PURCHASE_SAVE_CHECK_RESULT',company:'NCT',requestId:check.requestId,ok:true,result:{ok:false,pending:true,requestId:save.requestId}});await new Promise(resolve=>setImmediate(resolve));if(attempt<2)h.timers.at(-1)();}
+ await exhaustReceiptChecks(h);
  assert.equal(h.node('#saveEdits').disabled,false);assert.match(h.node('#liveStatus').textContent,/尚未取得保存完成回执/);
  assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,1);h.click({controlId:'retryPendingSave'});assert.equal(h.messages.at(-1).requestId,save.requestId);assert.equal(h.messages.at(-1).input.edits[0].changes.disc3,5);
 });
@@ -519,11 +528,11 @@ test('separate four-digit quantities preserve the legacy warehouse value and edi
   const html=h.node('#app').innerHTML;assert.match(html,/demand-edited/);assert.match(html,/9999/);assert.match(html,/8888/);assert.doesNotMatch(html,/9,999|8,888/);assert.match(html,/net-cost-cell/);assert.match(html,/data-plan-task="TASK"/);
 });
 
-test('reload checks the existing save identity and restores only the same staff member draft',()=>{
+test('reload checks the existing save identity and restores only the same staff member draft',async()=>{
   const cache=new Map(),storage={getItem:key=>cache.get(key)||null,setItem:(key,value)=>cache.set(key,value),removeItem:key=>cache.delete(key)};
   const first=harness(storage),data=workspace();data.tasks[0].editVersion='REV';first.reply(data);first.click({customer:'C'});first.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});first.click({controlId:'saveEdits'});const savedRequest=first.messages.at(-1);
   const reloaded=harness(storage);reloaded.reply(data);const check=reloaded.messages.at(-1);assert.equal(check.type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(check.saveRequestId,savedRequest.requestId);assert.match(reloaded.node('#app').innerHTML,/value="5(?:\.00)?"/);
-  reloaded.click({controlId:'retryPendingSave'});assert.equal(reloaded.messages.at(-1).requestId,savedRequest.requestId);assert.equal(reloaded.messages.at(-1).type,'PURCHASE_SAVE_REQUEST');
+  await exhaustReceiptChecks(reloaded);reloaded.click({controlId:'retryPendingSave'});assert.equal(reloaded.messages.at(-1).requestId,savedRequest.requestId);assert.equal(reloaded.messages.at(-1).type,'PURCHASE_SAVE_REQUEST');
   const other=harness(storage);other.reply({...data,staff:{staffId:'STAFF',memberId:'OTHER',staffName:'OTHER'}});assert.equal(other.messages.length,1);assert.doesNotMatch(other.node('#app').innerHTML,/Unsaved changes/);
 });
 
@@ -716,7 +725,7 @@ test('the original supplier record rendered as the first child is labelled as a 
 async function prewriteCmsFailure(save){
  const backend=fs.readFileSync(path.join(__dirname,'../backend/purchaseOperations.web.js'),'utf8');
  const callback=backend.slice(backend.indexOf('export const savePurchaseOperation='),backend.indexOf('export const getSupplierProfile=')).replace('export const savePurchaseOperation=','this.save=');
- const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},getPurchaseStaffContext:async()=>{throw Object.assign(Error('CMS lookup failed'),{code:'WDE0118'});},operate:async()=>{throw Error('Must never enter an operation');},console:{warn(){}}};vm.runInNewContext(callback,context);
+ const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},PROCUREMENT_SAVE_PENDING:'PENDING',getPurchaseStaffContext:async()=>{throw Object.assign(Error('CMS lookup failed'),{code:'WDE0118'});},operate:async()=>{throw Error('Must never enter an operation');},console:{warn(){}}};vm.runInNewContext(callback,context);
  return context.save(save.company,save.requestId,save.operation,save.input);
 }
 test('first-attempt CMS lookup failure releases waiting and preserves original editable draft without refresh or receipt polling',async()=>{
@@ -728,13 +737,13 @@ test('first-attempt CMS lookup failure releases waiting and preserves original e
 test('retry CMS lookup failure cannot clear an earlier uncertain save or permit a new request',async()=>{
  const h=harness(),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const first=h.messages.at(-1);
  h.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:false,error:'504 timeout'});const check=h.messages.at(-1);h.send({type:'PURCHASE_SAVE_CHECK_RESULT',requestId:check.requestId,ok:false,error:'Read failed'});await new Promise(resolve=>setImmediate(resolve));
- h.click({controlId:'retryPendingSave'});const retry=h.messages.at(-1);assert.deepEqual(retry,first);h.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:true,result:await prewriteCmsFailure(retry)});
+ h.timers.at(-1)();await exhaustReceiptChecks(h,4);h.click({controlId:'retryPendingSave'});const retry=h.messages.at(-1);assert.deepEqual(retry,first);h.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:true,result:await prewriteCmsFailure(retry)});
  assert.equal(h.node('#companySelect').disabled,true);assert.equal(h.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(h.messages.at(-1).saveRequestId,first.requestId);const before=h.messages.length;h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);
 });
 test('restored legacy pending request stays uncertain even when its next attempt cannot read CMS',async()=>{
  const values=new Map(),storage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)},h=harness(storage),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const first=h.messages.at(-1);
  const key=[...values.keys()][0],cached=JSON.parse(values.get(key));delete cached.saveAttemptCount;values.set(key,JSON.stringify(cached));
- const restored=harness(storage);restored.reply(w);const check=restored.messages.at(-1);restored.send({type:'PURCHASE_SAVE_CHECK_RESULT',requestId:check.requestId,ok:false,error:'Read failed'});await new Promise(resolve=>setImmediate(resolve));restored.click({controlId:'retryPendingSave'});const retry=restored.messages.at(-1);assert.equal(retry.requestId,first.requestId);
+ const restored=harness(storage);restored.reply(w);const check=restored.messages.at(-1);restored.send({type:'PURCHASE_SAVE_CHECK_RESULT',requestId:check.requestId,ok:false,error:'Read failed'});await new Promise(resolve=>setImmediate(resolve));restored.timers.at(-1)();await exhaustReceiptChecks(restored,4);restored.click({controlId:'retryPendingSave'});const retry=restored.messages.at(-1);assert.equal(retry.requestId,first.requestId);
  restored.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:true,result:await prewriteCmsFailure(retry)});assert.equal(restored.node('#companySelect').disabled,true);assert.equal(restored.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');
 });
 
@@ -783,7 +792,7 @@ test('payment submit shows visible in-dialog progress, disables duplicate submis
 });
 test('payment submit timeout checks the original request and pending result keeps submit locked while allowing exact retry',async()=>{
  const h=await paymentSubmitFixture();h.click({controlId:'submitPaymentRequest'});const save=h.messages.at(-1);h.timers.at(-1)();assert.equal(h.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(h.messages.at(-1).saveRequestId,save.requestId);assert.match(h.node('#paymentSubmitStatus').innerHTML,/正在核对提交结果/);
- for(let attempt=0;attempt<3;attempt++){const check=h.messages.at(-1);h.send({type:'PURCHASE_SAVE_CHECK_RESULT',requestId:check.requestId,ok:true,result:{ok:false,pending:true,requestId:save.requestId}});await new Promise(resolve=>setImmediate(resolve));if(attempt<2)h.timers.at(-1)();}
+ await exhaustReceiptChecks(h);
  assert.match(h.node('#paymentSubmitStatus').innerHTML,/提交结果待确认/);assert.equal(h.node('#submitPaymentRequest').disabled,true);assert.equal(h.node('#poRequestAmount').value,'25.00');assert.doesNotMatch(h.node('#liveStatus').textContent,/Submitted to Account 已提交财务/);
  h.click({controlId:'retryPendingSave'});assert.equal(h.messages.at(-1).requestId,save.requestId);assert.equal(h.messages.at(-1).input.requestedCents,2500);assert.equal(h.node('#submitPaymentRequest').disabled,true);
 });
@@ -963,7 +972,7 @@ test('delete and chase show in-dialog progress, lock repeat clicks and require t
 test('delete and chase pending receipts keep action disabled and retry preserves the exact request',async()=>{
  for(const action of ['DELETE_DOCUMENT','CHASE']){
   const {h,id}=await operationFeedbackFixture(action);h.click({controlId:id});const save=h.messages.at(-1);h.timers.at(-1)();
-  for(let attempt=0;attempt<3;attempt++){const check=h.messages.at(-1);assert.equal(check.saveRequestId,save.requestId);h.send({type:'PURCHASE_SAVE_CHECK_RESULT',requestId:check.requestId,ok:true,result:{ok:false,pending:true,requestId:save.requestId}});await new Promise(resolve=>setImmediate(resolve));if(attempt<2)h.timers.at(-1)();}
+  await exhaustReceiptChecks(h);
   assert.equal(h.node('#'+id).disabled,true);assert.match(h.node('#operationStatus').innerHTML,/结果待确认/);h.click({controlId:'retryPendingSave'});assert.equal(h.messages.at(-1).requestId,save.requestId);assert.deepEqual(h.messages.at(-1).input,save.input);
  }
 });
@@ -1016,9 +1025,9 @@ test('personal display drag and destination dialog persist through reload withou
 test('personal movement preserves a price draft and submits only its original edit version',()=>{
  const h=harness(),w=workspace();w.tasks[0].editVersion='V';w.tasks.push({...w.tasks[0],id:'TASK2'});h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({drag:'TASK2'});h.node('#moveTarget').value='top';h.click({controlId:'applyMove'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.type,'PURCHASE_SAVE_REQUEST');assert.equal(save.input.edits.length,1);assert.equal(save.input.edits[0].version,'V');assert.equal(save.input.edits[0].changes.disc3,3);for(const field of ['taskIds','customerId','versions','displayRows','displayOrderVersion'])assert.equal(save.input[field],undefined);
 });
-test('legacy mixed unknown Save retains its exact request; known rejection converts only unsent ordering',()=>{
+test('legacy mixed unknown Save retains its exact request; known rejection converts only unsent ordering',async()=>{
  const w=workspace();w.tasks[0].editVersion='V';w.tasks.push({...w.tasks[0],id:'TASK2'});const original={type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'ORIGINAL',operation:'EDIT',input:{customerId:'C',taskIds:['TASK2','TASK'],versions:{TASK:'V',TASK2:'V'},edits:[{taskId:'TASK',version:'V',changes:{disc3:3}}]}};
  const cache=new Map([['fmcg-purchase-draft-v1/NCT/STAFF/MEMBER',JSON.stringify({customerId:'C',drafts:[['TASK',{version:'V',changes:{disc3:3}}]],sequenceDraft:['TASK2','TASK'],sequenceVersions:original.input.versions,sequenceCustomerId:'C',savePending:original})]]),storage={getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v),removeItem:k=>cache.delete(k)},h=harness(storage);h.reply(w);
- assert.equal(h.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');assert.deepEqual(JSON.parse(cache.values().next().value).savePending,original);h.click({controlId:'retryPendingSave'});const retried=h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').at(-1);assert.deepEqual(JSON.parse(JSON.stringify(retried)),original);
+ assert.equal(h.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');assert.deepEqual(JSON.parse(cache.values().next().value).savePending,original);await exhaustReceiptChecks(h);h.click({controlId:'retryPendingSave'});const retried=h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').at(-1);assert.deepEqual(JSON.parse(JSON.stringify(retried)),original);
  h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:'ORIGINAL',ok:true,result:{ok:false,requestId:'ORIGINAL',error:'Select an active supplier.'}});h.click({controlId:'saveEdits'});const next=h.messages.at(-1);assert.notEqual(next.requestId,'ORIGINAL');assert.equal(next.input.taskIds,undefined);assert.equal(next.input.edits[0].changes.disc3,3);
 });
