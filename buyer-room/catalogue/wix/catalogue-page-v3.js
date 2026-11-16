@@ -17,7 +17,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-10-06-catalogue-brand-sort-v53';
+const CATALOGUE_BUILD_VERSION = '20261117-catalogue-layout-v1';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -72,6 +72,7 @@ function sendCatalogueContext(message) {
 function sendCatalogueMenu(message) {
     catalogueMenuMessage = message;
     try { $w('#html4').postMessage(message); } catch (error) {}
+    try { $w('#html5').postMessage(message); } catch (error) {}
 }
 
 function sidebarSelectionState(state) {
@@ -555,6 +556,19 @@ function setupCatalogueWorkspace() {
             catalogueWorkspaceReady = true;
             if (!catalogueWorkspaceProducts.length) await loadCatalogueWorkspaceProducts();
             else sendCatalogueWorkspaceData();
+            if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
+        } else if (message.type === 'catalogueWorkspaceBrowse') {
+            const principle = typeof message.principle === 'string' ? message.principle.trim() : '';
+            const main = typeof message.main === 'string' ? message.main.toUpperCase() : '';
+            const subId = typeof message.subId === 'string' ? message.subId : '';
+            const categories = (catalogueMenuMessage?.items || []).filter(item => item.mainCategory === main);
+            if (principle && !catalogueWorkspaceAllProducts.some(product => product.principle.toLowerCase() === principle.toLowerCase())) return;
+            if (main && !categories.length || subId && !categories.some(item => item.id === subId)) return;
+            catalogueWorkspaceQueryVersion += 1;
+            catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
+            catalogueWorkspaceFilter = { query: '', main: subId ? main : '', subIds: subId ? [subId] : categories.map(item => item.id), principle };
+            try { $w('#input2').value = ''; } catch (error) {}
+            sendCatalogueWorkspaceData();
         } else if (message.type === 'catalogueWorkspaceNavigate') {
             try { await wixWindowFrontend.scrollTo(0, 0); } catch (error) {}
         } else if (message.type === 'catalogueWorkspaceBuyerRoom') {
