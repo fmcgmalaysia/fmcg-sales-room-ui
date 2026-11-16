@@ -17,3 +17,47 @@ test('supplier bank fields round-trip as text with leading zeros and saved opera
 test('old supplier versions stay exact when bank fields are absent or blank',async()=>{const f=fixture(),result=await f.service.save(f.input),profile=await f.service.profile(result.supplierId);const fields=['companyName','shortName','registrationNo','address','officeTel','email','companyWebsite','collectionAddress','paymentTerm','supplierStatus','notes','salesContacts','brands'];const stored=[...f.rows].find(([k])=>k.startsWith('SharedSuppliers/'))[1];const oldVersion=createHash('sha256').update(JSON.stringify([fields.map(k=>[k,stored[k]??null])])).digest('hex').slice(0,32);assert.equal(profile.version,oldVersion);assert.equal(profile.bankName,'');assert.equal(profile.bankAccountNo,'');});
 test('one-sided, non-text, overlong and control-character bank data are rejected',async()=>{for(const extra of [{bankName:'MAYBANK'},{bankAccountNo:'00123'},{bankName:'MAYBANK',bankAccountNo:123},{bankName:'MAYBANK',bankAccountNo:'1'.repeat(65)},{bankName:'MAYBANK',bankAccountNo:'00\n123'}]){const f=fixture();await assert.rejects(f.service.save({...f.input,values:{...f.input.values,...extra}}),/Bank Name|Invalid supplier|bank details/);assert.equal([...f.rows.keys()].filter(k=>k.startsWith('SharedSuppliers/')).length,0);}});
 test('bank updates reject stale versions while edits from older clients retain existing bank values',async()=>{const f=fixture(),a=await f.service.save({...f.input,values:{...f.input.values,bankName:'MAYBANK',bankAccountNo:'001234'}});const b=await f.service.save({...f.input,supplierId:a.supplierId,expectedVersion:a.version,requestId:'22222222-2222-4222-8222-222222222222',values:{...f.input.values,companyName:'edited supplier'}});assert.equal((await f.service.profile(a.supplierId)).bankAccountNo,'001234');await assert.rejects(f.service.save({...f.input,supplierId:a.supplierId,expectedVersion:a.version,requestId:'33333333-3333-4333-8333-333333333333',values:{...f.input.values,bankName:'OTHER',bankAccountNo:'009999'}}),/changed/);assert.notEqual(a.version,b.version);});
+
+test('new registration, TIN and warehouse address round-trip without replacing legacy data',async()=>{
+ const {rows,service,input}=fixture();
+ const created=await service.save({...input,values:{...input.values,registrationNo:'OLD-1',registrationNoNew:'001200340056',tinNo:'C00123',address:'Office 1',warehouseAddress:'Warehouse 9',warehouseSameAsOffice:false,collectionAddress:'Pickup 8'}});
+ const profile=await service.profile(created.supplierId);
+ assert.equal(profile.registrationNo,'OLD-1');
+ assert.equal(profile.registrationNoNew,'001200340056');
+ assert.equal(profile.tinNo,'C00123');
+ assert.equal(profile.address,'OFFICE 1');
+ assert.equal(profile.warehouseAddress,'WAREHOUSE 9');
+ assert.equal(profile.collectionAddress,'PICKUP 8');
+ const edit=await service.save({...input,supplierId:created.supplierId,expectedVersion:created.version,requestId:'22222222-2222-4222-8222-222222222222',values:{...input.values,warehouseAddress:'Warehouse 10'}});
+ assert.notEqual(edit.version,created.version);
+ assert.equal((await service.profile(created.supplierId)).tinNo,'C00123');
+ assert.equal([...rows.keys()].filter(key=>key.startsWith('SharedSuppliers/')).length,1);
+});
+
+test('same-address choice follows later office edits, survives retries and can be switched off',async()=>{
+ const f=fixture();
+ const create={...f.input,values:{...f.input.values,address:'Office 1',warehouseAddress:'Stale address',warehouseSameAsOffice:true}};
+ f.fail();
+ await assert.rejects(f.service.save(create),/response lost/);
+ const first=await f.service.save(create);
+ assert.equal((await f.service.profile(first.supplierId)).warehouseAddress,'OFFICE 1');
+ const edit={...f.input,supplierId:first.supplierId,expectedVersion:first.version,requestId:'22222222-2222-4222-8222-222222222222',values:{...f.input.values,address:'Office 2'}};
+ const second=await f.service.save(edit);
+ const profile=await f.service.profile(first.supplierId);
+ assert.equal(profile.warehouseAddress,'OFFICE 2');
+ assert.equal(profile.warehouseSameAsOffice,true);
+ await f.service.save({...edit,expectedVersion:second.version,requestId:'33333333-3333-4333-8333-333333333333',values:{...edit.values,warehouseSameAsOffice:false,warehouseAddress:'Warehouse 3'}});
+ const final=await f.service.profile(first.supplierId);
+ assert.equal(final.warehouseAddress,'WAREHOUSE 3');
+ assert.equal(final.warehouseSameAsOffice,false);
+});
+
+test('legacy revisions are preserved when new fields are blank, and malformed field types are rejected',async()=>{
+ const {service,input}=fixture();
+ const first=await service.save(input);
+ const edit={...input,supplierId:first.supplierId,expectedVersion:first.version,requestId:'22222222-2222-4222-8222-222222222222',values:{...input.values,registrationNoNew:'',tinNo:'',warehouseAddress:'',warehouseSameAsOffice:false}};
+ assert.equal((await service.save(edit)).version,first.version);
+ for(const extra of [{tinNo:123},{warehouseSameAsOffice:'false'}]){
+  await assert.rejects(service.save({...input,values:{...input.values,...extra}}),/Invalid/);
+ }
+});

@@ -777,3 +777,7 @@ body #app>.active-order-heading{min-height:0;margin-bottom:12px}
 .supplier-allocation-dialog .allocation-lock-notice { margin: 5px 0; font-size: 10px; }
 
 .supplier-allocation-dialog .allocation-save[hidden]{display:none!important}
+
+.supplier-form .supplier-same-address{display:flex;align-items:center;gap:7px;min-height:30px;width:fit-content;cursor:pointer}
+.supplier-form .supplier-same-address input[type=checkbox]{width:16px;height:16px;margin:0;padding:0;accent-color:#2563eb}
+.supplier-form #supplierWarehouseAddress:read-only{background:#edf3f8}
