@@ -173,3 +173,35 @@ test('failed customer login creation resumes the same Wix customer reservation',
   assert.equal(flow.fmcg.rows('WixCustomerUsers').length, 1);
   assert.equal(flow.files.size, 1);
 });
+
+test('the assignee field is hidden until LTPOS confirms permission to assign another employee', () => {
+  const html = readFileSync(join(__dirname, '../../index.html'), 'utf8');
+  assert.match(html, /id="assignedStaffField" hidden>/);
+  assert.match(html, /id="assignedStaffSelect" name="assignedStaffId" disabled>/);
+
+  const field = { hidden: true };
+  const select = { disabled: true, required: false, value: '', addEventListener() {}, appendChild() {} };
+  const elements = { assignedStaffField: field, assignedStaffSelect: select, assignedQdHint: {} };
+  const start = html.indexOf('const assignedSelect=document');
+  const end = html.indexOf('\n', html.indexOf("assignedSelect.addEventListener('change'", start));
+  assert.ok(start >= 0 && end > start);
+  const render = vm.runInNewContext(`let customerCreationRouting=null,assignableStaff=[];\n${html.slice(start, end)}\nrenderAssignableStaff`, {
+    document: { getElementById: id => elements[id], createElement: () => ({}) },
+    staff: { canViewAllCustomers: false }
+  });
+  const owner = { staffId: salesperson.title, staffName: salesperson.staffName };
+  function checkVisibility(expected) {
+    assert.equal(field.hidden, !expected);
+    assert.equal(select.disabled, !expected);
+    assert.equal(select.required, expected);
+  }
+  checkVisibility(false);
+  render({ canCreate: true, mayAssignOthers: false, staff: [owner] });
+  checkVisibility(false);
+  render({ canCreate: true, mayAssignOthers: true, staff: [owner] });
+  checkVisibility(true);
+  render({ canCreate: true, mayAssignOthers: true, staff: [] });
+  checkVisibility(false);
+  render({ canCreate: false, mayAssignOthers: false, staff: [] });
+  checkVisibility(false);
+});
