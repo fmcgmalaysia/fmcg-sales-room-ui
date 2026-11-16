@@ -61,3 +61,13 @@ test('legacy revisions are preserved when new fields are blank, and malformed fi
   await assert.rejects(service.save({...input,values:{...input.values,...extra}}),/Invalid/);
  }
 });
+
+test('missing company name returns an editable failure before any receipt or supplier write',async()=>{
+ const {rows,service,input}=fixture();
+ const rejected=await service.save({...input,values:{...input.values,companyName:'  ',address:'Temporary address'}});
+ assert.equal(rejected.ok,false);
+ assert.equal(rejected.error,'Company Name is required.');
+ assert.equal(rejected.requestId,input.requestId);
+ assert.equal(rows.size,0);
+ assert.equal((await service.save(input)).ok,true);
+});

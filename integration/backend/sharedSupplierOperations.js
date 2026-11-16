@@ -28,7 +28,7 @@ export function createSharedSupplierOperations({store, brandOptions, now = () =>
       if(typeof values[key] !== 'string' || values[key].length > 4000) throw Error('Invalid supplier field.');
       patch[key] = ['email','companyWebsite','bankAccountNo'].includes(key)?text(values[key]):text(values[key]).toUpperCase();
     }
-    if(!patch.companyName) throw Error('Company Name is required.');
+    if(!patch.companyName) return {ok:false,requestId,error:'Company Name is required.'};
     if(patch.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patch.email)) throw Error('Check supplier email.');
     if(patch.companyWebsite && !/^https?:\/\/[^\s]+$/i.test(patch.companyWebsite)) throw Error('Website must start with https:// or http://.');
     if(!Array.isArray(values.salesContacts) || values.salesContacts.length>200 || !Array.isArray(values.brands) || values.brands.length>1000) throw Error('Invalid contacts or brands.');
