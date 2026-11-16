@@ -63,14 +63,18 @@ export const getPurchaseReferenceCost=webMethod(Permissions.SiteMember,async(com
  return {company,taskId,barcode:task.barcode,capturedAt:cost.capturedAt,prices};
 });
 export const getSupplierBrandOptions=webMethod(Permissions.SiteMember,async()=>{await getPurchaseStaffContext();return getPointbaseBrands();});
-export const saveSupplierProfile=webMethod(Permissions.SiteMember,async(requestId,supplierId,expectedVersion,values)=>{
- const staff=await getPurchaseStaffContext(undefined,'EDIT');return suppliers.save({requestId,supplierId,expectedVersion,values,staff});
+export const saveSupplierProfile=webMethod(Permissions.SiteMember,async(requestId,supplierId,expectedVersion,values,saveMemberId)=>{
+ const staff=await getPurchaseStaffContext(undefined,'EDIT');
+ if(saveMemberId!==undefined&&staff.memberId!==saveMemberId)return {ok:false,pending:true,requestId,error:'Original supplier save requires the original signed-in employee.'};
+ return suppliers.save({requestId,supplierId,expectedVersion,values,staff});
 });
-export const getPurchaseSaveResult=webMethod(Permissions.SiteMember,async(company,requestId,supplierId)=>{
+export const getPurchaseSaveResult=webMethod(Permissions.SiteMember,async(company,requestId,supplierId,saveMemberId)=>{
  const staff=await getPurchaseStaffContext(company);if(!/^[a-f0-9-]{36}$/i.test(requestId||'')||!PURCHASE_COLLECTIONS[company])throw Error('Invalid save identity.');
+ if(supplierId!==null&&saveMemberId!==undefined&&staff.memberId!==saveMemberId)return {ok:false,pending:true,company,requestId};
  const isSupplier=supplierId!==null,identity=isSupplier?(supplierId||'SUP-'+operationId(requestId,staff.memberId).slice(0,16).toUpperCase()):null;
  const scope=isSupplier?'SUPPLIER/'+identity:company+'/PURCHASE',collection=isSupplier?'SharedSupplierActivity':PURCHASE_COLLECTIONS[company].activity;
  const key=operationId(scope,requestId,staff.memberId),record=await store.read(collection,operationId(key,'RESULT'));
  if(record?.details?.recovered||record?.details?.outcome?.ok===true){const lock=await store.read(collection,operationId(scope,'LOCK'));if(lock?.details?.owner===key&&(record.details.recovered||(await store.read(collection,key))?.details?.plan?.event?.action==='PLANNER_ALLOCATION_SAVED'))return {ok:false,pending:true,company,requestId,error:'Original save recovery is pending. Retain this request.'};}
- return record?.details?.outcome || {ok:false,pending:true,company,requestId};
+ return record?.details?.outcome || {ok:false,pending:true,company,requestId,
+  ...(isSupplier&&typeof saveMemberId==='string'&&saveMemberId&&saveMemberId===staff.memberId?{sameEmployee:true}:{})};
 });

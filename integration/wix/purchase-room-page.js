@@ -44,10 +44,10 @@ $w.onReady(() => {
       try {
         let result;
         if(message.type==='PURCHASE_SAVE_REQUEST')result=await savePurchaseOperation(message.company,message.requestId,message.operation,message.input);
-        else if(message.type==='PURCHASE_SUPPLIER_SAVE_REQUEST')result=await saveSupplierProfile(message.requestId,message.supplierId,message.expectedVersion,message.values);
+        else if(message.type==='PURCHASE_SUPPLIER_SAVE_REQUEST')result=await saveSupplierProfile(message.requestId,message.supplierId,message.expectedVersion,message.values,message.saveMemberId);
         else if(message.type==='PURCHASE_PROFILE_REQUEST')result=await getSupplierProfile(message.supplierId);
         else if(message.type==='PURCHASE_BRANDS_REQUEST')result=await getSupplierBrandOptions();
-        else result=await getPurchaseSaveResult(message.company,message.saveRequestId,message.supplierId??null);
+        else result=await getPurchaseSaveResult(message.company,message.saveRequestId,message.supplierId??null,message.saveMemberId);
         if(message.type==='PURCHASE_SAVE_CHECK_REQUEST'&&result?.ok===false&&result.retryable===false&&result.requestId===message.saveRequestId)room.postMessage({type:'PURCHASE_SAVE_RESULT',ok:false,company:message.company,requestId:message.saveRequestId,result,error:result.error});
         room.postMessage({type:replyType,ok:true,company:message.company,requestId:message.requestId,result});
       } catch(error) {room.postMessage({type:replyType,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Save could not be confirmed.'});}
