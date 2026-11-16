@@ -10,7 +10,7 @@ const source = fs.readFileSync(path.join(__dirname, '../../master-staff/index.ht
 const pendingKey = 'master.staff.save.pending';
 const employee = { staffId: 'employee', name: 'Example', email: 'employee@example.com', status: 'PENDING' };
 
-async function start(reply, storage = new Map()) {
+async function start(reply, storage = new Map(), editExisting = false) {
   const actions = [], nodes = new Map();
   const makeNode = () => ({
     value: '', hidden: false, disabled: false, dataset: {}, handlers: {},
@@ -34,11 +34,14 @@ async function start(reply, storage = new Map()) {
       type: 'MASTER_STAFF_RESULT', requestId: message.requestId, ok: true, ...payload
     }}));
   }};
-  await vm.runInNewContext(`(async()=>{${source}\n})()`, {
+  const open = await vm.runInNewContext(`(async()=>{${source}\nreturn openEmployee;})()`, {
     document, window: { parent, addEventListener(_, fn) { handle = fn; } },
     localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
     crypto: { randomUUID }, Option: function () {}, FormData: class {
-      get(name) { return ({ name: employee.name, email: employee.email })[name] || ''; }
+      get(name) {
+        if (editExisting) return element('field-' + name).value;
+        return ({ name: employee.name, email: employee.email })[name] || '';
+      }
       getAll() { return []; }
       has() { return false; }
     },
@@ -48,8 +51,29 @@ async function start(reply, storage = new Map()) {
     },
     clearTimeout
   });
-  return { actions, element, storage, scheduled, submit: () => form.handlers.submit({ preventDefault() {} }) };
+  return { actions, element, storage, scheduled, open, input: () => form.handlers.input(),
+    submit: () => form.handlers.submit({ preventDefault() {} }) };
 }
+
+test('existing staff Save is visible and disabled until changed and disables again when restored', async () => {
+  const ui = await start(() => ({customers: []}), new Map(), true);
+  await ui.open(employee);
+  const save = ui.element('save');
+  assert.equal(save.hidden, false);
+  assert.equal(save.disabled, true);
+  assert.equal(save.dataset.unchanged, 'true');
+  ui.element('field-email').value = '  EMPLOYEE@example.com  ';
+  ui.input();
+  assert.equal(save.disabled, true);
+  ui.element('field-status').value = 'DISABLED';
+  ui.input();
+  assert.equal(save.disabled, false);
+  ui.element('field-status').value = employee.status;
+  ui.input();
+  assert.equal(save.disabled, true);
+  await ui.submit();
+  assert.equal(ui.actions.some(message => message.action === 'UPDATE_STAFF'), false);
+});
 
 test('lost response automatically reads the exact original receipt and completes the form', async () => {
   const ui = await start(message => message.action === 'REGISTER_STAFF'

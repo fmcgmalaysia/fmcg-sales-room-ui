@@ -31,9 +31,14 @@ export async function readStaffSaveStatus(requestId, project) {
 // lock may release it; a retry can read the result but cannot release another
 // invocation's lock. No Activity entries are created. Request markers replace
 // fields on the employee row rather than accumulating request-history rows.
-export async function writeStaffManagement({ requestId, fingerprint, actorId, prepare, project }) {
+export async function writeStaffManagement({ requestId, fingerprint, actorId, prepare, project, unchanged }) {
   if (!/^[a-f0-9-]{36}$/i.test(String(requestId ?? '')) || !actorId || !fingerprint) {
     throw Error('Invalid employee save request.');
+  }
+  if (unchanged) {
+    const locks = await wixData.query(collection).eq('_id', lockId).limit(1).find(readOptions);
+    const prior = await wixData.query(collection).eq('staffManagementRequestId', requestId).limit(2).find(readOptions);
+    if (!prior.items.length && locks.items[0]?.requestId !== requestId) return unchanged;
   }
   const lock = { _id: lockId, staffStatus: 'CONTROL', requestId, fingerprint, actorId };
   try {

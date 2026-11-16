@@ -28,7 +28,7 @@ function fixture(options = {}) {
   const source = fs.readFileSync(path.join(__dirname,'../backend/staffManagementWrite.js'),'utf8')
     .replace(/^import .+;\r?$/gm,'').replace(/^export /gm,'');
   const {write,readStatus} = vm.runInNewContext(source+'\n({write:writeStaffManagement,readStatus:readStaffSaveStatus})',{wixData});
-  return {rows,calls,write,readStatus};
+  return {rows,calls,write,readStatus,wixData};
 }
 
 function request(overrides={}) {
@@ -36,6 +36,21 @@ function request(overrides={}) {
     prepare:async()=>({row:{_id:'employee',title:'staff-id',staffStatus:'DISABLED'}}),
     project:row=>row,...overrides};
 }
+
+test('an unchanged edit returns the projected employee without writing a lock or receipt', async () => {
+  const f = fixture();
+  const unchanged = {staffId:'staff-id', name:'Example'};
+  assert.equal(await f.write(request({unchanged, prepare: () => assert.fail('unexpected edit')})), unchanged);
+  assert.deepEqual(f.calls, []);
+});
+
+test('a reused request cannot hide a conflicting receipt behind an unchanged edit', async () => {
+  const f = fixture();
+  const input = request();
+  await f.write(input);
+  await assert.rejects(f.write({...input, unchanged: {staffId:'staff-id'}, fingerprint:'different'}), /does not match/);
+  assert.equal(f.calls.filter(([action]) => action === 'update').length, 1);
+});
 
 test('a second management save cannot overwrite an in-flight change',async()=>{
   const f=fixture(); let resume;
@@ -140,6 +155,31 @@ const employee={_id:'employee',title:'staff-id',staffName:'Rinn',staffEmail:'rin
   role:'STAFF',staffStatus:'ACTIVE',description:'old-member',staffAccess:{},_updatedDate:'2026-11-13T00:00:00Z'};
 const update=(overrides={})=>({staffId:employee.title,revision:policy.staffManagementRevision(employee),
   name:'Rinn',email:employee.staffEmail,status:'ACTIVE',access:{},...overrides});
+
+test('the actual staff update entry point checks authority and treats reordered access as unchanged',async()=>{
+  const fixtureStore = fixture();
+  const staff = {...employee, staffAccess:{companyIds:['NCT','GHR'],departmentAccess:{PURCHASE:'EDIT',SUPPORT:'VIEW'}}};
+  const admin = {_id:'admin',title:'admin-id',staffName:'Admin',staffEmail:'admin@example.com',role:'SUPER ADMIN',staffStatus:'ACTIVE',description:'admin-member'};
+  fixtureStore.rows.set(staff._id, staff);
+  fixtureStore.rows.set(admin._id, admin);
+  const source = fs.readFileSync(path.join(__dirname,'../backend/staffManagement.web.js'),'utf8')
+    .replace(/^import .+;\r?$/gm,'').replace(/^export /gm,'');
+  const api = vm.runInNewContext(source + '\nupdateManagedStaff', {
+    ...policy, ...require('node:crypto'), webMethod: (_, fn) => fn, Permissions: {SiteMember: 1},
+    currentMember: {getMember: async () => ({_id:'admin-member', loginEmail:admin.staffEmail, status:'APPROVED'})},
+    wixData: {query(collection) { return {...fixtureStore.wixData.query(collection), limit() {
+      return {find: async () => ({items:[...fixtureStore.rows.values()], hasNext:()=>false})};
+    }}; }}, writeStaffManagement: fixtureStore.write
+  });
+  const input = update({requestId:randomUUID(),revision:policy.staffManagementRevision(staff),
+    name:' Rinn ',email:'RINN@example.com',access:{companyIds:['GHR','NCT'],departmentAccess:{SUPPORT:'VIEW',PURCHASE:'EDIT'}}});
+  const result = await api(input);
+  assert.equal(result.staffId, staff.title);
+  assert.deepEqual(fixtureStore.calls, []);
+  await api({...input, requestId:randomUUID(), name:'Rinn Lee'});
+  assert.equal(fixtureStore.rows.get('employee').staffName,'Rinn Lee');
+  assert.equal(fixtureStore.calls.filter(([action]) => action === 'update').length,1);
+});
 
 test('email changes revoke the old binding and keep the employee identity',()=>{
   const changed=policy.prepareStaffUpdate(update({email:'NEW@example.com'}),[employee],'admin');

@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="build" content="20261116-staff-save-receipt-v1">
+<meta name="build" content="20261116-staff-unchanged-save-v1">
 <title>Staff Management · MASTER</title>
 <style>
   @font-face{font-family:"Purchase Dashboard Inter";font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fMZg.ttf) format("truetype")}
@@ -51,6 +51,7 @@
   .editor-empty{padding:18px;color:#4e6680}
   #save-status{flex:1}
   #save[hidden]{display:none}
+  #save[data-unchanged=true]:disabled{background:#e6ebef;color:#516378;border-color:#d4dde5;opacity:1}
   @media(max-width:800px){body>header{padding:0 12px;gap:10px;font-size:12px}body>header strong{font-size:16px}body>header span{padding-left:10px}}
   @media(max-width:760px){.workspace{grid-template-columns:1fr}}
   @media(max-width:540px){main{padding:16px 12px}h1{font-size:22px}.heading{gap:8px}}
@@ -120,6 +121,7 @@
   let pendingReceipt, pendingForm = null, receiptTimer;
   try { pendingReceipt = localStorage.getItem(pendingKey); } catch (_) {}
   let dirty = false, saving = false;
+  let originalEmployeeFields, customerOptionsReady = false;
   let customerLoad = 0;
 
   function send(action, fields = {}) {
@@ -215,6 +217,22 @@
       }
     };
   }
+  function employeeFields({name, email, status, access = {}}) {
+    const ordered = record => Object.entries(record ?? {}).sort(([left], [right]) => left.localeCompare(right));
+    return JSON.stringify([String(name ?? '').trim(), String(email ?? '').trim().toLowerCase(), status,
+      [...(access.companyIds ?? [])].sort(), ordered(access.departmentAccess), ordered(access.customerAccess),
+      Boolean(access.supportViewAll), access.salesRoom || '', access.salesFunction || '']);
+  }
+  function refreshEmployeeSave() {
+    const button = id('save');
+    if (editing) {
+      const value = {...registration(), status:form.elements.namedItem('status').value};
+      if (!customerOptionsReady) value.access.customerAccess = editing.access?.customerAccess ?? {};
+      dirty = employeeFields(value) !== originalEmployeeFields;
+    }
+    button.disabled = saving || Boolean(pendingReceipt) || !customerOptionsReady || Boolean(editing && !dirty);
+    button.dataset.unchanged = String(Boolean(editing && !dirty && customerOptionsReady));
+  }
   id('search').addEventListener('input', render);
   function renderCustomerAccess(access) {
     const known = new Map(customers.map(customer=>[customer.id,customer.name]));
@@ -272,6 +290,7 @@
     if (matchingForm) void openEmployee(employee, true);
     else {
       if (!form.hidden && dirty) id('save').hidden = false;
+      if (!form.hidden) refreshEmployeeSave();
       render();
     }
   }
@@ -305,6 +324,8 @@
     selected = employee;
     editing = employee;
     dirty = false;
+    customerOptionsReady = false;
+    originalEmployeeFields = employee ? employeeFields(employee) : undefined;
     form.reset();
     id('add-title').textContent = employee?.name ?? 'Add Employee';
     const administrator = employee?.role === 'SUPER ADMIN';
@@ -335,7 +356,8 @@
     if (saved) {
       renderCustomerAccess(access.customerAccess);
       id('customer-status').textContent = '';
-      id('save').disabled = false;
+      customerOptionsReady = true;
+      refreshEmployeeSave();
       return;
     }
     id('customer-options').replaceChildren();
@@ -344,7 +366,9 @@
       const result=await send('LIST_CUSTOMERS');
       if (form.hidden || load !== customerLoad) return;
       customers=result.customers;
-      renderCustomerAccess(access.customerAccess);id('customer-status').textContent='';id('save').disabled=false;
+      renderCustomerAccess(access.customerAccess);id('customer-status').textContent='';
+      customerOptionsReady = true;
+      refreshEmployeeSave();
     }catch(error){if (!form.hidden && load === customerLoad) id('customer-status').textContent=error.message;}
   }
   id('add').addEventListener('click', () => selectEmployee());
@@ -361,7 +385,8 @@
     render();
   });
   form.addEventListener('input', () => {
-    dirty = true;
+    if (!editing) dirty = true;
+    refreshEmployeeSave();
     id('save').hidden = Boolean(pendingReceipt);
     id('cancel').textContent = 'Cancel';
     showSaveStatus('');
@@ -396,7 +421,7 @@
       }
     } finally {
       saving = false;
-      id('save').disabled = false;
+      if (!pendingReceipt) refreshEmployeeSave();
       id('cancel').disabled = false;
     }
     if (savedEmployee) {
