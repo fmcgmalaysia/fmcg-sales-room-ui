@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="catalogue-build-version" content="2026-10-06-catalogue-cbm-four-decimals-v52">
+  <meta name="catalogue-build-version" content="20261117-catalogue-menu-focus-v1">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap');
     :root{--orange:#f05a28;--orange2:#ff7a32;--orange-soft:#fff4ed;--navy:#102a4a;--ink:#142943;--muted:#6d7d90;--line:#dfe6ed;--panel:#fff;--bg:#f6f8fa;--green:#16885f}
@@ -134,7 +134,7 @@
     function renderMobileCategories(categories){
       if(!Array.isArray(categories))return;
       const names=[['FOOD','Food & Beverages'],['HOUSEHOLDS','Household & Cleaning'],['PERSONAL CARE','Personal Care & Health'],['OTHERS','General Merchandise']];
-      const makeButton=(label,filter)=>{const control=document.createElement('button');control.type='button';control.textContent=label;control.onclick=()=>{mobileMenu.open=false;closeProductDetail();post('catalogueWorkspaceBrowse',filter);};return control;};
+      const makeButton=(label,filter)=>{const control=document.createElement('button');control.type='button';control.textContent=label;control.onclick=()=>{mobileMenu.open=false;closeProductDetail();mobileMenu.querySelector('summary').focus({preventScroll:true});post('catalogueWorkspaceBrowse',filter);};return control;};
       const groups=names.map(([main,label])=>{
         const group=document.createElement('details'),title=document.createElement('summary');
         title.textContent=label;group.append(title,makeButton('All '+label,{main}));
