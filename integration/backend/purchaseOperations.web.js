@@ -48,11 +48,11 @@ export const savePurchaseOperation=webMethod(Permissions.SiteMember,async(compan
  finally {try{const finishedAt=Date.now();console.info?.('MASTER_SAVE_TIMING',{company,requestId,operation,startedAt:new Date(saveStartedAt).toISOString(),staffMs:operationStarted?staffFinishedAt-saveStartedAt:finishedAt-saveStartedAt,operationMs:operationStarted?finishedAt-staffFinishedAt:null,totalMs:finishedAt-saveStartedAt,threw:saveThrew});}catch(_){/* Diagnostics must never change a save result. */}}
 });
 export const getSupplierProfile=webMethod(Permissions.SiteMember,async supplierId=>{
- await getPurchaseStaffContext();if(typeof supplierId!=='string'||supplierId.length>100)throw Error('Invalid supplier.');return suppliers.profile(supplierId);
+ await getPurchaseStaffContext(undefined,'VIEW');if(typeof supplierId!=='string'||supplierId.length>100)throw Error('Invalid supplier.');return suppliers.profile(supplierId);
 });
 // Reference-only: no retry journal, CMS updates, P.O. creation or supplier-price confirmation.
 export const getPurchaseReferenceCost=webMethod(Permissions.SiteMember,async(company,taskId)=>{
- const staff=await getPurchaseStaffContext(company);
+ const staff=await getPurchaseStaffContext(company,'VIEW');
  if(!PURCHASE_COLLECTIONS[company]||!/^[a-f0-9]{32}$/i.test(taskId||''))throw Error('Invalid reference task.');
  const workspace=await readPlannerWorkspace(company,staff),task=workspace.tasks.find(row=>row.id===taskId);
  if(!task||task.archived)throw Error('Accepted purchase task is unavailable.');
@@ -62,14 +62,14 @@ export const getPurchaseReferenceCost=webMethod(Permissions.SiteMember,async(com
  const prices=Object.fromEntries(['lpPc','lpCtn','disc1','disc2','disc3'].map(key=>[key,typeof cost[key]==='number'&&Number.isFinite(cost[key])?cost[key]:null]));
  return {company,taskId,barcode:task.barcode,capturedAt:cost.capturedAt,prices};
 });
-export const getSupplierBrandOptions=webMethod(Permissions.SiteMember,async()=>{await getPurchaseStaffContext();return getPointbaseBrands();});
+export const getSupplierBrandOptions=webMethod(Permissions.SiteMember,async()=>{await getPurchaseStaffContext(undefined,'VIEW');return getPointbaseBrands();});
 export const saveSupplierProfile=webMethod(Permissions.SiteMember,async(requestId,supplierId,expectedVersion,values,saveMemberId)=>{
  const staff=await getPurchaseStaffContext(undefined,'EDIT');
  if(saveMemberId!==undefined&&staff.memberId!==saveMemberId)return {ok:false,pending:true,requestId,error:'Original supplier save requires the original signed-in employee.'};
  return suppliers.save({requestId,supplierId,expectedVersion,values,staff});
 });
 export const getPurchaseSaveResult=webMethod(Permissions.SiteMember,async(company,requestId,supplierId,saveMemberId)=>{
- const staff=await getPurchaseStaffContext(company);if(!/^[a-f0-9-]{36}$/i.test(requestId||'')||!PURCHASE_COLLECTIONS[company])throw Error('Invalid save identity.');
+ const staff=await getPurchaseStaffContext(company,'VIEW');if(!/^[a-f0-9-]{36}$/i.test(requestId||'')||!PURCHASE_COLLECTIONS[company])throw Error('Invalid save identity.');
  if(supplierId!==null&&saveMemberId!==undefined&&staff.memberId!==saveMemberId)return {ok:false,pending:true,company,requestId};
  const isSupplier=supplierId!==null,identity=isSupplier?(supplierId||'SUP-'+operationId(requestId,staff.memberId).slice(0,16).toUpperCase()):null;
  const scope=isSupplier?'SUPPLIER/'+identity:company+'/PURCHASE',collection=isSupplier?'SharedSupplierActivity':PURCHASE_COLLECTIONS[company].activity;
