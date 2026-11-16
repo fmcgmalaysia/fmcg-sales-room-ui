@@ -2,7 +2,8 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { baseline, replacements } = require('./sales-staff-menu-retirement.json');
+const manifestPath = process.argv[3] ?? path.join(__dirname, 'sales-staff-menu-retirement.json');
+const { baseline, replacements } = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
 const site = path.resolve(process.argv[2]);
 const hash = contents => createHash('sha256').update(contents).digest('hex');
