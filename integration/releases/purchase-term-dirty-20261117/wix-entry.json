@@ -1,0 +1,7 @@
+{
+  "baseline": "eb7094662b9a4da464173764e5d663b22831aa8b15d9b4cd8d23182b1c99ff2d",
+  "candidate": "04c7b3cb7361043f88836410e0788b452b8f6c7b44d144fbfa6854ab3f49d86e",
+  "file": "purchase-room-page.js",
+  "before": "20261117-supplier-saved-state-v1",
+  "after": "20261117-purchase-term-dirty-v1"
+}

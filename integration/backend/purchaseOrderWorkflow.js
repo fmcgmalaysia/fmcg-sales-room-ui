@@ -137,6 +137,23 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       if(!prior&&!prepared)throw Error('Please use Messages to contact Account. The old payment reminder has been retired.');
     }
     if(input.action==='DELETE_DOCUMENT')return deleteDocument({company,staff,requestId,input});
+    if(input.action==='TERM'&&/^[a-f0-9-]{36}$/i.test(requestId||'')&&staff?.memberId&&staff.staffId&&staff.staffName
+      &&typeof input.id==='string'&&input.id&&Number.isSafeInteger(input.termDays)&&input.termDays>=0&&input.termDays<=3650){
+      const stored=await store.read(PURCHASE_ORDER_COLLECTION,input.id);
+      if(stored?.company===company&&stored.details?.termDays===input.termDays){
+        const activity=names[company].activity,key=operationId(company+'/PURCHASE',requestId,staff.memberId);
+        const [prepared,receipt]=await Promise.all([store.read(activity,key),store.read(activity,operationId(key,'RESULT'))]);
+        if(!prepared&&!receipt){
+          const row=(await list(company,staff)).find(item=>item.id===input.id);
+          requireConfirmedProcurement(row);
+          if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
+          if(row.supplierAccount?.closed)throw Error('Purchase order changed. Ask Finance to reopen the closed supplier account before editing.');
+          if(stored.details.documentDeletion)throw Error('A document deletion is pending. Retry the original deletion.');
+          if(stored.details.procurementHandoff&&!row.procurementHandoff?.editable)throw Error('Procurement handoff has locked payment terms. Request return before editing.');
+          if(row.termDays===input.termDays)return {ok:true,company,requestId,poId:row.id,unchanged:true};
+        }
+      }
+    }
     let payload=null,journalInput=input;
     if(input.action==='DOCUMENT'){
       if(!documentService)throw Error('Document upload is not connected.');
