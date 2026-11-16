@@ -193,7 +193,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(chosen.every(({task})=>task.ourPoNumber===po&&!['NEW_INCOMING','WAITING_FOR_PO'].includes(task.purchaseStage)))throw Error('P.O. number has not changed.');
         const used=s.workspace.tasks.filter(row=>row.po.trim().toUpperCase()===po);
         if(used.some(row=>row.supplierId!==first.task.supplierId))throw Error('This P.O. is already assigned to another supplier.');
-        const savedOrders=(await store.all('PurchaseOrders')).filter(row=>row.company===company);
+        const savedOrders=(await store.all('PurchaseOrders',{company})).filter(row=>row.company===company);
         const proposed=s.workspace.tasks.map(row=>({...row,po:input.taskIds.includes(row.id)?po:row.po}));
         for(const saved of savedOrders){
           const members=proposed.filter(row=>saved.details?.taskIds?.includes(row.id));
