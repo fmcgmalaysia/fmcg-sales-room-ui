@@ -71,7 +71,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261116-sales-ready-dedup-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261117-sales-profile-saved-state-v1';
   const staffPromise = loadCurrentStaff();
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
@@ -312,11 +312,13 @@ $w.onReady(function () {
         );
         salesRoom.postMessage({
           type: 'SALES_ROOM_CUSTOMER_DETAIL',
+          ...(message.profileSaveRequestId ? { profileSaveRequestId: message.profileSaveRequestId } : {}),
           ...response
         });
       } catch (error) {
         salesRoom.postMessage({
           type: 'SALES_ROOM_CUSTOMER_DETAIL',
+          ...(message.profileSaveRequestId ? { profileSaveRequestId: message.profileSaveRequestId } : {}),
           ok: false,
           error: error?.message || 'Customer detail could not be loaded.'
         });
@@ -396,11 +398,13 @@ $w.onReady(function () {
         }
         salesRoom.postMessage({
           type: 'SALES_ROOM_CUSTOMER_PROFILE_RESULT',
+          requestId: message.requestId || '',
           ...response
         });
       } catch (error) {
         salesRoom.postMessage({
           type: 'SALES_ROOM_CUSTOMER_PROFILE_RESULT',
+          requestId: message.requestId || '',
           ok: false,
           error: error?.message || 'Customer profile could not be saved.'
         });
