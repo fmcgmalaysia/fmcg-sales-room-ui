@@ -1,0 +1,7 @@
+{
+  "baseline": "5f65dddb6038ade73a95bb29c2fc7e9b0a0d86be8519ab4c3f2d81c7127fc7fe",
+  "candidate": "eb7094662b9a4da464173764e5d663b22831aa8b15d9b4cd8d23182b1c99ff2d",
+  "file": "purchase-room-page.js",
+  "before": "20261116-supplier-unchanged-save-v1",
+  "after": "20261117-supplier-saved-state-v1"
+}
