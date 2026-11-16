@@ -1108,7 +1108,7 @@ export const updateSalesRoomCustomerProfile = webMethod(
     }
 
     const changes = Object.keys(patch)
-      .filter((key) => auditValue(customer[key]) !== auditValue(patch[key]))
+      .filter((key) => comparableCustomerProfileValue(key, customer[key]) !== patch[key])
       .map((key) => ({
         fieldId: key,
         fieldLabel: EDITABLE_CUSTOMER_FIELDS[key],
@@ -1133,7 +1133,7 @@ export const updateSalesRoomCustomerProfile = webMethod(
 
     await wixData.update(
       CUSTOMER_COLLECTION,
-      { ...customer, ...patch },
+      { ...customer, ...Object.fromEntries(changes.map(({ fieldId, afterValue }) => [fieldId, afterValue])) },
       { suppressAuth: true }
     );
 
@@ -1153,6 +1153,12 @@ export const updateSalesRoomCustomerProfile = webMethod(
     });
   }
 );
+
+function comparableCustomerProfileValue(key, value) {
+  if (key === 'primaryEmail') return normalizeEmail(value);
+  if (['customerShortName', 'natureOfBusiness', 'preferredCurrency', 'whatsapp', 'picTitle'].includes(key)) return upper(value);
+  return normalize(value);
+}
 
 export const saveSalesRoomCustomerUser = webMethod(
   Permissions.SiteMember,
