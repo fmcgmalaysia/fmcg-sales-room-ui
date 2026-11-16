@@ -1,7 +1,7 @@
 import { getManagedStaffDirectory, getManagedStaffSaveStatus, registerPendingStaff, updateManagedStaff, getManagedCustomerDirectory } from 'backend/staffManagement.web';
 import { authentication } from 'wix-members-frontend';
 
-const FRAME_URL = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-staff/?v=20261116-staff-directory-resume-v1';
+const FRAME_URL = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-staff/?v=20261117-staff-saved-state-v1';
 const rejectedSave = /^(Another employee change is being confirmed\.|Employee details changed\.|Employee identity could not be confirmed\.|Administrator identity cannot be changed here\.|Enter a valid staff name and email\.|This (?:email|staff identity) is already registered\.|Invalid (?:staff permissions|access scope|department permission|Support view scope|company permission|Sales Room permission|Sales Room function|customer permission|employee status|employee save request)\.|Unknown staff permission\.|Support department permission is required\.|Choose the Sales Room function and access together\.|Super Admin access is required\.|Staff access is not authorized\.|Sign in with your approved staff account\.)/;
 
 $w.onReady(() => {
