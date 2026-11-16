@@ -4,6 +4,15 @@ import { getSecret } from 'wix-secrets-backend';
 import { canUseSalesRoomCustomer, normalizeStaffAccess, projectFmcgStaffScope } from 'backend/staffManagementPolicy.js';
 
 const reply = (status, allowed = false) => ({ status, body: { allowed } });
+const salesAssigneeAction = 'SALES_CREATION_ASSIGNEES';
+
+function salesAssignee(staff, access) {
+  const staffId = String(staff.title ?? '').trim();
+  const staffName = String(staff.staffName ?? '').trim();
+  if (!/^STF-[A-Z0-9]{5,20}$/.test(staffId) || !staffName ||
+      access.salesFunction !== 'SALES' || access.salesRoom !== 'EDIT') return null;
+  return { staffId, staffName };
+}
 
 function matchesSecret(request, secret) {
   const headers = Object.entries(request.headers ?? {})
@@ -28,7 +37,7 @@ export async function checkFmcgStaffAccess(request) {
     const customerId = input?.customerId;
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
         typeof action !== 'string' || action.length > 30 ||
-        (!['ENTER', 'DIRECTORY_SCOPE'].includes(action) && (typeof customerId !== 'string' || !customerId || customerId.length > 160))) {
+        (!['ENTER', 'DIRECTORY_SCOPE', salesAssigneeAction].includes(action) && (typeof customerId !== 'string' || !customerId || customerId.length > 160))) {
       return reply(400);
     }
     const { items } = await wixData.query('StaffMasterAccess').eq('staffEmail', email).limit(2)
@@ -37,6 +46,18 @@ export async function checkFmcgStaffAccess(request) {
     const verifiedFmcgMember = action === 'DIRECTORY_SCOPE' && input.verifiedFmcgEmail === true;
     if (staff?.staffStatus !== 'ACTIVE' || !staff.title || (!staff.description && !verifiedFmcgMember)) return reply(200);
     const staffAccess = normalizeStaffAccess(staff.staffAccess ?? {});
+    if (action === salesAssigneeAction) {
+      if (staff.role !== 'SUPER ADMIN') {
+        const self = salesAssignee(staff, staffAccess);
+        return self ? { status: 200, body: { allowed: true, mayAssignOthers: false, assignees: [self] } } : reply(200);
+      }
+      const result = await wixData.query('StaffMasterAccess').eq('staffStatus', 'ACTIVE').limit(1000)
+        .find({ suppressAuth: true, consistentRead: true });
+      const assignees = result.items.map(row => salesAssignee(row, normalizeStaffAccess(row.staffAccess ?? {}))).filter(Boolean);
+      if (result.hasNext() || new Set(assignees.map(row => row.staffId)).size !== assignees.length) return reply(503);
+      assignees.sort((a, b) => a.staffName.localeCompare(b.staffName));
+      return { status: 200, body: { allowed: true, mayAssignOthers: true, assignees } };
+    }
     if (action === 'DIRECTORY_SCOPE') {
       const scope = projectFmcgStaffScope({ ...staff, staffAccess });
       if (!scope) return reply(200);

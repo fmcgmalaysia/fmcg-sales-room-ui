@@ -42,6 +42,18 @@ export async function getMasterStaffScope(loginEmail, verifiedFmcgEmail = false)
   return { staffId, staffName, customerScope };
 }
 
+export async function getMasterSalesCreationAssignees(loginEmail) {
+  const result = await requestStaffAccess(loginEmail, 'SALES_CREATION_ASSIGNEES');
+  if (result.allowed !== true) return null;
+  if (typeof result.mayAssignOthers !== 'boolean' || !Array.isArray(result.assignees) ||
+      (!result.mayAssignOthers && result.assignees.length !== 1) ||
+      result.assignees.some(row => typeof row?.staffId !== 'string' || !/^STF-[A-Z0-9]{5,20}$/.test(row.staffId) ||
+        typeof row.staffName !== 'string' || !row.staffName.trim())) {
+    throw Error('Salesperson assignment is unavailable.');
+  }
+  return { mayAssignOthers: result.mayAssignOthers, assignees: result.assignees };
+}
+
 export function staffMayAccessCustomer(staff, action, customerId) {
   const id = String(customerId ?? '').trim();
   if (staff?.authorized !== true || !id || !scopeActions.includes(action)) return false;

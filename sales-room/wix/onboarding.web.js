@@ -9,7 +9,7 @@ import { getSecret } from 'wix-secrets-backend';
 import wixRealtimeBackend from 'wix-realtime-backend';
 import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
-import { requireStaffCustomerAccess, staffMayAccessCustomer } from 'backend/masterStaffAccessClient.js';
+import { requireStaffCustomerAccess, staffMayAccessCustomer, getMasterSalesCreationAssignees } from 'backend/masterStaffAccessClient.js';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
@@ -36,31 +36,11 @@ const BUSINESS_TYPES = Object.freeze([
 ]);
 const CURRENCIES = Object.freeze(['USD', 'MYR', 'SGD', 'RMB', 'JPY']);
 
-export const getAssignableSalesStaff = webMethod(
-  Permissions.SiteMember,
-  async () => {
-    const context = await requireAuthorizedStaffContext();
-    let query = wixData
-      .query(STAFF_COLLECTION)
-      .eq('status', 'ACTIVE')
-      .limit(1000);
-
-    if (!context.canViewAllCustomers) {
-      query = query.eq('staffId', upper(context.staffId));
-    }
-
-    const result = await query.find({ suppressAuth: true });
-    const staff = result.items
-      .map((item) => ({
-        staffId: upper(item.staffId),
-        staffName: upper(item.title)
-      }))
-      .filter((item) => item.staffId && item.staffName)
-      .sort((a, b) => a.staffName.localeCompare(b.staffName));
-
-    return Object.freeze({ ok: true, staff });
-  }
-);
+export const getAssignableSalesStaff = webMethod(Permissions.SiteMember, async () => {
+  const context = await requireAuthorizedStaffContext();
+  const routing = await getMasterSalesCreationAssignees(context.loginEmail);
+  return Object.freeze({ ok: true, staff: routing?.assignees ?? [], canCreate: Boolean(routing), mayAssignOthers: routing?.mayAssignOthers ?? false });
+});
 
 export const createSalesRoomCustomer = webMethod(
   Permissions.SiteMember,
@@ -1827,59 +1807,22 @@ async function findAuthorizedCustomer(customerId, staff, action = 'VIEW') {
 }
 
 async function resolveCustomerRouting(requestedAssignedStaffId) {
-  const context = await resolveCurrentStaffContext();
-  if (!context?.authorized) {
-    throw new Error('This member is not authorized in STAFF MASTER.');
+  const context = await requireAuthorizedStaffContext();
+  if (!context.canViewAllCustomers && context.customerScope?.canCreateCustomers !== true) {
+    throw new Error('Customer setup requires Sales edit access in LTPOS.');
   }
+  const routing = await getMasterSalesCreationAssignees(context.loginEmail);
+  if (!routing) throw new Error('Customer setup requires Sales edit access in LTPOS.');
 
-  const currentStaffId = upper(context.staffId);
   const requestedStaffId = upper(requestedAssignedStaffId);
-  const canAssignCustomers = Boolean(context.canViewAllCustomers);
-  if (!canAssignCustomers && context.customerScope?.canCreateCustomers !== true) {
-    throw new Error('Customer setup requires Sales edit access.');
-  }
-  const targetStaffId = canAssignCustomers
-    ? requestedStaffId
-    : currentStaffId;
-
-  if (!targetStaffId) {
-    throw new Error('Select an ACTIVE salesperson with a configured QD.');
-  }
-  if (
-    !canAssignCustomers &&
-    requestedStaffId &&
-    requestedStaffId !== currentStaffId
-  ) {
+  const target = routing.mayAssignOthers
+    ? routing.assignees.find(row => row.staffId === requestedStaffId)
+    : routing.assignees[0];
+  if (!target) throw new Error('Select an active salesperson from LTPOS.');
+  if (!routing.mayAssignOthers && requestedStaffId && requestedStaffId !== target.staffId) {
     throw new Error('Sales staff cannot assign a customer to another employee.');
   }
-
-  const result = await wixData
-    .query(STAFF_COLLECTION)
-    .eq('staffId', targetStaffId)
-    .eq('status', 'ACTIVE')
-    .limit(2)
-    .find({ suppressAuth: true });
-
-  if (result.items.length !== 1) {
-    throw new Error(
-      result.items.length > 1
-        ? 'Duplicate ACTIVE STAFF ID. Admin review is required.'
-        : 'The assigned employee is not ACTIVE in STAFF MASTER.'
-    );
-  }
-
-  const target = result.items[0];
-  const staffName = upper(target.title);
-
-  if (!staffName) {
-    throw new Error('The assigned employee has no valid staff name.');
-  }
-
-  return Object.freeze({
-    staffId: targetStaffId,
-    staffName,
-    assignedByStaffId: currentStaffId
-  });
+  return Object.freeze({ ...target, assignedByStaffId: upper(context.staffId) });
 }
 
 async function resumeExistingRegistration(existingAccess, customer, staff) {

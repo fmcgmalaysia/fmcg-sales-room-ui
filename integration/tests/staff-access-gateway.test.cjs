@@ -18,6 +18,18 @@ function fixture(options = {}) {
     ...policy, Buffer, timingSafeEqual,
     getSecret:async()=>options.secret ?? 'test-secret',
     wixData:{query:()=>({eq:(field,email)=>{
+      if (field === 'staffStatus') {
+        assert.equal(email,'ACTIVE');
+        assert.ok(options.assignmentRows);
+        return {limit: limit => {
+          assert.equal(limit,1000);
+          return {find:async readOptions=>{
+            assert.equal(readOptions.consistentRead,true);
+            reads++;
+            return {items: options.assignmentRows.filter(row=>row.staffStatus==='ACTIVE'), hasNext:()=>Boolean(options.more)};
+          }};
+        }};
+      }
       assert.equal(field,'staffEmail');
       assert.equal(email,'staff@example.com');
       return {limit:limit=>{
@@ -37,6 +49,30 @@ const request = (input = {}, headers = {Authorization:'Bearer test-secret'}) => 
   headers,body:{text:async()=>typeof input === 'string' ? input : JSON.stringify({
     loginEmail:'STAFF@example.com',action:'VIEW',customerId:'customer-a',...input
   })}
+});
+
+const forNewCustomer = () => request({action:'SALES_CREATION_ASSIGNEES',customerId:undefined});
+const salesperson = {...staff,title:'STF-SALES1',staffName:'Sales One',staffAccess:{salesFunction:'SALES',salesRoom:'EDIT'}};
+
+test('only an active bound Sales Edit employee can obtain their own creation assignment', async()=>{
+  const self = fixture({rows:[salesperson]});
+  const result = await self.check(forNewCustomer());
+  assert.equal(JSON.stringify(result.body),JSON.stringify({allowed:true,mayAssignOthers:false,assignees:[{staffId:'STF-SALES1',staffName:'Sales One'}]}));
+  assert.equal(self.reads,1);
+  for(const row of [staff,{...salesperson,description:''},{...salesperson,staffStatus:'PENDING'},
+    {...salesperson,staffStatus:'DISABLED'},{...salesperson,staffAccess:{salesFunction:'SALES',salesRoom:'VIEW'}}]) {
+    const f=fixture({rows:[row]});
+    assert.equal((await f.check(forNewCustomer())).body.allowed,false);
+    assert.equal(f.reads,1);
+  }
+});
+
+test('Super Admin may list eligible Sales Edit owners without contact details', async()=>{
+  const options={rows:[{...staff,role:'SUPER ADMIN'}],assignmentRows:[staff,salesperson,{...salesperson,title:'STF-SALES2',staffStatus:'PENDING'}]};
+  const result=await fixture(options).check(forNewCustomer());
+  assert.equal(JSON.stringify(result.body),JSON.stringify({allowed:true,mayAssignOthers:true,assignees:[{staffId:'STF-SALES1',staffName:'Sales One'}]}));
+  assert.equal((await fixture({...options,more:true}).check(forNewCustomer())).status,503);
+  assert.equal((await fixture({...options,assignmentRows:[salesperson,salesperson]}).check(forNewCustomer())).status,503);
 });
 
 test('missing, duplicate and invalid credentials reject before any employee lookup', async()=>{
