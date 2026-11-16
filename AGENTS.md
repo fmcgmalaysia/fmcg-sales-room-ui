@@ -31,6 +31,13 @@ Purchase PO/PI/DO/INV/CN buttons are orange when the shared state is MISSING, bl
 
 This short entry does not replace the parent project's AGENTS.md, START_HERE.md, system-ownership record or current task handoff. Follow all mandatory startup reading and protected-workflow rules. Preserve user-verified behaviour, minimum patches, live-versus-repository comparison, recovery points, stop commands, permissions and all four publishing stages. Do not develop or merge unverified work on main. This document grants no deployment, business-data or permission changes.
 
+### 浏览器卡页恢复与前台归还 — 2026-11-16
+
+1. **后台为默认。** 代码、测试、打包、GitHub、文档和可用接口完成的操作留在后台。只有必须用实际浏览器画面、需要点击的编辑器步骤，或需要恢复卡住的页面时，才短时使用前台。使用前简短说明本次前台动作。
+2. **卡住就检查并换一个标签。** 如果后台打开页面后卡住、空白或无法确认载入，先核对目标网址、页面状态、未保存内容及正在进行的提交、上传或发布。确认安全后，只关闭卡住的目标标签，在前台用已核对的干净网址或正式书签新开一个标签。确认地址、目标站点和所需编辑区均已加载。保留有未保存工作或结果未明的标签，不重启 Chrome 或 Codex，也不后台反复开页。
+3. **一恢复就归还屏幕。** 所需页面或操作一旦就绪，立刻停止前台键鼠操作。有可安全恢复的原窗口则切回，后续核对、等待和执行回到后台。长时间加载和部署等待期间也归还屏幕。再次使用前台须有具体的界面动作。
+4. **区分应用卡顿与工具安全停止。** 普通卡页按上面步骤恢复。遇到工具明确安全停止、登录或授权拦截，遵守该工具的边界并保留恢复点。可继续的后台工作照常进行。
+
 ## 2026-10-20 工作效率补充规则
 
 本节只减少无效操作，不撤销或改写既有的完整开工阅读、稳定性、现场核对、恢复、权限和四阶段发布法律。
