@@ -1,0 +1,7 @@
+{
+  "file": "supportDesk.js",
+  "baseline": "0d32a643672153909784ecc0a09e50335515153e45576f0f8d4138f4681e294b",
+  "candidate": "eede66fa9460bcc15a94d32003bf04dc151323fa3d4c51bfdb4bb3d7f3b57f20",
+  "before": "  const state=copy(before);delete state.revision;",
+  "insert": "  if(normalized.action==='DESK_SHIPMENT'&&!changedShipmentFields.length){\n   const previous=before.references?.find(row=>row.desk===input.desk);\n   const unchanged=!normalized.details||Object.entries(normalized.details).every(([key,value])=>\n    value===(previous?.[key]??(key==='depositAmountCents'?null:'')));\n   if(unchanged){\n    const receipt={ok:true,company,requestId,noChange:true,deskState:before};\n    return prepareOnly?{receipt}:receipt;\n   }\n  }\n"
+}
