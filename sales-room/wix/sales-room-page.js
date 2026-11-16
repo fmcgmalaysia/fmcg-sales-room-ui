@@ -71,7 +71,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261111-warehouse-desk-workflow-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261116-sales-ready-dedup-v1';
   const staffPromise = loadCurrentStaff();
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
@@ -84,6 +84,7 @@ $w.onReady(function () {
   }
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
+  let readyBootstrapInFlight = false;
   let routeQueuePromise;
   let automaticQdVerificationPromise;
   let hasQdRetryWork = false;
@@ -244,39 +245,44 @@ $w.onReady(function () {
         staff: safeStaff
       });
 
-      if (staff.authorized) {
+      if (staff.authorized && !readyBootstrapInFlight) {
+        readyBootstrapInFlight = true;
         try {
-          await recordSalesRoomActivity({ action: 'SALES_ROOM_ENTER' });
-        } catch (error) {
-          // Activity logging must never block staff work.
-        }
-        await refreshSalesActivity(staff, 0);
-        try {
-          const routing = await getAssignableSalesStaff();
-          salesRoom.postMessage({
-            type: 'SALES_ROOM_ASSIGNABLE_STAFF',
-            ...routing
-          });
-        } catch (error) {
-          salesRoom.postMessage({
-            type: 'SALES_ROOM_ASSIGNABLE_STAFF',
-            ok: false,
-            error: error?.message || 'Assignable staff could not be loaded.'
-          });
-        }
+          try {
+            await recordSalesRoomActivity({ action: 'SALES_ROOM_ENTER' });
+          } catch (error) {
+            // Activity logging must never block staff work.
+          }
+          await refreshSalesActivity(staff, 0);
+          try {
+            const routing = await getAssignableSalesStaff();
+            salesRoom.postMessage({
+              type: 'SALES_ROOM_ASSIGNABLE_STAFF',
+              ...routing
+            });
+          } catch (error) {
+            salesRoom.postMessage({
+              type: 'SALES_ROOM_ASSIGNABLE_STAFF',
+              ok: false,
+              error: error?.message || 'Assignable staff could not be loaded.'
+            });
+          }
 
-        try {
-          const response = await getSalesRoomCustomersWithQuoteSignals();
-          salesRoom.postMessage({
-            type: 'SALES_ROOM_CUSTOMERS',
-            ...response
-          });
-        } catch (error) {
-          salesRoom.postMessage({
-            type: 'SALES_ROOM_CUSTOMERS',
-            ok: false,
-            error: error?.message || 'Customer list could not be loaded.'
-          });
+          try {
+            const response = await getSalesRoomCustomersWithQuoteSignals();
+            salesRoom.postMessage({
+              type: 'SALES_ROOM_CUSTOMERS',
+              ...response
+            });
+          } catch (error) {
+            salesRoom.postMessage({
+              type: 'SALES_ROOM_CUSTOMERS',
+              ok: false,
+              error: error?.message || 'Customer list could not be loaded.'
+            });
+          }
+        } finally {
+          readyBootstrapInFlight = false;
         }
       }
       return;
