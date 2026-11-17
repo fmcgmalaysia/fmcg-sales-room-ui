@@ -27,6 +27,39 @@ function privateCollection(sortField) {
   };
 }
 
+test('the quotation transport accepts a signed backend request and rejects tampering or an expired signature before writes', async () => {
+  const { createFmcgQuoteReceiver, createMasterQuoteSender } = await import(moduleUrl('backend/masterQuoteTransport.js'));
+  let now = 1794919800000;
+  let savedRequest;
+  const commands = [];
+  const secret = async () => 'synthetic-local-quotation-transport-key';
+  const receiver = createFmcgQuoteReceiver({ getSecret: secret, now: () => now, putQuote: async payload => {
+    commands.push(payload);
+    const { customerId, selectionId, version, requestId } = payload;
+    return { ok: true, customerId, selectionId, version, requestId };
+  } });
+  const sender = createMasterQuoteSender({ endpoint: 'https://fmcg999.wixstudio.com/my-site-1/_functions/masterWebQuotation', getSecret: secret,
+    now: () => now, fetch: async (url, request) => {
+      assert.equal(new URL(url).pathname, '/my-site-1/_functions/masterWebQuotation');
+      assert.equal(request.redirect, 'error');
+      assert(!JSON.stringify(request.headers).includes(await secret()));
+      savedRequest = request;
+      const result = await receiver({ headers: request.headers, body: { text: async () => request.body } });
+      return { ok: result.status === 200, json: async () => JSON.parse(result.body) };
+    } });
+  const quote = { customerId: 'QA1', selectionId: 'P01', requestId: randomUUID(), barcode: '2000000000015',
+    version: 2, currency: 'USD', enabled: true, priceEa: 1.6, priceCtn: 19.2 };
+  assert.equal((await sender(quote)).version, 2);
+  assert.deepEqual(commands, [quote]);
+
+  const replay = body => receiver({ headers: savedRequest.headers, body: { text: async () => body } });
+  assert.equal((await replay(savedRequest.body.replace('19.2', '29.2'))).status, 401);
+  now += 61000;
+  assert.equal((await replay(savedRequest.body)).status, 401);
+  assert.equal(commands.length, 1);
+  assert.throws(() => createMasterQuoteSender({ endpoint: 'https://example.invalid/my-site-1/_functions/masterWebQuotation' }), /Invalid quotation destination/);
+});
+
 test('Wix quotation read selects the latest row for each product and stops paging once the batch is complete', async () => {
   const pathToRevisionStore = 'backend/masterQuotationRevisionStore.js';
   const { createMasterQuotationWixStore } = await import(moduleUrl('integration/backend/masterQuotationWixStore.js', {
