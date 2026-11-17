@@ -28,22 +28,24 @@ export function createMasterQuoteProjection({ readContext, latest, read, insert 
   return async function receive(command) {
     const quote = priceInstruction(command);
     const { customerId, selectionId, version, requestId } = quote;
-    const context = await readContext(customerId, selectionId);
-    const { customer, selection } = context || {};
     const _id = createHash('sha256').update(JSON.stringify([customerId, selectionId, version])).digest('hex').slice(0, 32);
     const fingerprint = createHash('sha256').update(JSON.stringify(quote)).digest('hex');
     const row = { _id, ...quote, fingerprint };
     let stored = await read(_id);
-    if (!stored && (customer?.customerId !== customerId || !isWebQuotationReady(customer) ||
-        selection?.id !== selectionId || selection.customerId !== customerId || selection.removed || selection.barcode !== quote.barcode ||
-        (selection.selectionEpoch || '') !== (quote.selectionEpoch || '') ||
-        (quote.enabled && (customer.preferredCurrency !== quote.currency || !Number.isSafeInteger(selection.ea) || selection.ea < 1 ||
-          Number((quote.priceEa * selection.ea).toFixed(6)) !== quote.priceCtn)))) throw Error('Quotation selection is unavailable.');
-
     if (!stored) {
+      const { customer, selection } = await readContext(customerId, selectionId) || {};
+      if (customer?.customerId !== customerId || !isWebQuotationReady(customer) || selection?.id !== selectionId ||
+          selection.customerId !== customerId || selection.barcode !== quote.barcode) throw Error('Quotation selection is unavailable.');
+      const currentEpoch = selection.selectionEpoch || '';
+      const submittedEpoch = quote.selectionEpoch || '';
+      const older = Boolean(currentEpoch) && (!submittedEpoch || Date.parse(currentEpoch) > Date.parse(submittedEpoch));
+      if (currentEpoch !== submittedEpoch && !older) throw Error('Quotation selection is unavailable.');
+      const superseded = Boolean(selection.removed) || older;
+      if (!superseded && quote.enabled && (customer.preferredCurrency !== quote.currency || !Number.isSafeInteger(selection.ea) || selection.ea < 1 ||
+          Number((quote.priceEa * selection.ea).toFixed(6)) !== quote.priceCtn)) throw Error('Quotation selection is unavailable.');
       const current = await latest(customerId, selectionId);
       if ((current?.version ?? 0) + 1 !== version) throw Error('Quotation version is out of order.');
-      try { stored = await insert(row); }
+      try { stored = await insert(superseded ? { ...row, superseded: true } : row); }
       catch (error) {
         stored = await read(_id);
         if (!stored) throw error;
@@ -53,12 +55,12 @@ export function createMasterQuoteProjection({ readContext, latest, read, insert 
         (stored.selectionEpoch || '') !== (quote.selectionEpoch || '')) {
       throw Error('Quotation version conflicts with its receipt.');
     }
-    return { ok: true, customerId, selectionId, version, requestId };
+    return { ok: true, customerId, selectionId, version, requestId, ...(stored.superseded ? { superseded: true } : {}) };
   };
 }
 
 export function presentMasterQuote(selection, quote) {
-  if (!quote || selection.removed || selection.customerId !== quote.customerId || selection.id !== quote.selectionId ||
+  if (!quote || quote.superseded || selection.removed || selection.customerId !== quote.customerId || selection.id !== quote.selectionId ||
       (selection.unitBarcode || selection.barcode) !== quote.barcode || (selection.selectionEpoch || '') !== (quote.selectionEpoch || '')) return selection;
   const vipPriceEa = quote.enabled ? quote.priceEa : 0;
   const vipPriceCtn = quote.enabled ? quote.priceCtn : 0;

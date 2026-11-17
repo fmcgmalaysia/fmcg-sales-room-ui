@@ -67,6 +67,9 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       return Promise.all(rows.map(async row => {
         const last = batched ? batched.get(row.id) : await revisions.latest(customerId, row.id);
         const { pending, ...snapshot } = last?.snapshot || blank;
+        if (snapshot.published && (snapshot.published.selectionEpoch || '') !== (row.selectionEpoch || '')) {
+          snapshot.published = { ...snapshot.published, enabled: false };
+        }
         return { id: row.id, barcode: row.barcode, name: row.name, packing: row.packing, ea: row.ea, imageUrl: row.imageUrl,
           ...snapshot, pending: Boolean(pending), revision: last?.revision ?? 0 };
       }));
@@ -138,15 +141,18 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
         if (completed.commandId !== requestId || completed.fingerprint !== completionDigest) throw Error('This quotation changed.');
         return { revision: completed.revision };
       }
+      let receipt;
       try {
-        const receipt = await deliver(pending);
+        receipt = await deliver(pending);
         if (receipt?.ok !== true || receipt.customerId !== customerId || receipt.selectionId !== selectionId ||
             receipt.requestId !== requestId || receipt.version !== pending.version) throw Error('Quote receipt mismatch.');
       } catch { return { pending: true, message: 'Waiting for the customer quotation receipt.' }; }
       const { priceEa, priceCtn, currency, version } = pending;
-      const published = { priceEa, priceCtn, currency, version, enabled };
+      const visible = enabled && receipt.superseded !== true;
+      const published = { priceEa, priceCtn, currency, version, enabled: visible,
+        ...(pending.selectionEpoch ? { selectionEpoch: pending.selectionEpoch } : {}) };
       const priorPrice = previous.published;
-      const previousSp = enabled && priorPrice?.enabled && Number.isFinite(priorPrice.priceCtn) &&
+      const previousSp = visible && priorPrice?.enabled && Number.isFinite(priorPrice.priceCtn) &&
         (priorPrice.priceCtn !== priceCtn || priorPrice.currency !== currency)
         ? { priceCtn: priorPrice.priceCtn, currency: priorPrice.currency } : previous.previousSp;
       const saved = await append(customerId, selectionId, intent.revision, requestId, completionDigest,

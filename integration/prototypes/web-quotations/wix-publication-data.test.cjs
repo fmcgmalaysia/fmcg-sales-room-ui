@@ -3,6 +3,16 @@ const { createHash, randomUUID } = require('node:crypto');
 const { test } = require('node:test');
 const { createStore, initialState, load } = require('./isolation.cjs');
 
+test('an active legacy status cannot override suspension of a web quotation account', () => {
+  const { isWebQuotationReady } = load('backend/webQuotationCustomer.js', ['isWebQuotationReady']);
+  const ready = { quotationMode: 'WEB', webQuotationStatus: 'READY', accessStatus: 'ACTIVE', catalogueAccessStatus: 'ACTIVE' };
+  assert.equal(isWebQuotationReady(ready), true);
+  assert.equal(isWebQuotationReady({ ...ready, accessStatus: 'SUSPENDED' }), false);
+  assert.equal(isWebQuotationReady({ ...ready, catalogueAccessStatus: 'BLOCKED' }), false);
+  assert.equal(isWebQuotationReady({ ...ready, lifecycleStatus: 'ARCHIVED' }), false);
+  assert.equal(isWebQuotationReady({ ...ready, catalogueAccessStatus: 'PENDING' }), false);
+});
+
 test('normal Catalogue and Buyer handlers share signed web prices with the existing Excel generator and order snapshots', async () => {
   const state = initialState();
   const wixData = createStore(state, () => {});
@@ -47,8 +57,11 @@ test('normal Catalogue and Buyer handlers share signed web prices with the exist
   await buyer.recoverBuyerItem(selectionId);
   await assert.rejects(buyer.saveBuyerQuantity(selectionId, 2), /price is released/);
   const latestContext = await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-A', selectionId });
-  await assert.rejects(data.acceptMasterWebQuotation({ ...price, requestId: randomUUID(), version: 2 }), /unavailable/);
-  await data.acceptMasterWebQuotation({ ...price, requestId: randomUUID(), version: 2,
+  const late = { ...price, requestId: randomUUID(), version: 2 };
+  assert.equal((await data.acceptMasterWebQuotation(late)).superseded, true);
+  assert.equal((await data.acceptMasterWebQuotation(late)).superseded, true);
+  await assert.rejects(buyer.saveBuyerQuantity(selectionId, 2), /price is released/);
+  await data.acceptMasterWebQuotation({ ...price, requestId: randomUUID(), version: 3,
     selectionEpoch: latestContext.selection.selectionEpoch, priceEa: 2, priceCtn: 24 });
   assert.equal((await buyer.submitBuyerOrder([{ itemId: selectionId, quantityCtn: 2 }], '', orderId)).orderId, firstOrder.orderId);
   assert.equal((await data.applyWebQuotations(latestContext.customer, [latestContext.selection]))[0].vipPriceCtn, 24);

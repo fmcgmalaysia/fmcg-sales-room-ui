@@ -5,8 +5,11 @@ export function isWebQuotationCustomer(customer) {
 }
 
 export function isWebQuotationReady(customer) {
-  const access = upper(customer?.catalogueAccessStatus || customer?.accessStatus || customer?.customerStatus);
+  const accountAccess = upper(customer?.accessStatus);
+  const catalogueAccess = upper(customer?.catalogueAccessStatus);
+  const access = accountAccess || catalogueAccess || upper(customer?.customerStatus);
   const lifecycle = upper(customer?.lifecycleStatus || customer?.customerStatus);
   return isWebQuotationCustomer(customer) && upper(customer.webQuotationStatus) === 'READY' &&
-    access === 'ACTIVE' && lifecycle !== 'ARCHIVED';
+    access === 'ACTIVE' && (!catalogueAccess || catalogueAccess === 'ACTIVE') &&
+    !['ARCHIVED', 'SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(lifecycle);
 }

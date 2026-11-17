@@ -44,13 +44,14 @@ export function selectionEpoch(data) {
   return text(data.requoteRequestedAt || data.recoveredAt || data.selectionEpoch);
 }
 
-function selectionView(record, customerId) {
+function selectionView(record, customerId, includeRemoved = false) {
   const data = payload(record);
   const barcode = text(data.unitBarcode || data.barcode);
-  if (data.customerId !== customerId || record.removed || data.removed || !/^[0-9]{6,22}$/.test(barcode)) return null;
+  const removed = Boolean(record.removed || data.removed);
+  if (data.customerId !== customerId || (!includeRemoved && removed) || !/^[0-9]{6,22}$/.test(barcode)) return null;
   return { id: record._id, customerId, barcode, name: text(data.itemName), packing: text(data.packingSize),
     imageUrl: text(data.imageUrl), selectionEpoch: selectionEpoch(data), productId: text(data.productId),
-    fallbackEa: Number(data.productReference?.eaPerCtn || data.ea) };
+    fallbackEa: Number(data.productReference?.eaPerCtn || data.ea), removed };
 }
 
 async function packSelections(selections) {
@@ -68,11 +69,11 @@ async function packSelections(selections) {
   });
 }
 
-async function readContext(customerId, selectionId) {
+async function readContext(customerId, selectionId, includeRemoved = false) {
   const customer = customerView(await one(queryCustomer().eq('customerId', customerId)));
   if (!customer) return {};
   const record = await one(querySelection().eq('customerId', customerId).eq('_id', selectionId));
-  const selection = record && selectionView(record, customerId);
+  const selection = record && selectionView(record, customerId, includeRemoved);
   return { customer, selection: selection ? (await packSelections([selection]))[0] : null };
 }
 
@@ -96,7 +97,7 @@ export async function readMasterWebQuotationData({ action, customerId, customerI
 }
 
 export const acceptMasterWebQuotation = createMasterQuoteProjection({
-  readContext,
+  readContext: (customerId, selectionId) => readContext(customerId, selectionId, true),
   read: id => one(wixData.query(revisionCollection).eq('_id', id)),
   latest: async (customerId, selectionId) => (await queryQuotes(customerId).eq('selectionId', selectionId)
     .descending('version').limit(1).find(readOptions)).items[0] ?? null,
