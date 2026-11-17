@@ -6,9 +6,14 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const vm = require('node:vm');
 const policy = require('./load-master-module.cjs')('staffManagementPolicy.js');
-const { activateWebRegistration, newWebCustomerFields, reserveWebCustomer, patchOnboarding } =
+const { activateWebRegistration, newWebCustomerFields, reserveWebCustomer, patchOnce, patchOnboarding } =
   require('../prototypes/web-quotations/web-registration.cjs');
 const { createIsolation, initialState } = require('../prototypes/web-quotations/isolation.cjs');
+const { qaSites, qaRoute } = require('../prototypes/web-quotations/wix-qa-site-pair.cjs');
+
+function routeToQa(name) {
+  return qaRoute(name, qaSites.fmcg.siteId, qaSites.ltpos.siteId, qaSites.ltpos.base);
+}
 
 function evaluate(file, exports, globals, patch = source => source) {
   const source = readFileSync(join(__dirname, '../..', file), 'utf8')
@@ -167,7 +172,8 @@ function registration({ actor = salesperson, additionalOwners = [], loseFirstQdR
     'confirmMasterInitialSalesAccess', 'requireStaffCustomerAccess'
   ], {
     getSecret: async () => 'fixture-access',
-    fetch: async (_, options) => {
+    fetch: async (url, options) => {
+      if (webRegistrationEnabled) assert.equal(url, routeToQa('staffAccess'));
       const isGrant = Boolean(JSON.parse(options.body).grantRevision);
       if (isGrant && !interrupted && interruptGrant === 'BEFORE') {
         interrupted = true;
@@ -180,7 +186,9 @@ function registration({ actor = salesperson, additionalOwners = [], loseFirstQdR
       }
       return { ok: result.status === 200, status: result.status, json: async () => result.body };
     }
-  });
+  }, webRegistrationEnabled ? source => patchOnce(source,
+    "'https://fmcg999.wixstudio.com/master/_functions/staffAccess'",
+    JSON.stringify(routeToQa('staffAccess'))) : undefined);
   const readStaff = async () => {
     const scope = await client.getMasterStaffScope(actor.staffEmail, true);
     return scope && { authorized: true, ...scope, canViewAllCustomers: scope.customerScope.allCustomers, loginEmail: actor.staffEmail };
@@ -292,17 +300,23 @@ test('one newly registered customer selects, receives a quote, downloads and rou
       return record;
     }
   };
-  const { createNctIntake } = evaluate('integration/backend/nctIntake.js', ['createNctIntake'], { createHash });
+  const originalFmcgId = "'5292b63a-30e5-4c0e-8762-a1b127bbc651'";
+  const qaFmcgId = JSON.stringify(qaSites.fmcg.siteId);
+  const { createNctIntake } = evaluate('integration/backend/nctIntake.js', ['createNctIntake'], { createHash },
+    source => patchOnce(source, originalFmcgId, qaFmcgId));
   const receive = createNctIntake({ store: masterStore, captureCosts: async () => ({}) });
-  const payloadBuilder = evaluate('backend/nctSubmissionPayload.js', ['buildNctSubmission'], {});
+  const payloadBuilder = evaluate('backend/nctSubmissionPayload.js', ['buildNctSubmission'], {},
+    source => patchOnce(source, originalFmcgId, qaFmcgId));
   const delivery = evaluate('backend/nctSubmissionDelivery.js', ['createNctSubmissionDelivery'], payloadBuilder);
   const intake = evaluate('backend/nctSalesIntake.js', ['submitNctSalesOrder'], {
     ...delivery, wixData: qa.store, createHash, URL, getSecret: async () => 'qa-only',
-    fetch: async (_, options) => {
+    fetch: async (url, options) => {
+      assert.equal(url, routeToQa('nctIntake'));
       const response = await receive(JSON.parse(options.body));
       return { ok: true, json: async () => response };
     }
-  });
+  }, source => patchOnce(source, "'https://fmcg999.wixstudio.com/master/_functions/nctIntake'",
+    JSON.stringify(routeToQa('nctIntake'))));
   await qa.store.insert('WixFxRates', { currency: 'USD', rateToMyr: 4, active: true });
   const salesRoom = evaluate('sales-room/wix/onboarding.web.js', ['submitSalesRoomOrder'], {
     ...intake, wixData: qa.store, getCurrentStaffContext: flow.readStaff,
@@ -314,11 +328,23 @@ test('one newly registered customer selects, receives a quote, downloads and rou
   assert.equal(ghr.destination, 'GHR');
   assert.equal((await salesRoom.submitSalesRoomOrder(order.orderId, 'GHR')).receiptId, ghr.receiptId);
   await assert.rejects(salesRoom.submitSalesRoomOrder(order.orderId, 'NCT'), /receipt identity conflict/);
+  assert.equal((await buyer.getBuyerWorkspace()).myList[0].vipPriceCtn, 18);
   const nextOrder = await buyer.submitBuyerOrder([{ itemId: row.id, quantityCtn: 2 }], '', randomUUID());
   const nct = await salesRoom.submitSalesRoomOrder(nextOrder.orderId, 'NCT');
   assert.equal(nct.destination, 'NCT');
   assert.equal([...masterRows.keys()].filter(key => key.startsWith('NCTOrders/')).length, 1);
   assert.equal([...masterRows.keys()].filter(key => key.startsWith('NCTOrders1/')).length, 1);
+  const quote = qa.service.list(actor, customerId).rows[0];
+  assert.deepEqual(Object.keys(qa.state.quotes), [customerId + '|' + row.id]);
+  assert.equal(quote.published.version, 1);
+  assert.equal(quote.published.priceCtn, 18);
+  const quoteRecords = qa.store.rows('WixBuyerListItems');
+  assert.equal(quoteRecords.length, 1);
+  assert.equal(JSON.parse(quoteRecords[0].payload).webQuoteVersion, 1);
+  assert.equal(Object.keys(qa.state.delivered).length, 1);
+  for (const record of [quote.published, JSON.parse(Object.values(qa.state.delivered)[0])]) {
+    for (const field of ['company', 'companyId', 'destination']) assert.equal(Object.hasOwn(record, field), false);
+  }
 });
 
 test('re-registering an already activated web customer does not reactivate a disabled user', async () => {
