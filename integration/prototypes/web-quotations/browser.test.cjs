@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const { start } = require('./server.cjs');
-const evidence = 'C:/FMCG-WIX-LOCAL/handoff/catalogue-and-mobile-20261117/sequential-release-preflight/web-quotations-compact-evidence';
+const evidence = 'C:/FMCG-WIX-LOCAL/handoff/catalogue-and-mobile-20261117/sequential-release-preflight/web-quotations-shared-customer-evidence';
 
 async function main() {
   fs.mkdirSync(evidence, { recursive: true });
@@ -19,15 +19,32 @@ async function main() {
     await page.locator('[data-select=product-1]').click();
     await page.locator('[data-select=product-2]').click();
     await page.locator('[data-select=product-3]').click();
+    await page.locator('#company').selectOption('GHR');
     await page.getByRole('link', { name: 'Quotations', exact: true }).click();
+    assert.equal(await page.locator('#company').isVisible(), false);
     await page.getByRole('button', { name: 'Catch Cost', exact: true }).click();
     await waitForText('3 costs updated.');
     const gp = page.getByRole('spinbutton', { name: 'Target GP for Chocolate Cream Biscuits', exact: true });
     await gp.fill('25');
     const initialEa = page.getByRole('spinbutton', { name: 'Unit price for Chocolate Cream Biscuits', exact: true });
     assert.equal(await initialEa.inputValue(), '');
+    const targetEa = page.getByRole('spinbutton', { name: 'Target unit price for Chocolate Cream Biscuits', exact: true });
+    assert.equal(Number(await targetEa.inputValue()), 1);
     await page.getByRole('button', { name: 'Apply calculator for Chocolate Cream Biscuits', exact: true }).click();
     assert.equal(await initialEa.inputValue(), '1');
+    const beforeCompanySwitch = await page.locator('.quote-grid tbody').innerText();
+    await page.getByRole('link', { name: 'Catalogue', exact: true }).click();
+    await page.locator('#company').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#company').inputValue(), 'GHR');
+    await page.locator('#company').selectOption('NCT');
+    await page.getByRole('link', { name: 'Quotations', exact: true }).click();
+    await initialEa.waitFor();
+    assert.equal(await page.locator('#company').isVisible(), false);
+    assert.equal(await page.locator('#customer').inputValue(), 'QA-A');
+    assert.equal(await page.locator('.quote-grid tbody').innerText(), beforeCompanySwitch);
+    assert.equal(await initialEa.inputValue(), '1');
+    assert.equal(await targetEa.inputValue(), '1.00');
+    checks.push('Company switch is hidden in Quotations; changing it elsewhere preserves the customer, grid and unsaved inputs');
     await page.getByRole('switch', { name: 'Show quote for Chocolate Cream Biscuits', exact: true }).click();
     await waitForText('Quotation is visible to this customer.');
     assert.equal(await page.getByRole('switch', { name: 'Show quote for Chocolate Cream Biscuits', exact: true }).getAttribute('aria-checked'), 'true');
@@ -60,7 +77,8 @@ async function main() {
     await page.locator('tr').filter({ has: price }).getByRole('button', { name: 'Update quote', exact: true }).click();
     await waitForText('Quotation is visible to this customer.');
     const previousPriceRow = page.locator('tr').filter({ has: price });
-    assert.equal(await previousPriceRow.locator('[data-previous-sp]').innerText(), 'USD 12.00');
+    assert.equal(await previousPriceRow.locator('[data-previous-sp]').innerText(), 'CTN: 12.00');
+    assert.equal(await page.locator('[data-previous-sp]').nth(1).innerText(), '');
     await page.locator('#menu').click();
     await page.getByRole('link', { name: 'Buyer Room', exact: true }).click();
     await waitForText('USD 18');
@@ -105,6 +123,26 @@ async function main() {
     assert.equal(await price.isDisabled(), true);
     assert.equal(await page.getByRole('switch', { name: 'Show quote for Chocolate Cream Biscuits', exact: true }).isDisabled(), true);
     checks.push('Read-only QA Support has disabled cost, price and publication controls');
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    const fixture = qa.store.rows('WixBuyerListItems').find(item => item.customerId === 'QA-A');
+    for (let i = 4; i <= 1000; i++) {
+      const original = JSON.parse(fixture.payload);
+      const id = 'volume-product-' + i;
+      qa.store.rows('FMCGMALAYSIA').push({ _id: id, name: 'Volume test item ' + i, description: '100 g × 12', ea: 12 });
+      qa.store.rows('WixBuyerListItems').push({
+        ...fixture,
+        _id: 'volume-selection-' + i,
+        payload: JSON.stringify({ ...original, productId: id, unitBarcode: String(9900000000000 + i) })
+      });
+    }
+    await page.locator('#actor').selectOption('sales');
+    await page.getByText('Volume test item 1000', { exact: true }).waitFor({ state: 'attached' });
+    assert.equal(await page.locator('.quote-grid tbody tr').count(), 1000);
+    assert.equal(await page.locator('[data-page]').count(), 0);
+    await page.locator('#search').fill('Volume test item 1000');
+    assert.equal(await page.locator('.quote-grid tbody tr').count(), 1);
+    assert.equal(await page.locator('.quote-grid .product-name').innerText(), 'Volume test item 1000');
+    checks.push('1,000 fixture rows on one page, with search reaching the last row');
     assert.deepEqual(errors, []);
     fs.writeFileSync(path.join(evidence, 'browser-results.json'), JSON.stringify({ passed: true, checks, pageErrors: errors }, null, 2));
     console.log(JSON.stringify({ passed: true, checks }, null, 2));

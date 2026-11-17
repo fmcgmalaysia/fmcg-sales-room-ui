@@ -129,8 +129,13 @@ test('the existing Excel builder exports customer prices and pack formulas witho
   assert(!xml.includes('netCostCtn')); assert(!xml.includes('Target GP'));
 });
 
-test('company, customer and Support quote permissions are enforced by existing policy', async () => {
+test('customer grants and Sales Management permissions apply without a customer company', async () => {
   const { qa, id } = await ready();
+  const ghrStaff = { ...qa.actors.sales, staffAccess: { ...qa.actors.sales.staffAccess, companyIds: ['GHR'] } };
+  assert.equal(qa.service.list(ghrStaff, 'QA-A').rows[0].id, id);
+  assert.equal(qa.service.list(ghrStaff, 'QA-A').customer.company, undefined);
+  const noDepartment = { ...ghrStaff, staffAccess: { ...ghrStaff.staffAccess, departmentAccess: {} } };
+  assert.throws(() => qa.service.list(noDepartment, 'QA-A'), /access/);
   await assert.rejects(qa.service.catchCost(qa.actors.support, 'QA-A'), /access/);
   assert.throws(() => qa.service.list(qa.actors.sales, 'QA-B'), /access/);
   const otherId = await selected(qa, 'QA-B');

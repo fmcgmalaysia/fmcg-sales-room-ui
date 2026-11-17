@@ -23,7 +23,12 @@
 
 .quote-grid td {
   height: 44px;
+  color: #183651;
   font-variant-numeric: tabular-nums;
+}
+
+.quote-grid tbody tr:nth-child(even):not(.row-dirty) {
+  background: #f8fbfe;
 }
 
 .quote-grid .product-name {
@@ -60,10 +65,37 @@
   cursor: grab;
 }
 
-.quote-grid .inline-ea {
-  display: flex;
+.quote-grid .quote-value {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
   align-items: center;
-  gap: 3px;
+  column-gap: 4px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.quote-grid .disc-cell .quote-value {
+  grid-template-columns: 30px minmax(0, 1fr);
+}
+
+.quote-grid .quote-unit {
+  color: #60758a;
+  font-size: 9px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.quote-grid .previous-sp {
+  color: #657488;
+  white-space: nowrap;
+}
+
+.quote-grid .desc-cell {
+  padding-right: 12px;
+}
+
+.quote-grid .cost-cell b {
+  font-weight: 700;
 }
 
 .quote-grid input[type=number] {
@@ -83,15 +115,32 @@
   background: #eef5fc;
 }
 
-.quote-grid .calc-cell label {
-  display: grid;
-  gap: 2px;
-  color: #486780;
-  font-size: 9px;
+.quote-grid .calc-cell input {
+  width: min(100%, 54px);
+}
+
+.quote-grid .calc-cell input::placeholder {
+  color: #657488;
+}
+
+.quote-grid .calc-group {
+  text-align: center;
+  padding-block: 4px;
+  border-bottom: 1px solid var(--line);
+  background: #dce9f7;
+}
+
+.quote-grid .calc-headings th {
+  padding-block: 3px;
+  font-size: 10px;
 }
 
 .quote-grid .quote-actions {
   gap: 3px;
+}
+
+.quote-grid .quote-edits {
+  margin-top: 3px;
 }
 
 .quote-grid .update {
@@ -121,12 +170,8 @@
   transform: translateX(13px);
 }
 
-.quote-pages {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+.masthead .header-bottom {
+  margin-left: auto;
 }
 
 @media (min-width: 601px) {
@@ -145,6 +190,9 @@
 }
 
 @media (max-width: 600px) {
+  .masthead #menu {
+    margin-left: auto;
+  }
   .quote-grid {
     overflow: visible;
   }
@@ -188,8 +236,12 @@
     font-size: 16px;
   }
 
-  .quote-grid .calc-cell label {
-    font-size: 12px;
+  .quote-grid .calc-cell input {
+    width: min(100%, 88px);
+  }
+
+  .quote-grid .quote-unit {
+    font-size: 10px;
   }
 
   .quote-grid .update, .quote-grid .calc-cell .update {

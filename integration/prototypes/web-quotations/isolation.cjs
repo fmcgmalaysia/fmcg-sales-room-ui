@@ -15,8 +15,8 @@ const { calculateGrossProfitMargin } = load('integration/backend/grossProfitMarg
 
 function initialState() {
   const customers = [
-    { _id: 'QA-A', customerId: 'QA-A', title: 'Harbour Market · QA', company: 'NCT', preferredCurrency: 'USD', rateToMyr: 4, catalogueAccessStatus: 'ACTIVE', quotationMode: 'WEB' },
-    { _id: 'QA-B', customerId: 'QA-B', title: 'Cedar Stores · QA', company: 'GHR', preferredCurrency: 'SGD', rateToMyr: 3, catalogueAccessStatus: 'ACTIVE', quotationMode: 'WEB' }
+    { _id: 'QA-A', customerId: 'QA-A', title: 'Harbour Market · QA', preferredCurrency: 'USD', rateToMyr: 4, catalogueAccessStatus: 'ACTIVE', quotationMode: 'WEB' },
+    { _id: 'QA-B', customerId: 'QA-B', title: 'Cedar Stores · QA', preferredCurrency: 'SGD', rateToMyr: 3, catalogueAccessStatus: 'ACTIVE', quotationMode: 'WEB' }
   ];
   const products = [
     ['0999000000007', 'Chocolate Cream Biscuits', '100 g × 12', 12, 36, 'FOOD'],

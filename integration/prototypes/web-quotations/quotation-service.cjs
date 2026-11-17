@@ -13,9 +13,13 @@ function createQuotationService({ state, save, policy, calculateGrossProfitMargi
   }
   function authorize(actor, customerId, action) {
     const customer = customers().find(row => row.customerId === customerId);
-    if (!customer || !policy.canEnterDepartment(actor, 'SALES MANAGEMENT', action === 'VIEW' ? 'VIEW' : 'EDIT', customer.company) ||
+    if (!customer || !departmentAccess(actor, action === 'VIEW' ? 'VIEW' : 'EDIT') ||
         !policy.canUseSalesRoomCustomer(actor, action, customerId)) throw Error('You do not have access to this quotation.');
     return customer;
+  }
+  function departmentAccess(actor, action) {
+    // Company access belongs to the staff workroom, not to a quotation customer.
+    return ['NCT', 'GHR'].some(company => policy.canEnterDepartment(actor, 'SALES MANAGEMENT', action, company));
   }
   function rowsFor(customerId) {
     return selections(customerId).map(item => {
@@ -81,7 +85,7 @@ function createQuotationService({ state, save, policy, calculateGrossProfitMargi
   return {
     list(actor, customerId) {
       const customer = authorize(actor, customerId, 'VIEW');
-      const canEdit = policy.canEnterDepartment(actor, 'SALES MANAGEMENT', 'EDIT', customer.company) && policy.canUseSalesRoomCustomer(actor, 'EDIT_QUOTATION', customerId);
+      const canEdit = departmentAccess(actor, 'EDIT') && policy.canUseSalesRoomCustomer(actor, 'EDIT_QUOTATION', customerId);
       return copy({ customer, canEdit, rows: rowsFor(customerId).map(row => {
         const liveGp = row.published?.enabled ? calculateGrossProfitMargin({ sellingPricePc: row.published.priceEa, eaPerCtn: row.ea, netCostCtn: row.costMyr, rateToMyr: customer.rateToMyr }) : null;
         return { ...row, publishedGp: liveGp === null ? null : round(liveGp * 100), pending: Boolean(row.pending) };
