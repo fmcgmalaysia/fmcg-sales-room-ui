@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { createQuotationService } = require('./quotation-service.cjs');
+const { patchOnce } = require('./web-registration.cjs');
 const root = path.resolve(__dirname, '../../..');
 
 function load(file, names, globals = {}, patch = source => source) {
@@ -15,8 +16,8 @@ const { calculateGrossProfitMargin } = load('integration/backend/grossProfitMarg
 
 function initialState() {
   const customers = [
-    { _id: 'QA-A', customerId: 'QA-A', title: 'Harbour Market · QA', preferredCurrency: 'USD', rateToMyr: 4, catalogueAccessStatus: 'ACTIVE', quotationMode: 'WEB' },
-    { _id: 'QA-B', customerId: 'QA-B', title: 'Cedar Stores · QA', preferredCurrency: 'SGD', rateToMyr: 3, catalogueAccessStatus: 'ACTIVE', quotationMode: 'WEB' }
+    { _id: 'QA-A', customerId: 'QA-A', title: 'Harbour Market · QA', preferredCurrency: 'USD', rateToMyr: 4, catalogueAccessStatus: 'ACTIVE', quotationMode: 'WEB', webQuotationStatus: 'READY' },
+    { _id: 'QA-B', customerId: 'QA-B', title: 'Cedar Stores · QA', preferredCurrency: 'SGD', rateToMyr: 3, catalogueAccessStatus: 'ACTIVE', quotationMode: 'WEB', webQuotationStatus: 'READY' }
   ];
   const products = [
     ['0999000000007', 'Chocolate Cream Biscuits', '100 g × 12', 12, 36, 'FOOD'],
@@ -78,9 +79,13 @@ function createStore(state, save) {
 
 function patchCatalogue(source) {
   const replace = (before, after) => { assert.equal(source.split(before).length, 2, before); source = source.replace(before, after); };
-  replace("if (upper(customer.qdStatus) !== 'READY' || !normalize(customer.qdFileId))", "if (customer.quotationMode !== 'WEB' && (upper(customer.qdStatus) !== 'READY' || !normalize(customer.qdFileId)))");
+  replace("if (upper(customer.qdStatus) !== 'READY' || !normalize(customer.qdFileId))", "if (customer.quotationMode === 'WEB' && customer.webQuotationStatus !== 'READY') throw new Error('This customer registration is not ready.');\n  if (customer.quotationMode !== 'WEB' && (upper(customer.qdStatus) !== 'READY' || !normalize(customer.qdFileId)))");
   replace("customerId: normalize(customer.customerId),\n    qdFileId:", "customerId: normalize(customer.customerId),\n    quotationMode: customer.quotationMode,\n    qdFileId:");
   replace("if (upper(existing.qdSyncStatus) === 'READY' && normalize(item.customerId)", "if ((upper(existing.qdSyncStatus) === 'READY' || (context.quotationMode === 'WEB' && !existing.removed)) && normalize(item.customerId)");
+  const queued = "qdSyncStatus: 'PENDING',";
+  replace(queued + "\n        qdSyncedAt:", "qdSyncStatus: context.quotationMode === 'WEB' ? '' : 'PENDING',\n        qdSyncedAt:");
+  replace("qdSyncStatus: 'PENDING', payload: JSON.stringify(payload)", "qdSyncStatus: payload.qdSyncStatus, payload: JSON.stringify(payload)");
+  replace("queued: true, selection: publicSelection_(item)", "queued: context.quotationMode !== 'WEB', selection: publicSelection_(item)");
   return source;
 }
 
@@ -141,15 +146,17 @@ function createIsolation({ file, state: provided } = {}) {
         return [barcode, cost];
       }));
     }, deliver });
-  function buyerApi(customerId) {
+  function buyerApi(customerId, loginEmail = '') {
     if (!customers().some(customer => customer.customerId === customerId)) throw Error('Unknown QA customer');
     const globals = { wixData: store, webMethod: (_, run) => run, Permissions: { SiteMember: 'member' },
-      currentMember: { getMember: async () => ({ _id: 'member-' + customerId }) },
+      currentMember: { getMember: async () => ({ _id: 'member-' + customerId, loginEmail }) },
       getCurrentStaffContext: async () => ({ authorized: false }),
       wixRealtimeBackend: { publish: async () => {} },
       httpsRequest() { throw Error('External network access is disabled in this isolated workflow'); } };
     return { ...load('backend/catalogueSelection.web.js', ['addCatalogueSelection', 'getCatalogueSelectionState'], globals, patchCatalogue),
-      ...load('backend/catalogueAuth.web.js', ['getBuyerWorkspace', 'submitBuyerOrder'], globals) };
+      ...load('backend/catalogueAuth.web.js', ['getBuyerWorkspace', 'submitBuyerOrder'], globals, source => patchOnce(source,
+        'function ensureActive(customer) {',
+        "function ensureActive(customer) {\n  if (customer.quotationMode === 'WEB' && customer.webQuotationStatus !== 'READY') throw new Error('This customer registration is not ready.');")) };
   }
   const excel = load('backend/buyerSelectionExcel.js', ['buildBuyerSelectionExcel', 'buildBuyerOrderExcel']);
   const downloads = load('backend/buyerSelectionDownload.js', ['buildBuyerSelectionDownload'], { wixData: store, createHash, ...excel });

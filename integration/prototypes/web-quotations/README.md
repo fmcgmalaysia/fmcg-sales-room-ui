@@ -20,7 +20,9 @@ node integration/prototypes/web-quotations/server.cjs
 
 Open `http://127.0.0.1:8896/#catalogue` on this computer. Select fictional products, open Quotations, Catch Cost, enter GP or price, turn on Customer Quote, then open Buyer Room to download Excel or request an order. The dropdown can simulate the other company/customer and a read-only employee.
 
-Local state persists to `.qa-state.json`, excluded from Git. Only fictional customer names, costs, prices and orders belong in this preview. Local browser drafts are also saved locally. No Google or real CMS calls are made.
+Local state persists to `.qa-state-web.json`, excluded from Git. Only fictional customer names, costs, prices and orders belong in this preview. Local browser drafts are also saved locally. No Google or real CMS calls are made.
+
+The registration test loads repository registration, staff grant and order transport code with private in-memory substitutes. A new web customer reaches Quotations, Catalogue and Buyer Room only after the original LTPOS staff grant is confirmed and the customer is marked ready. In this test the same customer can send two orders and the Sales Room can route each to a different receiving company. Run `node --test integration/tests/fmcg-customer-registration.test.cjs`. The two real Wix sites and their login sessions have not yet been tested together.
 
 ## Design and implementation
 

@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createIsolation } = require('./isolation.cjs');
 
-function start({ port = 8896, file = path.join(__dirname, '.qa-state.json') } = {}) {
+function start({ port = 8896, file = path.join(__dirname, '.qa-state-web.json') } = {}) {
   const qa = createIsolation({ file });
   let recoveryBusy = false;
   const timer = setInterval(async () => {

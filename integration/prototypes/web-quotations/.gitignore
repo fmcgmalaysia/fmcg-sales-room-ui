@@ -1,4 +1,6 @@
 .qa-state.json
 .qa-state.json.tmp
+.qa-state-web.json
+.qa-state-web.json.tmp
 preview-out.log
 preview-error.log

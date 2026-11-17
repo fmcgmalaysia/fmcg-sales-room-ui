@@ -15,6 +15,11 @@ function createQuotationService({ state, save, policy, calculateGrossProfitMargi
     const customer = customers().find(row => row.customerId === customerId);
     if (!customer || !departmentAccess(actor, action === 'VIEW' ? 'VIEW' : 'EDIT') ||
         !policy.canUseSalesRoomCustomer(actor, action, customerId)) throw Error('You do not have access to this quotation.');
+    const access = customer.catalogueAccessStatus || customer.accessStatus;
+    if (customer.quotationMode !== 'WEB' || customer.webQuotationStatus !== 'READY' ||
+        customer.lifecycleStatus === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) {
+      throw Error('This customer registration is not ready.');
+    }
     return customer;
   }
   function departmentAccess(actor, action) {
