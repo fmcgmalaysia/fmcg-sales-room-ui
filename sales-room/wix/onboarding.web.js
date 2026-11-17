@@ -16,7 +16,6 @@ import { isWebQuotationCustomer } from 'backend/webQuotationCustomer.js';
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
 
-const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 
@@ -1772,7 +1771,7 @@ async function resolveCurrentStaffContext() {
 async function requireAuthorizedStaffContext() {
   const context = await resolveCurrentStaffContext();
   if (!context?.authorized) {
-    throw new Error('This member is not authorized in STAFF MASTER.');
+    throw new Error('This member does not have Sales Room access in LTPOS.');
   }
   return context;
 }
@@ -2242,19 +2241,12 @@ export const getSalesRoomActivityForAdmin = webMethod(
     if (!staff.canViewAllCustomers) throw new Error('Admin access is required.');
 
     const window = malaysiaDayWindow(dayOffset);
-    const [activityResult, staffResult] = await Promise.all([
-      wixData.query(PROFILE_AUDIT_COLLECTION)
-        .ge('changedAt', window.start)
-        .lt('changedAt', window.end)
-        .descending('changedAt')
-        .limit(1000)
-        .find({ suppressAuth: true }),
-      wixData.query(STAFF_COLLECTION)
-        .eq('status', 'ACTIVE')
-        .ascending('staffName')
-        .limit(1000)
-        .find({ suppressAuth: true })
-    ]);
+    const activityResult = await wixData.query(PROFILE_AUDIT_COLLECTION)
+      .ge('changedAt', window.start)
+      .lt('changedAt', window.end)
+      .descending('changedAt')
+      .limit(1000)
+      .find({ suppressAuth: true });
 
     const events = activityResult.items
       .filter((item) => SALES_ACTIVITY_ACTIONS.includes(upper(item.action)))
@@ -2270,18 +2262,15 @@ export const getSalesRoomActivityForAdmin = webMethod(
         staffEmail: normalizeEmail(item.changedByEmail)
       }));
 
-    const summaries = staffResult.items.map((item) => {
-      const staffId = upper(item.staffId);
-      const ownEvents = events.filter((event) => event.staffId === staffId);
-      return Object.freeze({
-        staffId,
-        staffName: normalize(item.staffName || item.name || item.staffId),
-        email: normalizeEmail(item.loginEmail || item.email),
-        activityCount: ownEvents.length,
-        lastActivityAt: ownEvents.length ? ownEvents[0].changedAt : '',
-        activeToday: ownEvents.length > 0
-      });
-    });
+    const summaryByStaff = new Map();
+    for (const event of events) {
+      if (!event.staffId) continue;
+      const summary = summaryByStaff.get(event.staffId);
+      if (summary) { summary.activityCount++; continue; }
+      summaryByStaff.set(event.staffId, { staffId: event.staffId, staffName: event.staffName || event.staffId,
+        email: event.staffEmail, activityCount: 1, lastActivityAt: event.changedAt, activeToday: true });
+    }
+    const summaries = [...summaryByStaff.values()].sort((a, b) => a.staffName.localeCompare(b.staffName));
 
     return Object.freeze({ ok: true, window, summaries, events });
   }

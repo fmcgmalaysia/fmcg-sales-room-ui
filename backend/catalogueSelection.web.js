@@ -10,7 +10,6 @@ import { isWebQuotationCustomer, isWebQuotationReady } from 'backend/webQuotatio
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
-const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const PRODUCT_COLLECTION = 'FMCGMALAYSIA';

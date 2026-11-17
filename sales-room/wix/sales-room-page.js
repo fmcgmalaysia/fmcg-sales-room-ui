@@ -1,7 +1,7 @@
 import { salesRoomShipment } from 'backend/onboarding.web';
 import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, checkSalesRoomOrderReceipt, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
 import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web.js';
-import { getCurrentStaffContext, recordStaffPresence, getStaffPresenceForAdmin } from 'backend/staffAuth.web.js';
+import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { getSalesRoomQuoteSignals, processSalesRoomSelectionQueue, routeSalesRoomCustomerSelections } from 'backend/catalogueSelection.web.js';
 import wixLocationFrontend from 'wix-location-frontend';
 import { authentication } from 'wix-members-frontend';
@@ -82,7 +82,6 @@ $w.onReady(function () {
     if (!file || !/^[A-Za-z0-9_-]{10,200}$/.test(file.fileId) || file.url !== 'https://drive.google.com/file/d/' + file.fileId + '/view') return;
     wixLocationFrontend.to(file.url);
   }
-  let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
   let routeQueuePromise;
   let automaticQdVerificationPromise;
@@ -140,33 +139,6 @@ $w.onReady(function () {
     await refreshCustomersFromCms();
     routePendingSelections();
   }).catch((error) => console.error('Sales Room realtime subscription failed', error));
-
-  async function syncPresence(staff, mode) {
-    try {
-      const recorded = await recordStaffPresence({
-        mode,
-        device: currentDevice
-      });
-
-      
-
-      if (staff.canViewAllCustomers) {
-        const presence = await getStaffPresenceForAdmin();
-        salesRoom.postMessage({
-          type: 'SALES_ROOM_STAFF_PRESENCE',
-          ...presence
-        });
-      }
-    } catch (error) {
-      if (staff.canViewAllCustomers) {
-        salesRoom.postMessage({
-          type: 'SALES_ROOM_STAFF_PRESENCE',
-          ok: false,
-          error: 'Staff activity could not be refreshed.'
-        });
-      }
-    }
-  }
 
   async function refreshSalesActivity(staff, dayOffset = 0) {
     if (!staff?.authorized || !staff.canViewAllCustomers) return;

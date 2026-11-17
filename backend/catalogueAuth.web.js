@@ -16,7 +16,6 @@ import { isWebQuotationCustomer, isWebQuotationReady } from 'backend/webQuotatio
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
-const STAFF_COLLECTION = 'StaffMaster';
 const PRODUCT_COLLECTION = 'FMCGMALAYSIA';
 const SUBCATEGORY_COLLECTION = 'subCategories';
 const BUYER_LIST_COLLECTION = 'WixBuyerListItems';
