@@ -10,6 +10,8 @@ import wixRealtimeBackend from 'wix-realtime-backend';
 import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { requireStaffCustomerAccess, staffMayAccessCustomer, getMasterSalesCreationAssignees, resolveMasterSalesCreationAssignee, confirmMasterInitialSalesAccess } from 'backend/masterStaffAccessClient.js';
+import { webQuotationRegistrationEnabled, reserveWebQuotationCustomer, reserveWebQuotationPrimaryUser, activateWebQuotationCustomer } from 'backend/webQuotationRegistration.js';
+import { isWebQuotationCustomer } from 'backend/webQuotationCustomer.js';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
@@ -39,13 +41,15 @@ const CURRENCIES = Object.freeze(['USD', 'MYR', 'SGD', 'RMB', 'JPY']);
 export const getAssignableSalesStaff = webMethod(Permissions.SiteMember, async () => {
   const context = await requireAuthorizedStaffContext();
   const routing = await getMasterSalesCreationAssignees(context.loginEmail);
-  return Object.freeze({ ok: true, staff: routing?.assignees ?? [], canCreate: Boolean(routing), mayAssignOthers: routing?.mayAssignOthers ?? false });
+  return Object.freeze({ ok: true, staff: routing?.assignees ?? [], canCreate: Boolean(routing),
+    mayAssignOthers: routing?.mayAssignOthers ?? false, quotationMode: await webQuotationRegistrationEnabled() ? 'WEB' : 'QD' });
 });
 
 export const createSalesRoomCustomer = webMethod(
   Permissions.SiteMember,
   async (payload) => {
     const customer = normalizeAndValidate(payload || {});
+    const web = await webQuotationRegistrationEnabled();
     const staff = await resolveCustomerRouting(payload?.assignedStaffId);
 
     const existingAccess = await findCustomerUserByEmail(customer.picEmail);
@@ -58,34 +62,31 @@ export const createSalesRoomCustomer = webMethod(
       .eq('title', customer.companyName)
       .limit(2)
       .find({ suppressAuth: true, consistentRead: true });
-    let customerRecord = duplicateCompany.items[0];
-    const canResumeReservation = duplicateCompany.items.length === 1 &&
-      /^[a-f0-9]{64}$/.test(customerRecord.salesInitialGrantRevision || '') &&
-      !customerRecord.qdFileId &&
-      ['REGISTERING', 'ACCESS RECORD ERROR'].includes(upper(customerRecord.customerStatus)) &&
-      upper(customerRecord.assignedStaffId) === staff.staffId &&
-      upper(customerRecord.customerShortName) === customer.customerShortName &&
-      normalizeEmail(customerRecord.primaryEmail) === customer.picEmail;
-    if (customerRecord && !canResumeReservation) {
+    const prior = duplicateCompany.items.length === 1 && duplicateCompany.items[0];
+    const resume = prior && /^[a-f0-9]{64}$/.test(prior.salesInitialGrantRevision || '') &&
+      ['REGISTERING', 'ACCESS RECORD ERROR'].includes(upper(prior.customerStatus)) &&
+      prior.assignedStaffId === staff.staffId && prior.primaryEmail === customer.picEmail &&
+      prior.customerShortName === customer.customerShortName;
+    if (duplicateCompany.items.length && !resume) {
       throw new Error('This company is already registered.');
     }
 
-    if (!customerRecord) {
-      const duplicateShortName = await wixData
-        .query(CUSTOMER_COLLECTION)
-        .eq('customerShortName', customer.customerShortName)
-        .limit(1)
-        .find({ suppressAuth: true });
+    const duplicateShortName = await wixData
+      .query(CUSTOMER_COLLECTION)
+      .eq('customerShortName', customer.customerShortName)
+      .limit(1)
+      .find({ suppressAuth: true });
 
-      if (duplicateShortName.items.length) {
-        throw new Error('This CUSTOMER SHORT NAME is already in use.');
-      }
+    if (duplicateShortName.items.some(item => !resume || item._id !== prior._id)) {
+      throw new Error('This CUSTOMER SHORT NAME is already in use.');
+    }
 
-      const customerId = await generateUniqueCustomerId();
-      customerRecord = await wixData.insert(CUSTOMER_COLLECTION, {
+    const proposedCustomerId = resume ? prior.customerId : await generateUniqueCustomerId();
+    const now = new Date();
+    const customerFields = {
         title: customer.companyName,
         customerShortName: customer.customerShortName,
-        customerId,
+        customerId: proposedCustomerId,
         country: customer.country,
         natureOfBusiness: customer.natureOfBusiness,
         picTitle: customer.picTitle,
@@ -109,22 +110,16 @@ export const createSalesRoomCustomer = webMethod(
         accessStatus: 'PENDING',
         reactivationStatus: 'NONE',
         primaryEmail: customer.picEmail
-      }, { suppressAuth: true });
-      if (customerRecord.salesInitialGrantRevision !== staff.grantRevision) {
-        throw new Error('Customer was reserved, but initial LTPOS access could not be recorded.');
-      }
-    }
-
+    };
+    let customerRecord = resume ? prior : web
+      ? await reserveWebQuotationCustomer({ ...customerFields, quotationMode: 'WEB', webQuotationStatus: 'PENDING' })
+      : await wixData.insert(CUSTOMER_COLLECTION, customerFields, { suppressAuth: true });
     const customerId = normalize(customerRecord.customerId);
     const userId = 'USR-' + customerId + '-01';
-    const now = new Date();
 
     let userRecord;
     try {
-      userRecord = await wixData.insert(
-        CUSTOMER_USER_COLLECTION,
-        {
-          _id: userId,
+      const userFields = {
           title: customer.picName,
           userId,
           customerId,
@@ -134,15 +129,17 @@ export const createSalesRoomCustomer = webMethod(
           email: customer.picEmail,
           primaryUser: true,
           failedLoginCount: 0
-        },
-        { suppressAuth: true }
-      );
+      };
+      userRecord = web ? await reserveWebQuotationPrimaryUser(userFields)
+        : await wixData.insert(CUSTOMER_USER_COLLECTION, userFields, { suppressAuth: true });
     } catch (error) {
-      userRecord = await wixData.get(CUSTOMER_USER_COLLECTION, userId, { suppressAuth: true, consistentRead: true }).catch(() => null);
-      if (!userRecord || normalize(userRecord.customerId) !== customerId || normalizeEmail(userRecord.email) !== customer.picEmail) {
-        await updateCustomerState(customerRecord, 'ERROR', 'ACCESS RECORD ERROR');
-        throw new Error('Customer was reserved, but the access record could not be created: ' + safeMessage(error));
-      }
+      if (web) throw Error('Customer reserved. Retry this registration to confirm buyer access.');
+      customerRecord = await updateCustomerState(
+        customerRecord,
+        'ERROR',
+        'ACCESS RECORD ERROR'
+      );
+      throw new Error('Customer was reserved, but the access record could not be created: ' + safeMessage(error));
     }
 
     const auditActor = await requireAuthorizedStaffContext();
@@ -172,11 +169,7 @@ export const createSalesRoomCustomer = webMethod(
       auditActor
     );
 
-    return provisionQuotationDesk({
-      customerRecord,
-      userRecord,
-      staff
-    });
+    return (isWebQuotationCustomer(customerRecord) ? activateWebQuotationCustomer : provisionQuotationDesk)({ customerRecord, userRecord, staff });
   }
 );
 
@@ -324,6 +317,7 @@ async function loadSalesRoomCustomers() {
         customerShortName: upper(item.customerShortName),
         country: normalize(item.country),
         qdStatus: upper(item.qdStatus),
+        ...(isWebQuotationCustomer(item) ? { quotationMode: 'WEB', webQuotationStatus: upper(item.webQuotationStatus) } : {}),
         qdFileId: staffMayAccessCustomer(staff, 'EDIT_QUOTATION', item.customerId) ? normalize(item.qdFileId) : '',
         customerStatus: upper(item.customerStatus),
         lifecycleStatus: upper(item.lifecycleStatus || 'ACTIVE'),
@@ -352,7 +346,7 @@ async function loadSalesRoomCustomers() {
       summary: {
         customerCount: customers.length,
         qdReadyCount: customers.filter(
-          (item) => item.qdStatus === 'READY'
+          (item) => item.quotationMode === 'WEB' ? item.webQuotationStatus === 'READY' : item.qdStatus === 'READY'
         ).length
       },
       customers
@@ -890,6 +884,7 @@ export const getSalesRoomCustomerDetail = webMethod(
         qdTemplateVersion: normalize(customer.qdTemplateVersion),
         qdLastVerifiedAt: customer.qdLastVerifiedAt || null,
         qdStatus: upper(customer.qdStatus),
+        ...(isWebQuotationCustomer(customer) ? { quotationMode: 'WEB', webQuotationStatus: upper(customer.webQuotationStatus) } : {}),
         customerStatus: upper(customer.customerStatus),
         lifecycleStatus: upper(customer.lifecycleStatus || 'ACTIVE'),
         accessStatus: upper(customer.accessStatus || (upper(customer.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
@@ -950,7 +945,7 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
       patch.reactivationStatus = 'NONE';
     } else if (normalizedAction === 'ACTIVATE' || normalizedAction === 'RESTORE' || normalizedAction === 'APPROVE_REACTIVATION') {
       patch.lifecycleStatus = 'ACTIVE';
-      patch.accessStatus = upper(customer.qdStatus) === 'READY' ? 'ACTIVE' : 'PENDING';
+      patch.accessStatus = (isWebQuotationCustomer(customer) ? upper(customer.webQuotationStatus) === 'READY' : upper(customer.qdStatus) === 'READY') ? 'ACTIVE' : 'PENDING';
       patch.reactivationStatus = normalizedAction === 'APPROVE_REACTIVATION' || (normalizedAction === 'ACTIVATE' && beforeReactivation === 'REQUESTED') ? 'APPROVED' : 'NONE';
     } else if (normalizedAction === 'REJECT_REACTIVATION') {
       patch.lifecycleStatus = beforeLifecycle;
@@ -1098,7 +1093,7 @@ export const updateSalesRoomCustomerProfile = webMethod(
     }
 
     const changes = Object.keys(patch)
-      .filter((key) => auditValue(customer[key]) !== auditValue(patch[key]))
+      .filter((key) => comparableCustomerProfileValue(key, customer[key]) !== patch[key])
       .map((key) => ({
         fieldId: key,
         fieldLabel: EDITABLE_CUSTOMER_FIELDS[key],
@@ -1123,7 +1118,7 @@ export const updateSalesRoomCustomerProfile = webMethod(
 
     await wixData.update(
       CUSTOMER_COLLECTION,
-      { ...customer, ...patch },
+      { ...customer, ...Object.fromEntries(changes.map(({ fieldId, afterValue }) => [fieldId, afterValue])) },
       { suppressAuth: true }
     );
 
@@ -1143,6 +1138,12 @@ export const updateSalesRoomCustomerProfile = webMethod(
     });
   }
 );
+
+function comparableCustomerProfileValue(key, value) {
+  if (key === 'primaryEmail') return normalizeEmail(value);
+  if (['customerShortName', 'natureOfBusiness', 'preferredCurrency', 'whatsapp', 'picTitle'].includes(key)) return upper(value);
+  return normalize(value);
+}
 
 export const saveSalesRoomCustomerUser = webMethod(
   Permissions.SiteMember,
@@ -1818,23 +1819,19 @@ async function findAuthorizedCustomer(customerId, staff, action = 'VIEW') {
 
 async function resolveCustomerRouting(requestedAssignedStaffId) {
   const context = await requireAuthorizedStaffContext();
-  if (!context.canViewAllCustomers && context.customerScope?.canCreateCustomers !== true) {
-    throw new Error('Customer setup requires Sales edit access in LTPOS.');
-  }
-  const requestedStaffId = upper(requestedAssignedStaffId);
-  const target = await resolveMasterSalesCreationAssignee(context.loginEmail, requestedStaffId);
-  if (!target) throw new Error('Select an active salesperson from LTPOS.');
-  return Object.freeze({ ...target, loginEmail: context.loginEmail });
+  const owner = await resolveMasterSalesCreationAssignee(context.loginEmail, upper(requestedAssignedStaffId));
+  if (!owner) throw Error('Select an active salesperson with customer creation access in LTPOS.');
+  return { ...owner, loginEmail: context.loginEmail };
 }
 
 async function resumeExistingRegistration(existingAccess, customer, staff) {
   const customerResult = await wixData
     .query(CUSTOMER_COLLECTION)
     .eq('customerId', normalize(existingAccess.customerId))
-    .limit(2)
-    .find({ suppressAuth: true, consistentRead: true });
+    .limit(1)
+    .find({ suppressAuth: true });
 
-  if (customerResult.items.length !== 1) {
+  if (!customerResult.items.length) {
     throw new Error('This email already has an access record without a customer record. Admin review is required.');
   }
 
@@ -1853,11 +1850,10 @@ async function resumeExistingRegistration(existingAccess, customer, staff) {
     return successResult(customerRecord, existingAccess, staff);
   }
 
-  return provisionQuotationDesk({
-    customerRecord,
-    userRecord: existingAccess,
-    staff
-  });
+  if (isWebQuotationCustomer(customerRecord)) {
+    return activateWebQuotationCustomer({ customerRecord, userRecord: existingAccess, staff });
+  }
+  return provisionQuotationDesk({ customerRecord, userRecord: existingAccess, staff });
 }
 
 function httpsFetchLike(url, options) { const send = (target, method, body) => new Promise((resolve, reject) => { const req = httpsRequest(target, { method, headers: options.headers || {} }, (res) => { let text = ''; res.setEncoding('utf8'); res.on('data', (chunk) => { text += chunk; }); res.on('end', () => resolve({ status: res.statusCode || 0, headers: res.headers || {}, text })); }); req.on('error', reject); if (body) req.write(body); req.end(); }); return send(url, options.method || 'GET', options.body || '').then(async (first) => { let current = first; if ([301, 302, 303, 307, 308].includes(current.status)) { const location = normalize(current.headers.location); if (!location) throw new Error('QD redirect location is missing.'); current = await send(location, 'GET', ''); } return { status: current.status, ok: current.status >= 200 && current.status < 300, url: '', headers: { get: (name) => normalize(current.headers[String(name).toLowerCase()]) }, text: async () => current.text }; }); }
@@ -1898,7 +1894,6 @@ function httpsFetchLike(url, options) { const send = (target, method, body) => n
       returnedStatus,
       returnedStatus === 'READY' ? 'REGISTERED' : 'ACTIVATION REQUIRED',
       {
-        salesInitialGrantRevision: '',
         qdOwnerStaffId: upper(customerRecord.qdOwnerStaffId || staff.staffId),
         qdFileId: normalize(body.result?.qdFileId || customerRecord.qdFileId),
         qdFileLabel: normalize(
@@ -2004,7 +1999,7 @@ async function findCustomerUserByEmail(email) {
     .query(CUSTOMER_USER_COLLECTION)
     .eq('email', email)
     .limit(2)
-    .find({ suppressAuth: true, consistentRead: true });
+    .find({ suppressAuth: true });
 
   if (result.items.length > 1) {
     throw new Error('Duplicate customer access email. Admin review is required.');

@@ -3,6 +3,8 @@ import { mediaManager } from 'wix-media-backend';
 import { createHash } from 'crypto';
 
 import { buildBuyerSelectionExcel } from 'backend/buyerSelectionExcel.js';
+import { applyWebQuotations } from 'backend/masterWebQuotationData.js';
+import { isWebQuotationCustomer } from 'backend/webQuotationCustomer.js';
 
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
@@ -87,7 +89,7 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   const access = upper(customer.catalogueAccessStatus || customer.accessStatus || customer.customerStatus);
   if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) throw new Error('This customer account is suspended.');
   const currency = upper(customer.preferredCurrency || customer.tradingCurrency || 'USD');
-  const selections = await allSelectionRecords(id);
+  let selections = await allSelectionRecords(id);
   if (!selections.length) throw new Error('There are no products to export.');
 
 
@@ -105,6 +107,14 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   }
 
 
+  if (isWebQuotationCustomer(customer)) {
+    const quoteRows = await applyWebQuotations(customer, selections.map(({ record, data }) => {
+      const barcode = normalize(data.barcode || data.unitBarcode);
+      const product = byId.get(normalize(data.productId)) || byBarcode.get(barcode) || {};
+      return { ...data, id: record._id, barcode, ea: numberOrBlank(product.ea ?? product.price) };
+    }));
+    selections = quoteRows.map(data => ({ data }));
+  }
   const rows = selections.map(({ data }) => {
     const storedBarcode = normalize(data.barcode || data.unitBarcode);
     const product = byId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};

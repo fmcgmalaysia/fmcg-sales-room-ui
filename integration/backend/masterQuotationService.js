@@ -77,11 +77,12 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       const rows = await selections(customerId);
       if (!rows.length) return { updated: 0, failed: 0 };
       const costs = await readCosts([...new Set(rows.map(row => row.barcode))]);
+      const latest = revisions.latestFor ? await revisions.latestFor(customerId, rows.map(row => row.id)) : null;
       let updated = 0;
       let failed = 0;
       for (const row of rows) {
         try {
-          const last = await revisions.latest(customerId, row.id);
+          const last = latest ? latest.get(row.id) : await revisions.latest(customerId, row.id);
           const previous = last?.snapshot || blank;
           if (previous.pending) { failed++; continue; }
           const cost = rowSnapshot(row, costs?.[row.barcode]);
@@ -125,7 +126,7 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
         if (!price) throw Error('There is no customer quote to withdraw.');
         const version = (previous.published?.version ?? 0) + 1;
         const pending = { customerId, selectionId, barcode: row.barcode, requestId, version, enabled, currency: price.currency,
-          priceEa: price.priceEa, priceCtn: price.priceCtn };
+          priceEa: price.priceEa, priceCtn: price.priceCtn, ...(row.selectionEpoch ? { selectionEpoch: row.selectionEpoch } : {}) };
         intent = await append(customerId, selectionId, revision, requestId, fingerprint, { ...previous, pending });
       }
       const { pending, ...previous } = intent.snapshot;

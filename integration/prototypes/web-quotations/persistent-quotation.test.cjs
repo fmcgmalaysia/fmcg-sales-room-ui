@@ -60,6 +60,27 @@ test('the quotation transport accepts a signed backend request and rejects tampe
   assert.throws(() => createMasterQuoteSender({ endpoint: 'https://example.invalid/my-site-1/_functions/masterWebQuotation' }), /Invalid quotation destination/);
 });
 
+test('the signed read gateway rejects a quote publication proof and exposes only the requested catalogue scope', async () => {
+  const { createFmcgQuotationReader, createMasterQuotationReader, createFmcgQuoteReceiver } = await import(moduleUrl('backend/masterQuoteTransport.js'));
+  const getSecret = async () => 'synthetic-local-quotation-transport-key';
+  let request;
+  const calls = [];
+  const read = createFmcgQuotationReader({ getSecret, read: async input => { calls.push(input); return { customers: [] }; } });
+  const receiver = createFmcgQuoteReceiver({ getSecret, putQuote: () => { throw Error('A read must never write'); } });
+  const sender = createMasterQuotationReader({ endpoint: 'https://www.fmcgmalaysia.com/_functions/masterWebQuotationRead', getSecret,
+    fetch: async (url, options) => {
+      assert.equal(url, 'https://www.fmcgmalaysia.com/_functions/masterWebQuotationRead');
+      request = { headers: options.headers, body: { text: async () => options.body } };
+      const result = await read(request);
+      return { ok: result.status === 200, json: () => JSON.parse(result.body) };
+    }
+  });
+  assert.deepEqual(await sender({ action: 'customers', customerIds: ['QA1'] }), { ok: true, customers: [] });
+  assert.deepEqual(calls.map(call => call.customerIds), [['QA1']]);
+  assert.equal((await receiver(request)).status, 401);
+  await assert.rejects(sender({ action: 'customers' }), /Invalid quotation data request/);
+});
+
 test('Wix quotation read selects the latest row for each product and stops paging once the batch is complete', async () => {
   const pathToRevisionStore = 'backend/masterQuotationRevisionStore.js';
   const { createMasterQuotationWixStore } = await import(moduleUrl('integration/backend/masterQuotationWixStore.js', {
@@ -97,7 +118,7 @@ test('persistent MASTER quotation supplies the FMCG buyer price and resumes with
     import(moduleUrl('integration/backend/masterQuotationService.js', {
       'backend/grossProfitMargin.js': moduleUrl('integration/backend/grossProfitMargin.js')
     })),
-    import(moduleUrl('backend/masterQuoteProjection.js'))
+    import(moduleUrl('backend/masterQuoteProjection.js', { 'backend/webQuotationCustomer.js': moduleUrl('backend/webQuotationCustomer.js') }))
   ]);
   const customer = { customerId: 'CUS-QA-001', preferredCurrency: 'USD', rateToMyr: 4,
     catalogueAccessStatus: 'ACTIVE', quotationMode: 'WEB', webQuotationStatus: 'READY' };

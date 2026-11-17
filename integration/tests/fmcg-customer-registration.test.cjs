@@ -6,8 +6,7 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const vm = require('node:vm');
 const policy = require('./load-master-module.cjs')('staffManagementPolicy.js');
-const { activateWebRegistration, newWebCustomerFields, reserveWebCustomer, patchOnce, patchOnboarding } =
-  require('../prototypes/web-quotations/web-registration.cjs');
+const { patchOnce } = require('../prototypes/web-quotations/web-registration.cjs');
 const { createIsolation, initialState } = require('../prototypes/web-quotations/isolation.cjs');
 const { qaSites, qaRoute } = require('../prototypes/web-quotations/wix-qa-site-pair.cjs');
 
@@ -215,11 +214,16 @@ function registration({ actor = salesperson, additionalOwners = [], loseFirstQdR
     };
     return request;
   }
+  const webCustomer = evaluate('backend/webQuotationCustomer.js', ['isWebQuotationCustomer', 'isWebQuotationReady'], {});
+  const webRegistration = evaluate('backend/webQuotationRegistration.js', ['webQuotationRegistrationEnabled', 'reserveWebQuotationCustomer',
+    'reserveWebQuotationPrimaryUser', 'activateWebQuotationCustomer'], {
+    ...webCustomer, ...client, wixData: fmcg, createHash, getSecret: async () => webRegistrationEnabled ? 'ENABLED' : ''
+  });
   const api = evaluate('sales-room/wix/onboarding.web.js', ['createSalesRoomCustomer', 'verifySalesRoomCustomerQd'], {
     ...client, wixData: fmcg, webMethod: (_, handler) => handler, Permissions: { SiteMember: 'member' },
     getCurrentStaffContext: readStaff, getSecret: async () => 'fixture-qd', httpsRequest,
-    activateWebRegistration, newWebCustomerFields, reserveWebCustomer, webRegistrationEnabled
-  }, webRegistrationEnabled ? patchOnboarding : undefined);
+    ...webCustomer, ...webRegistration
+  });
   return { api, master, fmcg, fmcgWrites, masterWrites, qdRequests, files: qd.files, readStaff, client };
 }
 

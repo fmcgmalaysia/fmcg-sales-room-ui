@@ -11,6 +11,8 @@ import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
 import { createBuyerSelectionMediaDownload } from 'backend/buyerSelectionDownload.js';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { requireStaffCustomerAccess } from 'backend/masterStaffAccessClient.js';
+import { applyWebQuotations, readMasterWebQuotationData } from 'backend/masterWebQuotationData.js';
+import { isWebQuotationCustomer, isWebQuotationReady } from 'backend/webQuotationCustomer.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -169,9 +171,10 @@ function ensureActive(customer) {
   const lifecycle = upper(customer.lifecycleStatus || customer.customerStatus);
   const access = upper(customer.catalogueAccessStatus || customer.accessStatus || customer.customerStatus);
   if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) throw new Error('This customer account is suspended.');
+  if (isWebQuotationCustomer(customer) && !isWebQuotationReady(customer)) throw new Error('Your web quotation workspace is not ready.');
 }
 function contextFromCustomer(customer, actor) {
-  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, actorUserId: normalize(actor.userId), primaryUser: Boolean(actor.primaryUser), currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId) };
+  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, actorUserId: normalize(actor.userId), primaryUser: Boolean(actor.primaryUser), currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId), ...(isWebQuotationCustomer(customer) ? { quotationMode: 'WEB' } : {}) };
 }
 
 function httpsCall(url, options, body = '') {
@@ -239,7 +242,8 @@ async function resolveBuyerContext(assistCustomerId = '', staffAction = 'VIEW') 
   const isPrimary = normalize(customer.primaryUserId) === resolvedUserId || Boolean(user.primaryUser);
   return contextFromCustomer(customer, { email, name: user.title || email, type: 'CUSTOMER_USER', userId: resolvedUserId, primaryUser: isPrimary });
 }
-async function workspaceItems(customerId) {
+async function workspaceItems(buyer) {
+  const { customerId } = buyer;
   let result = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', normalize(customerId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
   const records = [...result.items];
   while (result.hasNext()) { result = await result.next(); records.push(...result.items); }
@@ -258,7 +262,7 @@ async function workspaceItems(customerId) {
     const barcode = normalize(product.barcode);
     if (barcode) byBarcode.set(barcode, product);
   });
-  return rows.map(({ record, data }) => {
+  const selections = rows.map(({ record, data }) => {
     const safeData = { ...data };
     delete safeData.targetGp;
     delete safeData.quoteActorEmail;
@@ -303,6 +307,7 @@ async function workspaceItems(customerId) {
       qtyEditedAt: normalize(data.qtyEditedAt), qtyEditedBy: normalize(data.qtyEditedBy)
     };
   });
+  return buyer.quotationMode === 'WEB' ? applyWebQuotations(await customerById(customerId), selections) : selections;
 }
 
 async function buyerOrderHistory(customerId, cursor = '') {
@@ -412,7 +417,7 @@ export const getBuyerTransactionHistory = webMethod(Permissions.SiteMember, asyn
 export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   const [items, orderPage, customer, userResult, notifications] = await Promise.all([
-    workspaceItems(buyer.customerId),
+    workspaceItems(buyer),
     buyerOrderHistory(buyer.customerId),
     customerById(buyer.customerId),
     wixData.query(CUSTOMER_USER_COLLECTION).eq('customerId', buyer.customerId).limit(100).find({ suppressAuth: true }),
@@ -613,7 +618,14 @@ export const saveBuyerQuantity = webMethod(Permissions.SiteMember, async (itemId
   const row = await findOwnedItem(buyer, itemId);
   if (row.data.removed) throw new Error('Recover this item before entering an order quantity.');
   const requestedQuantity = quantity(quantityCtn);
-  if (requestedQuantity > 0 && !(releasedOrderPrice(row.data) > 0)) throw new Error('Order quantity becomes available after the V.I.P price is released.');
+  if (requestedQuantity > 0) {
+    let item = row.data;
+    if (buyer.quotationMode === 'WEB') {
+      const { customer, selection } = await readMasterWebQuotationData({ action: 'selection', customerId: buyer.customerId, selectionId: normalize(itemId) });
+      item = customer && selection ? (await applyWebQuotations(customer, [selection]))[0] : {};
+    }
+    if (!(releasedOrderPrice(item) > 0)) throw new Error('Order quantity becomes available after the V.I.P price is released.');
+  }
   if (requestedQuantity === quantity(row.data.orderQtyCtn)) return { ok: true, itemId: normalize(itemId), quantityCtn: requestedQuantity, qtyEditedAt: requestedQuantity ? normalize(row.data.qtyEditedAt) : '', qtyEditedBy: requestedQuantity ? normalize(row.data.qtyEditedBy) : '' };
   const now = new Date().toISOString();
   const actor = buyer.actorName || buyer.email;
@@ -692,6 +704,10 @@ export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, 
     normalPriceEa: 0, normalPriceCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, vipPrice: 0,
     quotePerPc: 0, quotePerCtn: 0, pricePerPc: 0, pricePerCtn: 0, previousQuote: null, targetGp: null,
     qdCleanupStatus: 'PENDING', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
+  if (buyer.quotationMode === 'WEB') {
+    await putPayload(BUYER_LIST_COLLECTION, row.record.title, { ...next, qdSyncStatus: '', qdCleanupStatus: '' });
+    return { ok: true, itemId: normalize(itemId), removed: true };
+  }
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
   try {
     await routeQdAction('REMOVE_SELECTION', buyer, row);
@@ -710,6 +726,10 @@ export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId,
   if (row.data.removed && (await activeBuyerSelectionCount(buyer.customerId, buyer.selectionLimit)) >= buyer.selectionLimit) throw new Error(`My Selection is at its ${buyer.selectionLimit}-product limit. Remove an item before restoring this one.`);
   const now = new Date().toISOString();
   let next = { ...row.data, removed: false, recoveredAt: now, requoteRequestedAt: now, quoteStatus: 'RFQ', quoteActive: false, quotePerPc: 0, quotePerCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, orderQtyCtn: 0, qtyEditedAt: '', qtyEditedBy: '', qdSyncStatus: 'PENDING', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
+  if (buyer.quotationMode === 'WEB') {
+    await putPayload(BUYER_LIST_COLLECTION, row.record.title, { ...next, qdSyncStatus: '' });
+    return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ' };
+  }
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
   try {
     const result = await routeQdAction('ADD_SELECTION', buyer, row);
@@ -745,7 +765,7 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
     if (!Array.isArray(stored.pendingLines) || stored.pendingLines.length !== stored.lineCount) throw new Error('Incomplete order requires Sales Room review.');
     return stored.additionVersion === 1 ? finishBuyerAddition(stored, buyer) : finishBuyerOrder(stored, buyer);
   }
-  const list = (await workspaceItems(buyer.customerId)).filter(item => !item.removed);
+  const list = (await workspaceItems(buyer)).filter(item => !item.removed);
   const byId = new Map(list.map(item => [normalize(item.id), item]));
   const lines = requests.map((request, index) => {
     const item = byId.get(normalize(request.itemId));

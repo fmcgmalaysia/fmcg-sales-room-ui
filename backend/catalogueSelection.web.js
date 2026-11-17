@@ -6,6 +6,7 @@ import wixRealtimeBackend from 'wix-realtime-backend';
 import { request as httpsRequest } from 'https';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { requireStaffCustomerAccess, staffMayAccessCustomer } from 'backend/masterStaffAccessClient.js';
+import { isWebQuotationCustomer, isWebQuotationReady } from 'backend/webQuotationCustomer.js';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
@@ -102,7 +103,8 @@ export const addCatalogueSelection = webMethod(
       if (existing.removed && (customerItems || await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length >= context.selectionLimit) {
         throw new Error(`My Selection is at its ${context.selectionLimit}-product limit. Remove an item before restoring this one.`);
       }
-      if (upper(existing.qdSyncStatus) === 'READY' && normalize(item.customerId) === context.customerId && item.removed === false) {
+      if ((context.webQuotation || upper(existing.qdSyncStatus) === 'READY') && normalize(item.customerId) === context.customerId &&
+          item.removed === false && !existing.removed) {
         return Object.freeze({ ok: true, duplicate: true, selection: publicSelection_(item) });
       }
       const queued = {
@@ -114,7 +116,8 @@ export const addCatalogueSelection = webMethod(
         quotePerCtn: 0,
         vipPriceEa: 0,
         vipPriceCtn: 0,
-        qdSyncStatus: 'PENDING'
+        qdSyncStatus: context.webQuotation ? '' : 'PENDING',
+        ...(context.webQuotation ? { recoveredAt: now, requoteRequestedAt: now, orderQtyCtn: 0 } : {})
       };
       item = await wixData.update(
         SELECTION_COLLECTION,
@@ -141,7 +144,7 @@ export const addCatalogueSelection = webMethod(
         selectedByName: context.actorName,
         source: context.actorType === 'STAFF' ? 'SALES_ROOM_ASSIST' : context.actorType === 'ADMIN' ? 'ADMIN_CATALOGUE' : 'BUYER_CATALOGUE',
         qdFileId: context.qdFileId,
-        qdSyncStatus: 'PENDING',
+        qdSyncStatus: context.webQuotation ? '' : 'PENDING',
         qdSyncedAt: '',
         qdRow: 0,
         lastError: ''
@@ -149,7 +152,7 @@ export const addCatalogueSelection = webMethod(
       try {
         item = await wixData.insert(
           SELECTION_COLLECTION,
-          { _id: selectionId, title, customerId: context.customerId, removed: false, qdSyncStatus: 'PENDING', payload: JSON.stringify(payload) },
+          { _id: selectionId, title, customerId: context.customerId, removed: false, qdSyncStatus: payload.qdSyncStatus, payload: JSON.stringify(payload) },
           { suppressAuth: true }
         );
       } catch (error) {
@@ -161,7 +164,7 @@ export const addCatalogueSelection = webMethod(
     await notifySalesRoomSelectionChanged_();
     // Return immediately after CMS persistence and realtime notification.
     // QD routing runs as a separate request and cannot delay buyer feedback.
-    return Object.freeze({ ok: true, queued: true, selection: publicSelection_(item) });
+    return Object.freeze({ ok: true, queued: !context.webQuotation, selection: publicSelection_(item) });
   }
 );
 
@@ -561,8 +564,12 @@ async function resolveSelectionContext_(assistCustomerId, staffAction = 'VIEW') 
   if (lifecycleStatus === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(accessStatus)) {
     throw new Error('Catalogue access is suspended for this customer.');
   }
-  if (upper(customer.qdStatus) !== 'READY' || !normalize(customer.qdFileId)) throw new Error('This customer Quotation Desk is not ready.');
+  const webQuotation = isWebQuotationCustomer(customer);
+  if (webQuotation) {
+    if (!isWebQuotationReady(customer)) throw new Error('This customer web quotation workspace is not ready.');
+  } else if (upper(customer.qdStatus) !== 'READY' || !normalize(customer.qdFileId)) throw new Error('This customer Quotation Desk is not ready.');
   return {
+    webQuotation,
     customerId: normalize(customer.customerId),
     qdFileId: normalize(customer.qdFileId),
     assignedStaffId: upper(customer.assignedStaffId),
