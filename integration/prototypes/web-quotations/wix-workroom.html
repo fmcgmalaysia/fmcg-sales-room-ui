@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="build" content="20261117-master-quotations-wix-v1">
+  <title>Sales Management · Quotations</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <strong>MASTER</strong>
+    <span class="department">Sales Management</span>
+    <div class="header-bottom">
+      <input id="search" type="search" placeholder="Search product or barcode" aria-label="Search products">
+      <span id="staff"></span>
+    </div>
+  </header>
+  <main>
+    <div class="page-title">
+      <h1>Quotations</h1>
+      <label class="customer-control">Customer <select id="customer" disabled></select></label>
+    </div>
+    <p id="notice" role="status" aria-live="polite">Connecting to Sales Management…</p>
+    <section id="content" aria-label="Quotation workroom"></section>
+  </main>
+</body>
+</html>
