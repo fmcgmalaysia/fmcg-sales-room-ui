@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const { start } = require('./server.cjs');
-const evidence = 'C:/FMCG-WIX-LOCAL/handoff/catalogue-and-mobile-20261117/sequential-release-preflight/web-quotations-evidence';
+const evidence = 'C:/FMCG-WIX-LOCAL/handoff/catalogue-and-mobile-20261117/sequential-release-preflight/web-quotations-compact-evidence';
 
 async function main() {
   fs.mkdirSync(evidence, { recursive: true });
@@ -24,6 +24,10 @@ async function main() {
     await waitForText('3 costs updated.');
     const gp = page.getByRole('spinbutton', { name: 'Target GP for Chocolate Cream Biscuits', exact: true });
     await gp.fill('25');
+    const initialEa = page.getByRole('spinbutton', { name: 'Unit price for Chocolate Cream Biscuits', exact: true });
+    assert.equal(await initialEa.inputValue(), '');
+    await page.getByRole('button', { name: 'Apply calculator for Chocolate Cream Biscuits', exact: true }).click();
+    assert.equal(await initialEa.inputValue(), '1');
     await page.getByRole('switch', { name: 'Show quote for Chocolate Cream Biscuits', exact: true }).click();
     await waitForText('Quotation is visible to this customer.');
     assert.equal(await page.getByRole('switch', { name: 'Show quote for Chocolate Cream Biscuits', exact: true }).getAttribute('aria-checked'), 'true');
@@ -38,6 +42,15 @@ async function main() {
         assert.equal(await page.locator('#menu').getAttribute('aria-expanded'), 'true');
         await page.locator('#menu').click();
       }
+      if (width === 1440) {
+        const name = page.getByText('Magiclean Kitchen Cleaner (TP) - Ocean and Love Story Limited Edition', { exact: true });
+        assert(await name.evaluate(element => element.scrollWidth <= element.clientWidth));
+        const handle = page.getByRole('button', { name: 'Move Sparkling Cola', exact: true });
+        await handle.press('Alt+ArrowUp');
+        assert.match(await page.locator('[data-row]').first().innerText(), /Sparkling Cola/);
+        await handle.press('Alt+ArrowDown');
+        assert.match(await page.locator('[data-row]').first().innerText(), /Chocolate Cream Biscuits/);
+      }
       await page.screenshot({ path: path.join(evidence, `quotations-${width}.png`), fullPage: true });
       checks.push({ width, metrics });
     }
@@ -46,6 +59,8 @@ async function main() {
     await price.fill('1.5');
     await page.locator('tr').filter({ has: price }).getByRole('button', { name: 'Update quote', exact: true }).click();
     await waitForText('Quotation is visible to this customer.');
+    const previousPriceRow = page.locator('tr').filter({ has: price });
+    assert.equal(await previousPriceRow.locator('[data-previous-sp]').innerText(), 'USD 12.00');
     await page.locator('#menu').click();
     await page.getByRole('link', { name: 'Buyer Room', exact: true }).click();
     await waitForText('USD 18');
@@ -72,7 +87,7 @@ async function main() {
     await price.fill('');
     qa.state.failure = 'AFTER';
     await page.getByRole('switch', { name: 'Show quote for Chocolate Cream Biscuits', exact: true }).click();
-    await page.waitForFunction(() => document.querySelector('[role=switch]')?.getAttribute('aria-checked') === 'false' && document.querySelector('.quote-label')?.textContent === 'Not shown');
+    await page.waitForFunction(() => document.querySelector('[role=switch]')?.getAttribute('aria-checked') === 'false' && document.querySelector('.quote-label')?.textContent === '');
     assert.equal(await page.getByRole('switch', { name: 'Show quote for Chocolate Cream Biscuits', exact: true }).isDisabled(), true);
     assert.equal(JSON.parse(qa.store.rows('WixBuyerOrderLines')[0].payload).lockedUnitPrice, 18);
     assert.equal(await price.inputValue(), '');

@@ -21,7 +21,7 @@ function initialState() {
   const products = [
     ['0999000000007', 'Chocolate Cream Biscuits', '100 g × 12', 12, 36, 'FOOD'],
     ['0999000000008', 'Sparkling Cola', '320 ml × 24', 24, 48, 'FOOD'],
-    ['0999000000009', 'Botanical Garden Concentrated Laundry Detergent — Fresh Blossom Family Pack', '2 L × 6', 6, 54, 'HOUSEHOLD'],
+    ['0999000000009', 'Magiclean Kitchen Cleaner (TP) - Ocean and Love Story Limited Edition', '2 L × 6', 6, 54, 'HOUSEHOLD'],
     ['0999000000010', 'Oat & Honey Breakfast Biscuits', '180 g × 12', 12, 60, 'FOOD']
   ].map(([barcode, name, description, ea, cost, mainCategory], index) => ({ _id: 'product-' + (index + 1), barcode, name, description, ea, cost, mainCategory, pointBaseStatus: 'ACTIVE', m3Ctn: 0.025 }));
   return {
@@ -129,7 +129,18 @@ function createIsolation({ file, state: provided } = {}) {
     if (lostReply) throw Error('Simulated response lost after writing');
   }
   const service = createQuotationService({ state, save, policy, calculateGrossProfitMargin, selections, customers,
-    readCosts: async barcodes => { state.costRequests.push(barcodes); save(); return structuredClone(state.costs); }, deliver });
+    readCosts: async barcodes => {
+      state.costRequests.push(barcodes); save();
+      return Object.fromEntries(barcodes.filter(barcode => state.costs[barcode]).map(barcode => {
+        const cost = structuredClone(state.costs[barcode]);
+        const product = store.rows('FMCGMALAYSIA').find(item => item.barcode === barcode);
+        if (cost.netCostCtn > 0 && product) cost.details = {
+          lpEa: cost.netCostCtn / product.ea, lpCtn: cost.netCostCtn,
+          disc1: 0, disc2: 0, disc3: 0, remark: product._id === 'product-1' ? '100 FOC 10' : ''
+        };
+        return [barcode, cost];
+      }));
+    }, deliver });
   function buyerApi(customerId) {
     if (!customers().some(customer => customer.customerId === customerId)) throw Error('Unknown QA customer');
     const globals = { wixData: store, webMethod: (_, run) => run, Permissions: { SiteMember: 'member' },

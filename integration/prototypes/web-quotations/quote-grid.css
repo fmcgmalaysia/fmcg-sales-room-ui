@@ -1,0 +1,204 @@
+.quote-grid {
+  overflow-x: auto;
+}
+
+.quote-grid table {
+  min-width: 1370px;
+}
+
+.quote-grid :is(th, td) {
+  width: auto;
+  padding: 3px 5px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.quote-grid th {
+  padding-block: 7px;
+}
+
+.quote-grid th small {
+  margin-top: 2px;
+}
+
+.quote-grid td {
+  height: 44px;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-grid .product-name {
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.quote-grid :is(.barcode, .packing, .cost-cell small) {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.quote-grid .image-cell, .quote-grid .row-number {
+  text-align: center;
+}
+
+.quote-grid .demo-thumb {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 36px;
+  font-size: 21px;
+}
+
+.quote-grid .move-row {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  min-height: 25px;
+  width: 17px;
+  font-size: 19px;
+  cursor: grab;
+}
+
+.quote-grid .inline-ea {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.quote-grid input[type=number] {
+  min-width: 0;
+  min-height: 21px;
+  padding: 1px 4px;
+  font-size: 11px;
+  border-radius: 3px;
+  appearance: textfield;
+}
+
+.quote-grid input::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+.quote-grid .calc-cell {
+  background: #eef5fc;
+}
+
+.quote-grid .calc-cell label {
+  display: grid;
+  gap: 2px;
+  color: #486780;
+  font-size: 9px;
+}
+
+.quote-grid .quote-actions {
+  gap: 3px;
+}
+
+.quote-grid .update {
+  min-height: 16px;
+  padding: 1px 4px;
+  font-size: 9px;
+}
+
+.quote-grid .calc-cell .update {
+  min-height: 23px;
+  font-size: 10px;
+}
+
+.quote-grid .switch {
+  width: 30px;
+  height: 17px;
+  min-height: 17px;
+  padding: 2px;
+}
+
+.quote-grid .switch::before {
+  width: 13px;
+  height: 13px;
+}
+
+.quote-grid .switch[aria-checked=true]::before {
+  transform: translateX(13px);
+}
+
+.quote-pages {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@media (min-width: 601px) {
+  main:has(.quote-grid) {
+    max-width: none;
+    padding: 12px;
+  }
+
+  main:has(.quote-grid) .page-title {
+    margin-bottom: 10px;
+  }
+
+  main:has(.quote-grid) .toolbar {
+    padding: 5px 9px;
+  }
+}
+
+@media (max-width: 600px) {
+  .quote-grid {
+    overflow: visible;
+  }
+
+  .quote-grid table {
+    min-width: 0;
+  }
+
+  .quote-grid colgroup {
+    display: none;
+  }
+
+  .quote-grid td, .quote-grid td:first-child {
+    height: auto;
+    padding: 6px 9px;
+    font-size: 12px;
+    background: transparent;
+    border: 0;
+  }
+
+  .quote-grid .move-cell {
+    display: none;
+  }
+
+  .quote-grid .row-number, .quote-grid .image-cell {
+    text-align: left;
+  }
+
+  .quote-grid .desc-cell {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .quote-grid .product-name {
+    white-space: normal;
+    font-size: 13px;
+  }
+
+  .quote-grid input[type=number] {
+    min-height: 40px;
+    font-size: 16px;
+  }
+
+  .quote-grid .calc-cell label {
+    font-size: 12px;
+  }
+
+  .quote-grid .update, .quote-grid .calc-cell .update {
+    min-height: 44px;
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  .quote-grid .switch {
+    margin: 12px 7px 12px 0;
+  }
+}

@@ -68,6 +68,10 @@ function createQuotationService({ state, save, policy, calculateGrossProfitMargi
     const pending = row.pending;
     if (!pending) return;
     await deliver(copy(pending.packet));
+    if (pending.published.enabled && row.published?.priceCtn > 0 &&
+        (row.published.priceCtn !== pending.published.priceCtn || row.published.currency !== pending.published.currency)) {
+      row.previousSp = { priceCtn: row.published.priceCtn, currency: row.published.currency };
+    }
     row.published = pending.published;
     row.pending = null;
     row.revision++;
@@ -97,6 +101,7 @@ function createQuotationService({ state, save, policy, calculateGrossProfitMargi
             failed++;
           } else {
             row.costMyr = cost.netCostCtn;
+            row.costDetails = cost.details || null;
             row.costAt = cost.at;
             row.costError = '';
             if (row.draft) row.draft = pricing(row, customer, row.draft);

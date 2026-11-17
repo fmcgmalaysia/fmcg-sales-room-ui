@@ -47,7 +47,8 @@ function start({ port = 8896, file = path.join(__dirname, '.qa-state.json') } = 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         return res.end(JSON.stringify(result));
       }
-      const files = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
+      const files = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'],
+        '/quote-grid.css': ['quote-grid.css', 'text/css'] };
       const fileInfo = files[url.pathname];
       if (!fileInfo) { res.writeHead(404); return res.end(); }
       res.writeHead(200, { 'Content-Type': fileInfo[1] + '; charset=utf-8' });
