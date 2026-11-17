@@ -61,9 +61,11 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
 
   return {
     async list({ customer }) {
-      const rows = await selections(customer.customerId);
+      const { customerId } = customer;
+      const rows = await selections(customerId);
+      const batched = revisions.latestFor ? await revisions.latestFor(customerId, rows.map(row => row.id)) : null;
       return Promise.all(rows.map(async row => {
-        const last = await revisions.latest(customer.customerId, row.id);
+        const last = batched ? batched.get(row.id) : await revisions.latest(customerId, row.id);
         const { pending, ...snapshot } = last?.snapshot || blank;
         return { id: row.id, barcode: row.barcode, name: row.name, packing: row.packing, ea: row.ea, imageUrl: row.imageUrl,
           ...snapshot, pending: Boolean(pending), revision: last?.revision ?? 0 };

@@ -27,6 +27,37 @@ function privateCollection(sortField) {
   };
 }
 
+test('Wix quotation read selects the latest row for each product and stops paging once the batch is complete', async () => {
+  const pathToRevisionStore = 'backend/masterQuotationRevisionStore.js';
+  const { createMasterQuotationWixStore } = await import(moduleUrl('integration/backend/masterQuotationWixStore.js', {
+    [pathToRevisionStore]: moduleUrl('integration/' + pathToRevisionStore)
+  }));
+  const page1 = [7, 6, 5].map(revision => ({ customerId: 'QA1', selectionId: 'P01', revision }));
+  const page2 = [{ customerId: 'QA1', selectionId: 'P02', revision: 3 }];
+  const reads = [];
+  const filters = [];
+  let additional = 0;
+  const fluent = {
+    eq: (key, value) => { filters.push([key, value]); return fluent; },
+    hasSome: (key, values) => { filters.push([key, values]); return fluent; },
+    descending: field => { assert.equal(field, 'revision'); return fluent; },
+    limit: size => { assert.equal(size, 1000); return fluent; },
+    find: async options => {
+      reads.push(options);
+      return { items: page1, hasNext: () => true, next: async () => {
+        additional++;
+        return { items: page2, hasNext: () => true, next: async () => { throw Error('Do not fetch a page after collecting all products'); } };
+      } };
+    }
+  };
+  const store = createMasterQuotationWixStore({ query: name => { assert.equal(name, 'PrivateQuotationRevisions'); return fluent; } }, 'PrivateQuotationRevisions');
+  const latest = await store.latestFor('QA1', ['P01', 'P02', 'P02']);
+  assert.deepEqual(filters, [['customerId', 'QA1'], ['selectionId', ['P01', 'P02']]]);
+  assert.deepEqual(reads, [{ suppressAuth: true, consistentRead: true }]);
+  assert.equal(additional, 1);
+  assert.deepEqual([...latest.values()].map(row => row.revision), [7, 3]);
+});
+
 test('persistent MASTER quotation supplies the FMCG buyer price and resumes with the same request after a lost network response', async t => {
   const [{ createMasterQuotationRevisionStore }, { createMasterQuotationService }, { createMasterQuoteProjection, presentMasterQuote }] = await Promise.all([
     import(moduleUrl('integration/backend/masterQuotationRevisionStore.js')),
