@@ -38,8 +38,15 @@ export function connectMasterQuotationFrame(frame, run) {
         return;
       }
       frame.postMessage({ ...envelope, ok: true, result });
-    } catch {
-      frame.postMessage({ ...envelope, ok: false, error: 'The quotation action could not be confirmed.' });
+    } catch (error) {
+      if (action === 'cost') {
+        const code = String(error?.code || '');
+        console.warn('MASTER_QUOTATION_CATCH_COST_UNCONFIRMED', requestId,
+          /^[A-Z][A-Z0-9_]{2,63}$/.test(code) ? code : 'UNKNOWN');
+      }
+      frame.postMessage({ ...envelope, ok: false, error: action === 'cost'
+        ? 'Catch Cost did not return a confirmed result. Check the refreshed rows before retrying.'
+        : 'The quotation action could not be confirmed.' });
     }
   });
 }

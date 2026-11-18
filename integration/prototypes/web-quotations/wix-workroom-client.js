@@ -117,9 +117,10 @@ function quoteResumeButton(row) {
   return current.canEdit && current.canPublish !== false && publicationAttempts.has(key(row.id))
     ? '<button class="update primary" data-action="resume">Confirm status</button>' : '';
 }
-function message(value = '', error = false) {
+function message(value = '', error = false, warning = false) {
   $('#notice').textContent = value;
   $('#notice').classList.toggle('error', error);
+  $('#notice').classList.toggle('cost-warning', warning);
 }
 
 function productImage(value) {
@@ -321,7 +322,8 @@ content.addEventListener('click', async event => {
   try {
     if (button.id === 'catch-cost') {
       const result = await api('cost', {}, context);
-      message(`${result.updated} costs updated${result.failed ? ` · ${result.failed} could not be confirmed` : ''}.`, result.failed > 0);
+      message(`Catch Cost: ${result.updated} updated · ${result.failed} failed.`,
+        result.failed > 0 && result.updated === 0, result.failed > 0 && result.updated > 0);
     } else if (action === 'draft') {
       await saveDraft(row, context);
       message('Draft saved.');

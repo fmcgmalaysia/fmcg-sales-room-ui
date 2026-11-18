@@ -499,6 +499,11 @@
   font-size: 12px;
 }
 
+.wix-quotation-workroom #notice.cost-warning {
+  color: #795000;
+  background: #fff2dc;
+}
+
 @media (min-width: 601px) {
   .wix-quotation-workroom {
     display: flex;

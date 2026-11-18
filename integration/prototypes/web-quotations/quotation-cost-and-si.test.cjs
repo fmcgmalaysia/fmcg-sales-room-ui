@@ -7,6 +7,31 @@ const firstBarcode = '0999000000007';
 const secondBarcode = '0999000000008';
 const customerId = 'QA-A';
 
+test('all six carton-only prices refresh without altering published quotes', async () => {
+  const { calculateNetCartonCost, calculateGrossProfitMargin } = load('integration/backend/grossProfitMargin.js',
+    ['calculateNetCartonCost', 'calculateGrossProfitMargin']);
+  const { createMasterQuotationService } = load('integration/backend/masterQuotationService.js',
+    ['createMasterQuotationService'], { createHash, randomUUID, calculateNetCartonCost, calculateGrossProfitMargin });
+  const cartons = [33.70, 55.70, 55.70, 55.70, 40, 40];
+  const rows = cartons.map((_, i) => ({ customerId, id: 'SEL-' + i, barcode: String(1000000000000 + i) }));
+  const published = { enabled: true, priceEa: 3, priceCtn: 72, currency: 'USD', version: 3 };
+  const saved = [];
+  const service = createMasterQuotationService({
+    revisions: { latest: async () => ({ revision: 1, snapshot: { published } }), append: async ({ snapshot }) => saved.push(snapshot) },
+    readSelections: async () => rows,
+    readCosts: async () => Object.fromEntries(rows.map((row, i) => [row.barcode, {
+      unitBarcode: row.barcode, costCurrency: 'MYR', costStatus: 'CAPTURED', capturedAt: '2026-11-18T08:05:00Z',
+      lpPc: null, lpCtn: cartons[i], eaPerCtn: 24, disc1: 0, disc2: 0, disc3: 0
+    }])),
+    deliver: () => assert.fail('Cost refresh may not change published prices')
+  });
+  const result = await service.catchCost({ staffId: 'QA-SALES', customer: { customerId } });
+  assert.deepEqual({ ...result }, { updated: 6, failed: 0 });
+  assert.deepEqual(saved.map(row => row.costMyr), cartons);
+  assert.deepEqual(saved.map(row => row.costDetails.lpEa), cartons.map(cost => cost / 24));
+  assert(saved.every(row => row.published === published));
+});
+
 test('Last SP reads the matching customer and product from issued SI snapshots across both companies', async () => {
   const operationId = (...value) => JSON.stringify(value);
   const { FULFILMENT_ACTION, readCustomerShipments } = load('integration/backend/customerShipmentLedger.js',
