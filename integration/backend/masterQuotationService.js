@@ -36,6 +36,7 @@ function rowSnapshot(row, cost) {
   if (!positive(costMyr)) return { costError: 'Point Base cost unavailable. Previous cost retained.' };
   return { costMyr, costAt: cost.capturedAt, costError: '', costDetails: {
     lpEa: cost.lpPc, lpCtn: cost.lpCtn, disc1: cost.disc1 * 100, disc2: cost.disc2 * 100, disc3: cost.disc3,
+    ...(typeof cost.priceStale === 'boolean' ? { priceStale: cost.priceStale } : {}),
     remark: typeof cost.note === 'string' ? cost.note.slice(0, 160) : ''
   } };
 }
@@ -71,6 +72,7 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
           snapshot.published = { ...snapshot.published, enabled: false };
         }
         return { id: row.id, barcode: row.barcode, name: row.name, packing: row.packing, ea: row.ea, imageUrl: row.imageUrl,
+          ...(row.sortId ? { sortId: row.sortId } : {}),
           ...snapshot, pending: Boolean(pending), revision: last?.revision ?? 0 };
       }));
     },
@@ -150,6 +152,8 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       const { priceEa, priceCtn, currency, version } = pending;
       const visible = enabled && receipt.superseded !== true;
       const published = { priceEa, priceCtn, currency, version, enabled: visible,
+        ...(visible && typeof receipt.publishedAt === 'string' && Number.isFinite(Date.parse(receipt.publishedAt))
+          ? { publishedAt: receipt.publishedAt } : {}),
         ...(pending.selectionEpoch ? { selectionEpoch: pending.selectionEpoch } : {}) };
       const priorPrice = previous.published;
       const previousSp = visible && priorPrice?.enabled && Number.isFinite(priorPrice.priceCtn) &&

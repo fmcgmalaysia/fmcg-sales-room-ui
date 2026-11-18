@@ -38,13 +38,30 @@ const inputValue = number => Number.isFinite(number) ? number : '';
 function calculatorInput(row) {
   return calculator.get(key(row.id)) || (row.draft?.mode === 'GP' ? row.draft : null);
 }
-function labeledValue(label, value) {
-  return `<div class="quote-value"><span class="quote-unit">${label}</span><span>${value}</span></div>`;
+function labeledValue(label, value, tone = '') {
+  return `<div class="quote-value"><span class="quote-unit">${label}</span><span class="${tone}">${value}</span></div>`;
+}
+function gpTone(gp) {
+  if (!Number.isFinite(gp)) return '';
+  const margin = Number(gp.toFixed(2));
+  return margin < 8 ? 'gp-risk' : margin > 8 ? 'gp-healthy' : '';
 }
 function profit(row, price) {
   const known = price && Number.isFinite(row.costMyr);
-  return labeledValue('GP', known ? fixed(price.gp) + '%' : '—') +
+  return labeledValue('GP', known ? fixed(price.gp) + '%' : '—', known ? gpTone(price.gp) : '') +
     labeledValue('CTN', known ? fixed(price.priceCtn * current.customer.rateToMyr - row.costMyr) : '—');
+}
+function riskCount() {
+  return current.rows.filter(row => gpTone(draftPrice(row)?.gp) === 'gp-risk').length;
+}
+function quoteDate(value, withTime = false) {
+  if (!value || !Number.isFinite(Date.parse(value))) return '';
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kuala_Lumpur', day: '2-digit', month: '2-digit', year: '2-digit',
+    ...(withTime ? { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' } : {})
+  }).formatToParts(new Date(value));
+  const { day, month, year, hour, minute } = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${day}-${month}-${year}${withTime ? ` ${hour}:${minute}` : ''}`;
 }
 function dirty(row) {
   const input = drafts[key(row.id)];
@@ -70,17 +87,17 @@ function quoteRow(row, number) {
     <td class="row-number">${String(number).padStart(4, '0')}</td>
     <td class="image-cell"><span class="demo-thumb" aria-label="Sample product icon">${placeholder}</span></td>
     <td class="desc-cell"><span class="barcode">${escapeHtml(row.barcode)}</span><div class="product-name">${desc}</div><span class="packing">${escapeHtml(row.packing)}</span></td>
-    <td class="previous-sp"><span class="mobile-label">Previous SP</span><span data-previous-sp>${previous ? 'CTN: ' + previousCurrency + fixed(previous.priceCtn) : ''}</span></td>
+    <td class="previous-sp"><span class="mobile-label">Last SP</span><span data-previous-sp>${previous ? previousCurrency + fixed(previous.priceCtn) + ' / CTN' : ''}</span><small>${quoteDate(previous?.siDate)}</small></td>
     <td><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><label class="quote-value"><span class="quote-unit">EA</span><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" value="${inputValue(price?.priceEa)}" ${disabled ? 'disabled' : ''}></label>${labeledValue('CTN', `<span data-carton>${fixed(price?.priceCtn)}</span>`)}</td>
     <td><span class="mobile-label">Profit · MYR</span><span data-profit>${profit(row, price)}</span></td>
     <td><span class="mobile-label">List cost · MYR</span>${labeledValue('EA', fixed(details.lpEa))}${labeledValue('CTN', fixed(details.lpCtn))}</td>
     <td class="disc-cell"><span class="mobile-label">Discounts</span>${labeledValue('Disc 1', Number.isFinite(details.disc1) ? fixed(details.disc1) + '%' : '—')}${labeledValue('Disc 2', Number.isFinite(details.disc2) ? fixed(details.disc2) + '%' : '—')}${labeledValue('Disc 3', fixed(details.disc3))}</td>
-    <td class="cost-cell"><span class="mobile-label">Net cost · MYR per CTN</span><b>${fixed(row.costMyr)}</b><small class="${row.costError ? 'warning' : ''}" title="${escapeHtml(row.costError || row.costAt || '')}">${row.costError ? 'Check cost' : row.costAt ? 'Caught' : 'Awaiting cost'}</small></td>
-    <td><span class="mobile-label">Remark</span>${escapeHtml(details.remark || '—')}</td>
-    <td><span class="mobile-label">Customer quote</span><div class="quote-actions"><button role="switch" aria-label="Show quote for ${desc}" aria-checked="${visible}" class="switch" data-action="toggle" ${disabled || (!visible && (!price || row.costMyr === null)) ? 'disabled' : ''}></button><span class="quote-label">${row.pending ? 'Confirming…' : visible ? fixed(row.published.priceCtn) : ''}</span></div>
+    <td class="cost-cell"><span class="mobile-label">Net cost · MYR per CTN</span><b class="${details.priceStale === true && Number.isFinite(row.costMyr) ? 'stale-cost' : ''}"${details.priceStale === true ? ' title="Point Base price needs verification"' : ''}>${fixed(row.costMyr)}</b><small class="${row.costError ? 'warning' : ''}" title="${escapeHtml(row.costError || row.costAt || '')}">${row.costError ? 'Check cost' : row.costAt ? '' : 'Awaiting cost'}</small></td>
+    <td class="remark-cell"><span class="mobile-label">Remark</span>${escapeHtml(details.remark || '—')}</td>
+    <td><span class="mobile-label">View Quote</span><div class="quote-actions"><button role="switch" aria-label="Show quote for ${desc}" aria-checked="${visible}" class="switch" data-action="toggle" ${disabled || (!visible && (!price || row.costMyr === null)) ? 'disabled' : ''}></button><span class="quote-label">${row.pending ? 'Confirming…' : visible ? quoteDate(row.published.publishedAt) : ''}</span></div>
     <div class="quote-actions quote-edits"><button class="update" data-action="draft" ${disabled || !dirty(row) || !price ? 'disabled' : ''}>Save draft</button>${visible ? `<button class="update primary" data-action="publish" ${disabled || !quoteChanged(row) ? 'disabled' : ''}>Update quote</button>` : ''}</div></td>
-    <td class="calc-cell"><span class="mobile-label">Target GP</span><input aria-label="Target GP for ${desc}" data-calc="GP" type="number" step="any" placeholder="00.00%" value="${inputValue(target?.mode === 'GP' ? target.value : Number.isFinite(suggestion?.gp) ? fixed(suggestion.gp) : null)}" ${disabled ? 'disabled' : ''}></td>
-    <td class="calc-cell"><span class="mobile-label">Target SP · EA</span><input aria-label="Target unit price for ${desc}" data-calc="EA" type="number" step="any" placeholder="000.00" value="${target?.mode === 'EA' ? inputValue(target.value) : suggestion ? fixed(suggestion.priceEa) : ''}" ${disabled ? 'disabled' : ''}></td>
+    <td class="calc-cell"><span class="mobile-label">Margin</span><input aria-label="Target margin for ${desc}" data-calc="GP" type="number" step="1" placeholder="0%" value="${inputValue(target?.mode === 'GP' ? target.value : Number.isFinite(suggestion?.gp) ? Math.round(suggestion.gp) : null)}" ${disabled ? 'disabled' : ''}></td>
+    <td class="calc-cell"><span class="mobile-label">Selling</span><input aria-label="Target unit price for ${desc}" data-calc="EA" type="number" step="any" placeholder="0.00" value="${target?.mode === 'EA' ? inputValue(target.value) : suggestion ? fixed(suggestion.priceEa) : ''}" ${disabled ? 'disabled' : ''}></td>
     <td class="calc-cell"><button type="button" class="update primary" data-action="apply" aria-label="Apply calculator for ${desc}" ${disabled || !suggestion ? 'disabled' : ''}>Apply</button></td>
   </tr>`;
 }
@@ -93,10 +110,18 @@ function renderQuotes() {
   const search = $('#search').value.toLowerCase();
   const rows = quoteRows().filter(row => [row.name, row.barcode, row.packing, row.costDetails?.remark].join(' ').toLowerCase().includes(search));
   const currency = current.customer.preferredCurrency;
-  content.innerHTML = `<div class="toolbar"><div class="toolbar-meta"><span class="currency">${currency}</span><span class="muted">${current.rows.length} products · 1 ${currency} = MYR ${format(current.customer.rateToMyr)}</span></div><button class="primary" id="catch-cost" ${busy || !current.canEdit || !current.rows.length ? 'disabled' : ''}>${busy ? 'Working…' : 'Catch Cost'}</button></div>` + (rows.length ? `
-    <div class="table-wrap quote-grid"><table><colgroup>${[27, 38, 40, '', 79, 99, 84, 82, 89, 76, 86, 115, 66, 68, 53].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
-    <thead><tr><th rowspan="2" aria-label="Move"></th><th rowspan="2">Row</th><th rowspan="2">Image</th><th rowspan="2">Descriptions</th><th rowspan="2">Previous SP<small>${currency} · CTN</small></th><th rowspan="2">SP ${currency}</th><th rowspan="2">Profit<small>MYR</small></th><th rowspan="2">List Cost<small>MYR</small></th><th rowspan="2">Disc</th><th rowspan="2">Net Cost<small>MYR · CTN</small></th><th rowspan="2">Remark</th><th rowspan="2">Customer Quote</th><th class="calc-cell calc-group" colspan="3">Calculator</th></tr>
-    <tr class="calc-headings"><th class="calc-cell">Target GP</th><th class="calc-cell">Target SP<small>${currency} · EA</small></th><th class="calc-cell" aria-label="Apply"></th></tr></thead>
+  const quoted = current.rows.filter(row => row.published?.enabled).length;
+  const risk = riskCount();
+  const latestCost = current.rows.reduce((latest, row) => Date.parse(row.costAt) > Date.parse(latest) ||
+    (!latest && Number.isFinite(Date.parse(row.costAt))) ? row.costAt : latest, '');
+  const customerName = escapeHtml(current.customer.fullName || current.customer.name || $('#customer').selectedOptions[0]?.textContent || '');
+  content.innerHTML = `<div class="toolbar quote-summary"><div>
+    <div class="quote-customer"><h2>${customerName}</h2><span class="currency">${currency}</span></div>
+    <div class="toolbar-meta"><span class="muted">Current FX &nbsp; 1 ${currency} = MYR ${format(current.customer.rateToMyr)}</span><span class="muted">Last Cost Refresh &nbsp; ${quoteDate(latestCost, true) || '—'}</span><button class="primary" id="catch-cost" ${busy || !current.canEdit || !current.rows.length ? 'disabled' : ''}>${busy ? 'Working…' : 'Catch Cost'}</button></div>
+    </div><dl class="quote-counts"><div><dt>Total Selected</dt><dd>${current.rows.length}</dd></div><div><dt>Quoted</dt><dd>${quoted}</dd></div><div><dt>Awaiting Quote</dt><dd>${current.rows.length - quoted}</dd></div><div><dt>High-Risk Quotes</dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl></div>` + (rows.length ? `
+    <div class="table-wrap quote-grid"><table><colgroup>${[24, 34, 35, '', 77, 86, 72, 70, 73, 66, 156, 89, 45, 48, 42].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
+    <thead><tr><th rowspan="2" aria-label="Move"></th><th rowspan="2">Row</th><th rowspan="2">Image</th><th rowspan="2">Descriptions</th><th class="quote-left" rowspan="2">Last SP</th><th class="quote-left" rowspan="2">Selling Price</th><th class="quote-left" rowspan="2">Profit<small>MYR</small></th><th rowspan="2">List Cost<small>MYR</small></th><th rowspan="2">Disc</th><th rowspan="2">Net Cost<small>MYR · CTN</small></th><th rowspan="2">Remark</th><th rowspan="2">View Quote</th><th class="calc-cell calc-group" colspan="3">Target Profit Calculator</th></tr>
+    <tr class="calc-headings"><th class="calc-cell">Margin</th><th class="calc-cell">Selling</th><th class="calc-cell" aria-label="Apply"></th></tr></thead>
     <tbody>${rows.map((row, index) => quoteRow(row, index + 1)).join('')}</tbody></table></div>` :
     `<div class="empty">${current.rows.length ? 'No matching products.' : 'Products selected in Catalogue appear here.'}<br><button data-go="catalogue">Open Catalogue</button></div>`);
 }
@@ -147,6 +172,10 @@ function editPrice(row, tr, next, updateEa = false) {
   if (updateEa) tr.querySelector('[data-mode=EA]').value = inputValue(price?.priceEa);
   tr.querySelector('[data-carton]').textContent = fixed(price?.priceCtn);
   tr.querySelector('[data-profit]').innerHTML = profit(row, price);
+  const risk = riskCount();
+  const count = $('#quote-risk-count');
+  count.textContent = risk;
+  count.classList.toggle('gp-risk', Boolean(risk));
   tr.classList.toggle('row-dirty', dirty(row));
   tr.querySelector('[data-action=draft]').disabled = !dirty(row) || !price;
   tr.querySelector('[data-action=toggle]').disabled = !row.published?.enabled && (!price || row.costMyr === null);
@@ -158,7 +187,8 @@ content.addEventListener('input', event => {
   if (!input || input.disabled || busy) return;
   const tr = input.closest('[data-row]');
   const row = current.rows.find(row => row.id === tr.dataset.row);
-  const value = input.value === '' ? null : Number(input.value);
+  const value = input.value === '' ? null : input.dataset.calc === 'GP' ? Math.trunc(Number(input.value)) : Number(input.value);
+  if (input.dataset.calc === 'GP' && value !== null && Number(input.value) !== value) input.value = value;
   if (input.dataset.mode) {
     editPrice(row, tr, { mode: 'EA', value });
     return;
@@ -168,7 +198,7 @@ content.addEventListener('input', event => {
   const price = draftPrice(row, next);
   const other = tr.querySelector(`[data-calc=${next.mode === 'GP' ? 'EA' : 'GP'}]`);
   const calculated = next.mode === 'GP' ? price?.priceEa : price?.gp;
-  other.value = Number.isFinite(calculated) ? fixed(calculated) : '';
+  other.value = Number.isFinite(calculated) ? next.mode === 'GP' ? fixed(calculated) : Math.round(calculated) : '';
   tr.querySelector('[data-action=apply]').disabled = !price;
 });
 function moveQuoteRow(from, to) {

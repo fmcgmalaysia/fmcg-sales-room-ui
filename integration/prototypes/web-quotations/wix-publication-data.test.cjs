@@ -16,6 +16,8 @@ test('an active legacy status cannot override suspension of a web quotation acco
 test('normal Catalogue and Buyer handlers share signed web prices with the existing Excel generator and order snapshots', async () => {
   const state = initialState();
   const wixData = createStore(state, () => {});
+  const product = await wixData.get('FMCGMALAYSIA', 'product-1');
+  await wixData.update('FMCGMALAYSIA', { ...product, pointBaseSortId: 'FO-00002' });
   const ready = load('backend/webQuotationCustomer.js', ['isWebQuotationCustomer', 'isWebQuotationReady']);
   const projection = load('backend/masterQuoteProjection.js', ['createMasterQuoteProjection', 'presentMasterQuote'], { createHash, ...ready });
   const data = load('backend/masterWebQuotationData.js', ['acceptMasterWebQuotation', 'applyWebQuotations', 'readMasterWebQuotationData'], {
@@ -36,6 +38,7 @@ test('normal Catalogue and Buyer handlers share signed web prices with the exist
   const { selection: { id: selectionId, unitBarcode: barcode } } = await addCatalogueSelection('product-1');
   const read = await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-A', selectionId });
   assert.equal(read.selection.ea, 12);
+  assert.equal(read.selection.sortId, 'FO-00002');
   assert.equal((await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-B', selectionId })).selection, null);
   const price = { customerId: 'QA-A', selectionId, barcode, requestId: randomUUID(), version: 1,
     currency: 'USD', enabled: true, priceEa: 1.6, priceCtn: 19.2 };

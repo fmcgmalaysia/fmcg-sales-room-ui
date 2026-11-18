@@ -10,16 +10,25 @@ let current = null;
 let staffId = '';
 let generation = 0;
 let busy = false;
-let dragging = '';
 let drafts = {};
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, value =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[value]);
 const format = value => value == null ? '—' : new Intl.NumberFormat('en', { maximumFractionDigits: 6 }).format(value);
 const customerId = () => $('#customer').value;
-const scope = () => JSON.stringify([staffId, customerId()]);
 const key = id => JSON.stringify([staffId, customerId(), id]);
 const requestId = () => crypto.randomUUID();
+const compareSortIds = new Intl.Collator('en', { numeric: true, sensitivity: 'base' }).compare;
+
+function quoteRows() {
+  const withSortId = [];
+  const withoutSortId = [];
+  for (const row of current.rows) {
+    (row.sortId ? withSortId : withoutSortId).push(row);
+  }
+  withSortId.sort((left, right) => compareSortIds(left.sortId, right.sortId));
+  return withSortId.concat(withoutSortId);
+}
 
 function readStorage(name, fallback) {
   try { return JSON.parse(localStorage.getItem('master-quotations-v1:' + name)) ?? fallback; }
@@ -123,8 +132,63 @@ async function initialize() {
   } catch (error) { message(error.message, true); }
 }
 
-$('#customer').onchange = () => { message(); $('#search').value = ''; refresh(); };
-$('#search').oninput = () => { if (current && !busy) renderQuotes(); };
+$('#customer').onchange = () => { message(); refresh(); };
+
+function hideChangedQuote(tr) {
+  if (!tr || busy || current?.canPublish === false) return;
+  const row = current?.rows.find(item => item.id === tr.dataset.row);
+  const next = row && drafts[key(row.id)];
+  if (row?.published?.enabled && next && next.value !== row.published.priceEa) {
+    tr.querySelector('[data-action=toggle]').click();
+  }
+}
+
+content.addEventListener('change', event => {
+  const price = event.target.closest('[data-mode=EA]');
+  if (price) hideChangedQuote(price.closest('[data-row]'));
+});
+
+content.addEventListener('focusin', event => {
+  const field = event.target.closest('[data-calc]');
+  if (field && !field.disabled) {
+    field.dataset.beforeFocus = field.value;
+    field.value = '';
+  }
+});
+
+content.addEventListener('focusout', event => {
+  const field = event.target.closest('[data-calc]');
+  if (field?.dataset.beforeFocus !== undefined) {
+    if (!field.value) field.value = field.dataset.beforeFocus;
+    delete field.dataset.beforeFocus;
+  }
+});
+
+content.addEventListener('input', event => {
+  if (event.target.matches('[data-calc]')) delete event.target.dataset.beforeFocus;
+});
+
+content.addEventListener('keydown', event => {
+  const field = event.target.closest('[data-mode=EA], [data-calc]');
+  if (!field || field.disabled || event.altKey || event.ctrlKey || event.metaKey) return;
+  const tr = field.closest('[data-row]');
+  if (event.key === 'Enter' && field.dataset.mode === 'EA') {
+    event.preventDefault();
+    if (field.value) field.value = fixed(Number(field.value));
+    hideChangedQuote(tr);
+    return;
+  }
+  const vertical = ['ArrowUp', 'ArrowDown'].includes(event.key);
+  const horizontal = ['ArrowLeft', 'ArrowRight'].includes(event.key);
+  if (!vertical && !(horizontal && field.dataset.calc)) return;
+  event.preventDefault();
+  const target = vertical
+    ? (event.key === 'ArrowUp' ? tr.previousElementSibling : tr.nextElementSibling)?.querySelector(
+        field.dataset.calc ? `[data-calc=${field.dataset.calc}]` : '[data-mode=EA]')
+    : event.key === 'ArrowLeft' && field.dataset.calc === 'EA' ? tr.querySelector('[data-calc=GP]')
+      : event.key === 'ArrowRight' && field.dataset.calc === 'GP' ? tr.querySelector('[data-calc=EA]') : null;
+  if (target && !target.disabled) target.focus();
+});
 
 content.addEventListener('click', async event => {
   const button = event.target.closest('button');
@@ -133,7 +197,12 @@ content.addEventListener('click', async event => {
   const action = button.dataset.action;
   if (action === 'apply' && row) {
     const input = calculatorInput(row);
-    if (input && draftPrice(row, input)) editPrice(row, button.closest('[data-row]'), input, true);
+    const price = input && draftPrice(row, input);
+    if (price) {
+      const tr = button.closest('[data-row]');
+      editPrice(row, tr, { mode: 'EA', value: price.priceEa }, true);
+      hideChangedQuote(tr);
+    }
     return;
   }
   if (!row && button.id !== 'catch-cost') return;

@@ -24,7 +24,7 @@ async function main() {
     assert.equal(await page.locator('#company').isVisible(), false);
     await page.getByRole('button', { name: 'Catch Cost', exact: true }).click();
     await waitForText('3 costs updated.');
-    const gp = page.getByRole('spinbutton', { name: 'Target GP for Chocolate Cream Biscuits', exact: true });
+    const gp = page.getByRole('spinbutton', { name: 'Target margin for Chocolate Cream Biscuits', exact: true });
     await gp.fill('25');
     const initialEa = page.getByRole('spinbutton', { name: 'Unit price for Chocolate Cream Biscuits', exact: true });
     assert.equal(await initialEa.inputValue(), '');
@@ -77,7 +77,7 @@ async function main() {
     await page.locator('tr').filter({ has: price }).getByRole('button', { name: 'Update quote', exact: true }).click();
     await waitForText('Quotation is visible to this customer.');
     const previousPriceRow = page.locator('tr').filter({ has: price });
-    assert.equal(await previousPriceRow.locator('[data-previous-sp]').innerText(), 'CTN: 12.00');
+    assert.equal(await previousPriceRow.locator('[data-previous-sp]').innerText(), '12.00 / CTN');
     assert.equal(await page.locator('[data-previous-sp]').nth(1).innerText(), '');
     await page.locator('#menu').click();
     await page.getByRole('link', { name: 'Buyer Room', exact: true }).click();

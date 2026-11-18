@@ -37,6 +37,10 @@ function MPC_columns_(headers) {
     if (matches.length !== 1) throw new Error('POINTBASE header missing or duplicated: ' + names[key]);
     columns[key] = matches[0];
   });
+  ['COST FRESHNESS', 'NOTES'].forEach(function (name) {
+    var index = headers.findIndex(function (header) { return MPC_header_(header) === MPC_header_(name); });
+    if (index !== -1) columns[name] = index;
+  });
   return columns;
 }
 
@@ -57,6 +61,10 @@ function MPC_snapshot_(barcode, raw, display, columns, source, at) {
   result.itemName = MPC_text_(display[columns.itemName]);
   result.packingSize = MPC_text_(display[columns.packing]);
   result.brandName = MPC_text_(display[columns.brand]);
+  var freshness = MPC_text_(display[columns['COST FRESHNESS']]);
+  if (['🔴', '🟠', '🟢'].indexOf(freshness) !== -1) result.priceStale = freshness === '🔴';
+  var note = MPC_text_(display[columns.NOTES]);
+  if (note) result.note = note.slice(0, 160);
   ['ea', 'lpPc', 'lpCtn', 'disc1', 'disc2', 'disc3', 'netCostCtn', 'cbmPerCtn'].forEach(function (key) {
     var value = raw[columns[key]], shown = MPC_text_(display[columns[key]]);
     var number = null;
