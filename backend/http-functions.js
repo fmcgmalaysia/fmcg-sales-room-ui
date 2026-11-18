@@ -129,7 +129,7 @@ export async function get_googleStaffAuth(request) {
 // QUOTATION DESK -> BUYER ROOM RELEASE
 export async function get_buyerSelectionExcel(request) {
   try {
-    const authorization = verifyBuyerSelectionExportToken(request?.query?.token, await getSecret('BUYER_EXCEL_DOWNLOAD_SECRET'));
+    const authorization = verifyBuyerSelectionExportToken(request?.query?.token, await getSecret('FMCG_QD_ROUTER_TOKEN'));
     const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room';
     const file = await buildBuyerSelectionDownload(authorization.customerId, buyerRoomUrl);
     return response({
@@ -160,7 +160,7 @@ export async function get_buyerSelectionExcel(request) {
 
 export async function get_buyerOrderExcel(request) {
   try {
-    const authorization = verifyBuyerOrderExportToken(request?.query?.token, await getSecret('BUYER_EXCEL_DOWNLOAD_SECRET'));
+    const authorization = verifyBuyerOrderExportToken(request?.query?.token, await getSecret('FMCG_QD_ROUTER_TOKEN'));
     const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room';
     let file;
     let lastError;

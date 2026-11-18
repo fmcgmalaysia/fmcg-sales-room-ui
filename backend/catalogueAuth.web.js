@@ -28,7 +28,7 @@ const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
 const ACCOUNT_NOTIFICATION_COLLECTION = 'WixAccountNotifications';
 const USER_AUDIT_COLLECTION = 'CustomerUserAudit';
 const ORDER_PAGE_SIZE = 20;
-const BUYER_EXCEL_DOWNLOAD_SECRET = 'BUYER_EXCEL_DOWNLOAD_SECRET';
+const BUYER_EXCEL_SIGNING_KEY = 'FMCG_QD_ROUTER_TOKEN';
 
 function normalize(value) { return String(value ?? '').trim(); }
 function upper(value) { return normalize(value).toUpperCase(); }
@@ -531,7 +531,7 @@ export const prepareBuyerOrderDownload = webMethod(Permissions.SiteMember, async
     throw new Error('Please refresh the order form and try again.');
   }
   const orderId = nextOrderId(buyer.customerId, submissionId);
-  const issued = createBuyerOrderExportToken(buyer.customerId, orderId, await getSecret(BUYER_EXCEL_DOWNLOAD_SECRET), 900);
+  const issued = createBuyerOrderExportToken(buyer.customerId, orderId, await getSecret(BUYER_EXCEL_SIGNING_KEY), 900);
   return { ok: true, orderId, ...issued };
 });
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
