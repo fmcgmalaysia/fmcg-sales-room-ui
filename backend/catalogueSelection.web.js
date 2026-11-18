@@ -33,6 +33,8 @@ export const getCatalogueSelectionState = webMethod(
     return Object.freeze({
       ok: true,
       customerId: context.customerId,
+      companyName: context.companyName,
+      actorName: context.actorName,
       selectedProductIds: [...new Set(selectedItems.flatMap((item) => {
         const data = selectionPayload_(item);
         return [data.productId, ...(Array.isArray(data.productAliases) ? data.productAliases : [])];
@@ -219,6 +221,7 @@ async function resolveSelectionContext_(assistCustomerId, staffAction = 'VIEW') 
   if (!isWebQuotationReady(customer)) throw new Error('This customer web quotation workspace is not ready.');
   return {
     customerId: normalize(customer.customerId),
+    companyName: normalize(customer.title),
     actorType,
     actorId,
     actorName,

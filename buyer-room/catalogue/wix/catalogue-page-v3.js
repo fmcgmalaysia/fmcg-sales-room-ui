@@ -5,7 +5,6 @@ import wixWindowFrontend from 'wix-window-frontend';
 import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
-import { getSalesRoomCustomerDetail } from 'backend/onboarding.web';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
 
 let catalogueContextMessage = null;
@@ -21,6 +20,12 @@ const CATALOGUE_BUILD_VERSION = '20261118-catalogue-staff-entry-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
+const CATALOGUE_PRODUCT_FIELDS = [
+    '_id', 'name', 'title', 'description', 'packingSize', 'ea', 'EA', 'price', 'barcode', 'unitBarcode',
+    'innerBoxBarcode', 'cartonBarcode', 'm3Ctn', 'cbmPerCtn', 'cbm', 'principle', 'brandName', 'mainCategory',
+    'image', 'countryOrigin', 'shelflife', 'shelfLife', 'pointBaseSortId', 'sortNo', 'sortNO', 'sortNumber',
+    'sortOrder', 'subCategories', 'unitPrice', 'pricePerUnit', 'currency'
+];
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -315,7 +320,7 @@ function loadCatalogueWorkspaceProducts() {
 async function readCatalogueWorkspaceProducts(queryVersion) {
     const products = [];
     try {
-        let result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').limit(1000).find();
+        let result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').fields(...CATALOGUE_PRODUCT_FIELDS).limit(1000).find();
         products.push(...result.items);
         while (result.hasNext() && products.length < 10000) {
             result = await result.next();
@@ -336,7 +341,7 @@ async function showCatalogueWorkspaceQuery(query, resumeSubIds = null, position 
     const queryVersion = ++catalogueWorkspaceQueryVersion;
     const products = [];
     try {
-        let result = await query.eq('pointBaseStatus', 'ACTIVE').limit(1000).find();
+        let result = await query.eq('pointBaseStatus', 'ACTIVE').fields(...CATALOGUE_PRODUCT_FIELDS).limit(1000).find();
         products.push(...result.items);
         while (result.hasNext() && products.length < 10000) {
             result = await result.next();
@@ -385,27 +390,24 @@ async function loadSelectionState(assistCustomerId = '') {
 
 $w.onReady(async () => {
     const hasBuyerAccess = local.getItem('catalogueAccess') === 'granted' || session.getItem('catalogueAccess') === 'granted';
+    const assistCustomerId = String(wixLocationFrontend.query?.assist || '').trim();
+    const assistedSelection = assistCustomerId ? getCatalogueSelectionState(assistCustomerId).catch(() => null) : null;
     let staff;
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
 
     if (staff?.authorized) {
-        const assistCustomerId = String(wixLocationFrontend.query?.assist || '').trim();
         if (assistCustomerId) {
             try {
-                const [response, selection] = await Promise.all([
-                    getSalesRoomCustomerDetail(assistCustomerId),
-                    getCatalogueSelectionState(assistCustomerId)
-                ]);
-                const customer = response?.customer || {};
-                if (!response?.ok || !selection?.ok || customer.customerId !== selection.customerId || customer.customerId !== assistCustomerId) {
+                const selection = await assistedSelection;
+                if (!selection?.ok || selection.customerId !== assistCustomerId) {
                     throw new Error('Catalogue customer access could not be verified.');
                 }
-                session.setItem('catalogueAssistCustomerId', customer.customerId);
-                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: customer.customerId };
+                session.setItem('catalogueAssistCustomerId', selection.customerId);
+                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId };
                 sidebarSelectionState(selection);
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
-                    sheetName: String(customer.companyName || customer.customerId || '').trim(),
+                    sheetName: String(selection.companyName || selection.customerId).trim(),
                     signedInName: String(staff.staffName || staff.staffId || '').trim()
                 });
             } catch (error) {
@@ -460,7 +462,7 @@ $w.onReady(async () => {
 
 async function loadMenuData() {
     try {
-        const result = await wixData.query('subCategories').ascending('mainCategory').ascending('title').limit(1000).find();
+        const result = await wixData.query('subCategories').ascending('mainCategory').ascending('title').fields('_id', 'mainCategory', 'title').limit(1000).find();
         catalogueSubCategoryMainMap = new Map(result.items.map(item => [
             String(item._id || ''),
             String(item.mainCategory || '').trim().toUpperCase()
@@ -476,7 +478,7 @@ async function loadMenuData() {
         catalogueFoodProductIds = new Set();
         catalogueFoodPrinciples = new Set();
         if (foodSubCategoryIds.length) {
-            let foodResult = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').hasSome('subCategories', foodSubCategoryIds).limit(1000).find();
+            let foodResult = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').hasSome('subCategories', foodSubCategoryIds).fields('_id', 'principle').limit(1000).find();
             foodResult.items.forEach(item => {
                 catalogueFoodProductIds.add(String(item._id || ''));
                 const principle = String(item.principle || '').trim().toUpperCase();
