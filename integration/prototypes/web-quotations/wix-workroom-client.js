@@ -19,6 +19,9 @@ const customerId = () => $('#customer').value;
 const key = id => JSON.stringify([staffId, customerId(), id]);
 const requestId = () => crypto.randomUUID();
 const compareSortIds = new Intl.Collator('en', { numeric: true, sensitivity: 'base' }).compare;
+const formatCents = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 2 }).format;
+const roundCents = value => Number(formatCents(value));
+const calculatorPrice = (row, input) => draftPrice(row, input, roundCents);
 const desktopGrid = window.matchMedia('(min-width: 601px)');
 const quoteOverscan = 16;
 let quoteWindow;
@@ -281,8 +284,17 @@ content.addEventListener('keydown', event => {
   const tr = field.closest('[data-row]');
   if (event.key === 'Enter' && field.dataset.mode === 'EA') {
     event.preventDefault();
-    if (field.value) field.value = fixed(Number(field.value));
+    if (field.value) field.value = fixed(roundCents(Number(field.value)));
     hideChangedQuote(tr);
+    return;
+  }
+  if (event.key === 'Enter' && field.dataset.calc) {
+    event.preventDefault();
+    if (busy) return;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    if (field.dataset.calc === 'EA' && field.value !== '') {
+      field.value = fixed(roundCents(Number(field.value)));
+    }
     return;
   }
   const vertical = ['ArrowUp', 'ArrowDown'].includes(event.key);
@@ -304,10 +316,11 @@ content.addEventListener('click', async event => {
   const action = button.dataset.action;
   if (action === 'apply' && row) {
     const input = calculatorInput(row);
-    const price = input && draftPrice(row, input);
+    const price = input && calculatorPrice(row, input);
     if (price) {
       const tr = button.closest('[data-row]');
       editPrice(row, tr, { mode: 'EA', value: price.priceEa }, true);
+      tr.querySelector('[data-calc=EA]').value = fixed(price.priceEa);
       hideChangedQuote(tr);
     }
     return;

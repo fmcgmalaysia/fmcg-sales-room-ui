@@ -23,15 +23,25 @@ async function api(action, body, context = customerId()) {
   if (!response.ok) throw Error(result.error || 'The request could not be completed.');
   return result;
 }
-function draftPrice(row, input = drafts[key(row.id)] || row.draft) {
+function draftPrice(row, input = drafts[key(row.id)] || row.draft, roundEa = value => Number(value.toFixed(6))) {
   if (!input) return null;
   const value = input.value;
   const rate = current.customer.rateToMyr;
+  const hasPack = Number.isSafeInteger(row.ea) && row.ea > 0;
+  const hasFx = Number.isFinite(rate) && rate > 0;
+  const hasCost = Number.isFinite(row.costMyr) && row.costMyr > 0;
+  if ((input.mode === 'GP' && (!hasPack || !hasFx || !hasCost || value >= 100)) ||
+      (input.mode === 'CTN' && !hasPack) || !Number.isFinite(value)) return null;
   let ea = input.mode === 'GP' ? row.costMyr / (1 - value / 100) / rate / row.ea : input.mode === 'CTN' ? value / row.ea : value;
-  if (value === null || !Number.isFinite(value) || (input.mode === 'GP' && (value >= 100 || !(row.costMyr > 0))) || !(ea > 0)) return null;
-  ea = Number(ea.toFixed(6));
-  const ctn = Number((ea * row.ea).toFixed(6));
-  return { mode: input.mode, value, priceEa: ea, priceCtn: ctn, gp: row.costMyr === null ? null : (ctn * rate - row.costMyr) / (ctn * rate) * 100 };
+  if (!Number.isFinite(ea) || ea <= 0) return null;
+  ea = roundEa(ea);
+  if (!(ea > 0)) return null;
+  const rawCtn = hasPack ? ea * row.ea : null;
+  const ctn = Number.isFinite(rawCtn) && rawCtn > 0 ? Number(rawCtn.toFixed(6)) : null;
+  const revenue = ctn && hasFx ? ctn * rate : null;
+  const profitMyr = Number.isFinite(revenue) && revenue > 0 && hasCost ? revenue - row.costMyr : null;
+  return { mode: input.mode, value, priceEa: ea, priceCtn: ctn, profitMyr,
+    gp: profitMyr === null ? null : profitMyr / revenue * 100 };
 }
 const fixed = number => Number.isFinite(number) ? number.toFixed(2) : '—';
 const inputValue = number => Number.isFinite(number) ? number : '';
@@ -47,9 +57,15 @@ function gpTone(gp) {
   return margin < 8 ? 'gp-risk' : margin > 8 ? 'gp-healthy' : '';
 }
 function profit(row, price) {
-  const known = price && Number.isFinite(row.costMyr);
+  const known = Number.isFinite(price?.gp);
+  if (price && !known) {
+    const reason = price.priceCtn === null ? 'No pack size'
+      : !(current.customer.rateToMyr > 0) ? 'No FX rate'
+      : !(row.costMyr > 0) ? 'No cost' : 'Unavailable';
+    return '<small class="quote-profit-note">' + reason + '</small>';
+  }
   return labeledValue('GP', known ? fixed(price.gp) + '%' : '—', known ? gpTone(price.gp) : '') +
-    labeledValue('CTN', known ? fixed(price.priceCtn * current.customer.rateToMyr - row.costMyr) : '—');
+    labeledValue('CTN', fixed(price?.profitMyr));
 }
 function riskCount() {
   return current.rows.filter(row => gpTone(draftPrice(row)?.gp) === 'gp-risk').length;
