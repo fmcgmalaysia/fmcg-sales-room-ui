@@ -45,6 +45,11 @@ function buildWixWorkroom(destination) {
     .replace("editPrice(row, tr, { mode: 'EA', value });", "editPrice(row, tr, { mode: 'EA', value: value === null ? null : roundCents(value) });")
     .replaceAll('(!price || row.costMyr === null)', '!Number.isFinite(price?.gp)')
     .replace('target?.mode === \'EA\' ? inputValue(target.value) : suggestion ? fixed(suggestion.priceEa)', 'suggestion ? fixed(suggestion.priceEa)')
+    .replace(/<input aria-label="Target unit price[^\n]+?\$\{disabled \? 'disabled' : ''\}>/,
+      '<output class="calc-selling" aria-label="Target unit price for ${desc}" data-calculated-selling>${suggestion ? fixed(suggestion.priceEa) : \'0.00\'}</output>')
+    .replace("const other = tr.querySelector(`[data-calc=${next.mode === 'GP' ? 'EA' : 'GP'}]`);", "const other = tr.querySelector('[data-calculated-selling]');")
+    .replace("const calculated = next.mode === 'GP' ? price?.priceEa : price?.gp;", 'const calculated = price?.priceEa;')
+    .replace("other.value = Number.isFinite(calculated) ? next.mode === 'GP' ? fixed(calculated) : Math.round(calculated) : '';", "other.value = Number.isFinite(calculated) ? fixed(calculated) : '0.00';")
     .replace('data-calc="GP" type="number" step="1" placeholder="0%"', 'data-calc="GP" type="number" step="1" placeholder="0"')
     .replace('<input aria-label="Target margin', '<label class="calc-margin"><input aria-label="Target margin')
     .replace('${disabled ? \'disabled\' : \'\'}></td>\n    <td class="calc-cell"><span class="mobile-label">Selling', '${disabled ? \'disabled\' : \'\'}><span aria-hidden="true">%</span></label></td>\n    <td class="calc-cell"><span class="mobile-label">Selling')
@@ -57,6 +62,7 @@ function buildWixWorkroom(destination) {
     .replace('class="quote-left" rowspan="2">Selling Price', 'class="quote-right" rowspan="2">Selling Price')
     .replace('rowspan="2">List Cost', 'class="quote-right" rowspan="2">List Cost')
     .replace('rowspan="2">Disc</th>', 'rowspan="2">Disc.</th>')
+    .replace('rowspan="2">Net Cost', 'class="quote-right" rowspan="2">Net Cost')
     .replace('Net cost · MYR per CTN', 'Net cost per CTN')
     .replace('<div class="product-name">${desc}</div>', '<div class="product-name" title="${desc}">${desc}</div>')
     .replace('<th rowspan="2" aria-label="Move"></th>', '');

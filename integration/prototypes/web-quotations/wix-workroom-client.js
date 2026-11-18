@@ -258,28 +258,23 @@ content.addEventListener('change', event => {
   if (price) hideChangedQuote(price.closest('[data-row]'));
 });
 
+const quotationEditFields = '[data-mode=EA], [data-calc=GP]';
 content.addEventListener('focusin', event => {
-  const field = event.target.closest('[data-calc]');
-  if (field && !field.disabled) {
-    field.dataset.beforeFocus = field.value;
-    field.value = '';
-  }
+  if (event.target.matches(quotationEditFields)) event.target.dataset.replaceOnInput = '';
 });
 
-content.addEventListener('focusout', event => {
-  const field = event.target.closest('[data-calc]');
-  if (field?.dataset.beforeFocus !== undefined) {
-    if (!field.value) field.value = field.dataset.beforeFocus;
-    delete field.dataset.beforeFocus;
-  }
-});
+for (const type of ['focusout', 'input']) {
+  content.addEventListener(type, event => delete event.target.dataset.replaceOnInput);
+}
 
-content.addEventListener('input', event => {
-  if (event.target.matches('[data-calc]')) delete event.target.dataset.beforeFocus;
+content.addEventListener('beforeinput', event => {
+  if (event.target.dataset.replaceOnInput !== undefined && event.inputType.startsWith('insert')) {
+    event.target.value = '';
+  }
 });
 
 content.addEventListener('keydown', event => {
-  const field = event.target.closest('[data-mode=EA], [data-calc]');
+  const field = event.target.closest(quotationEditFields);
   if (!field || field.disabled || event.altKey || event.ctrlKey || event.metaKey) return;
   const tr = field.closest('[data-row]');
   if (event.key === 'Enter' && field.dataset.mode === 'EA') {
@@ -292,20 +287,12 @@ content.addEventListener('keydown', event => {
     event.preventDefault();
     if (busy) return;
     field.dispatchEvent(new Event('input', { bubbles: true }));
-    if (field.dataset.calc === 'EA' && field.value !== '') {
-      field.value = fixed(roundCents(Number(field.value)));
-    }
     return;
   }
-  const vertical = ['ArrowUp', 'ArrowDown'].includes(event.key);
-  const horizontal = ['ArrowLeft', 'ArrowRight'].includes(event.key);
-  if (!vertical && !(horizontal && field.dataset.calc)) return;
+  if (!['ArrowUp', 'ArrowDown'].includes(event.key)) return;
   event.preventDefault();
-  const target = vertical
-    ? (event.key === 'ArrowUp' ? tr.previousElementSibling : tr.nextElementSibling)?.querySelector(
-        field.dataset.calc ? `[data-calc=${field.dataset.calc}]` : '[data-mode=EA]')
-    : event.key === 'ArrowLeft' && field.dataset.calc === 'EA' ? tr.querySelector('[data-calc=GP]')
-      : event.key === 'ArrowRight' && field.dataset.calc === 'GP' ? tr.querySelector('[data-calc=EA]') : null;
+  const adjacent = event.key === 'ArrowUp' ? tr.previousElementSibling : tr.nextElementSibling;
+  const target = adjacent?.querySelector(field.dataset.calc ? '[data-calc=GP]' : '[data-mode=EA]');
   if (target && !target.disabled) target.focus();
 });
 
@@ -320,7 +307,6 @@ content.addEventListener('click', async event => {
     if (price) {
       const tr = button.closest('[data-row]');
       editPrice(row, tr, { mode: 'EA', value: price.priceEa }, true);
-      tr.querySelector('[data-calc=EA]').value = fixed(price.priceEa);
       hideChangedQuote(tr);
     }
     return;

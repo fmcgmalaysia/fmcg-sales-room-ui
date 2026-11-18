@@ -211,7 +211,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(await grid.getByRole('searchbox').count(), 0);
     assert.equal(await grid.locator('.quote-customer h2').textContent(), 'QA Trading Company Limited');
     assert.equal(await first.locator('.row-number').textContent(), '002');
-    for (const name of ['Selling Price', 'List Cost']) {
+    for (const name of ['Selling Price', 'List Cost', 'Net Cost']) {
       assert.equal(await grid.getByRole('columnheader', { name, exact: true }).evaluate(el => getComputedStyle(el).textAlign), 'right');
     }
     assert(await grid.getByRole('columnheader', { name: 'Disc.', exact: true }).isVisible());
@@ -227,6 +227,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.deepEqual(decimals, [decimals[0], decimals[0], decimals[0]]);
     assert.deepEqual(await first.locator('.quote-value-suffix .quote-unit').allTextContents(), ['EA', 'CT', 'EA', 'CT']);
     assert.equal(await first.locator('.stale-cost').textContent(), '36.00');
+    assert.deepEqual(await first.locator('.stale-cost').evaluate(e => [getComputedStyle(e).color, getComputedStyle(e).fontSize]), ['rgb(229, 27, 43)', '12px']);
     assert.equal(await first.locator('[data-previous-sp]').textContent(), '12.00 / CTN');
     assert.equal(await first.locator('.previous-sp small').textContent(), '16-11-26');
     assert.equal(await grid.locator('[data-row=item-1] .gp-risk').count(), 1);
@@ -255,26 +256,33 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(requests.filter(request => request.action === 'publish').at(-1).input.enabled, false);
     await ea.press('ArrowDown');
     assert.equal(await grid.locator('[data-row=item-1] [data-mode=EA]:focus').count(), 1);
-    await first.locator('[data-calc=GP]').press('ArrowRight');
-    assert.equal(await first.locator('[data-calc=EA]:focus').count(), 1);
+    assert.equal(await grid.locator('input[data-calc=EA]').count(), 0);
 
     const roundingRow = grid.locator('[data-row=item-3]');
     const margin = roundingRow.locator('[data-calc=GP]');
-    const selling = roundingRow.locator('[data-calc=EA]');
-    await margin.fill('12');
+    const selling = roundingRow.locator('[data-calculated-selling]');
+    await margin.fill('5');
+    await ea.click();
+    assert.equal(await ea.inputValue(), '3.00');
+    await ea.pressSequentially('27');
+    assert.equal(await ea.inputValue(), '27');
+    assert.notEqual(await first.evaluate(e=>getComputedStyle(e).backgroundColor), 'rgb(255, 250, 241)');
+    await ea.fill('3');
+    await ea.press('Enter');
+    await margin.click();
+    assert.equal(await margin.inputValue(), '5');
+    await margin.pressSequentially('12');
     await margin.press('Enter');
     assert.equal(await margin.inputValue(), '12');
     assert.equal(await roundingRow.locator('.calc-margin span').textContent(), '%');
-    assert.equal(await selling.inputValue(), '8.98');
+    assert.equal(await selling.textContent(), '8.98');
     await roundingRow.getByRole('button', { name: 'Apply calculator', exact: false }).click();
     assert.equal(await roundingRow.locator('[data-mode=EA]').inputValue(), '8.98');
     assert.equal(await roundingRow.locator('[data-carton]').textContent(), '107.76');
     await roundingRow.getByRole('switch').click();
     await roundingRow.locator('[role=switch][aria-checked=true]').waitFor();
     assert.equal(requests.filter(({ action }) => action === 'draft').at(-1).input.input.value, 8.98);
-    await selling.fill('8.9756521');
-    await selling.press('Enter');
-    assert.equal(await selling.inputValue(), '8.98');
+    assert.equal(await selling.textContent(), '8.98');
     assert.equal(await margin.inputValue(), '12');
 
     const noCost = grid.locator('[data-row=item-4]');
@@ -285,12 +293,13 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert(await noCost.getByRole('switch').isDisabled());
     await noCost.locator('[data-calc=GP]').fill('12');
     await noCost.locator('[data-calc=GP]').press('Enter');
-    assert.equal(await noCost.locator('[data-calc=EA]').inputValue(), '');
+    assert.equal(await noCost.locator('[data-calculated-selling]').textContent(), '0.00');
     assert(await noCost.getByRole('button', { name: 'Apply calculator', exact: false }).isDisabled());
 
     const noPack = grid.locator('[data-row=item-5]');
     await noPack.locator('[data-mode=EA]').fill('80.00');
     assert.equal(await noPack.locator('[data-carton]').textContent(), '');
+    assert(await noPack.locator('.quote-value-suffix > [data-carton] + .quote-unit').isVisible());
     assert.equal(await noPack.locator('[data-profit]').textContent(), '');
     assert(await noPack.getByRole('switch').isDisabled());
     assert.equal(await grid.locator('[data-row=item-6] [data-profit]').textContent(), 'GP-50.00%CTN-12.00');

@@ -17,7 +17,7 @@ test('normal Catalogue and Buyer handlers share signed web prices with the exist
   const state = initialState();
   const wixData = createStore(state, () => {});
   const product = await wixData.get('FMCGMALAYSIA', 'product-1');
-  await wixData.update('FMCGMALAYSIA', { ...product, pointBaseSortId: 'FO-00002' });
+  await wixData.update('FMCGMALAYSIA', { ...product, ea: undefined, price: 12, pointBaseSortId: 'FO-00002' });
   const ready = load('backend/webQuotationCustomer.js', ['isWebQuotationCustomer', 'isWebQuotationReady']);
   const projection = load('backend/masterQuoteProjection.js', ['createMasterQuoteProjection', 'presentMasterQuote'], { createHash, ...ready });
   const data = load('backend/masterWebQuotationData.js', ['acceptMasterWebQuotation', 'applyWebQuotations', 'readMasterWebQuotationData'], {
@@ -39,6 +39,10 @@ test('normal Catalogue and Buyer handlers share signed web prices with the exist
   const read = await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-A', selectionId });
   assert.equal(read.selection.ea, 12);
   assert.equal(read.selection.sortId, 'FO-00002');
+  const catalogueProduct = await wixData.get('FMCGMALAYSIA', 'product-1');
+  await wixData.update('FMCGMALAYSIA', { ...catalogueProduct, price: undefined });
+  assert.equal((await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-A', selectionId })).selection.ea, 12);
+  await wixData.update('FMCGMALAYSIA', catalogueProduct);
   assert.equal((await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-B', selectionId })).selection, null);
   const price = { customerId: 'QA-A', selectionId, barcode, requestId: randomUUID(), version: 1,
     currency: 'USD', enabled: true, priceEa: 1.6, priceCtn: 19.2 };
