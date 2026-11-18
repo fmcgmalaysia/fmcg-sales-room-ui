@@ -1460,7 +1460,7 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 44285965022
+          run-id: 44295816790
           github-token: ${{ github.token }}
           path: ${{ format('{0}/ltpos-domain-baseline', runner.temp) }}
 
@@ -1471,10 +1471,11 @@ jobs:
           mkdir "$site"
           tar --extract --file "$RUNNER_TEMP/ltpos-domain-baseline/artifact.tar" --directory "$site"
           test "$(find "$site" -type f | wc -l)" -eq 116
-          echo "409d62813f5baabad5aee1286469c33a7b335ef9fff43af8b85e0a1a391adac9  $site/ltpos/managed.html" | sha256sum -c
+          echo "05aa412d0db74a797f2d6148c759354112916025fb9aec7cc90ed1b62857654b  $site/ltpos/managed.html" | sha256sum -c
           node --test integration/tests/ltpos-managed-workspaces.test.cjs integration/tests/ltpos-portal-origin.test.cjs
-          cp ltpos/managed.html "$site/ltpos/managed.html"
-          test "$(find "$site" -type f | wc -l)" -eq 116
+          test ! -e "$site/ltpos/ltpos-brand-mark.png"
+          cp ltpos/managed.html ltpos/ltpos-brand-mark.png "$site/ltpos/"
+          test "$(find "$site" -type f | wc -l)" -eq 117
 
       - name: Upload the isolated LTPOS portal package
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'ltpos-custom-domain-only'

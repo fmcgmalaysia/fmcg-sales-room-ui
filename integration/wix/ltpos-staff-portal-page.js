@@ -1,7 +1,7 @@
 import { authentication } from 'wix-members-frontend';
 import { getLtposWorkspaces } from 'backend/ltposWorkspaces.web';
 
-const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/managed.html?v=ltpos-staff-portal-custom-domain-v1';
+const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/managed.html?v=ltpos-staff-portal-brand-v1';
 const SITE = 'https://fmcg999.wixstudio.com/master';
 const workspaces = new Map([
   ['purchase', ['Purchase 采购', 'https://www.ltpos.ai/purchase']],
