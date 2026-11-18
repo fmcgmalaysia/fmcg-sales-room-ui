@@ -9,6 +9,11 @@ const queryCustomer = () => wixData.query('WixCustomers');
 const querySelection = () => wixData.query('WixBuyerListItems');
 const queryQuotes = customerId => wixData.query(revisionCollection).eq('customerId', customerId);
 const text = value => String(value ?? '').trim();
+const cartonQuantity = value => {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  const quantity = Number(value);
+  return Number.isSafeInteger(quantity) && quantity > 0 ? quantity : null;
+};
 
 async function rows(query) {
   const result = [];
@@ -52,7 +57,7 @@ function selectionView(record, customerId, includeRemoved = false) {
   if (data.customerId !== customerId || (!includeRemoved && removed) || !/^[0-9]{6,22}$/.test(barcode)) return null;
   return { id: record._id, customerId, barcode, name: text(data.itemName), packing: text(data.packingSize),
     imageUrl: text(data.imageUrl), selectionEpoch: selectionEpoch(data), productId: text(data.productId),
-    fallbackEa: Number(data.productReference?.eaPerCtn || data.ea), removed };
+    fallbackEa: cartonQuantity(data.productReference?.eaPerCtn) ?? cartonQuantity(data.ea), removed };
 }
 
 async function packSelections(selections) {
@@ -66,8 +71,8 @@ async function packSelections(selections) {
   return selections.map(({ productId, fallbackEa, ...row }) => {
     const product = products.get(productId);
     const matches = product && text(product.barcode) === row.barcode;
-    const ea = matches ? Number(product.ea) : fallbackEa;
-    return { ...row, ea: Number.isSafeInteger(ea) && ea > 0 ? ea : null,
+    const ea = matches ? cartonQuantity(product.ea) ?? cartonQuantity(product.price) ?? fallbackEa : fallbackEa;
+    return { ...row, ea,
       ...(matches && text(product.pointBaseSortId) ? { sortId: text(product.pointBaseSortId) } : {}) };
   });
 }

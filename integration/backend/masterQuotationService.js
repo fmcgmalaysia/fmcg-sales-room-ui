@@ -31,11 +31,15 @@ function calculatePrice({ mode, value }, selection, customer, snapshot) {
 
 function rowSnapshot(row, cost) {
   const valid = cost?.costStatus === 'CAPTURED' && cost.unitBarcode === row.barcode && cost.costCurrency === 'MYR' &&
-    Number.isFinite(Date.parse(cost.capturedAt)) && positive(cost.lpPc);
-  const costMyr = valid ? calculateNetCartonCost(cost) : null;
+    Number.isFinite(Date.parse(cost.capturedAt));
+  let lpPc = cost?.lpPc;
+  if (valid && lpPc == null && positive(cost.lpCtn) && Number.isSafeInteger(cost.eaPerCtn) && cost.eaPerCtn > 0) {
+    lpPc = cost.lpCtn / cost.eaPerCtn;
+  }
+  const costMyr = valid && positive(lpPc) ? calculateNetCartonCost(cost) : null;
   if (!positive(costMyr)) return { costError: 'Point Base cost unavailable. Previous cost retained.' };
   return { costMyr, costAt: cost.capturedAt, costError: '', costDetails: {
-    lpEa: cost.lpPc, lpCtn: cost.lpCtn, disc1: cost.disc1 * 100, disc2: cost.disc2 * 100, disc3: cost.disc3,
+    lpEa: lpPc, lpCtn: cost.lpCtn, disc1: cost.disc1 * 100, disc2: cost.disc2 * 100, disc3: cost.disc3,
     ...(typeof cost.priceStale === 'boolean' ? { priceStale: cost.priceStale } : {}),
     remark: typeof cost.note === 'string' ? cost.note.slice(0, 160) : ''
   } };
