@@ -268,7 +268,7 @@ async function readWebQuoteCounters(customers, listRows) {
   }
   const result = new Map();
   const activeCustomers = customers.filter(customer => isWebQuotationReady(customer) && webRows.get(customer.customerId).length);
-  if (!activeCustomers.length) return result;
+  if (!activeCustomers.length) return { counts: result, selections: webRows };
   const activeRows = activeCustomers.flatMap(customer => webRows.get(customer.customerId));
   const productIds = [...new Set(activeRows.map(row => normalize(row.data.productId)).filter(Boolean))];
   const products = new Map();
@@ -281,7 +281,7 @@ async function readWebQuoteCounters(customers, listRows) {
   } catch (error) {
     console.warn('Sales Room web quotation counters could not read product packing', error);
     for (const customer of activeCustomers) result.set(customer.customerId, null);
-    return result;
+    return { counts: result, selections: webRows };
   }
   await Promise.all(activeCustomers.map(async (customer) => {
     const rows = webRows.get(customer.customerId);
@@ -303,7 +303,7 @@ async function readWebQuoteCounters(customers, listRows) {
       result.set(customer.customerId, null);
     }
   }));
-  return result;
+  return { counts: result, selections: webRows };
 }
 
 export const getSalesRoomCustomersOperational = webMethod(
@@ -317,7 +317,7 @@ export const getSalesRoomCustomersOperational = webMethod(
     ]);
 
     const visibleCustomers = base.customers || [];
-    const webCounts = await readWebQuoteCounters(visibleCustomers, listRows);
+    const { counts: webCounts, selections } = await readWebQuoteCounters(visibleCustomers, listRows);
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
     const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)) && !row.data.receiptOnly);
     const incomingByCustomer = new Map();
@@ -349,6 +349,7 @@ export const getSalesRoomCustomersOperational = webMethod(
         rfqItemCount: quote?.rfq ?? null,
         quoteWorkStatusAvailable: Boolean(quote),
         pendingQuoteCount: quote?.awaiting ?? null,
+        selectedItemCount: selections.get(customer.customerId)?.length ?? 0,
         pendingQuoteReceivedAt: quote?.pendingQuoteReceivedAt || '',
         lastQuoteSyncedAt: quote?.lastQuoteSyncedAt || '',
         confirmedOrderCount: incoming.count,
