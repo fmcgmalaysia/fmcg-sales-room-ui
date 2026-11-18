@@ -183,39 +183,29 @@ $w.onReady(function () {
       if (staff.authorized && !readyBootstrapInFlight) {
         readyBootstrapInFlight = true;
         try {
-          try {
-            await recordSalesRoomActivity({ action: 'SALES_ROOM_ENTER' });
-          } catch (error) {
-            // Activity logging must never block staff work.
-          }
-          await refreshSalesActivity(staff, 0);
-          try {
-            const routing = await getAssignableSalesStaff();
-            salesRoom.postMessage({
-              type: 'SALES_ROOM_ASSIGNABLE_STAFF',
-              ...routing
-            });
-          } catch (error) {
-            salesRoom.postMessage({
-              type: 'SALES_ROOM_ASSIGNABLE_STAFF',
-              ok: false,
-              error: error?.message || 'Assignable staff could not be loaded.'
-            });
-          }
-
-          try {
-            const response = await getSalesRoomCustomersOperational();
-            salesRoom.postMessage({
-              type: 'SALES_ROOM_CUSTOMERS',
-              ...response
-            });
-          } catch (error) {
-            salesRoom.postMessage({
-              type: 'SALES_ROOM_CUSTOMERS',
-              ok: false,
-              error: error?.message || 'Customer list could not be loaded.'
-            });
-          }
+          await Promise.all([
+            refreshCustomersFromCms(),
+            (async () => {
+              try {
+                await recordSalesRoomActivity({ action: 'SALES_ROOM_ENTER' });
+              } catch (error) {
+                // Activity logging must never block staff work.
+              }
+              await refreshSalesActivity(staff, 0);
+            })(),
+            (async () => {
+              try {
+                const routing = await getAssignableSalesStaff();
+                salesRoom.postMessage({ type: 'SALES_ROOM_ASSIGNABLE_STAFF', ...routing });
+              } catch (error) {
+                salesRoom.postMessage({
+                  type: 'SALES_ROOM_ASSIGNABLE_STAFF',
+                  ok: false,
+                  error: error?.message || 'Assignable staff could not be loaded.'
+                });
+              }
+            })()
+          ]);
         } finally {
           readyBootstrapInFlight = false;
         }
