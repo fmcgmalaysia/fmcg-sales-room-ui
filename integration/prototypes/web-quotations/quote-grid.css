@@ -51,6 +51,25 @@
   text-align: center;
 }
 
+.quote-product-preview {
+  position: fixed;
+  z-index: 25;
+  display: block;
+  width: min(200px, calc(100vw - 20px));
+  height: min(200px, calc(100vh - 20px));
+  padding: 8px;
+  pointer-events: none;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+  box-shadow: 0 5px 20px #153b5933;
+}
+
+.quote-product-preview[hidden] {
+  display: none;
+}
+
 .quote-grid .demo-thumb {
   display: grid;
   place-items: center;

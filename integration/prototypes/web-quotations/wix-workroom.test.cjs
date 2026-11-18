@@ -121,6 +121,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
     const rows = [makeRow(longName, 0), ...Array.from({ length: 999 }, (_, i) => makeRow('Product ' + (i + 1), i + 1))];
     rows[0].costDetails.disc3 = 5;
     rows[0].costDetails.priceStale = true;
+    rows[0].imageUrl = 'https://static.wixstatic.com/media/test-product.svg';
     rows[0].lastSale = { priceCtn: 12, currency: 'USD', siDate: '2026-11-16' };
     rows[1].draft = { mode: 'EA', value: 0.8 };
     rows[2].draft = { mode: 'EA', value: 36 / 0.92 / 4 / 12 };
@@ -163,6 +164,9 @@ test('the compact quotation grid renders and saves over the iframe message contr
       const file = new URL(route.request().url()).pathname.slice(1);
       return route.fulfill({ path: path.join(destination, file) });
     });
+    await page.route('https://static.wixstatic.com/media/test-product.svg', route => route.fulfill({
+      contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="blue"/></svg>'
+    }));
     await page.goto(parent + '/quotations-test');
     const grid = page.frameLocator('#workroom');
     const first = grid.locator('tr[data-row="item-0"]');
@@ -174,6 +178,17 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(await grid.locator('.move-row').count(), 0);
     assert.equal(await grid.locator('#company, #actor').count(), 0);
     assert(await first.locator('.product-name').evaluate(el => el.scrollWidth <= el.clientWidth));
+    const thumbnail = first.locator('.product-thumb');
+    await thumbnail.hover();
+    const preview = grid.locator('.quote-product-preview');
+    assert(await preview.isVisible());
+    const previewBounds = await preview.evaluate(el => {
+      const rect = el.getBoundingClientRect();
+      return { width: rect.width, fits: rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight };
+    });
+    assert.deepEqual(previewBounds, { width: 200, fits: true });
+    await first.locator('.product-name').hover();
+    assert.equal(await preview.isVisible(), false);
 
     assert.equal(await grid.getByRole('searchbox').count(), 0);
     assert.equal(await grid.locator('.quote-customer h2').textContent(), 'QA Trading Company Limited');

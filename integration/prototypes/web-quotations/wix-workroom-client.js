@@ -126,6 +126,40 @@ function productImage(value) {
   return '<span class="empty-thumb">—</span>';
 }
 
+const productPreview = document.createElement('img');
+productPreview.className = 'quote-product-preview';
+productPreview.alt = '';
+productPreview.hidden = true;
+document.body.append(productPreview);
+let previewThumbnail;
+
+function hideProductPreview() {
+  if (!previewThumbnail) return;
+  previewThumbnail = null;
+  productPreview.hidden = true;
+  productPreview.removeAttribute('src');
+}
+
+content.addEventListener('pointerover', event => {
+  const thumbnail = event.target.closest('.product-thumb');
+  if (event.pointerType !== 'mouse' || !thumbnail || thumbnail === previewThumbnail) return;
+  previewThumbnail = thumbnail;
+  productPreview.src = thumbnail.currentSrc || thumbnail.src;
+  productPreview.hidden = false;
+  const anchor = thumbnail.getBoundingClientRect();
+  const { width, height } = productPreview.getBoundingClientRect();
+  const gap = 10;
+  const nextToImage = anchor.right + gap + width <= innerWidth - gap
+    ? anchor.right + gap : anchor.left - width - gap;
+  productPreview.style.left = Math.max(gap, Math.min(nextToImage, innerWidth - width - gap)) + 'px';
+  productPreview.style.top = Math.max(gap, Math.min(anchor.top - 18, innerHeight - height - gap)) + 'px';
+});
+content.addEventListener('pointerout', event => {
+  if (event.target === previewThumbnail) hideProductPreview();
+});
+window.addEventListener('scroll', hideProductPreview, { capture: true, passive: true });
+window.addEventListener('resize', hideProductPreview, { passive: true });
+
 function api(action, input, context = customerId()) {
   if (parent === window) return Promise.reject(Error('Open Quotations from the MASTER workroom.'));
   const id = requestId();
@@ -160,6 +194,7 @@ window.addEventListener('message', event => {
 });
 
 async function refresh() {
+  hideProductPreview();
   const token = ++generation;
   const context = customerId();
   current = null;
