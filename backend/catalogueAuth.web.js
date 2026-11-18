@@ -391,6 +391,7 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
   const account = {
     customerId: buyer.customerId,
     companyName: normalize(customer.title),
+    customerShortName: normalize(customer.customerShortName),
     country: normalize(customer.country),
     natureOfBusiness: normalize(customer.natureOfBusiness),
     address: [customer.address1, customer.address2, customer.address3].map(normalize).filter(Boolean).join(', '),
