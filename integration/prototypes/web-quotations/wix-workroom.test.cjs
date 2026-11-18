@@ -137,7 +137,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
     rows[3].sortId = 'NF-00001';
     const requests = [];
     let compactFixture = false;
-    const costOutcomes = [{ updated: 4, failed: 6 }, null];
+    const costOutcomes = [{ updated: 4, failed: 6 }, 'unconfirmed', 'lost-after-save'];
     await page.exposeFunction('handleQuotation', (action, customerId, input) => {
       requests.push({ action, customerId, input });
       if (action === 'customers') return { staffId: 'STF-QA', staffName: 'Test staff', customers: [{ customerId: 'CUS-QA-001', name: 'QA Trading' }, { customerId: 'CUS-QA-002', name: 'Read only' }] };
@@ -157,8 +157,12 @@ test('the compact quotation grid renders and saves over the iframe message contr
       }
       if (action === 'cost') {
         const outcome = costOutcomes.length ? costOutcomes.shift() : { updated: rows.length, failed: 0 };
-        if (!outcome) throw Error('Point Base unavailable');
+        if (outcome === 'unconfirmed') throw Error('Point Base unavailable');
         for (const row of rows) row.costAt = '2026-11-17T08:00:00.000Z';
+        if (outcome === 'lost-after-save') {
+          rows.forEach((row, index) => { row.manualCostReceipt = { requestId: input.requestId, updated: index !== 999 }; });
+          throw Error('Wix response lost after saving costs');
+        }
         return outcome;
       }
       throw Error('Unexpected action');
@@ -243,7 +247,10 @@ test('the compact quotation grid renders and saves over the iframe message contr
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
     await grid.locator('#notice.cost-warning').getByText('Catch Cost: 4 updated · 6 failed.').waitFor();
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
-    await grid.locator('#notice.error').getByText('Catch Cost did not return a confirmed result. Check the refreshed rows before retrying.').waitFor();
+    await grid.locator('#notice.cost-warning').getByText('Catch Cost: 0 updated · 0 failed · 1000 unconfirmed.').waitFor();
+    await grid.getByRole('button', { name: 'Catch Cost' }).click();
+    await grid.locator('#notice.cost-warning').getByText('Catch Cost: 999 updated · 1 failed.').waitFor();
+    assert.equal(requests.filter(({ action }) => action === 'cost').length, 3);
     await first.locator('[data-calc=GP]').fill('25');
     await first.getByRole('button', { name: 'Apply calculator', exact: false }).click();
     assert.equal(await first.locator('[data-mode=EA]').inputValue(), '1.00');

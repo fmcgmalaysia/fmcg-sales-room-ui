@@ -26,7 +26,7 @@ export function connectMasterQuotationFrame(frame, run) {
     const { requestId, customerId, action } = data;
     const envelope = { type: 'MASTER_QUOTATION_RESULT', requestId, customerId, action };
     const editing = action === 'draft' || action === 'publish';
-    const input = editing ? editInput(action, data.input) : undefined;
+    const input = editing ? editInput(action, data.input) : action === 'cost' ? { requestId } : undefined;
     if (editing && !input) {
       frame.postMessage({ ...envelope, ok: false, error: 'Review the quotation inputs and try again.' });
       return;

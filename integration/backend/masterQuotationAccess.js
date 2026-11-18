@@ -50,7 +50,7 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readC
       return { staffId, customer: { customerId, preferredCurrency, rateToMyr, ...(fullName ? { fullName } : {}) }, rows,
         canEdit: can('EDIT', 'EDIT_QUOTATION', customerId), canPublish: can('EDIT', 'PUBLISH_QUOTATION', customerId) };
     }
-    if (action === 'cost') return quotation.catchCost(scope);
+    if (action === 'cost') return quotation.catchCost(scope, input);
     if (action === 'draft') return quotation.saveDraft(scope, input);
     return quotation.publish(scope, input);
   };

@@ -177,9 +177,8 @@ content.addEventListener('pointerout', event => {
 window.addEventListener('scroll', hideProductPreview, { capture: true, passive: true });
 window.addEventListener('resize', hideProductPreview, { passive: true });
 
-function api(action, input, context = customerId()) {
+function api(action, input, context = customerId(), id = requestId()) {
   if (parent === window) return Promise.reject(Error('Open Quotations from the MASTER workroom.'));
-  const id = requestId();
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       requests.delete(id);
@@ -206,7 +205,9 @@ window.addEventListener('message', event => {
       content.replaceChildren();
       message(m.error || 'Your staff access could not be confirmed.', true);
     }
-    pending.reject(Error(m.error || 'The quotation action could not be confirmed.'));
+    const error = Error(m.error || 'The quotation action could not be confirmed.');
+    error.accessDenied = m.accessDenied === true;
+    pending.reject(error);
   }
 });
 
@@ -228,9 +229,38 @@ async function refresh() {
     }
     current = result;
     renderQuotes(scrollPosition);
+    return result;
   } catch (error) {
     if (token === generation) message(error.message, true);
   }
+}
+
+function showCostResult({ updated, failed, unconfirmed = 0 }) {
+  message(`Catch Cost: ${updated} updated · ${failed} failed${unconfirmed ? ` · ${unconfirmed} unconfirmed` : ''}.`,
+    failed > 0 && !updated && !unconfirmed, Boolean(unconfirmed || (failed && updated)));
+}
+
+async function refreshCost(context, requestedRows) {
+  const id = requestId();
+  try {
+    showCostResult(await api('cost', {}, context, id));
+  } catch (error) {
+    if (error.accessDenied) throw error;
+    message('Checking which costs were saved…');
+    const refreshed = await refresh();
+    if (!refreshed) return true;
+    let updated = 0;
+    let failed = 0;
+    for (const row of refreshed.rows) {
+      const receipt = row.manualCostReceipt;
+      if (!requestedRows.has(row.id) || receipt?.requestId !== id) continue;
+      if (receipt.updated === true) updated++;
+      if (receipt.updated === false) failed++;
+    }
+    showCostResult({ updated, failed, unconfirmed: requestedRows.size - updated - failed });
+    return true;
+  }
+  return false;
 }
 
 async function initialize() {
@@ -332,11 +362,12 @@ content.addEventListener('click', async event => {
   button.disabled = true;
   $('#customer').disabled = true;
   message();
+  let refreshed = false;
+  let denied = false;
   try {
     if (button.id === 'catch-cost') {
-      const result = await api('cost', {}, context);
-      message(`Catch Cost: ${result.updated} updated · ${result.failed} failed.`,
-        result.failed > 0 && result.updated === 0, result.failed > 0 && result.updated > 0);
+      const requestedRows = new Set(current.rows.map(row => row.id));
+      refreshed = await refreshCost(context, requestedRows);
     } else if (action === 'draft') {
       await saveDraft(row, context);
       message('Draft saved.');
@@ -359,11 +390,14 @@ content.addEventListener('click', async event => {
         message(packet.enabled ? 'Quotation is visible to this customer.' : 'Quotation hidden. Existing orders retain their prices.');
       }
     }
-  } catch (error) { message(error.message, true); }
+  } catch (error) { denied = error.accessDenied === true; message(error.message, true); }
   finally {
     busy = false;
     $('#customer').disabled = false;
-    if (context === customerId()) await refresh();
+    if (refreshed && current) renderQuotes(quoteWindow && {
+      left: quoteWindow.scroller.scrollLeft, top: quoteWindow.scroller.scrollTop
+    });
+    else if (!refreshed && !denied && context === customerId()) await refresh();
   }
 });
 
