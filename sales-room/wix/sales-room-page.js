@@ -1,8 +1,7 @@
 import { salesRoomShipment } from 'backend/onboarding.web';
-import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, checkSalesRoomOrderReceipt, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
+import { createSalesRoomCustomer, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, checkSalesRoomOrderReceipt, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
 import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web.js';
 import { getCurrentStaffContext, recordStaffPresence, getStaffPresenceForAdmin } from 'backend/staffAuth.web.js';
-import { getSalesRoomQuoteSignals, processSalesRoomSelectionQueue, routeSalesRoomCustomerSelections } from 'backend/catalogueSelection.web.js';
 import wixLocationFrontend from 'wix-location-frontend';
 import { authentication } from 'wix-members-frontend';
 import wixRealtimeFrontend from 'wix-realtime-frontend';
@@ -31,33 +30,6 @@ function deniedStaff(reason) {
   };
 }
 
-async function getSalesRoomCustomersWithQuoteSignals() {
-  const response = await getSalesRoomCustomersOperational();
-  try {
-    const signals = await getSalesRoomQuoteSignals();
-    const byCustomer = signals?.byCustomer || {};
-    const customers = (Array.isArray(response?.customers) ? response.customers : []).map((customer) => ({
-      ...customer,
-      ...(byCustomer[String(customer?.customerId || '').trim()] || {})
-    }));
-    const quoteSummary = signals?.summary || {};
-    return {
-      ...response,
-      customers,
-      summary: {
-        ...(response?.summary || {}),
-        awaitingQuoteItemCount: Number(quoteSummary.awaitingQuoteItemCount || 0),
-        quotedItemCount: Number(quoteSummary.quotedItemCount || 0),
-        failedQuoteItemCount: Number(quoteSummary.failedQuoteItemCount || 0),
-        quoteCustomerCount: customers.filter((customer) => Number(customer.awaitingQuoteItemCount || 0) > 0).length
-      }
-    };
-  } catch (error) {
-    console.error('Quotation signals could not be loaded', error);
-    return response;
-  }
-}
-
 async function loadCurrentStaff() {
   try {
     const staff = await getCurrentStaffContext();
@@ -71,7 +43,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261111-warehouse-desk-workflow-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261118-sales-qd-retirement-v1';
   const staffPromise = loadCurrentStaff();
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
@@ -84,34 +56,12 @@ $w.onReady(function () {
   }
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
-  let routeQueuePromise;
-  let automaticQdVerificationPromise;
-  let hasQdRetryWork = false;
-
-  function verifyActivationRequiredQdsInBackground(customers) {
-    if (automaticQdVerificationPromise) return automaticQdVerificationPromise;
-    const pendingCustomers = (Array.isArray(customers) ? customers : [])
-      .filter((customer) => String(customer?.qdStatus || '').trim().toUpperCase() === 'ACTIVATION_REQUIRED');
-    if (!pendingCustomers.length) return Promise.resolve();
-
-    automaticQdVerificationPromise = Promise.allSettled(
-      pendingCustomers.map((customer) => verifySalesRoomCustomerQd(customer.customerId))
-    )
-      .then(() => getSalesRoomCustomersWithQuoteSignals())
-      .then((response) => salesRoom.postMessage({ type: 'SALES_ROOM_CUSTOMERS', ...response }))
-      .catch((error) => console.error('Automatic QD verification could not be completed', error))
-      .finally(() => { automaticQdVerificationPromise = null; });
-    return automaticQdVerificationPromise;
-  }
-
+  let readyBootstrapInFlight = false;
   function refreshCustomersFromCms() {
     if (customerRefreshPromise) return customerRefreshPromise;
-    customerRefreshPromise = getSalesRoomCustomersWithQuoteSignals()
+    customerRefreshPromise = getSalesRoomCustomersOperational()
       .then((response) => {
-        hasQdRetryWork = (Array.isArray(response?.customers) ? response.customers : []).some(customer =>
-          Number(customer.pendingRouteItemCount || 0) + Number(customer.failedRouteItemCount || 0) + Number(customer.routingItemCount || 0) > 0);
         salesRoom.postMessage({ type: 'SALES_ROOM_CUSTOMERS', ...response });
-        verifyActivationRequiredQdsInBackground(response?.customers);
         return response;
       })
       .catch((error) => salesRoom.postMessage({ type: 'SALES_ROOM_CUSTOMERS', ok: false, error: error?.message || 'Customer List Could Not Be Loaded.' }))
@@ -119,26 +69,8 @@ $w.onReady(function () {
     return customerRefreshPromise;
   }
 
-  function routePendingSelections() {
-    if (routeQueuePromise) return routeQueuePromise;
-    routeQueuePromise = processSalesRoomSelectionQueue()
-      .then((result) => {
-        if (Number(result?.processed || 0) > 0) return refreshCustomersFromCms();
-        return result;
-      })
-      .catch((error) => console.error('QD background queue could not be processed', error))
-      .finally(() => { routeQueuePromise = null; });
-    return routeQueuePromise;
-  }
-
-  // Retry only while saved work remains; no reload or customer interaction.
-  setInterval(() => {
-    if (hasQdRetryWork) staffPromise.then(staff => { if (staff.authorized) routePendingSelections(); });
-  }, 60000);
-
   wixRealtimeFrontend.subscribe({ name: 'sales-room-signals' }, async () => {
     await refreshCustomersFromCms();
-    routePendingSelections();
   }).catch((error) => console.error('Sales Room realtime subscription failed', error));
 
   async function syncPresence(staff, mode) {
@@ -244,39 +176,44 @@ $w.onReady(function () {
         staff: safeStaff
       });
 
-      if (staff.authorized) {
+      if (staff.authorized && !readyBootstrapInFlight) {
+        readyBootstrapInFlight = true;
         try {
-          await recordSalesRoomActivity({ action: 'SALES_ROOM_ENTER' });
-        } catch (error) {
-          // Activity logging must never block staff work.
-        }
-        await refreshSalesActivity(staff, 0);
-        try {
-          const routing = await getAssignableSalesStaff();
-          salesRoom.postMessage({
-            type: 'SALES_ROOM_ASSIGNABLE_STAFF',
-            ...routing
-          });
-        } catch (error) {
-          salesRoom.postMessage({
-            type: 'SALES_ROOM_ASSIGNABLE_STAFF',
-            ok: false,
-            error: error?.message || 'Assignable staff could not be loaded.'
-          });
-        }
+          try {
+            await recordSalesRoomActivity({ action: 'SALES_ROOM_ENTER' });
+          } catch (error) {
+            // Activity logging must never block staff work.
+          }
+          await refreshSalesActivity(staff, 0);
+          try {
+            const routing = await getAssignableSalesStaff();
+            salesRoom.postMessage({
+              type: 'SALES_ROOM_ASSIGNABLE_STAFF',
+              ...routing
+            });
+          } catch (error) {
+            salesRoom.postMessage({
+              type: 'SALES_ROOM_ASSIGNABLE_STAFF',
+              ok: false,
+              error: error?.message || 'Assignable staff could not be loaded.'
+            });
+          }
 
-        try {
-          const response = await getSalesRoomCustomersWithQuoteSignals();
-          salesRoom.postMessage({
-            type: 'SALES_ROOM_CUSTOMERS',
-            ...response
-          });
-        } catch (error) {
-          salesRoom.postMessage({
-            type: 'SALES_ROOM_CUSTOMERS',
-            ok: false,
-            error: error?.message || 'Customer list could not be loaded.'
-          });
+          try {
+            const response = await getSalesRoomCustomersOperational();
+            salesRoom.postMessage({
+              type: 'SALES_ROOM_CUSTOMERS',
+              ...response
+            });
+          } catch (error) {
+            salesRoom.postMessage({
+              type: 'SALES_ROOM_CUSTOMERS',
+              ok: false,
+              error: error?.message || 'Customer list could not be loaded.'
+            });
+          }
+        } finally {
+          readyBootstrapInFlight = false;
         }
       }
       return;
@@ -306,11 +243,13 @@ $w.onReady(function () {
         );
         salesRoom.postMessage({
           type: 'SALES_ROOM_CUSTOMER_DETAIL',
+          ...(message.profileSaveRequestId ? { profileSaveRequestId: message.profileSaveRequestId } : {}),
           ...response
         });
       } catch (error) {
         salesRoom.postMessage({
           type: 'SALES_ROOM_CUSTOMER_DETAIL',
+          ...(message.profileSaveRequestId ? { profileSaveRequestId: message.profileSaveRequestId } : {}),
           ok: false,
           error: error?.message || 'Customer detail could not be loaded.'
         });
@@ -322,29 +261,6 @@ $w.onReady(function () {
 
     if (message.type === 'SALES_ROOM_CUSTOMERS_REQUEST') {
       await refreshCustomersFromCms();
-      routePendingSelections();
-      return;
-    }
-
-    if (message.type === 'SALES_ROOM_ROUTE_QD_REQUEST') {
-      const customerId = message.customerId || '';
-      try {
-        const response = await routeSalesRoomCustomerSelections(customerId);
-        salesRoom.postMessage({
-          type: 'SALES_ROOM_QD_ROUTE_RESULT',
-          customerId,
-          ...response
-        });
-        await refreshCustomersFromCms();
-      } catch (error) {
-        salesRoom.postMessage({
-          type: 'SALES_ROOM_QD_ROUTE_RESULT',
-          ok: false,
-          customerId,
-          error: error?.message || 'Quotation Desk route could not be completed.'
-        });
-        await refreshCustomersFromCms();
-      }
       return;
     }
 
@@ -390,11 +306,13 @@ $w.onReady(function () {
         }
         salesRoom.postMessage({
           type: 'SALES_ROOM_CUSTOMER_PROFILE_RESULT',
+          requestId: message.requestId || '',
           ...response
         });
       } catch (error) {
         salesRoom.postMessage({
           type: 'SALES_ROOM_CUSTOMER_PROFILE_RESULT',
+          requestId: message.requestId || '',
           ok: false,
           error: error?.message || 'Customer profile could not be saved.'
         });
@@ -463,23 +381,7 @@ $w.onReady(function () {
     }
 
 
-    if (message.type === 'SALES_ROOM_PUBLISH_QUOTES') {
-      try {
-        const result = await publishSalesRoomQuotations(message.customerId || '');
-        salesRoom.postMessage({ type: 'SALES_ROOM_PUBLISH_QUOTES_RESULT', ok: true, result });
-        await refreshCustomersFromCms();
-      } catch (error) {
-        salesRoom.postMessage({ type: 'SALES_ROOM_PUBLISH_QUOTES_RESULT', ok: false, error: error?.message || 'Quotation publishing failed.' });
-      }
-      return;
-    }
 
-    if (message.type === 'SALES_ROOM_QD_OPENED') {
-      const currentStaff = await staffPromise;
-      try { await recordSalesRoomActivity({ action: 'QD_OPENED', customerId: message.customerId || '' }); } catch (error) {}
-      await refreshSalesActivity(currentStaff, 0);
-      return;
-    }
     if (message.type === 'SALES_ROOM_ACTIVITY_REQUEST') {
       const currentStaff = await staffPromise;
       await refreshSalesActivity(currentStaff, message.dayOffset || 0);
@@ -571,16 +473,6 @@ $w.onReady(function () {
     if (message.type === 'SALES_ROOM_CREATE_PROFORMA') {
       try { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', ...(await createSalesRoomProforma(message.orderId || '')) }); }
       catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', ok: false, error: error?.message || 'Proforma request could not be created.' }); }
-      return;
-    }
-
-    if (message.type === 'SALES_ROOM_QD_VERIFY') {
-      try {
-        const response = await verifySalesRoomCustomerQd(message.customerId || '');
-        salesRoom.postMessage({ type: 'SALES_ROOM_QD_VERIFY_RESULT', ...response });
-      } catch (error) {
-        salesRoom.postMessage({ type: 'SALES_ROOM_QD_VERIFY_RESULT', ok: false, customerId: message.customerId || '', error: error?.message || 'Quotation Desk activation could not be verified.' });
-      }
       return;
     }
 

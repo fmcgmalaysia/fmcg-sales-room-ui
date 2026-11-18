@@ -6,7 +6,7 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { getSalesRoomCustomerDetail } from 'backend/onboarding.web';
-import { addCatalogueSelection, getCatalogueSelectionState, routeCatalogueSelection } from 'backend/catalogueSelection.web.js';
+import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
 
 let catalogueContextMessage = null;
 let catalogueMenuMessage = null;
@@ -17,7 +17,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-10-06-catalogue-brand-sort-v53';
+const CATALOGUE_BUILD_VERSION = '20261117-catalogue-layout-v1';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -28,9 +28,67 @@ let catalogueSubCategoryMainMap = new Map();
 let catalogueFoodProductIds = new Set();
 let catalogueFoodPrinciples = new Set();
 let catalogueProductsLoaded = false;
+let catalogueWorkspaceRead = null;
+let catalogueWorkspaceFullReadComplete = false;
 let catalogueCategoriesLoaded = false;
 let catalogueSelectionResolved = false;
 let catalogueWorkspaceQueryVersion = 0;
+let catalogueBrowseRevision = 0;
+let catalogueBrowseSubIds = [];
+let catalogueBrowseKey = '';
+let catalogueBrowsePosition = null;
+
+function recordCatalogueBrowse(subIds, position = null) {
+    catalogueBrowseRevision += 1;
+    catalogueBrowseSubIds = subIds;
+    catalogueBrowsePosition = position;
+}
+
+function workspaceFilterMessage() {
+    const message = { type: 'catalogueWorkspaceFilter', ...catalogueWorkspaceFilter };
+    if (wixWindowFrontend.formFactor !== 'Mobile') return message;
+    const position = catalogueBrowsePosition;
+    catalogueBrowsePosition = null;
+    return { ...message,
+        browseRevision: catalogueBrowseRevision, position };
+}
+
+function rememberMobileCataloguePosition(message) {
+    if (!catalogueBrowseKey || catalogueBrowseSubIds === null || message.browseRevision !== catalogueBrowseRevision) return;
+    const { anchor, offset } = message;
+    if (typeof anchor !== 'string' || anchor.length > 100 || !Number.isInteger(offset) || offset < 0 || offset > 200) return;
+    try {
+        local.setItem(catalogueBrowseKey, JSON.stringify({
+            query: catalogueWorkspaceFilter.query, principle: catalogueWorkspaceFilter.principle,
+            subIds: catalogueBrowseSubIds, anchor, offset
+        }));
+    } catch (error) {}
+}
+
+async function restoreMobileCataloguePosition(customerId) {
+    if (wixWindowFrontend.formFactor !== 'Mobile' || !customerId) return;
+    catalogueBrowseKey = 'catalogueBrowseReturnV1:' + customerId;
+    let saved;
+    try { saved = JSON.parse(local.getItem(catalogueBrowseKey) || 'null'); }
+    catch (error) { return; }
+    if (!saved || catalogueWorkspaceQueryVersion !== 0) return;
+    const { query, principle, subIds, anchor, offset } = saved;
+    if (typeof query !== 'string' || query.length > 200 || typeof principle !== 'string' || principle.length > 200
+        || !Array.isArray(subIds) || subIds.length > 100 || !subIds.every(id => typeof id === 'string' && /^[a-z0-9_-]{1,100}$/i.test(id))
+        || typeof anchor !== 'string' || anchor.length > 100 || !Number.isInteger(offset) || offset < 0 || offset > 200) return;
+    if (subIds.length) {
+        await showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', subIds), subIds, { anchor, offset });
+        return;
+    }
+    if (!catalogueWorkspaceFullReadComplete) await loadCatalogueWorkspaceProducts();
+    if (!catalogueWorkspaceFullReadComplete || catalogueWorkspaceQueryVersion !== 0) return;
+    catalogueWorkspaceFilter = { query, main: '', subIds: [], principle };
+    recordCatalogueBrowse([], { anchor, offset });
+    if (query) {
+        try { $w('#input2').value = query; } catch (error) {}
+    }
+    sendCatalogueWorkspaceData();
+}
 
 function imageUrl(value) {
     const raw = String(value || '').trim();
@@ -72,6 +130,7 @@ function sendCatalogueContext(message) {
 function sendCatalogueMenu(message) {
     catalogueMenuMessage = message;
     try { $w('#html4').postMessage(message); } catch (error) {}
+    try { $w('#html5').postMessage(message); } catch (error) {}
 }
 
 function sidebarSelectionState(state) {
@@ -186,11 +245,19 @@ function sendCatalogueWorkspaceData() {
             context: catalogueContextMessage,
             buildVersion: CATALOGUE_BUILD_VERSION
         });
-        $w('#html5').postMessage({ type: 'catalogueWorkspaceFilter', ...catalogueWorkspaceFilter });
+        $w('#html5').postMessage(workspaceFilterMessage());
     } catch (error) {}
 }
 
-async function loadCatalogueWorkspaceProducts() {
+function loadCatalogueWorkspaceProducts() {
+    if (!catalogueWorkspaceRead) {
+        catalogueWorkspaceRead = readCatalogueWorkspaceProducts(catalogueWorkspaceQueryVersion)
+            .finally(() => { catalogueWorkspaceRead = null; });
+    }
+    return catalogueWorkspaceRead;
+}
+
+async function readCatalogueWorkspaceProducts(queryVersion) {
     const products = [];
     try {
         let result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').limit(1000).find();
@@ -200,16 +267,17 @@ async function loadCatalogueWorkspaceProducts() {
             products.push(...result.items);
         }
         catalogueWorkspaceAllProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
-        catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
+        catalogueWorkspaceFullReadComplete = true;
+        if (queryVersion === catalogueWorkspaceQueryVersion) catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
     } catch (error) {
         console.error('Catalogue workspace CMS load failed', error);
-        catalogueWorkspaceProducts = [];
+        if (queryVersion === catalogueWorkspaceQueryVersion) catalogueWorkspaceProducts = [];
     }
     catalogueProductsLoaded = true;
     sendCatalogueWorkspaceData();
 }
 
-async function showCatalogueWorkspaceQuery(query) {
+async function showCatalogueWorkspaceQuery(query, resumeSubIds = null, position = null) {
     const queryVersion = ++catalogueWorkspaceQueryVersion;
     const products = [];
     try {
@@ -222,6 +290,7 @@ async function showCatalogueWorkspaceQuery(query) {
         if (queryVersion !== catalogueWorkspaceQueryVersion) return;
         catalogueWorkspaceProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
         catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
+        recordCatalogueBrowse(resumeSubIds, position);
         sendCatalogueWorkspaceData();
     } catch (error) {
         console.error('Catalogue workspace filtered CMS load failed', error);
@@ -232,6 +301,7 @@ function showAllCatalogueWorkspaceProducts() {
     catalogueWorkspaceQueryVersion += 1;
     catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
     catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
+    recordCatalogueBrowse([]);
     sendCatalogueWorkspaceData();
 }
 
@@ -289,6 +359,8 @@ $w.onReady(async () => {
                 sheetName: String(state?.companyName || 'Buyer Account').trim(),
                 signedInName: String(state?.actorName || 'Buyer').trim()
             });
+            restoreMobileCataloguePosition(state?.customerId)
+                .catch(error => console.warn('Catalogue browsing position could not be restored', error));
         } catch (error) {
             selectionContext = null;
             local.removeItem('catalogueAccess');
@@ -403,6 +475,7 @@ function setupNav() {
         catalogueWorkspaceQueryVersion += 1;
         catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
         catalogueWorkspaceFilter = { query, main: '', subIds: [], principle: '' };
+        recordCatalogueBrowse([]);
         sendCatalogueWorkspaceData();
         try {
             if (query.length < 2) { await dataset.setFilter(wixData.filter()); return; }
@@ -467,6 +540,10 @@ function setupNav() {
             showAllCatalogueWorkspaceProducts();
             await dataset.setFilter(wixData.filter());
         } else if (message.type === 'catalogueAccount') {
+            if (catalogueBrowseKey) {
+                try { local.removeItem(catalogueBrowseKey); } catch (error) {}
+                catalogueBrowseKey = '';
+            }
             await authentication.logout();
             wixLocationFrontend.to('/');
         } else if (message.type === 'catalogueBuyerRoom') {
@@ -553,8 +630,29 @@ function setupCatalogueWorkspace() {
         const message = event.data || {};
         if (message.type === 'catalogueWorkspaceReady') {
             catalogueWorkspaceReady = true;
-            if (!catalogueWorkspaceProducts.length) await loadCatalogueWorkspaceProducts();
-            else sendCatalogueWorkspaceData();
+            if (catalogueWorkspaceFullReadComplete || catalogueWorkspaceProducts.length) sendCatalogueWorkspaceData();
+            else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
+            if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
+        } else if (message.type === 'catalogueWorkspaceBrowse') {
+            const principle = typeof message.principle === 'string' ? message.principle.trim() : '';
+            const main = typeof message.main === 'string' ? message.main.toUpperCase() : '';
+            const subId = typeof message.subId === 'string' ? message.subId : '';
+            const categories = (catalogueMenuMessage?.items || []).filter(item => item.mainCategory === main);
+            if (principle && !catalogueWorkspaceAllProducts.some(product => product.principle.toLowerCase() === principle.toLowerCase())) return;
+            if ((main && !categories.length) || (subId && !categories.some(item => item.id === subId))) return;
+            try { $w('#input2').value = ''; } catch (error) {}
+            if (main) {
+                const ids = subId ? [subId] : categories.map(item => item.id);
+                await showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids), ids);
+                return;
+            }
+            catalogueWorkspaceQueryVersion += 1;
+            catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
+            catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle };
+            recordCatalogueBrowse([]);
+            sendCatalogueWorkspaceData();
+        } else if (message.type === 'catalogueWorkspacePosition') {
+            rememberMobileCataloguePosition(message);
         } else if (message.type === 'catalogueWorkspaceNavigate') {
             try { await wixWindowFrontend.scrollTo(0, 0); } catch (error) {}
         } else if (message.type === 'catalogueWorkspaceBuyerRoom') {
@@ -566,15 +664,12 @@ function setupCatalogueWorkspace() {
             selectionBusyIds.add(productId);
             try {
                 const result = await addCatalogueSelection(productId, selectionContext.assistCustomerId || '');
-                if (!result?.ok) throw new Error(result?.error || 'Quotation Desk selection sync failed.');
+                if (!result?.ok) throw new Error(result?.error || 'Could not save this selection.');
                 selectedProductIds.add(productId);
                 activeSelectedProductIds.add(productId);
                 catalogueSelectionTotal = activeSelectedProductIds.size;
                 workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
                 sendCatalogueWorkspaceData();
-                routeCatalogueSelection(result?.selection?.id, selectionContext.assistCustomerId || '')
-                    .then(routeResult => { if (!routeResult?.ok) console.error('Background QD routing failed', routeResult?.error || routeResult); })
-                    .catch(error => console.error('Background QD routing failed', error));
             } catch (error) {
                 console.error('Catalogue workspace selection failed', error);
                 workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: false, productId });

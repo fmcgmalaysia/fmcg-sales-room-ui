@@ -11,7 +11,7 @@ import { verifyBuyerSelectionExportToken } from 'backend/buyerSelectionExportTok
 import { buildBuyerSelectionDownload } from 'backend/buyerSelectionDownload.js';
 import { verifyBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
-import { getMasterStaffScope, staffMayAccessCustomer } from 'backend/masterStaffAccessClient.js';
+import { getMasterStaffScope } from 'backend/masterStaffAccessClient.js';
 
 const SITE_BASE = 'https://www.fmcgmalaysia.com';
 const CALLBACK_URL = SITE_BASE + '/_functions/googleStaffAuth';
@@ -127,60 +127,9 @@ export async function get_googleStaffAuth(request) {
 }
 
 // QUOTATION DESK -> BUYER ROOM RELEASE
-const QUOTE_LIST_COLLECTION = 'WixBuyerListItems';
-const QUOTE_CUSTOMER_COLLECTION = 'WixCustomers';
-function quoteJson(status, payload) {
-  return response({ status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }, body: JSON.stringify(payload) });
-}
-function quotePayload(record) {
-  const raw = record?.payload;
-  if (raw && typeof raw === 'object') return raw;
-  try { return JSON.parse(String(raw || '{}')); } catch (_) { return {}; }
-}
-function quoteNumber(value) { const number = Number(value); return Number.isFinite(number) ? number : 0; }
-function quoteBarcode(value) { return String(value || '').replace(/\.0$/, '').trim(); }
-function quoteFingerprint(value) {
-  return JSON.stringify({
-    quotePerPc: quoteNumber(value?.quotePerPc),
-    quotePerCtn: quoteNumber(value?.quotePerCtn),
-    currency: normalize(value?.vipCurrency || value?.currency || '').toUpperCase()
-  });
-}
-async function quoteSecret() {
-  try { return await getSecret('WIX_QUOTE_SYNC_TOKEN'); }
-  catch (_) { return getSecret('FMCG_QD_ROUTER_TOKEN'); }
-}
-async function authorizeQuotationSync(request, body) {
-  const authorization = normalize(request?.headers?.authorization);
-  const expected = normalize(await quoteSecret());
-  if (expected && authorization === 'Bearer ' + expected) {
-    return { actorEmail: normalizeEmail(body?.actorEmail), mode: 'service' };
-  }
-
-  const match = /^Bearer\s+(.+)$/i.exec(authorization);
-  if (!match) return null;
-  try {
-    const userResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-      method: 'get',
-      headers: { Authorization: 'Bearer ' + match[1] }
-    });
-    if (!userResponse.ok) return null;
-    const user = await userResponse.json();
-    const email = normalizeEmail(user?.email);
-    if (!email || user?.email_verified !== true) return null;
-    const claimedActor = normalizeEmail(body?.actorEmail);
-    if (claimedActor && claimedActor !== email) return null;
-    const staff = await getMasterStaffScope(email, true);
-    if (!staff || !staffMayAccessCustomer({ ...staff, authorized: true }, 'PUBLISH_QUOTATION', body?.customerId)) return null;
-    return { actorEmail: email, mode: 'google' };
-  } catch (_) {
-    return null;
-  }
-}
-
 export async function get_buyerSelectionExcel(request) {
   try {
-    const authorization = verifyBuyerSelectionExportToken(request?.query?.token, await getSecret('FMCG_QD_ROUTER_TOKEN'));
+    const authorization = verifyBuyerSelectionExportToken(request?.query?.token, await getSecret('BUYER_EXCEL_DOWNLOAD_SECRET'));
     const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room';
     const file = await buildBuyerSelectionDownload(authorization.customerId, buyerRoomUrl);
     return response({
@@ -211,7 +160,7 @@ export async function get_buyerSelectionExcel(request) {
 
 export async function get_buyerOrderExcel(request) {
   try {
-    const authorization = verifyBuyerOrderExportToken(request?.query?.token, await getSecret('FMCG_QD_ROUTER_TOKEN'));
+    const authorization = verifyBuyerOrderExportToken(request?.query?.token, await getSecret('BUYER_EXCEL_DOWNLOAD_SECRET'));
     const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room';
     let file;
     let lastError;
@@ -261,83 +210,12 @@ export async function get_buyerOrderExcel(request) {
   }
 }
 
-export async function post_quotationSync(request) {
-  try {
-    const body = await request.body.json();
-    const authorized = await authorizeQuotationSync(request, body);
-    if (!authorized) return quoteJson(401, { ok: false, error: 'Unauthorized quotation sync.' });
-    const customerId = normalize(body?.customerId);
-    const qdFileId = normalize(body?.quotationDeskFileId);
-    const quotations = Array.isArray(body?.quotations) ? body.quotations : [];
-    if (!customerId || !qdFileId || !quotations.length) return quoteJson(400, { ok: false, error: 'Quotation sync payload is incomplete.' });
-    const customers = await wixData.query(QUOTE_CUSTOMER_COLLECTION).eq('customerId', customerId).limit(2).find({ suppressAuth: true, consistentRead: true });
-    if (customers.items.length !== 1) return quoteJson(404, { ok: false, error: 'Customer account was not found.' });
-    const customer = customers.items[0];
-    if (normalize(customer.qdFileId) !== qdFileId) return quoteJson(403, { ok: false, error: 'Quotation Desk identity does not match this customer.' });
-    const currency = normalize(customer.preferredCurrency || customer.tradingCurrency || 'USD').toUpperCase();
-    const requestId = normalize(body.requestId);
-    const results = [];
-    for (const quotation of quotations) {
-      const wixMyListId = normalize(quotation?.wixMyListId);
-      try {
-        if (!wixMyListId) throw new Error('WIX MY LIST ID is missing.');
-        const record = await wixData.get(QUOTE_LIST_COLLECTION, wixMyListId, { suppressAuth: true });
-        if (!record) throw new Error('Buyer list item was not found.');
-        const item = quotePayload(record);
-        if (normalize(item.customerId) !== customerId) throw new Error('Buyer list item belongs to another customer.');
-        if (quoteBarcode(item.unitBarcode || item.barcode) !== quoteBarcode(quotation.unitBarcode)) throw new Error('Unit Barcode does not match the selected item.');
-        const quotePerPc = quoteNumber(quotation.quotePerPc);
-        const quotePerCtn = quoteNumber(quotation.quotePerCtn);
-        if (!(quotePerPc > 0) || !(quotePerCtn > 0)) throw new Error('Both quotation prices must be greater than zero.');
-        const incomingFingerprint = quoteFingerprint({ quotePerPc, quotePerCtn, currency });
-        const currentFingerprint = quoteFingerprint(item);
-        const priorRequestId = normalize(item.quoteRequestId);
-        if (requestId && priorRequestId === requestId && currentFingerprint !== incomingFingerprint) {
-          throw new Error('This request ID was already used for a different quotation value.');
-        }
-        if (item.quoteActive === true && normalize(item.quoteStatus).toUpperCase() === 'VIEW QUOTE' && currentFingerprint === incomingFingerprint) {
-          results.push({
-            ok: true,
-            changed: false,
-            unchanged: true,
-            wixMyListId,
-            quoteStatus: 'VIEW QUOTE',
-            quoteEffectiveAt: item.quoteEffectiveAt || item.quoteSyncedAt || ''
-          });
-          continue;
-        }
-        const now = new Date().toISOString();
-        const hadLiveQuote = item.quoteActive === true && normalize(item.quoteStatus).toUpperCase() === 'VIEW QUOTE' && quoteNumber(item.quotePerPc) > 0 && quoteNumber(item.quotePerCtn) > 0;
-        const previousQuote = hadLiveQuote ? {
-          quotePerPc: quoteNumber(item.quotePerPc),
-          quotePerCtn: quoteNumber(item.quotePerCtn),
-          currency: normalize(item.vipCurrency || currency).toUpperCase(),
-          quoteEffectiveAt: item.quoteEffectiveAt || item.quoteSyncedAt || '',
-          expiredAt: now,
-          requestId: normalize(item.quoteRequestId)
-        } : null;
-        const actorEmail = authorized.actorEmail || normalizeEmail(body.actorEmail);
-        const next = { ...item, quoteStatus: 'VIEW QUOTE', quoteActive: true, quotePerPc, quotePerCtn, vipPriceEa: quotePerPc, vipPriceCtn: quotePerCtn, vipCurrency: currency, targetGp: quotation.targetGp ?? null, previousQuote, quoteEffectiveAt: now, quoteSyncedAt: now, quoteRequestId: requestId, quoteActorEmail: actorEmail, lastEditedBy: actorEmail || 'FMCG Malaysia' };
-        await wixData.update(QUOTE_LIST_COLLECTION, { ...record, payload: JSON.stringify(next) }, { suppressAuth: true });
-        results.push({ ok: true, changed: true, unchanged: false, wixMyListId, quoteStatus: 'VIEW QUOTE', quoteEffectiveAt: now });
-      } catch (error) {
-        results.push({ ok: false, wixMyListId, error: normalize(error?.message || error) });
-      }
-    }
-    return quoteJson(200, {
-      ok: true,
-      requestId,
-      summary: {
-        changed: results.filter((item) => item.ok && item.changed).length,
-        unchanged: results.filter((item) => item.ok && item.unchanged).length,
-        failed: results.filter((item) => !item.ok).length
-      },
-      results
-    });
-  } catch (error) {
-    console.error('Quotation sync failed', error);
-    return quoteJson(500, { ok: false, error: normalize(error?.message || error || 'Quotation sync failed.') });
-  }
+export async function post_quotationSync() {
+  return response({
+    status: 410,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    body: JSON.stringify({ ok: false, error: 'This action has been retired.' })
+  });
 }
 export async function post_masterFxRates(request) {
   try {

@@ -4,7 +4,6 @@ import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
-import { request as httpsRequest } from 'https';
 import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
 import { createBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
@@ -12,7 +11,7 @@ import { createBuyerSelectionMediaDownload } from 'backend/buyerSelectionDownloa
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { requireStaffCustomerAccess } from 'backend/masterStaffAccessClient.js';
 import { applyWebQuotations, readMasterWebQuotationData } from 'backend/masterWebQuotationData.js';
-import { isWebQuotationCustomer, isWebQuotationReady } from 'backend/webQuotationCustomer.js';
+import { isWebQuotationReady } from 'backend/webQuotationCustomer.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -29,8 +28,7 @@ const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
 const ACCOUNT_NOTIFICATION_COLLECTION = 'WixAccountNotifications';
 const USER_AUDIT_COLLECTION = 'CustomerUserAudit';
 const ORDER_PAGE_SIZE = 20;
-const QD_ROUTER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
-const QD_ROUTER_SECRET = 'FMCG_QD_ROUTER_TOKEN';
+const BUYER_EXCEL_DOWNLOAD_SECRET = 'BUYER_EXCEL_DOWNLOAD_SECRET';
 
 function normalize(value) { return String(value ?? '').trim(); }
 function upper(value) { return normalize(value).toUpperCase(); }
@@ -171,48 +169,12 @@ function ensureActive(customer) {
   const lifecycle = upper(customer.lifecycleStatus || customer.customerStatus);
   const access = upper(customer.catalogueAccessStatus || customer.accessStatus || customer.customerStatus);
   if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) throw new Error('This customer account is suspended.');
-  if (isWebQuotationCustomer(customer) && !isWebQuotationReady(customer)) throw new Error('Your web quotation workspace is not ready.');
+  if (!isWebQuotationReady(customer)) throw new Error('Your web quotation workspace is not ready.');
 }
 function contextFromCustomer(customer, actor) {
-  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, actorUserId: normalize(actor.userId), primaryUser: Boolean(actor.primaryUser), currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId), ...(isWebQuotationCustomer(customer) ? { quotationMode: 'WEB' } : {}) };
+  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, actorUserId: normalize(actor.userId), primaryUser: Boolean(actor.primaryUser), currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', assignedStaffId: upper(customer.assignedStaffId), quotationMode: 'WEB' };
 }
 
-function httpsCall(url, options, body = '') {
-  return new Promise((resolve, reject) => {
-    const req = httpsRequest(url, options, response => {
-      let text = '';
-      response.setEncoding('utf8');
-      response.on('data', chunk => { text += chunk; });
-      response.on('end', () => resolve({ status: Number(response.statusCode || 0), headers: response.headers || {}, text }));
-    });
-    req.on('error', reject);
-    req.setTimeout(30000, () => req.destroy(new Error('Quotation Desk service timed out.')));
-    if (body) req.write(body);
-    req.end();
-  });
-}
-async function routeQdAction(action, buyer, row) {
-  if (!buyer.qdFileId) throw new Error('Quotation Desk file is not configured.');
-  const payload = JSON.stringify({
-    action,
-    sharedSecret: await getSecret(QD_ROUTER_SECRET),
-    customerId: buyer.customerId,
-    assignedStaffId: buyer.assignedStaffId,
-    qdFileId: buyer.qdFileId,
-    wixMyListId: normalize(row.record._id || row.data.id || row.data.itemId),
-    unitBarcode: normalize(row.data.unitBarcode || row.data.barcode)
-  });
-  let response = await httpsCall(QD_ROUTER_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, payload);
-  if ([301, 302, 303, 307, 308].includes(response.status)) {
-    const location = Array.isArray(response.headers.location) ? response.headers.location[0] : response.headers.location;
-    if (!location) throw new Error('Quotation Desk redirect is missing.');
-    response = await httpsCall(new URL(location, QD_ROUTER_ENDPOINT).toString(), { method: 'GET', headers: { Accept: 'application/json' } });
-  }
-  let body = {};
-  try { body = JSON.parse(response.text || '{}'); } catch (_) { /* handled below */ }
-  if (response.status < 200 || response.status >= 300 || !body.ok) throw new Error(body.error || 'Quotation Desk update failed.');
-  return body.result || {};
-}
 async function resolveBuyerContext(assistCustomerId = '', staffAction = 'VIEW') {
   const member = await signedInMember();
   if (!member?._id) throw new Error('Sign in is required.');
@@ -307,7 +269,7 @@ async function workspaceItems(buyer) {
       qtyEditedAt: normalize(data.qtyEditedAt), qtyEditedBy: normalize(data.qtyEditedBy)
     };
   });
-  return buyer.quotationMode === 'WEB' ? applyWebQuotations(await customerById(customerId), selections) : selections;
+  return applyWebQuotations(await customerById(customerId), selections);
 }
 
 async function buyerOrderHistory(customerId, cursor = '') {
@@ -400,8 +362,7 @@ async function writeBuyerUserAudit(action, customerId, userId, beforeStatus, aft
 
 function buyerPageContext(buyer) {
   if (buyer.actorType === 'CUSTOMER_USER') return buyer;
-  const { qdFileId, ...context } = buyer;
-  return context;
+  return buyer;
 }
 
 export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
@@ -570,7 +531,7 @@ export const prepareBuyerOrderDownload = webMethod(Permissions.SiteMember, async
     throw new Error('Please refresh the order form and try again.');
   }
   const orderId = nextOrderId(buyer.customerId, submissionId);
-  const issued = createBuyerOrderExportToken(buyer.customerId, orderId, await getSecret(QD_ROUTER_SECRET), 900);
+  const issued = createBuyerOrderExportToken(buyer.customerId, orderId, await getSecret(BUYER_EXCEL_DOWNLOAD_SECRET), 900);
   return { ok: true, orderId, ...issued };
 });
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
@@ -621,7 +582,7 @@ export const saveBuyerQuantity = webMethod(Permissions.SiteMember, async (itemId
   if (requestedQuantity > 0) {
     let item = row.data;
     if (buyer.quotationMode === 'WEB') {
-      const { customer, selection } = await readMasterWebQuotationData({ action: 'selection', customerId: buyer.customerId, selectionId: normalize(itemId) });
+      const { customer, selection } = await readMasterWebQuotationData({ action: 'selection', customerId: buyer.customerId, customerIds: undefined, selectionId: normalize(itemId) });
       item = customer && selection ? (await applyWebQuotations(customer, [selection]))[0] : {};
     }
     if (!(releasedOrderPrice(item) > 0)) throw new Error('Order quantity becomes available after the V.I.P price is released.');
@@ -700,47 +661,21 @@ export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, 
   const buyer = await resolveBuyerContext(assistCustomerId, 'ASSIST_SELECTION');
   const row = await findOwnedItem(buyer, itemId);
   const now = new Date().toISOString();
-  let next = { ...row.data, removed: true, removedTime: now, orderQtyCtn: 0, quoteStatus: 'REMOVED', quoteActive: false,
+  const next = { ...row.data, removed: true, removedTime: now, orderQtyCtn: 0, quoteStatus: 'REMOVED', quoteActive: false,
     normalPriceEa: 0, normalPriceCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, vipPrice: 0,
     quotePerPc: 0, quotePerCtn: 0, pricePerPc: 0, pricePerCtn: 0, previousQuote: null, targetGp: null,
-    qdCleanupStatus: 'PENDING', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
-  if (buyer.quotationMode === 'WEB') {
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, { ...next, qdSyncStatus: '', qdCleanupStatus: '' });
-    return { ok: true, itemId: normalize(itemId), removed: true };
-  }
+    qdSyncStatus: '', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-  try {
-    await routeQdAction('REMOVE_SELECTION', buyer, row);
-    next = { ...next, qdSyncStatus: 'REMOVED', qdCleanupStatus: 'READY', qdRow: 0, qdCleanedAt: new Date().toISOString() };
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-    return { ok: true, itemId: normalize(itemId), removed: true, qdCleanupStatus: 'READY' };
-  } catch (error) {
-    next = { ...next, qdCleanupStatus: 'FAILED', qdCleanupError: normalize(error?.message || error) };
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-    return { ok: true, itemId: normalize(itemId), removed: true, qdCleanupStatus: 'FAILED', warning: 'The item was removed, but Sales Room must review QD cleanup.' };
-  }
+  return { ok: true, itemId: normalize(itemId), removed: true };
 });
 export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId, assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId, 'ASSIST_SELECTION');
   const row = await findOwnedItem(buyer, itemId);
   if (row.data.removed && (await activeBuyerSelectionCount(buyer.customerId, buyer.selectionLimit)) >= buyer.selectionLimit) throw new Error(`My Selection is at its ${buyer.selectionLimit}-product limit. Remove an item before restoring this one.`);
   const now = new Date().toISOString();
-  let next = { ...row.data, removed: false, recoveredAt: now, requoteRequestedAt: now, quoteStatus: 'RFQ', quoteActive: false, quotePerPc: 0, quotePerCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, orderQtyCtn: 0, qtyEditedAt: '', qtyEditedBy: '', qdSyncStatus: 'PENDING', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
-  if (buyer.quotationMode === 'WEB') {
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, { ...next, qdSyncStatus: '' });
-    return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ' };
-  }
+  const next = { ...row.data, removed: false, recoveredAt: now, requoteRequestedAt: now, quoteStatus: 'RFQ', quoteActive: false, quotePerPc: 0, quotePerCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, orderQtyCtn: 0, qtyEditedAt: '', qtyEditedBy: '', qdSyncStatus: '', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-  try {
-    const result = await routeQdAction('ADD_SELECTION', buyer, row);
-    next = { ...next, qdSyncStatus: 'READY', qdSyncedAt: new Date().toISOString(), qdRow: Number(result.qdRow || 0), lastError: '' };
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-    return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ' };
-  } catch (error) {
-    next = { ...next, qdSyncStatus: 'FAILED', lastError: normalize(error?.message || error) };
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-    return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ', warning: 'Re-quote requested, but Sales Room must review QD routing.' };
-  }
+  return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ' };
 });
 function nextOrderId(customerId, requestId) { return 'ORD-' + normalize(customerId).replace(/[^A-Z0-9-]/gi, '').toUpperCase() + '-' + requestId.replace(/-/g, '').toUpperCase(); }
 export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (requestedLines, assistCustomerId = '', requestId = '', customerPoNumber = '') => {
@@ -969,4 +904,3 @@ async function rollbackPendingBuyerAddition(order) {
     }
   }
 }
-

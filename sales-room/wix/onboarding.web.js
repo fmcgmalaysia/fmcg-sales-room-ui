@@ -4,17 +4,14 @@ import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { fetch } from 'wix-fetch';
-import { request as httpsRequest } from 'https';
-import { getSecret } from 'wix-secrets-backend';
 import wixRealtimeBackend from 'wix-realtime-backend';
 import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
-import { requireStaffCustomerAccess, staffMayAccessCustomer, getMasterSalesCreationAssignees, resolveMasterSalesCreationAssignee, confirmMasterInitialSalesAccess } from 'backend/masterStaffAccessClient.js';
-import { webQuotationRegistrationEnabled, reserveWebQuotationCustomer, reserveWebQuotationPrimaryUser, activateWebQuotationCustomer } from 'backend/webQuotationRegistration.js';
-import { isWebQuotationCustomer } from 'backend/webQuotationCustomer.js';
+import { requireStaffCustomerAccess, staffMayAccessCustomer, getMasterSalesCreationAssignees, resolveMasterSalesCreationAssignee } from 'backend/masterStaffAccessClient.js';
+import { reserveWebQuotationCustomer, reserveWebQuotationPrimaryUser, activateWebQuotationCustomer } from 'backend/webQuotationRegistration.js';
+import { isWebQuotationCustomer, isWebQuotationReady } from 'backend/webQuotationCustomer.js';
+import { applyWebQuotations } from 'backend/masterWebQuotationData.js';
 
-const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
-const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
 
 const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
@@ -41,15 +38,16 @@ const CURRENCIES = Object.freeze(['USD', 'MYR', 'SGD', 'RMB', 'JPY']);
 export const getAssignableSalesStaff = webMethod(Permissions.SiteMember, async () => {
   const context = await requireAuthorizedStaffContext();
   const routing = await getMasterSalesCreationAssignees(context.loginEmail);
-  return Object.freeze({ ok: true, staff: routing?.assignees ?? [], canCreate: Boolean(routing),
-    mayAssignOthers: routing?.mayAssignOthers ?? false, quotationMode: await webQuotationRegistrationEnabled() ? 'WEB' : 'QD' });
+  const staff = routing?.assignees ?? [];
+  const mayAssignOthers = routing?.mayAssignOthers === true;
+  return Object.freeze({ ok: true, staff, canCreate: mayAssignOthers || staff.length > 0,
+    mayAssignOthers, quotationMode: 'WEB' });
 });
 
 export const createSalesRoomCustomer = webMethod(
   Permissions.SiteMember,
   async (payload) => {
     const customer = normalizeAndValidate(payload || {});
-    const web = await webQuotationRegistrationEnabled();
     const staff = await resolveCustomerRouting(payload?.assignedStaffId);
 
     const existingAccess = await findCustomerUserByEmail(customer.picEmail);
@@ -63,7 +61,7 @@ export const createSalesRoomCustomer = webMethod(
       .limit(2)
       .find({ suppressAuth: true, consistentRead: true });
     const prior = duplicateCompany.items.length === 1 && duplicateCompany.items[0];
-    const resume = prior && /^[a-f0-9]{64}$/.test(prior.salesInitialGrantRevision || '') &&
+    const resume = prior && isWebQuotationCustomer(prior) && /^[a-f0-9]{64}$/.test(prior.salesInitialGrantRevision || '') &&
       ['REGISTERING', 'ACCESS RECORD ERROR'].includes(upper(prior.customerStatus)) &&
       prior.assignedStaffId === staff.staffId && prior.primaryEmail === customer.picEmail &&
       prior.customerShortName === customer.customerShortName;
@@ -98,48 +96,32 @@ export const createSalesRoomCustomer = webMethod(
         destinationPortName: customer.destinationPort,
         assignedStaffId: staff.staffId,
         salesInitialGrantRevision: staff.grantRevision,
-        qdOwnerStaffId: staff.staffId,
-        qdFileId: '',
-        qdFileLabel: '',
-        qdSheetName: 'WIX QUOTATION',
-        qdSheetId: '',
-        qdTemplateVersion: '',
-        qdStatus: 'PENDING',
         customerStatus: 'REGISTERING',
         lifecycleStatus: 'ACTIVE',
         accessStatus: 'PENDING',
         reactivationStatus: 'NONE',
         primaryEmail: customer.picEmail
     };
-    let customerRecord = resume ? prior : web
-      ? await reserveWebQuotationCustomer({ ...customerFields, quotationMode: 'WEB', webQuotationStatus: 'PENDING' })
-      : await wixData.insert(CUSTOMER_COLLECTION, customerFields, { suppressAuth: true });
+    const customerRecord = resume ? prior
+      : await reserveWebQuotationCustomer({ ...customerFields, quotationMode: 'WEB', webQuotationStatus: 'PENDING' });
     const customerId = normalize(customerRecord.customerId);
     const userId = 'USR-' + customerId + '-01';
 
     let userRecord;
     try {
-      const userFields = {
-          title: customer.picName,
-          userId,
-          customerId,
-          mobileNo: customer.picMobile,
-          status: 'PENDING',
-          authorizedTime: now,
-          email: customer.picEmail,
-          primaryUser: true,
-          failedLoginCount: 0
-      };
-      userRecord = web ? await reserveWebQuotationPrimaryUser(userFields)
-        : await wixData.insert(CUSTOMER_USER_COLLECTION, userFields, { suppressAuth: true });
-    } catch (error) {
-      if (web) throw Error('Customer reserved. Retry this registration to confirm buyer access.');
-      customerRecord = await updateCustomerState(
-        customerRecord,
-        'ERROR',
-        'ACCESS RECORD ERROR'
-      );
-      throw new Error('Customer was reserved, but the access record could not be created: ' + safeMessage(error));
+      userRecord = await reserveWebQuotationPrimaryUser({
+        title: customer.picName,
+        userId,
+        customerId,
+        mobileNo: customer.picMobile,
+        status: 'PENDING',
+        authorizedTime: now,
+        email: customer.picEmail,
+        primaryUser: true,
+        failedLoginCount: 0
+      });
+    } catch {
+      throw Error('Customer reserved. Retry this registration to confirm buyer access.');
     }
 
     const auditActor = await requireAuthorizedStaffContext();
@@ -169,87 +151,9 @@ export const createSalesRoomCustomer = webMethod(
       auditActor
     );
 
-    return (isWebQuotationCustomer(customerRecord) ? activateWebQuotationCustomer : provisionQuotationDesk)({ customerRecord, userRecord, staff });
+    return activateWebQuotationCustomer({ customerRecord, userRecord, staff });
   }
 );
-
-export const verifySalesRoomCustomerQd = webMethod(
-  Permissions.SiteMember,
-  async (customerId) => {
-    const staff = await requireAuthorizedStaffContext();
-    let customerRecord = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
-    const qdFileId = normalize(customerRecord.qdFileId);
-    if (!qdFileId) throw new Error('This customer has no Quotation Desk file.');
-
-    const sharedSecret = await getSecret(SECRET_NAME);
-    const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'VERIFY_QD',
-        sharedSecret,
-        customerId: normalize(customerRecord.customerId),
-        assignedStaffId: upper(customerRecord.assignedStaffId),
-        qdFileId
-      })
-    });
-    const body = parseAppsScriptResponse(await response.text());
-    if (!response.ok || !body.ok) {
-      throw new Error(body.error || 'Quotation Desk activation verification failed.');
-    }
-
-    const qdStatus = upper(body.result?.qdStatus || 'ACTIVATION_REQUIRED');
-    customerRecord = await updateCustomerState(
-      customerRecord,
-      qdStatus,
-      qdStatus === 'READY' ? 'REGISTERED' : 'ACTIVATION REQUIRED',
-      {
-        qdFileId: normalize(body.result?.qdFileId || qdFileId),
-        qdFileLabel: normalize(body.result?.qdFileName || customerRecord.qdFileLabel),
-        qdSheetId: normalize(body.result?.qdSheetId || customerRecord.qdSheetId),
-        qdSheetName: normalize(body.result?.qdSheetName || 'WIX QUOTATION'),
-        qdTemplateVersion: normalize(body.result?.qdTemplateVersion || customerRecord.qdTemplateVersion),
-        qdLastVerifiedAt: new Date()
-      }
-    );
-
-    if (qdStatus === 'READY') {
-      const lifecycleStatus = upper(customerRecord.lifecycleStatus || 'ACTIVE');
-      const accessStatus = upper(customerRecord.accessStatus || 'PENDING');
-      const mayActivate = lifecycleStatus !== 'ARCHIVED' && accessStatus !== 'SUSPENDED' && accessStatus !== 'BLOCKED';
-      if (mayActivate) {
-        customerRecord = await wixData.update(
-          CUSTOMER_COLLECTION,
-          { ...customerRecord, lifecycleStatus: 'ACTIVE', accessStatus: 'ACTIVE' },
-          { suppressAuth: true }
-        );
-      }
-      const users = await wixData.query(CUSTOMER_USER_COLLECTION)
-        .eq('customerId', normalize(customerRecord.customerId))
-        .limit(5)
-        .find({ suppressAuth: true });
-      for (const user of users.items) {
-        if (mayActivate && upper(user.status) === 'PENDING') {
-          await wixData.update(
-            CUSTOMER_USER_COLLECTION,
-            { ...user, status: 'ACTIVE', authorizedTime: user.authorizedTime || new Date() },
-            { suppressAuth: true }
-          );
-        }
-      }
-    }
-
-    return Object.freeze({
-      ok: true,
-      customerId: normalize(customerRecord.customerId),
-      qdStatus,
-      customerStatus: upper(customerRecord.customerStatus),
-      qdFileId: normalize(customerRecord.qdFileId),
-      qdFileLabel: normalize(customerRecord.qdFileLabel)
-    });
-  }
-);
-
 
 async function loadSalesRoomCustomers() {
     const staff = await requireAuthorizedStaffContext();
@@ -358,74 +262,51 @@ export const getSalesRoomCustomers = webMethod(
   loadSalesRoomCustomers
 );
 
-async function loadQuoteRiskCounts(customers) {
-  const requested = (customers || [])
-    .map((customer) => ({
-      customerId: normalize(customer.customerId),
-      qdFileId: normalize(customer.qdFileId)
-    }))
-    .filter((customer) => customer.customerId && /^[A-Za-z0-9_-]{20,}$/.test(customer.qdFileId));
-  if (!requested.length) return new Map();
+async function readWebQuoteCounters(customers, listRows) {
+  const webRows = new Map(customers.filter(isWebQuotationCustomer).map(customer => [customer.customerId, []]));
+  for (const { record, data } of listRows) {
+    const selections = webRows.get(normalize(data.customerId));
+    if (selections && !record.removed && !data.removed) selections.push({ record, data });
+  }
+  const result = new Map();
+  const activeCustomers = customers.filter(customer => isWebQuotationReady(customer) && webRows.get(customer.customerId).length);
+  if (!activeCustomers.length) return result;
+  const activeRows = activeCustomers.flatMap(customer => webRows.get(customer.customerId));
+  const productIds = [...new Set(activeRows.map(row => normalize(row.data.productId)).filter(Boolean))];
+  const products = new Map();
   try {
-    const sharedSecret = await getSecret(SECRET_NAME);
-    const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'GET_QUOTE_RISK_COUNTS', sharedSecret, customers: requested })
-    });
-    const body = parseAppsScriptResponse(await response.text());
-    if (!response.ok || !body.ok) throw new Error(body.error || 'Quote risk scan failed.');
-    return new Map((body.result?.counts || []).map((item) => [
-      normalize(item.customerId),
-      {
-        available: !item.error,
-        quoteRiskCount: Math.max(0, Number(item.quoteRiskCount) || 0),
-        pendingQuoteCount: Math.max(0, Number(item.pendingQuoteCount) || 0),
-        redSignalCount: Math.max(0, Number(item.redSignalCount) || 0),
-        lowGpCount: Math.max(0, Number(item.lowGpCount) || 0)
-      }
-    ]));
-  } catch (error) {
-    console.warn('Sales Room quote risk scan unavailable:', error?.message || error);
-    return new Map();
-  }
-}
-
-export const publishSalesRoomQuotations = webMethod(
-  Permissions.SiteMember,
-  async (customerId) => {
-    const publishStartedAt = Date.now();
-    console.info('[quote-publish-timing]', { stage: 'start', elapsedMs: 0 });
-    try {
-      const staff = await requireAuthorizedStaffContext();
-      const customer = await findAuthorizedCustomer(customerId, staff, 'PUBLISH_QUOTATION');
-      const qdFileId = normalize(customer.qdFileId);
-      if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('This customer does not have a valid Quotation Desk.');
-      const sharedSecret = await getSecret(SECRET_NAME);
-      console.info('[quote-publish-timing]', { stage: 'before-central-request', elapsedMs: Date.now() - publishStartedAt });
-      const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
-        method: 'post',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'PUBLISH_QUOTATIONS',
-          sharedSecret,
-          customerId: normalize(customer.customerId),
-          qdFileId,
-          actorEmail: normalizeEmail(staff.loginEmail || staff.staffEmail)
-        })
-      });
-      console.info('[quote-publish-timing]', { stage: 'central-response', elapsedMs: Date.now() - publishStartedAt, status: response.status, contentType: response.headers.get('content-type') });
-      const body = parseAppsScriptResponse(await response.text());
-      console.info('[quote-publish-timing]', { stage: 'response-parsed', elapsedMs: Date.now() - publishStartedAt });
-      if (!response.ok || !body.ok) return { ok: false, error: body.error || 'Quotation publish failed.' };
-      return { ok: true, ...(body.result || {}) };
-    } catch (error) {
-      console.info('[quote-publish-timing]', { stage: 'caught-error', elapsedMs: Date.now() - publishStartedAt });
-      console.error('Sales Room quotation publish failed', error);
-      return { ok: false, error: safeMessage(error) || 'Quotation publish failed.' };
+    for (let index = 0; index < productIds.length; index += 100) {
+      const batch = productIds.slice(index, index + 100);
+      const page = await wixData.query('FMCGMALAYSIA').hasSome('_id', batch).limit(100).find({ suppressAuth:true, consistentRead:true });
+      for (const item of page.items) products.set(item._id, item);
     }
+  } catch (error) {
+    console.warn('Sales Room web quotation counters could not read product packing', error);
+    for (const customer of activeCustomers) result.set(customer.customerId, null);
+    return result;
   }
-);
+  await Promise.all(activeCustomers.map(async (customer) => {
+    const rows = webRows.get(customer.customerId);
+    try {
+      const selections = rows.map(({ record, data }) => {
+        const product = products.get(normalize(data.productId));
+        const barcode = normalize(data.barcode || data.unitBarcode);
+        if (!product || normalize(product.barcode) !== barcode) throw Error('Product packing requires reconciliation.');
+        return { ...data, id:record._id, catalogueEa:Number(product.ea), barcode };
+      });
+      const projected = await applyWebQuotations(customer, selections);
+      const quoted = projected.filter(row => row.quoteActive === true).length;
+      const pending = projected.filter(row => row.quoteStatus === 'RFQ');
+      const received = pending.map(row => row.selectedAt).filter(value => Number.isFinite(Date.parse(value)));
+      received.sort((a,b) => new Date(a) - new Date(b));
+      result.set(customer.customerId, { quoted, awaiting:pending.length, rfq:pending.length, pendingQuoteReceivedAt:received[0] || '', lastQuoteSyncedAt:'' });
+    } catch (error) {
+      console.warn('Sales Room web quotation counters could not be confirmed', error);
+      result.set(customer.customerId, null);
+    }
+  }));
+  return result;
+}
 
 export const getSalesRoomCustomersOperational = webMethod(
   Permissions.SiteMember,
@@ -437,45 +318,8 @@ export const getSalesRoomCustomersOperational = webMethod(
       readAllPayloadRows(BUYER_LINE_COLLECTION)
     ]);
 
-    const quoteByCustomer = new Map();
-    for (const row of listRows) {
-      const item = row.data;
-      if (item.removed) continue;
-      const customerId = normalize(item.customerId);
-      if (!customerId) continue;
-      // Quote counts represent formally released QD rows, never merely a
-      // non-zero price left in storage.
-      const status = upper(item.quoteStatus || 'RFQ');
-      const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0, rfq: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
-      if (status === 'VIEW QUOTE' || status === 'WARNING') current.quoted += 1;
-      const syncedAt = item.quoteEffectiveAt || item.quoteSyncedAt || '';
-      if (syncedAt && (!current.lastQuoteSyncedAt || new Date(syncedAt).getTime() > new Date(current.lastQuoteSyncedAt).getTime())) current.lastQuoteSyncedAt = syncedAt;
-      if (status === 'RFQ') current.rfq += 1;
-      if (status === 'RFQ' || status === 'FAILED') {
-        current.awaiting += 1;
-        const receivedAt = item.selectedAt || row.record?._createdDate || '';
-        if (receivedAt && (!current.pendingQuoteReceivedAt || new Date(receivedAt).getTime() < new Date(current.pendingQuoteReceivedAt).getTime())) {
-          current.pendingQuoteReceivedAt = receivedAt;
-        }
-      }
-      quoteByCustomer.set(customerId, current);
-    }
-
-    // Only customers with quotation rows can carry quotation risk. Opening
-    // every customer's Google Sheet made the whole customer list wait for
-    // unrelated QDs and could exceed Wix's request deadline on a cold start.
-    const riskCustomers = (base.customers || []).filter((customer) => {
-      const quote = quoteByCustomer.get(customer.customerId);
-      return Boolean(quote && (quote.quoted > 0 || quote.awaiting > 0));
-    });
-    const quoteRiskCounts = await Promise.race([
-      loadQuoteRiskCounts(riskCustomers),
-      // A cold Apps Script + Google Sheets read commonly needs more than
-      // 3.5 seconds. Returning unavailable too early made the dashboard and
-      // customer risk bubbles alternate between a number and a dash.
-      new Promise((resolve) => setTimeout(() => resolve(new Map()), 8000))
-    ]);
-
+    const visibleCustomers = base.customers || [];
+    const webCounts = await readWebQuoteCounters(visibleCustomers, listRows);
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
     const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)) && !row.data.receiptOnly);
     const incomingByCustomer = new Map();
@@ -497,24 +341,18 @@ export const getSalesRoomCustomersOperational = webMethod(
       if (!customerId || line.addedToOrderId || isCompletedProgressLine(line)) continue;
       activeLineByCustomer.set(customerId, Number(activeLineByCustomer.get(customerId) || 0) + 1);
     }
-    const customers = (base.customers || []).map((customer) => {
-      const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0, rfq: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
+    const customers = visibleCustomers.map((customer) => {
+      const quote = webCounts.has(customer.customerId) ? webCounts.get(customer.customerId) : { quoted: 0, awaiting: 0, rfq: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
       const incoming = incomingByCustomer.get(customer.customerId) || { count: 0, incomingOrderReceivedAt: '' };
-      const qdWork = quoteRiskCounts.get(customer.customerId) || null;
-      const hasQuoteRows = quote.quoted > 0 || quote.awaiting > 0;
-      const quoteWorkStatusAvailable = !hasQuoteRows || Boolean(qdWork && qdWork.available);
       return {
         ...customer,
-        quotedItemCount: quote.quoted,
-        awaitingQuoteItemCount: quote.awaiting,
-        rfqItemCount: quote.rfq,
-        quoteWorkStatusAvailable,
-        quoteRiskCount: quoteWorkStatusAvailable ? Number(qdWork?.quoteRiskCount || 0) : null,
-        pendingQuoteCount: quoteWorkStatusAvailable ? Number(qdWork?.pendingQuoteCount || 0) : null,
-        redSignalCount: quoteWorkStatusAvailable ? Number(qdWork?.redSignalCount || 0) : null,
-        lowGpCount: quoteWorkStatusAvailable ? Number(qdWork?.lowGpCount || 0) : null,
-        pendingQuoteReceivedAt: quote.pendingQuoteReceivedAt,
-        lastQuoteSyncedAt: quote.lastQuoteSyncedAt,
+        quotedItemCount: quote?.quoted ?? null,
+        awaitingQuoteItemCount: quote?.awaiting ?? null,
+        rfqItemCount: quote?.rfq ?? null,
+        quoteWorkStatusAvailable: Boolean(quote),
+        pendingQuoteCount: quote?.awaiting ?? null,
+        pendingQuoteReceivedAt: quote?.pendingQuoteReceivedAt || '',
+        lastQuoteSyncedAt: quote?.lastQuoteSyncedAt || '',
         confirmedOrderCount: incoming.count,
         activeOrderLineCount: Number(activeLineByCustomer.get(customer.customerId) || 0),
         incomingOrderReceivedAt: incoming.incomingOrderReceivedAt
@@ -527,9 +365,9 @@ export const getSalesRoomCustomersOperational = webMethod(
       summary: {
         ...(base.summary || {}),
         customerCount: customers.length,
-        quoteCustomerCount: customers.filter((item) => item.awaitingQuoteItemCount > 0).length,
-        quotedItemCount: customers.reduce((sum, item) => sum + item.quotedItemCount, 0),
-        unquotedItemCount: customers.reduce((sum, item) => sum + item.awaitingQuoteItemCount, 0),
+        quoteCustomerCount: customers.every(item => item.awaitingQuoteItemCount !== null) ? customers.filter(item => item.awaitingQuoteItemCount > 0).length : null,
+        quotedItemCount: customers.every(item => item.quotedItemCount !== null) ? customers.reduce((sum, item) => sum + item.quotedItemCount, 0) : null,
+        unquotedItemCount: customers.every(item => item.awaitingQuoteItemCount !== null) ? customers.reduce((sum, item) => sum + item.awaitingQuoteItemCount, 0) : null,
         pendingQuoteItemCount: customers.every((item) => item.quoteWorkStatusAvailable) ? customers.reduce((sum, item) => sum + item.pendingQuoteCount, 0) : null,
         confirmedOrderCount: incomingOrders.length
       }
@@ -1819,8 +1657,10 @@ async function findAuthorizedCustomer(customerId, staff, action = 'VIEW') {
 
 async function resolveCustomerRouting(requestedAssignedStaffId) {
   const context = await requireAuthorizedStaffContext();
-  const owner = await resolveMasterSalesCreationAssignee(context.loginEmail, upper(requestedAssignedStaffId));
-  if (!owner) throw Error('Select an active salesperson with customer creation access in LTPOS.');
+  const owner = await resolveMasterSalesCreationAssignee(context.loginEmail, normalize(requestedAssignedStaffId));
+  if (!owner) {
+    throw Error('Select an active salesperson with customer creation access in LTPOS.');
+  }
   return { ...owner, loginEmail: context.loginEmail };
 }
 
@@ -1835,163 +1675,17 @@ async function resumeExistingRegistration(existingAccess, customer, staff) {
     throw new Error('This email already has an access record without a customer record. Admin review is required.');
   }
 
-  let customerRecord = customerResult.items[0];
+  const customerRecord = customerResult.items[0];
   if (upper(customerRecord.title) !== customer.companyName) {
     throw new Error('This email is already authorized for another company.');
   }
-  if (upper(customerRecord.assignedStaffId) !== staff.staffId) {
+  if (normalize(customerRecord.assignedStaffId) !== staff.staffId) {
     throw new Error('This customer belongs to another salesperson.');
   }
-
-  if (
-    upper(customerRecord.qdStatus) === 'READY' &&
-    upper(existingAccess.status) === 'ACTIVE'
-  ) {
-    return successResult(customerRecord, existingAccess, staff);
+  if (!isWebQuotationCustomer(customerRecord)) {
+    throw new Error('This customer registration requires admin review.');
   }
-
-  if (isWebQuotationCustomer(customerRecord)) {
-    return activateWebQuotationCustomer({ customerRecord, userRecord: existingAccess, staff });
-  }
-  return provisionQuotationDesk({ customerRecord, userRecord: existingAccess, staff });
-}
-
-function httpsFetchLike(url, options) { const send = (target, method, body) => new Promise((resolve, reject) => { const req = httpsRequest(target, { method, headers: options.headers || {} }, (res) => { let text = ''; res.setEncoding('utf8'); res.on('data', (chunk) => { text += chunk; }); res.on('end', () => resolve({ status: res.statusCode || 0, headers: res.headers || {}, text })); }); req.on('error', reject); if (body) req.write(body); req.end(); }); return send(url, options.method || 'GET', options.body || '').then(async (first) => { let current = first; if ([301, 302, 303, 307, 308].includes(current.status)) { const location = normalize(current.headers.location); if (!location) throw new Error('QD redirect location is missing.'); current = await send(location, 'GET', ''); } return { status: current.status, ok: current.status >= 200 && current.status < 300, url: '', headers: { get: (name) => normalize(current.headers[String(name).toLowerCase()]) }, text: async () => current.text }; }); }
-  async function provisionQuotationDesk({ customerRecord, userRecord, staff }) { const routingPayload = {
-    customerId: normalize(customerRecord.customerId),
-    assignedStaffId: upper(customerRecord.assignedStaffId),
-    companyName: upper(customerRecord.title),
-    currency: upper(customerRecord.preferredCurrency)
-  };
-
-  if (!routingPayload.companyName || !routingPayload.currency) {
-    throw new Error('Customer QD creation data is incomplete.');
-  }
-
-  try {
-    if (customerRecord.salesInitialGrantRevision) {
-      await confirmMasterInitialSalesAccess(staff.loginEmail, routingPayload.customerId,
-        routingPayload.assignedStaffId, customerRecord.salesInitialGrantRevision);
-    }
-    const sharedSecret = await getSecret(SECRET_NAME);
-    let response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },      // @ts-ignore Wix runtime passes this option to backend fetch.
-      body: JSON.stringify({
-        ...routingPayload,
-        sharedSecret
-      })
-    });
-
-    if ([301, 302, 303, 307, 308].includes(response.status)) { const redirectUrl = normalize(response.headers?.get?.('location')); if (!redirectUrl) throw new Error('QD redirect location is missing.'); response = await fetch(redirectUrl, { method: 'get' }); } const responseText = await response.text(); let body; try { body  = parseAppsScriptResponse(responseText); } catch (_) { throw new Error('QD response ' + response.status + ' · ' + normalize(response.headers?.get?.('content-type')) + ' · ' + normalize(responseText).slice(0, 180)); }
-    if (!response.ok || !body.ok) {
-      throw new Error(body.error || 'Quotation Desk creation failed.');
-    }
-
-    const returnedStatus = upper(body.result?.qdStatus || 'ACTIVATION_REQUIRED');
-    customerRecord = await updateCustomerState(
-      customerRecord,
-      returnedStatus,
-      returnedStatus === 'READY' ? 'REGISTERED' : 'ACTIVATION REQUIRED',
-      {
-        qdOwnerStaffId: upper(customerRecord.qdOwnerStaffId || staff.staffId),
-        qdFileId: normalize(body.result?.qdFileId || customerRecord.qdFileId),
-        qdFileLabel: normalize(
-          body.result?.qdFileName || customerRecord.qdFileLabel
-        ),
-        qdSheetId: normalize(body.result?.qdSheetId || customerRecord.qdSheetId),
-        qdSheetName: normalize(
-          body.result?.qdSheetName || customerRecord.qdSheetName
-        ),
-        qdTemplateVersion: normalize(body.result?.qdTemplateVersion || customerRecord.qdTemplateVersion),
-        qdLastVerifiedAt: new Date()
-      }
-    );
-    if (returnedStatus === 'READY') {
-      userRecord = await wixData.update(
-        CUSTOMER_USER_COLLECTION,
-        {
-          ...userRecord,
-          status: 'ACTIVE',
-          authorizedTime: userRecord.authorizedTime || new Date(),
-          failedLoginCount: Number(userRecord.failedLoginCount || 0)
-        },
-        { suppressAuth: true }
-      );
-    }
-
-    return successResult(customerRecord, userRecord, staff, body.result);
-  } catch (error) {
-    customerRecord = await updateCustomerState(
-      customerRecord,
-      'ERROR',
-      'REGISTRATION ERROR'
-    );
-
-    if (upper(userRecord.status) !== 'PENDING') {
-      userRecord = await wixData.update(
-        CUSTOMER_USER_COLLECTION,
-        {
-          ...userRecord,
-          status: 'PENDING'
-        },
-        { suppressAuth: true }
-      );
-    }
-
-    return {
-      ok: false,
-      retryable: true,
-      error: safeMessage(error),
-      result: {
-        customerId: customerRecord.customerId,
-        qdFileId: customerRecord.qdFileId,
-        qdStatus: customerRecord.qdStatus,
-        customerStatus: customerRecord.customerStatus,
-        assignedStaffId: staff.staffId,
-        wixCustomerRecordId: customerRecord._id,
-        wixCustomerUserRecordId: userRecord._id,
-        accessCreated: false
-      }
-    };
-  }
-}
-
-async function updateCustomerState(
-  record,
-  qdStatus,
-  customerStatus,
-  routingPatch = {}
-) {
-  return wixData.update(
-    CUSTOMER_COLLECTION,
-    {
-      ...record,
-      ...routingPatch,
-      qdStatus,
-      customerStatus
-    },
-    { suppressAuth: true }
-  );
-}
-
-function successResult(customerRecord, userRecord, staff, qdResult = {}) {
-  return {
-    ok: true,
-    result: {
-      ...qdResult,
-      customerId: customerRecord.customerId,
-      companyName: normalize(customerRecord.title),
-      customerShortName: upper(customerRecord.customerShortName),
-      qdSheetName: customerRecord.qdSheetName,
-      qdStatus: customerRecord.qdStatus,
-      customerStatus: customerRecord.customerStatus,
-      assignedStaffId: staff.staffId,
-      wixCustomerRecordId: customerRecord._id,
-      wixCustomerUserRecordId: userRecord._id,
-      accessCreated: upper(userRecord.status) === 'ACTIVE'
-    }
-  };
+  return activateWebQuotationCustomer({ customerRecord, userRecord: existingAccess, staff });
 }
 
 async function findCustomerUserByEmail(email) {
@@ -2037,19 +1731,6 @@ async function generateUniqueCustomerId() {
   throw new Error('Unable to generate a unique CUSTOMER ID. Please retry.');
 }
 
-function parseAppsScriptResponse(text) {
-  const cleaned = String(text || '').replace(/^\uFEFF/, '').trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch (_) {
-    const withoutHtml = cleaned.replace(/<[^>]*>/g, '').trim();
-    try {
-      return JSON.parse(withoutHtml);
-    } catch (error) {
-      throw new Error('Quotation Desk service returned an invalid response.');
-    }
-  }
-}
 
 function normalizeAndValidate(raw) {
   const p = {
