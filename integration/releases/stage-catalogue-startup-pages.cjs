@@ -5,9 +5,9 @@ const path = require('node:path');
 
 const target = process.argv[2];
 const workroom = 'catalogue/catalogue-workspace-v1.html';
-const previousMarker = 'content="20261118-catalogue-staff-entry-v1"';
-const newMarker = 'content="20261119-catalogue-startup-pages-v1"';
-const baselineHash = 'd640f61f522801201168b02bd40ad242e71e880284ad2ed8ddebdad40e82fd10';
+const previousMarker = 'content="20261119-catalogue-startup-pages-v1"';
+const newMarker = 'content="20261119-catalogue-sort-cost-v1"';
+const baselineHash = '9cbf4d95952adcd589eead8e86f5b8bf99b931f17090f3477622872da5d75926';
 const hash = data => createHash('sha256').update(data).digest('hex');
 
 assert.ok(target && fs.statSync(target).isDirectory(), 'Pass the extracted production Pages directory.');

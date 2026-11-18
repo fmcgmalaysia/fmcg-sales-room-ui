@@ -16,7 +16,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261119-catalogue-startup-pages-v1';
+const CATALOGUE_BUILD_VERSION = '20261119-catalogue-sort-cost-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -233,6 +233,7 @@ function catalogueProductRecord(item) {
 }
 
 function sortCatalogueProducts(items) {
+    const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
     return items
         .map((item, index) => ({ item, index }))
         .sort((left, right) => {
@@ -240,7 +241,7 @@ function sortCatalogueProducts(items) {
             const rightBrand = String(right.item.brandName || '').trim();
             if (!leftBrand && rightBrand) return 1;
             if (leftBrand && !rightBrand) return -1;
-            const brandOrder = leftBrand.localeCompare(rightBrand, 'en', { numeric: true, sensitivity: 'base' });
+            const brandOrder = collator.compare(leftBrand, rightBrand);
             if (brandOrder) return brandOrder;
             const leftRaw = String(left.item.sortNo ?? '').trim();
             const rightRaw = String(right.item.sortNo ?? '').trim();
@@ -251,7 +252,7 @@ function sortCatalogueProducts(items) {
             const rightNumber = Number(rightRaw);
             const order = Number.isFinite(leftNumber) && Number.isFinite(rightNumber)
                 ? leftNumber - rightNumber
-                : leftRaw.localeCompare(rightRaw, 'en', { numeric: true, sensitivity: 'base' });
+                : collator.compare(leftRaw, rightRaw);
             return order || left.index - right.index;
         })
         .map(entry => entry.item);

@@ -26,6 +26,17 @@ test('brand first; numeric sort inside brand; no item-name ordering; stable ties
  assert.deepEqual(plain(vm.runInContext('sortCatalogueProducts(items).map(x=>x.id)',c)), ['a1','a2','tie','missing-sort','b2','b10','missing-brand']);
  assert.equal(c.items[0].id,'b10');
 });
+test('Catalogue keeps numeric brand order and ties across case and accents', () => {
+ const c = catContext();
+ c.items = [
+  {id:'ten',brandName:'Brand 10',sortNo:'FO-1'},
+  {id:'tie-first',brandName:'Bránd 2',sortNo:'FO-2'},
+  {id:'two-ten',brandName:'Brand 2',sortNo:'FO-10'},
+  {id:'tie-second',brandName:'BRAND 2',sortNo:'FO-2'}
+ ];
+ assert.deepEqual(plain(vm.runInContext('sortCatalogueProducts(items).map(x=>x.id)', c)),
+  ['tie-first','tie-second','two-ten','ten']);
+});
 test('reads real CMS brand and Point Base sort ID without treating principle as brand', () => {
  const c=catContext(); c.input={_id:'id',name:'Product',brandName:' MILO ',principle:'NESTLE',pointBaseSortId:'FO-12',sortNo:'wrong',price:24,barcode:'0955001'};
  vm.runInContext('imageUrl = x=>x; catalogueReferenceIds = x=>x||[]; catalogueUnitPrice = ()=>0;', c);
