@@ -278,9 +278,12 @@ content.addEventListener('keydown', event => {
   const field = event.target.closest(quotationEditFields);
   if (!field || field.disabled || event.altKey || event.ctrlKey || event.metaKey) return;
   const tr = field.closest('[data-row]');
+  const movesRow = ['ArrowUp', 'ArrowDown'].includes(event.key);
+  if (field.dataset.mode === 'EA' && field.value && (event.key === 'Enter' || movesRow)) {
+    field.value = fixed(roundCents(Number(field.value)));
+  }
   if (event.key === 'Enter' && field.dataset.mode === 'EA') {
     event.preventDefault();
-    if (field.value) field.value = fixed(roundCents(Number(field.value)));
     hideChangedQuote(tr);
     return;
   }
@@ -290,7 +293,7 @@ content.addEventListener('keydown', event => {
     field.dispatchEvent(new Event('input', { bubbles: true }));
     return;
   }
-  if (!['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+  if (!movesRow) return;
   event.preventDefault();
   const adjacent = event.key === 'ArrowUp' ? tr.previousElementSibling : tr.nextElementSibling;
   const target = adjacent?.querySelector(field.dataset.calc ? '[data-calc=GP]' : '[data-mode=EA]');

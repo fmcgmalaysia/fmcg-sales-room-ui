@@ -218,7 +218,10 @@ test('the compact quotation grid renders and saves over the iframe message contr
       assert.equal(await grid.getByRole('columnheader', { name, exact: true }).evaluate(el => getComputedStyle(el).textAlign), 'right');
     }
     assert(await grid.getByRole('columnheader', { name: 'Discount', exact: true }).isVisible());
-    assert.equal(await grid.locator('.calc-group').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(220, 231, 241)');
+    assert.equal(await grid.locator('.calc-group').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(19, 54, 80)');
+    assert.equal(await grid.locator('.quotation-title-row').getByLabel('Customer').count(), 1);
+    assert.deepEqual(await first.locator('input[data-mode=EA], input[data-calc=GP]').evaluateAll(inputs =>
+      inputs.map(input => input.getBoundingClientRect().height)), [25, 25]);
     assert.equal(await first.locator('td.calc-cell').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(247, 249, 252)');
     assert.deepEqual(await first.locator('.disc-cell .quote-value').allTextContents(), ['1.0.00%', '2.0.00%', '3.5.00']);
     const decimals = await first.locator('.disc-cell .quote-value > :nth-child(2)').evaluateAll(amounts => amounts.map(amount => {
@@ -246,6 +249,10 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(await first.locator('[data-mode=EA]').inputValue(), '1.00');
     await first.locator('[data-mode=EA]').fill('1.5');
     assert.equal(await first.locator('[data-profit]').textContent(), 'GP50.00%CTN36.00');
+    assert.deepEqual(await first.locator('.gp-healthy').evaluate(el => {
+      const style = getComputedStyle(el);
+      return [style.color, style.fontWeight];
+    }), ['rgb(20, 87, 220)', '700']);
     assert.equal(await first.locator('[data-carton]').textContent(), '18.00');
     await first.getByRole('switch').click();
     await grid.getByText('Quotation is visible to this customer.').waitFor();
@@ -261,8 +268,12 @@ test('the compact quotation grid renders and saves over the iframe message contr
     await first.locator('[role=switch][aria-checked=false]').waitFor();
     assert.equal(await ea.inputValue(), '3.00');
     assert.equal(requests.filter(request => request.action === 'publish').at(-1).input.enabled, false);
+    await ea.fill('5.2');
     await ea.press('ArrowDown');
+    assert.equal(await ea.inputValue(), '5.20');
     assert.equal(await grid.locator('[data-row=item-1] [data-mode=EA]:focus').count(), 1);
+    await ea.fill('3');
+    await ea.press('Enter');
     assert.equal(await grid.locator('input[data-calc=EA]').count(), 0);
 
     const roundingRow = grid.locator('[data-row=item-3]');
