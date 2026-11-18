@@ -16,7 +16,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261118-catalogue-staff-entry-v1';
+const CATALOGUE_BUILD_VERSION = '20261119-catalogue-startup-pages-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -318,13 +318,17 @@ function loadCatalogueWorkspaceProducts() {
 }
 
 async function readCatalogueWorkspaceProducts(queryVersion) {
-    const products = [];
     try {
-        let result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').fields(...CATALOGUE_PRODUCT_FIELDS).limit(1000).find();
-        products.push(...result.items);
-        while (result.hasNext() && products.length < 10000) {
-            result = await result.next();
-            products.push(...result.items);
+        const makeQuery = () => wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').fields(...CATALOGUE_PRODUCT_FIELDS);
+        const firstPage = await makeQuery().limit(1000).find();
+        let products = await readCataloguePagesInParallel(makeQuery, firstPage);
+        if (!products) {
+            products = [...firstPage.items];
+            let result = firstPage;
+            while (result.hasNext() && products.length < 10000) {
+                result = await result.next();
+                products.push(...result.items);
+            }
         }
         catalogueWorkspaceAllProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
         catalogueWorkspaceFullReadComplete = true;
@@ -335,6 +339,38 @@ async function readCatalogueWorkspaceProducts(queryVersion) {
     }
     catalogueProductsLoaded = true;
     sendCatalogueWorkspaceData();
+}
+
+async function readCataloguePagesInParallel(makeQuery, firstPage) {
+    const pageSize = firstPage.pageSize;
+    const total = Math.min(firstPage.totalCount, 10000);
+    if (!Number.isSafeInteger(total) || pageSize !== 1000 ||
+        firstPage.items.length !== pageSize || total <= 2 * pageSize) return null;
+
+    const products = [...firstPage.items];
+    const ids = new Set(products.map(item => item._id));
+    if (ids.size !== products.length || products.some(item => !item._id)) return null;
+    const step = pageSize - 1;
+    for (let offset = pageSize; offset < total;) {
+        const requests = [];
+        for (let slot = 0; slot < 3 && offset < total; slot += 1, offset += step) {
+            const length = Math.min(step, total - offset);
+            // The first item overlaps the preceding page to detect shifted offsets.
+            requests.push(makeQuery().skip(offset - 1).limit(length + 1).find()
+                .then(result => ({ result, length })).catch(() => null));
+        }
+        for (const page of await Promise.all(requests)) {
+            if (!page || page.result.totalCount !== firstPage.totalCount ||
+                page.result.items.length !== page.length + 1 ||
+                page.result.items[0]._id !== products[products.length - 1]._id) return null;
+            for (const item of page.result.items.slice(1)) {
+                if (!item._id || ids.has(item._id)) return null;
+                ids.add(item._id);
+                products.push(item);
+            }
+        }
+    }
+    return products;
 }
 
 async function showCatalogueWorkspaceQuery(query, resumeSubIds = null, position = null) {

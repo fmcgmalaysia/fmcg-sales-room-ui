@@ -1509,25 +1509,25 @@ jobs:
         with:
           path: ${{ format('{0}/master-department-brand-site', runner.temp) }}
 
-      - name: Download the verified package for Quotations and Buyer Room
+      - name: Download the verified production package for Catalogue startup
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'catalogue-complete-only'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 44341173978
+          run-id: 44352998926
           github-token: ${{ github.token }}
           path: ${{ format('{0}/catalogue-complete-baseline', runner.temp) }}
 
-      - name: Replace only the approved Quotations and Buyer Room resources
+      - name: Update only the Catalogue workspace build marker
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'catalogue-complete-only'
         run: |
           site="$RUNNER_TEMP/catalogue-complete-site"
           mkdir "$site"
           tar --extract --file "$RUNNER_TEMP/catalogue-complete-baseline/artifact.tar" --directory "$site"
-          node --test integration/prototypes/web-quotations/wix-publication-data.test.cjs
-          node integration/releases/stage-quote-buyer-sales-catalogue.cjs "$site"
+          node --test tests/catalogue-startup-pages.test.cjs
+          node integration/releases/stage-catalogue-startup-pages.cjs "$site"
 
-      - name: Upload the verified Quotations and Buyer Room package
+      - name: Upload the verified Catalogue startup package
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'catalogue-complete-only'
         uses: actions/upload-pages-artifact@v5
         with:
