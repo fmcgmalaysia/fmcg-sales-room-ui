@@ -1,10 +1,10 @@
 import { authentication } from 'wix-members-frontend';
 import { getLtposWorkspaces } from 'backend/ltposWorkspaces.web';
 
-const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/managed.html?v=ltpos-staff-portal-v2';
+const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/managed.html?v=ltpos-staff-portal-custom-domain-v1';
 const SITE = 'https://fmcg999.wixstudio.com/master';
 const workspaces = new Map([
-  ['purchase', ['Purchase 采购', SITE]],
+  ['purchase', ['Purchase 采购', 'https://www.ltpos.ai/purchase']],
   ['support', ['Support 后勤', SITE + '/support-department']],
   ['warehouse', ['Warehouse 货仓', SITE + '/warehouse-department']],
   ['finance', ['Finance 财务', SITE + '/account-department']],

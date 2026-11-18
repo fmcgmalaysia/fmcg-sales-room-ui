@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex">
-  <meta name="build" content="ltpos-staff-portal-v2">
+  <meta name="build" content="ltpos-staff-portal-custom-domain-v1">
   <title>LTPOS · Staff Portal</title>
   <style>
     :root{color-scheme:dark;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;color:#fff;background:#07182c}
@@ -66,13 +66,20 @@
     </section>
   </main>
   <script type="module">
-    const host = 'https://fmcg999.wixstudio.com';
+    const hosts = new Set(['https://www.ltpos.ai', 'https://ltpos.ai', 'https://fmcg999.wixstudio.com']);
+    const referrerHost = document.referrer ? new URL(document.referrer).origin : '';
+    let host = hosts.has(referrerHost) ? referrerHost : '';
     const id = key => document.getElementById(key);
     const labels = new Map([
       ['purchase', 'Purchase 采购'], ['support', 'Support 后勤'],
       ['warehouse', 'Warehouse 货仓'], ['finance', 'Finance 财务']
     ]);
-    const post = (type, details = {}) => window.parent.postMessage({ type, ...details }, host);
+    const post = (type, details = {}) => {
+      if (host) window.parent.postMessage({ type, ...details }, host);
+      else if (type === 'LTPOS_READY' && !referrerHost) {
+        for (const trustedHost of hosts) window.parent.postMessage({ type }, trustedHost);
+      }
+    };
     let timer;
     function show(state, details = {}) {
       clearTimeout(timer);
@@ -106,7 +113,9 @@
       id('status').hidden = !id('status').textContent;
     }
     window.addEventListener('message', event => {
-      if (event.source !== window.parent || event.origin !== host || event.data?.type !== 'LTPOS_SESSION') return;
+      if (event.source !== window.parent || !hosts.has(event.origin) ||
+          (host && event.origin !== host) || event.data?.type !== 'LTPOS_SESSION') return;
+      host = event.origin;
       show(event.data.state, event.data);
     });
     id('signin').addEventListener('click', () => {
