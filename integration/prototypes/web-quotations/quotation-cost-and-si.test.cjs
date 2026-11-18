@@ -16,8 +16,19 @@ test('all six carton-only prices refresh without altering published quotes', asy
   const rows = cartons.map((_, i) => ({ customerId, id: 'SEL-' + i, barcode: String(1000000000000 + i) }));
   const published = { enabled: true, priceEa: 3, priceCtn: 72, currency: 'USD', version: 3 };
   const saved = [];
+  let pending = 0;
+  let peakPending = 0;
   const service = createMasterQuotationService({
-    revisions: { latest: async () => ({ revision: 1, snapshot: { published } }), append: async ({ snapshot }) => saved.push(snapshot) },
+    revisions: {
+      latest: async () => ({ revision: 1, snapshot: { published } }),
+      async append({ snapshot }) {
+        pending++;
+        peakPending = Math.max(peakPending, pending);
+        await new Promise(setImmediate);
+        saved.push(snapshot);
+        pending--;
+      }
+    },
     readSelections: async () => rows,
     readCosts: async () => Object.fromEntries(rows.map((row, i) => [row.barcode, {
       unitBarcode: row.barcode, costCurrency: 'MYR', costStatus: 'CAPTURED', capturedAt: '2026-11-18T08:05:00Z',
@@ -25,11 +36,14 @@ test('all six carton-only prices refresh without altering published quotes', asy
     }])),
     deliver: () => assert.fail('Cost refresh may not change published prices')
   });
-  const result = await service.catchCost({ staffId: 'QA-SALES', customer: { customerId } });
+  const requestId = randomUUID();
+  const result = await service.catchCost({ staffId: 'QA-SALES', customer: { customerId } }, { requestId });
   assert.deepEqual({ ...result }, { updated: 6, failed: 0 });
   assert.deepEqual(saved.map(row => row.costMyr), cartons);
   assert.deepEqual(saved.map(row => row.costDetails.lpEa), cartons.map(cost => cost / 24));
   assert(saved.every(row => row.published === published));
+  assert(saved.every(row => row.manualCostReceipt.requestId === requestId && row.manualCostReceipt.updated));
+  assert.equal(peakPending, cartons.length);
 });
 
 test('Last SP reads the matching customer and product from issued SI snapshots across both companies', async () => {

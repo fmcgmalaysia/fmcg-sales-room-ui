@@ -22,6 +22,8 @@ const compareSortIds = new Intl.Collator('en', { numeric: true, sensitivity: 'ba
 const formatCents = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 2 }).format;
 const roundCents = value => Number(formatCents(value));
 const calculatorPrice = (row, input) => draftPrice(row, input, roundCents);
+const calculatorMatchesPrice = (price, suggestion) => suggestion?.priceEa > 0 && price?.priceEa > 0 &&
+  roundCents(price.priceEa) === suggestion.priceEa;
 const desktopGrid = window.matchMedia('(min-width: 601px)');
 const quoteOverscan = 16;
 let quoteWindow;
@@ -103,6 +105,14 @@ function sellingPrice(row) {
   return draftPrice(row);
 }
 
+function updateCalculatorApply(row, tr, price, suggestion) {
+  const button = tr.querySelector('[data-action=apply]');
+  const applied = calculatorMatchesPrice(price, suggestion);
+  button.toggleAttribute('data-applied', applied);
+  button.setAttribute('aria-label', `${applied ? 'Calculator price applied to' : 'Apply calculator for'} ${row.name}`);
+  button.disabled = applied || !suggestion || !current.canEdit || row.pending || busy;
+}
+
 function readStorage(name, fallback) {
   try { return JSON.parse(localStorage.getItem('master-quotations-v1:' + name)) ?? fallback; }
   catch { return fallback; }
@@ -167,9 +177,8 @@ content.addEventListener('pointerout', event => {
 window.addEventListener('scroll', hideProductPreview, { capture: true, passive: true });
 window.addEventListener('resize', hideProductPreview, { passive: true });
 
-function api(action, input, context = customerId()) {
+function api(action, input, context = customerId(), id = requestId()) {
   if (parent === window) return Promise.reject(Error('Open Quotations from the MASTER workroom.'));
-  const id = requestId();
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       requests.delete(id);
@@ -196,7 +205,9 @@ window.addEventListener('message', event => {
       content.replaceChildren();
       message(m.error || 'Your staff access could not be confirmed.', true);
     }
-    pending.reject(Error(m.error || 'The quotation action could not be confirmed.'));
+    const error = Error(m.error || 'The quotation action could not be confirmed.');
+    error.accessDenied = m.accessDenied === true;
+    pending.reject(error);
   }
 });
 
@@ -218,9 +229,38 @@ async function refresh() {
     }
     current = result;
     renderQuotes(scrollPosition);
+    return result;
   } catch (error) {
     if (token === generation) message(error.message, true);
   }
+}
+
+function showCostResult({ updated, failed, unconfirmed = 0 }) {
+  message(`Catch Cost: ${updated} updated · ${failed} failed${unconfirmed ? ` · ${unconfirmed} unconfirmed` : ''}.`,
+    failed > 0 && !updated && !unconfirmed, Boolean(unconfirmed || (failed && updated)));
+}
+
+async function refreshCost(context, requestedRows) {
+  const id = requestId();
+  try {
+    showCostResult(await api('cost', {}, context, id));
+  } catch (error) {
+    if (error.accessDenied) throw error;
+    message('Checking which costs were saved…');
+    const refreshed = await refresh();
+    if (!refreshed) return true;
+    let updated = 0;
+    let failed = 0;
+    for (const row of refreshed.rows) {
+      const receipt = row.manualCostReceipt;
+      if (!requestedRows.has(row.id) || receipt?.requestId !== id) continue;
+      if (receipt.updated === true) updated++;
+      if (receipt.updated === false) failed++;
+    }
+    showCostResult({ updated, failed, unconfirmed: requestedRows.size - updated - failed });
+    return true;
+  }
+  return false;
 }
 
 async function initialize() {
@@ -278,9 +318,12 @@ content.addEventListener('keydown', event => {
   const field = event.target.closest(quotationEditFields);
   if (!field || field.disabled || event.altKey || event.ctrlKey || event.metaKey) return;
   const tr = field.closest('[data-row]');
+  const movesRow = ['ArrowUp', 'ArrowDown'].includes(event.key);
+  if (field.dataset.mode === 'EA' && field.value && (event.key === 'Enter' || movesRow)) {
+    field.value = fixed(roundCents(Number(field.value)));
+  }
   if (event.key === 'Enter' && field.dataset.mode === 'EA') {
     event.preventDefault();
-    if (field.value) field.value = fixed(roundCents(Number(field.value)));
     hideChangedQuote(tr);
     return;
   }
@@ -290,7 +333,7 @@ content.addEventListener('keydown', event => {
     field.dispatchEvent(new Event('input', { bubbles: true }));
     return;
   }
-  if (!['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+  if (!movesRow) return;
   event.preventDefault();
   const adjacent = event.key === 'ArrowUp' ? tr.previousElementSibling : tr.nextElementSibling;
   const target = adjacent?.querySelector(field.dataset.calc ? '[data-calc=GP]' : '[data-mode=EA]');
@@ -319,11 +362,12 @@ content.addEventListener('click', async event => {
   button.disabled = true;
   $('#customer').disabled = true;
   message();
+  let refreshed = false;
+  let denied = false;
   try {
     if (button.id === 'catch-cost') {
-      const result = await api('cost', {}, context);
-      message(`Catch Cost: ${result.updated} updated · ${result.failed} failed.`,
-        result.failed > 0 && result.updated === 0, result.failed > 0 && result.updated > 0);
+      const requestedRows = new Set(current.rows.map(row => row.id));
+      refreshed = await refreshCost(context, requestedRows);
     } else if (action === 'draft') {
       await saveDraft(row, context);
       message('Draft saved.');
@@ -346,11 +390,14 @@ content.addEventListener('click', async event => {
         message(packet.enabled ? 'Quotation is visible to this customer.' : 'Quotation hidden. Existing orders retain their prices.');
       }
     }
-  } catch (error) { message(error.message, true); }
+  } catch (error) { denied = error.accessDenied === true; message(error.message, true); }
   finally {
     busy = false;
     $('#customer').disabled = false;
-    if (context === customerId()) await refresh();
+    if (refreshed && current) renderQuotes(quoteWindow && {
+      left: quoteWindow.scroller.scrollLeft, top: quoteWindow.scroller.scrollTop
+    });
+    else if (!refreshed && !denied && context === customerId()) await refresh();
   }
 });
 

@@ -137,7 +137,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
     rows[3].sortId = 'NF-00001';
     const requests = [];
     let compactFixture = false;
-    const costOutcomes = [{ updated: 4, failed: 6 }, null];
+    const costOutcomes = [{ updated: 4, failed: 6 }, 'unconfirmed', 'lost-after-save'];
     await page.exposeFunction('handleQuotation', (action, customerId, input) => {
       requests.push({ action, customerId, input });
       if (action === 'customers') return { staffId: 'STF-QA', staffName: 'Test staff', customers: [{ customerId: 'CUS-QA-001', name: 'QA Trading' }, { customerId: 'CUS-QA-002', name: 'Read only' }] };
@@ -157,8 +157,12 @@ test('the compact quotation grid renders and saves over the iframe message contr
       }
       if (action === 'cost') {
         const outcome = costOutcomes.length ? costOutcomes.shift() : { updated: rows.length, failed: 0 };
-        if (!outcome) throw Error('Point Base unavailable');
+        if (outcome === 'unconfirmed') throw Error('Point Base unavailable');
         for (const row of rows) row.costAt = '2026-11-17T08:00:00.000Z';
+        if (outcome === 'lost-after-save') {
+          rows.forEach((row, index) => { row.manualCostReceipt = { requestId: input.requestId, updated: index !== 999 }; });
+          throw Error('Wix response lost after saving costs');
+        }
         return outcome;
       }
       throw Error('Unexpected action');
@@ -218,7 +222,10 @@ test('the compact quotation grid renders and saves over the iframe message contr
       assert.equal(await grid.getByRole('columnheader', { name, exact: true }).evaluate(el => getComputedStyle(el).textAlign), 'right');
     }
     assert(await grid.getByRole('columnheader', { name: 'Discount', exact: true }).isVisible());
-    assert.equal(await grid.locator('.calc-group').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(220, 231, 241)');
+    assert.equal(await grid.locator('.calc-group').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(19, 54, 80)');
+    assert.equal(await grid.locator('.quotation-title-row').getByLabel('Customer').count(), 1);
+    assert.deepEqual(await first.locator('input[data-mode=EA], input[data-calc=GP]').evaluateAll(inputs =>
+      inputs.map(input => input.getBoundingClientRect().height)), [25, 25]);
     assert.equal(await first.locator('td.calc-cell').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(247, 249, 252)');
     assert.deepEqual(await first.locator('.disc-cell .quote-value').allTextContents(), ['1.0.00%', '2.0.00%', '3.5.00']);
     const decimals = await first.locator('.disc-cell .quote-value > :nth-child(2)').evaluateAll(amounts => amounts.map(amount => {
@@ -240,12 +247,24 @@ test('the compact quotation grid renders and saves over the iframe message contr
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
     await grid.locator('#notice.cost-warning').getByText('Catch Cost: 4 updated · 6 failed.').waitFor();
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
-    await grid.locator('#notice.error').getByText('Catch Cost did not return a confirmed result. Check the refreshed rows before retrying.').waitFor();
+    await grid.locator('#notice.cost-warning').getByText('Catch Cost: 0 updated · 0 failed · 1000 unconfirmed.').waitFor();
+    await grid.getByRole('button', { name: 'Catch Cost' }).click();
+    await grid.locator('#notice.cost-warning').getByText('Catch Cost: 999 updated · 1 failed.').waitFor();
+    assert.equal(requests.filter(({ action }) => action === 'cost').length, 3);
     await first.locator('[data-calc=GP]').fill('25');
     await first.getByRole('button', { name: 'Apply calculator', exact: false }).click();
     assert.equal(await first.locator('[data-mode=EA]').inputValue(), '1.00');
+    const applied = first.getByRole('button', { name: /Calculator price applied to/ });
+    assert(await applied.isDisabled());
+    assert(await applied.locator('.calc-applied-check').isVisible());
     await first.locator('[data-mode=EA]').fill('1.5');
+    assert(await first.getByRole('button', { name: /Apply calculator for/ }).isEnabled());
+    assert.equal(await first.locator('.calc-applied-check').isVisible(), false);
     assert.equal(await first.locator('[data-profit]').textContent(), 'GP50.00%CTN36.00');
+    assert.deepEqual(await first.locator('.gp-healthy').evaluate(el => {
+      const style = getComputedStyle(el);
+      return [style.color, style.fontWeight];
+    }), ['rgb(20, 87, 220)', '700']);
     assert.equal(await first.locator('[data-carton]').textContent(), '18.00');
     await first.getByRole('switch').click();
     await grid.getByText('Quotation is visible to this customer.').waitFor();
@@ -261,8 +280,12 @@ test('the compact quotation grid renders and saves over the iframe message contr
     await first.locator('[role=switch][aria-checked=false]').waitFor();
     assert.equal(await ea.inputValue(), '3.00');
     assert.equal(requests.filter(request => request.action === 'publish').at(-1).input.enabled, false);
+    await ea.fill('5.2');
     await ea.press('ArrowDown');
+    assert.equal(await ea.inputValue(), '5.20');
     assert.equal(await grid.locator('[data-row=item-1] [data-mode=EA]:focus').count(), 1);
+    await ea.fill('3');
+    await ea.press('Enter');
     assert.equal(await grid.locator('input[data-calc=EA]').count(), 0);
 
     const roundingRow = grid.locator('[data-row=item-3]');

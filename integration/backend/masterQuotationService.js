@@ -119,26 +119,31 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       }));
     },
 
-    async catchCost({ staffId, customer }) {
+    async catchCost({ staffId, customer }, input) {
       const { customerId } = customer;
+      const batchId = input?.requestId ?? randomUUID();
+      if (typeof batchId !== 'string' || !requestKey.test(batchId)) throw Error('Invalid cost refresh request.');
       const rows = await selections(customerId);
       if (!rows.length) return { updated: 0, failed: 0 };
       const costs = await readCosts([...new Set(rows.map(row => row.barcode))]);
       const latest = revisions.latestFor ? await revisions.latestFor(customerId, rows.map(row => row.id)) : null;
       let updated = 0;
       let failed = 0;
-      for (const row of rows) {
-        try {
-          const last = latest ? latest.get(row.id) : await revisions.latest(customerId, row.id);
-          const previous = last?.snapshot || blank;
-          if (previous.pending) { failed++; continue; }
-          const cost = rowSnapshot(row, costs?.[row.barcode]);
-          const snapshot = { ...previous, ...cost };
-          if (cost.costAt && snapshot.draft) snapshot.draft = calculatePrice(snapshot.draft, row, customer, snapshot);
-          await append(customerId, row.id, last?.revision ?? 0, randomUUID(), digest('cost', staffId, row.id, cost), snapshot);
-          if (cost.costError) failed++;
-          else updated++;
-        } catch { failed++; }
+      for (let index = 0; index < rows.length; index += 8) {
+        await Promise.all(rows.slice(index, index + 8).map(async row => {
+          try {
+            const last = latest ? latest.get(row.id) : await revisions.latest(customerId, row.id);
+            const previous = last?.snapshot || blank;
+            if (previous.pending) { failed++; return; }
+            const cost = rowSnapshot(row, costs?.[row.barcode]);
+            const manualCostReceipt = { requestId: batchId, updated: !cost.costError };
+            const snapshot = { ...previous, ...cost, manualCostReceipt };
+            if (cost.costAt && snapshot.draft) snapshot.draft = calculatePrice(snapshot.draft, row, customer, snapshot);
+            await append(customerId, row.id, last?.revision ?? 0, randomUUID(), digest('cost', staffId, row.id, cost), snapshot);
+            if (manualCostReceipt.updated) updated++;
+            else failed++;
+          } catch { failed++; }
+        }));
       }
       return { updated, failed };
     },

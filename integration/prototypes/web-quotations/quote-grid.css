@@ -380,8 +380,17 @@
   color: #3766a2;
 }
 
+.wix-quotation-workroom .quotation-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
 .wix-quotation-workroom .quotation-heading {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 20px;
   font-weight: 800;
   line-height: 26px;
@@ -389,12 +398,18 @@
 }
 
 .wix-quotation-workroom .customer-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
-  margin: 0 0 0 auto;
+  margin: 0;
+  color: #40617e;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .wix-quotation-workroom .masthead .header-bottom {
-  margin-left: 0;
+  margin-left: auto;
 }
 
 .wix-quotation-workroom #customer {
@@ -508,6 +523,37 @@
   background: #fff2dc;
 }
 
+.wix-quotation-workroom .quote-grid .gp-healthy {
+  color: #1457dc;
+  font-weight: 700;
+}
+
+.wix-quotation-workroom .calc-applied-check,
+.wix-quotation-workroom [data-applied] .calc-apply-label {
+  display: none;
+}
+
+.wix-quotation-workroom [data-applied] .calc-applied-check {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: auto;
+}
+
+.wix-quotation-workroom .quote-grid [data-applied]:disabled {
+  color: #1457dc;
+  background: #e8f0fe;
+  border-color: #c4d7f8;
+  opacity: 1;
+}
+
+.wix-quotation-workroom .quote-grid .disc-cell .quote-value {
+  grid-template-columns: 12px 5ch .8em;
+  column-gap: 0;
+  justify-content: end;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (min-width: 601px) {
   .wix-quotation-workroom {
     display: flex;
@@ -537,7 +583,6 @@
   }
 
   .wix-quotation-workroom .quote-grid {
-    --quote-extra-width: max(0px, 100vw - 1440px);
     overflow: auto;
     overscroll-behavior: contain;
     scroll-padding-top: 48px;
@@ -570,9 +615,9 @@
   }
 
   .wix-quotation-workroom .quote-grid thead .calc-group {
-    background: #dce7f1;
-    color: #203047;
-    border-inline-start: 1px solid #c2d2e1;
+    background: #133650;
+    color: #fff;
+    border-inline-start: 1px solid #133650;
   }
 
   .wix-quotation-workroom .quote-grid thead tr:first-child th:nth-last-child(2) {
@@ -684,12 +729,12 @@
   }
 
   .wix-quotation-workroom .customer-control {
-    flex-basis: 100%;
-    order: 1;
+    flex: 1 1 160px;
+    justify-content: flex-end;
   }
 
   .wix-quotation-workroom #customer {
-    width: 100%;
+    width: min(100%, 180px);
     min-height: 38px;
     margin-block: 3px;
     font-size: 16px;
