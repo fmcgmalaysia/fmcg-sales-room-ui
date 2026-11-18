@@ -21,7 +21,11 @@ function buildWixWorkroom(destination) {
     section('function draftPrice(', 'function quoteRows(') + section('function renderQuotes(', 'function renderCatalogue('),
     "const search = $('#search').value.toLowerCase();\n  const rows = quoteRows().filter(row => [row.name, row.barcode, row.packing, row.costDetails?.remark].join(' ').toLowerCase().includes(search));",
     'const rows = quoteRows();'
-  );
+  ).replace('<div class="table-wrap quote-grid"><table>',
+    '<div class="table-wrap quote-grid"><table aria-rowcount="${rows.length + 2}">')
+    .replace("<tbody>${rows.map((row, index) => quoteRow(row, index + 1)).join('')}</tbody>",
+      '<tbody>${initialQuoteRows(rows)}</tbody>')
+    .replace('</div>`);\n}', '</div>`);\n  mountQuoteRows(rows);\n}');
   const interaction = section('async function saveDraft(', 'function moveQuoteRow(');
   const shared = replaceOnce(render + interaction, "const draftKey = context + '|' + row.id;", 'const draftKey = key(row.id);')
     .replaceAll('disabled || (!visible', 'disabled || current.canPublish === false || (!visible')
@@ -33,6 +37,9 @@ function buildWixWorkroom(destination) {
     .replace('data-mode="EA" type="number" step="any"', 'data-mode="EA" type="number" step="any" placeholder="0.00"')
     .replace('value="${inputValue(price?.priceEa)}"', 'value="${price ? fixed(price.priceEa) : \'\'}"')
     .replace(".value = inputValue(price?.priceEa);", ".value = price ? fixed(price.priceEa) : '';")
+    .replace('const previous = row.previousSp;', 'const previous = row.lastSale;')
+    .replaceAll('draftPrice(row)', 'sellingPrice(row)')
+    .replace('<tr data-row="${escapeHtml(row.id)}"', '<tr aria-rowindex="${number + 2}" data-row="${escapeHtml(row.id)}"')
     .replace(/    <td class="move-cell">[^\n]+\n/, '')
     .replace('[24, 34, 35,', '[34, 35,')
     .replace('<th rowspan="2" aria-label="Move"></th>', '');

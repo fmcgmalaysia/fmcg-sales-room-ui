@@ -121,6 +121,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
     const rows = [makeRow(longName, 0), ...Array.from({ length: 999 }, (_, i) => makeRow('Product ' + (i + 1), i + 1))];
     rows[0].costDetails.disc3 = 5;
     rows[0].costDetails.priceStale = true;
+    rows[0].lastSale = { priceCtn: 12, currency: 'USD', siDate: '2026-11-16' };
     rows[1].draft = { mode: 'EA', value: 0.8 };
     rows[2].draft = { mode: 'EA', value: 36 / 0.92 / 4 / 12 };
     rows[0].sortId = 'FO-00002';
@@ -166,8 +167,9 @@ test('the compact quotation grid renders and saves over the iframe message contr
     const grid = page.frameLocator('#workroom');
     const first = grid.locator('tr[data-row="item-0"]');
     await first.waitFor();
-    assert.equal(await grid.locator('tbody tr').count(), 1000);
-    assert.deepEqual(await grid.locator('tbody tr').evaluateAll(trs => trs.slice(0, 5).map(tr => tr.dataset.row)),
+    assert.equal(await grid.locator('table').getAttribute('aria-rowcount'), '1002');
+    assert(await grid.locator('tbody tr[data-row]').count() < 100);
+    assert.deepEqual(await grid.locator('tbody tr[data-row]').evaluateAll(trs => trs.slice(0, 5).map(tr => tr.dataset.row)),
       ['item-2', 'item-0', 'item-1', 'item-3', 'item-4']);
     assert.equal(await grid.locator('.move-row').count(), 0);
     assert.equal(await grid.locator('#company, #actor').count(), 0);
@@ -177,6 +179,8 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(await grid.locator('.quote-customer h2').textContent(), 'QA Trading Company Limited');
     assert.match(await first.locator('.disc-cell').textContent(), /Disc 35\.00$/);
     assert.equal(await first.locator('.stale-cost').textContent(), '36.00');
+    assert.equal(await first.locator('[data-previous-sp]').textContent(), '12.00 / CTN');
+    assert.equal(await first.locator('.previous-sp small').textContent(), '16-11-26');
     assert.equal(await grid.locator('[data-row=item-1] .gp-risk').count(), 1);
     assert.equal(await grid.locator('#quote-risk-count').textContent(), '1');
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
@@ -203,6 +207,21 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(await grid.locator('[data-row=item-1] [data-mode=EA]:focus').count(), 1);
     await first.locator('[data-calc=GP]').press('ArrowRight');
     assert.equal(await first.locator('[data-calc=EA]:focus').count(), 1);
+
+    const frame = await page.locator('#workroom').elementHandle();
+    const workroom = await frame.contentFrame();
+    const resizeStart = Date.now();
+    await page.setViewportSize({ width: 1024, height: 920 });
+    await workroom.waitForFunction(() => innerWidth === 1024 && document.querySelector('tbody tr').getBoundingClientRect().height > 0,
+      undefined, { timeout: 15000 });
+    const resizeMs = Date.now() - resizeStart;
+    console.log(`Quotation 1,000-row resize took ${resizeMs} ms`);
+    assert(resizeMs < 2500, `Full-grid resize took ${resizeMs} ms`);
+    await workroom.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await grid.locator('[data-row=item-999]').waitFor();
+    assert(await grid.locator('tbody tr[data-row]').count() < 100);
+    await workroom.evaluate(() => window.scrollTo(0, 0));
+    await first.waitFor();
 
     compactFixture = true;
     await grid.locator('#customer').selectOption('CUS-QA-002');

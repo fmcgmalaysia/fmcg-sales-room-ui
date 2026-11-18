@@ -1,9 +1,11 @@
 .quote-grid {
   overflow-x: auto;
+  contain: inline-size;
 }
 
 .quote-grid table {
-  min-width: 1370px;
+  width: max(100%, 1370px);
+  min-width: 0;
 }
 
 .quote-grid :is(th, td) {
@@ -212,6 +214,8 @@
 }
 
 .quote-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 53fr) minmax(0, 47fr);
   border-bottom: 1px solid var(--line);
   border-radius: 7px;
   margin-bottom: 10px;
@@ -248,6 +252,12 @@
   text-align: center;
 }
 
+.wix-quotation-workroom .quote-actions:has(.switch) {
+  align-items: center;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .quote-counts div {
   border-left: 1px solid var(--line);
   padding: 3px 8px;
@@ -257,6 +267,27 @@
 .quote-counts dd { margin: 2px 0 0; font-size: 17px; font-weight: 700; }
 
 @media (min-width: 601px) {
+  .windowed-quote-grid tbody tr[data-row] > td {
+    height: 46px;
+  }
+
+  .windowed-quote-grid table {
+    overflow-anchor: none;
+  }
+
+  .windowed-quote-grid .remark-cell {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .windowed-quote-grid .quote-spacer td {
+    height: 0;
+    padding: 0;
+    border: 0;
+  }
+
   main:has(.quote-grid) {
     max-width: none;
     padding: 12px;
@@ -291,6 +322,7 @@
   }
 
   .quote-grid table {
+    width: 100%;
     min-width: 0;
   }
 
