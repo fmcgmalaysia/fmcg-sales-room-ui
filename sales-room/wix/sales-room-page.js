@@ -5,6 +5,7 @@ import { getCurrentStaffContext, recordStaffPresence, getStaffPresenceForAdmin }
 import wixLocationFrontend from 'wix-location-frontend';
 import { authentication } from 'wix-members-frontend';
 import wixRealtimeFrontend from 'wix-realtime-frontend';
+import { session } from 'wix-storage-frontend';
 
 const STAFF_LOGIN_URL = '/sales-room-login';
 const PRESENCE_HEARTBEAT_MS = 60 * 1000;
@@ -131,6 +132,9 @@ $w.onReady(function () {
       const staff = await staffPromise;
       const customerId = String(message.customerId || '').trim();
       if (!staff.authorized || !/^CUS-[A-Za-z0-9-]+$/.test(customerId)) return;
+      try {
+        session.setItem('staffBuyerEntryV1', JSON.stringify({ customerId, staffId: staff.staffId, expiresAt: Date.now() + 30000 }));
+      } catch (error) { /* The explicit URL still carries the requested customer. */ }
       wixLocationFrontend.to('/buyer-room?assist=' + encodeURIComponent(customerId));
       return;
     }

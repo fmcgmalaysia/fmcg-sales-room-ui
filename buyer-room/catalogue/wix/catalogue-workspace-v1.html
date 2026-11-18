@@ -5,7 +5,7 @@
 <meta name="catalogue-category-ready-build" content="20261117-catalogue-category-ready-v1">
 <meta name="catalogue-mobile-names-build" content="20261117-catalogue-mobile-names-v1">
 <meta name="catalogue-mobile-detail-build" content="20261118-catalogue-mobile-detail-v1">
-<meta name="catalogue-workroom-build" content="20261118-catalogue-complete-v1">
+<meta name="catalogue-workroom-build" content="20261118-catalogue-staff-entry-v1">
 <meta name="catalogue-selection-return-build" content="20261117-catalogue-selection-return-v1">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -379,7 +379,7 @@
     window.addEventListener('message',e=>{const d=e.data||{};
       if(d.type==='catalogueMenuData')renderMobileCategories(d.items);
       if(d.type==='catalogueWorkspaceData'){
-        state.products=Array.isArray(d.products)?d.products:[];
+        if(Array.isArray(d.products))state.products=d.products;
         state.selectionProducts=Array.isArray(d.selectionProducts)?d.selectionProducts:[];
         state.selectedIds=new Set((d.selectedProductIds||[]).map(text));
         state.activeSelectedIds=new Set((d.activeSelectedProductIds||[]).map(text));
@@ -414,7 +414,8 @@
       if(d.type==='catalogueWorkspaceFilter')applyCatalogueFilter(d);
       if(d.type==='catalogueWorkspaceMenuState')document.body.classList.toggle('mega-open',Boolean(d.open))
     });
-    const announceReady=()=>post('catalogueWorkspaceReady');announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
+    const instanceId=String(Date.now())+'-'+Math.random().toString(36).slice(2);
+    const announceReady=()=>post('catalogueWorkspaceReady',{instanceId});announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
   </script>
 </body>
 </html>

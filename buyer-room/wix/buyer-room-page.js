@@ -3,19 +3,43 @@ import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
 import wixRealtimeFrontend from 'wix-realtime-frontend';
+import { getCurrentBuyerContext } from 'backend/catalogueAuth.web';
 
 let assistCustomerId = '';
 function getAssistCustomerId() {
   // Assisted access must be explicit in the URL. Catalogue already preserves
   // the `assist` query when staff return to Buyer Room, while ignoring an old
   // session value prevents a later customer login from inheriting staff mode.
-  return String(wixLocationFrontend.query?.assist || '').trim();
+  const assist = String(wixLocationFrontend.query?.assist || '').trim();
+  if (assist) return assist;
+  try {
+    return (new URL(wixLocationFrontend.url).searchParams.get('assist') || '').trim();
+  } catch (error) {
+    return '';
+  }
+}
+async function resolveEntryCustomerId() {
+  const explicitCustomerId = getAssistCustomerId();
+  let entry;
+  try {
+    const saved = session.getItem('staffBuyerEntryV1');
+    if (saved) session.removeItem('staffBuyerEntryV1');
+    if (!explicitCustomerId && saved) entry = JSON.parse(saved);
+  } catch (error) { return explicitCustomerId; }
+  if (!entry?.staffId || !/^CUS-[A-Za-z0-9-]+$/.test(entry.customerId || '') || !(entry.expiresAt > Date.now())) return explicitCustomerId;
+  try {
+    const access = await getCurrentBuyerContext(entry.customerId);
+    const buyer = access?.buyer;
+    if (access?.ok && buyer?.status === 'ACTIVE' && ['ADMIN', 'STAFF'].includes(buyer.actorType) &&
+        buyer.actorStaffId === entry.staffId && buyer.customerId === entry.customerId) return buyer.customerId;
+  } catch (error) { /* Use the ordinary buyer route if assisted access cannot be verified. */ }
+  return '';
 }
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
   const downloadButton = $w('#downloadExcelButton');
-  assistCustomerId = getAssistCustomerId();
+  assistCustomerId = await resolveEntryCustomerId();
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
   function openHistoryFile(message) {
@@ -269,10 +293,9 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261111-warehouse-desk-workflow-v1';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261117-mobile-menu-icon-v1';
   try { await refreshWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   // Visible-frame polling is the only periodic workspace refresh authority.
   setInterval(() => { if (activeDownloadExpiresAt && activeDownloadExpiresAt < Date.now() + 60000) { downloadButton.disable(); downloadButton.link = ''; prepareSelectionDownload(true); } }, 30000);
 });
-

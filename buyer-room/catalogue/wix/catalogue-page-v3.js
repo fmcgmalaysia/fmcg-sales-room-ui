@@ -17,13 +17,17 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261118-catalogue-complete-v1';
+const CATALOGUE_BUILD_VERSION = '20261118-catalogue-staff-entry-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
+let catalogueWorkspaceInstance = '';
+let lastWorkspaceProducts = null;
+let lastWorkspaceCategoryMap = null;
+let lastWorkspaceCategoriesLoaded;
 let catalogueSelectionLimit = 100;
 let catalogueSelectionTotal = 0;
 let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
@@ -156,7 +160,7 @@ async function getPrinciplesForSub(subId) {
 }
 
 function sendCatalogueContext(message) {
-    catalogueContextMessage = { ...message, buyerRoomUrl: buyerRoomUrl() };
+    catalogueContextMessage = { ...message, buyerRoomUrl: buyerRoomUrl(message.mode) };
     try { $w('#text19').text = String(message.sheetName || 'FMCG Malaysia').trim(); } catch (error) {}
     try { $w('#text20').text = String(message.signedInName || 'Buyer').trim(); } catch (error) {}
     try { $w('#html3').postMessage(catalogueContextMessage); } catch (error) {}
@@ -271,13 +275,16 @@ function catalogueSelectionSummary() {
 function sendCatalogueWorkspaceData() {
     if (!catalogueWorkspaceReady) return;
     try {
+        const refreshProducts = !catalogueWorkspaceInstance || catalogueWorkspaceProducts !== lastWorkspaceProducts ||
+            catalogueSubCategoryMainMap !== lastWorkspaceCategoryMap ||
+            catalogueCategoriesLoaded !== lastWorkspaceCategoriesLoaded;
         const selection = catalogueSelectionSummary();
         $w('#html5').postMessage({
             type: 'catalogueWorkspaceData',
-            products: catalogueWorkspaceProducts.map(product => ({
+            ...(refreshProducts ? { products: catalogueWorkspaceProducts.map(product => ({
                 ...product,
                 mainCategory: catalogueMainCategory(product)
-            })),
+            })) } : {}),
             selectedProductIds: [...selectedProductIds],
             activeSelectedProductIds: [...activeSelectedProductIds],
             selectionProducts: selection.products,
@@ -290,6 +297,9 @@ function sendCatalogueWorkspaceData() {
             context: catalogueContextMessage,
             buildVersion: CATALOGUE_BUILD_VERSION
         });
+        lastWorkspaceProducts = catalogueWorkspaceProducts;
+        lastWorkspaceCategoryMap = catalogueSubCategoryMainMap;
+        lastWorkspaceCategoriesLoaded = catalogueCategoriesLoaded;
         $w('#html5').postMessage(workspaceFilterMessage());
     } catch (error) {}
 }
@@ -382,11 +392,17 @@ $w.onReady(async () => {
         const assistCustomerId = String(wixLocationFrontend.query?.assist || '').trim();
         if (assistCustomerId) {
             try {
-                const response = await getSalesRoomCustomerDetail(assistCustomerId);
+                const [response, selection] = await Promise.all([
+                    getSalesRoomCustomerDetail(assistCustomerId),
+                    getCatalogueSelectionState(assistCustomerId)
+                ]);
                 const customer = response?.customer || {};
-                session.setItem('catalogueAssistCustomerId', customer.customerId || assistCustomerId);
-                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: customer.customerId || assistCustomerId };
-                await loadSelectionState(selectionContext.assistCustomerId);
+                if (!response?.ok || !selection?.ok || customer.customerId !== selection.customerId || customer.customerId !== assistCustomerId) {
+                    throw new Error('Catalogue customer access could not be verified.');
+                }
+                session.setItem('catalogueAssistCustomerId', customer.customerId);
+                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: customer.customerId };
+                sidebarSelectionState(selection);
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
                     sheetName: String(customer.companyName || customer.customerId || '').trim(),
@@ -687,6 +703,10 @@ function setupCatalogueWorkspace() {
     workspace.onMessage(async (event) => {
         const message = event.data || {};
         if (message.type === 'catalogueWorkspaceReady') {
+            const instanceId = typeof message.instanceId === 'string' ? message.instanceId : '';
+            if (instanceId && instanceId === catalogueWorkspaceInstance) return;
+            catalogueWorkspaceInstance = instanceId;
+            lastWorkspaceProducts = null;
             catalogueWorkspaceReady = true;
             if (catalogueWorkspaceFullReadComplete || catalogueWorkspaceProducts.length) sendCatalogueWorkspaceData();
             else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
@@ -773,13 +793,19 @@ function setupCatalogueWorkspace() {
 }
 
 function openBuyerRoom() {
-    const assistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
+    if (catalogueContextMessage?.mode === 'preview') {
+        wixLocationFrontend.to('/sales-room');
+        return;
+    }
+    const assistCustomerId = String(selectionContext?.assistCustomerId || '').trim();
     wixLocationFrontend.to(assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : '/buyer-room');
 }
 
-function buyerRoomUrl() {
-    const url = new URL('buyer-room', new URL('.', wixLocationFrontend.url));
-    const assistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
+function buyerRoomUrl(mode = catalogueContextMessage?.mode) {
+    const preview = mode === 'preview';
+    const url = new URL(preview ? 'sales-room' : 'buyer-room', new URL('.', wixLocationFrontend.url));
+    if (preview) return url.href;
+    const assistCustomerId = String(selectionContext?.assistCustomerId || '').trim();
     if (assistCustomerId) url.searchParams.set('assist', assistCustomerId);
     return url.href;
 }

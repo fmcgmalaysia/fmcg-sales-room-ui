@@ -1514,11 +1514,11 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 44303376451
+          run-id: 44317237371
           github-token: ${{ github.token }}
           path: ${{ format('{0}/catalogue-complete-baseline', runner.temp) }}
 
-      - name: Replace only the three verified Catalogue HTML assets
+      - name: Replace only the verified Catalogue header and workspace
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'catalogue-complete-only'
         run: |
           site="$RUNNER_TEMP/catalogue-complete-site"

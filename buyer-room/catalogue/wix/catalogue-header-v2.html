@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="catalogue-header-build-version" content="2026-09-30-catalogue-buyer-room-link-v52">
-  <meta name="catalogue-mobile-header-build" content="20261118-catalogue-complete-v1">
+  <meta name="catalogue-mobile-header-build" content="20261118-catalogue-staff-entry-v1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,6 +19,7 @@
     @media(max-width:1100px){.page-id{height:40px;margin-left:12px;padding:0 13px;font-size:12px;letter-spacing:.06em}.page-id svg{width:18px;height:18px}.nav{gap:1px;padding:0 4px}.navbtn{padding:0 8px;font-size:12px}.navbtn:after{left:8px;right:8px}.nav-actions{padding:0 10px 0 5px}.buyer-room{height:40px;padding:0 12px;font-size:12px}}
     @media(max-width:750px){.header,.navrow{height:52px}.page-id{height:36px;margin-left:7px;padding:0 10px;gap:6px;font-size:10px;letter-spacing:.03em}.page-id svg{width:16px;height:16px}.nav{gap:2px;padding:0 5px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.navbtn{flex:0 0 auto;padding:0 9px;font-size:11px}.navbtn:after{left:9px;right:9px;height:2px}.nav-actions{padding:0 7px 0 4px}.buyer-room{width:40px;height:38px;padding:0;border-radius:9px}.buyer-room .label,.buyer-room .arrow{display:none}.buyer-room svg{width:19px;height:19px}}
 
+    .buyer-room[aria-disabled="true"]{opacity:.58;cursor:default}
     .mobile-brand,.mobile-search{display:none}
     @media(max-width:900px){
       .header{height:auto}.nav{display:none}
@@ -51,11 +52,15 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
       <input id="mobileSearch" type="search" aria-label="Search products, brands or categories" placeholder="Search products" autocomplete="off">
     </label>
-    <div class="nav-actions"><a class="buyer-room" id="buyerRoom" href="https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room" target="fmcgBuyerRoom" aria-label="Open Buyer Room"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 5h2l1.5 9.1h10.4l2.1-6.3H6.1M9.2 18.5a1.2 1.2 0 1 0 0 .1M17 18.5a1.2 1.2 0 1 0 0 .1"/></svg></span><span class="label">Buyer Room</span><span class="arrow" aria-hidden="true">→</span></a></div>
+    <div class="nav-actions"><a class="buyer-room" id="buyerRoom" target="fmcgBuyerRoom" aria-disabled="true" aria-label="Open Buyer Room"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 5h2l1.5 9.1h10.4l2.1-6.3H6.1M9.2 18.5a1.2 1.2 0 1 0 0 .1M17 18.5a1.2 1.2 0 1 0 0 .1"/></svg></span><span class="label">Buyer Room</span><span class="arrow" aria-hidden="true">→</span></a></div>
   </div></header>
   <script>
     const post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-    const buttons=[...document.querySelectorAll('.navbtn')];const buyerRoom=document.getElementById('buyerRoom');let active='',hoverTimer;
+    const buttons=[...document.querySelectorAll('.navbtn')];const buyerRoom=document.getElementById('buyerRoom');let active='',hoverTimer,staffPreview=false;
+    buyerRoom.addEventListener('click',event=>{
+      if(!buyerRoom.hasAttribute('href')){event.preventDefault();return}
+      if(staffPreview){event.preventDefault();post('catalogueBuyerRoom')}
+    });
     function paint(){buttons.forEach(button=>button.classList.toggle('active',button.dataset.key===active))}
     function openMenu(key){active=key;paint();post('catalogueMain',{main:key,open:true})}
     buttons.forEach(button=>{button.addEventListener('mouseenter',()=>{clearTimeout(hoverTimer);hoverTimer=setTimeout(()=>openMenu(button.dataset.key),220)});button.addEventListener('mouseleave',()=>clearTimeout(hoverTimer));button.addEventListener('click',()=>{clearTimeout(hoverTimer);const same=active===button.dataset.key;active=same?'':button.dataset.key;paint();post('catalogueMain',{main:button.dataset.key,open:!same})})});
@@ -68,7 +73,14 @@
     window.addEventListener('message',event=>{
       const data=event.data||{};
       if(data.type==='catalogueContext'){
-        const href=String(data.buyerRoomUrl||'').trim();if(href)buyerRoom.href=href;
+        const href=String(data.buyerRoomUrl||'').trim();
+        if(href){
+          staffPreview=data.mode==='preview';
+          buyerRoom.href=href;
+          buyerRoom.removeAttribute('aria-disabled');
+          buyerRoom.querySelector('.label').textContent=staffPreview?'Choose customer':'Buyer Room';
+          buyerRoom.setAttribute('aria-label',staffPreview?'Choose a customer in Sales Room':'Open Buyer Room');
+        }
         for(const [id,value] of [['mobileCompany',data.sheetName],['mobileActor',data.signedInName]]){
           const label=document.getElementById(id);label.textContent=String(value||'').trim();label.title=label.textContent
         }
