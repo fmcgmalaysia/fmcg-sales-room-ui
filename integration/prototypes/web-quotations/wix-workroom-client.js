@@ -20,7 +20,6 @@ const key = id => JSON.stringify([staffId, customerId(), id]);
 const requestId = () => crypto.randomUUID();
 const compareSortIds = new Intl.Collator('en', { numeric: true, sensitivity: 'base' }).compare;
 const desktopGrid = window.matchMedia('(min-width: 601px)');
-const quoteRowHeight = 46;
 const quoteOverscan = 16;
 let quoteWindow;
 let quoteFrame = 0;
@@ -29,22 +28,26 @@ function initialQuoteRows(rows) {
   return desktopGrid.matches && rows.length > 120 ? '' : rows.map((row, index) => quoteRow(row, index + 1)).join('');
 }
 
-function mountQuoteRows(rows) {
+function mountQuoteRows(rows, scrollPosition) {
   const body = content.querySelector('.quote-grid tbody');
-  quoteWindow = body && { body, rows };
-  updateQuoteWindow();
+  quoteWindow = body && { body, rows, scroller: body.closest('.quote-grid') };
+  if (!quoteWindow) return;
+  updateQuoteWindow(scrollPosition?.top);
+  if (desktopGrid.matches && scrollPosition) {
+    quoteWindow.scroller.scrollTo(scrollPosition.left, scrollPosition.top);
+  }
 }
 
-function updateQuoteWindow() {
+function updateQuoteWindow(scrollTop) {
   if (!quoteWindow || !quoteWindow.body.isConnected) return;
-  const { body, rows } = quoteWindow;
+  const { body, rows, scroller } = quoteWindow;
   if (rows.length <= 120) return;
   const virtual = desktopGrid.matches;
-  body.closest('.quote-grid').classList.toggle('windowed-quote-grid', virtual);
-  const gridTop = body.getBoundingClientRect().top;
+  scroller.classList.toggle('windowed-quote-grid', virtual);
+  const quoteRowHeight = parseFloat(getComputedStyle(scroller).getPropertyValue('--quote-row-height'));
   const first = virtual ? Math.min(rows.length - 1,
-    Math.max(0, Math.floor(-gridTop / quoteRowHeight) - quoteOverscan)) : 0;
-  const end = virtual ? Math.min(rows.length, first + Math.ceil(innerHeight / quoteRowHeight) + quoteOverscan * 2) : rows.length;
+    Math.max(0, Math.floor((scrollTop ?? scroller.scrollTop) / quoteRowHeight) - quoteOverscan)) : 0;
+  const end = virtual ? Math.min(rows.length, first + Math.ceil(scroller.clientHeight / quoteRowHeight) + quoteOverscan * 2) : rows.length;
   if (quoteWindow.first === first && quoteWindow.end === end) return;
   quoteWindow.first = first;
   quoteWindow.end = end;
@@ -78,7 +81,7 @@ function queueQuoteWindow() {
     updateQuoteWindow();
   });
 }
-window.addEventListener('scroll', queueQuoteWindow, { passive: true });
+content.addEventListener('scroll', queueQuoteWindow, { capture: true, passive: true });
 window.addEventListener('resize', queueQuoteWindow, { passive: true });
 
 function quoteRows() {
@@ -120,7 +123,7 @@ function productImage(value) {
   try {
     const url = new URL(value);
     if (url.origin === 'https://static.wixstatic.com' && url.pathname.startsWith('/media/')) {
-      return '<img class="product-thumb" loading="lazy" width="36" height="35" alt="" src="' + escapeHtml(url.href) + '">';
+      return '<img class="product-thumb" loading="lazy" width="58" height="52" alt="" src="' + escapeHtml(url.href) + '">';
     }
   } catch { /* Unknown product image. */ }
   return '<span class="empty-thumb">—</span>';
@@ -197,6 +200,8 @@ async function refresh() {
   hideProductPreview();
   const token = ++generation;
   const context = customerId();
+  const scrollPosition = quoteWindow && current?.customer?.customerId === context
+    ? { left: quoteWindow.scroller.scrollLeft, top: quoteWindow.scroller.scrollTop } : null;
   current = null;
   content.replaceChildren();
   if (!context) return;
@@ -208,7 +213,7 @@ async function refresh() {
       throw Error('The quotation workspace could not be verified.');
     }
     current = result;
-    renderQuotes();
+    renderQuotes(scrollPosition);
   } catch (error) {
     if (token === generation) message(error.message, true);
   }

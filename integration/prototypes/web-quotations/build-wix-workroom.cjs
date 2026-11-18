@@ -21,11 +21,12 @@ function buildWixWorkroom(destination) {
     section('function draftPrice(', 'function quoteRows(') + section('function renderQuotes(', 'function renderCatalogue('),
     "const search = $('#search').value.toLowerCase();\n  const rows = quoteRows().filter(row => [row.name, row.barcode, row.packing, row.costDetails?.remark].join(' ').toLowerCase().includes(search));",
     'const rows = quoteRows();'
-  ).replace('<div class="table-wrap quote-grid"><table>',
-    '<div class="table-wrap quote-grid"><table aria-rowcount="${rows.length + 2}">')
+  ).replace('function renderQuotes()', 'function renderQuotes(scrollPosition)')
+    .replace('<div class="table-wrap quote-grid"><table>',
+      '<div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 2}">')
     .replace("<tbody>${rows.map((row, index) => quoteRow(row, index + 1)).join('')}</tbody>",
       '<tbody>${initialQuoteRows(rows)}</tbody>')
-    .replace('</div>`);\n}', '</div>`);\n  mountQuoteRows(rows);\n}');
+    .replace('</div>`);\n}', '</div>`);\n  mountQuoteRows(rows, scrollPosition);\n}');
   const interaction = section('async function saveDraft(', 'function moveQuoteRow(');
   const shared = replaceOnce(render + interaction, "const draftKey = context + '|' + row.id;", 'const draftKey = key(row.id);')
     .replaceAll('disabled || (!visible', 'disabled || current.canPublish === false || (!visible')
@@ -41,7 +42,13 @@ function buildWixWorkroom(destination) {
     .replaceAll('draftPrice(row)', 'sellingPrice(row)')
     .replace('<tr data-row="${escapeHtml(row.id)}"', '<tr aria-rowindex="${number + 2}" data-row="${escapeHtml(row.id)}"')
     .replace(/    <td class="move-cell">[^\n]+\n/, '')
-    .replace('[24, 34, 35,', '[34, 35,')
+    .replace('[24, 34, 35, \'\', 77, 86, 72, 70, 73, 66, 156, 89, 45, 48, 42]', '[42, 62, \'\', 85, 96, 76, 75, 77, 74, 142, 72, 53, 56, 49]')
+    .replaceAll('<small>MYR</small>', '')
+    .replace('<small>MYR · CTN</small>', '')
+    .replace('Profit · MYR', 'Profit')
+    .replace('List cost · MYR', 'List cost')
+    .replace('Net cost · MYR per CTN', 'Net cost per CTN')
+    .replace('<div class="product-name">${desc}</div>', '<div class="product-name" title="${desc}">${desc}</div>')
     .replace('<th rowspan="2" aria-label="Move"></th>', '');
   const output = [
     wixClient,

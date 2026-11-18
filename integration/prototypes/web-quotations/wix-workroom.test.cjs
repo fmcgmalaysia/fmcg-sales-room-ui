@@ -178,6 +178,14 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(await grid.locator('.move-row').count(), 0);
     assert.equal(await grid.locator('#company, #actor').count(), 0);
     assert(await first.locator('.product-name').evaluate(el => el.scrollWidth <= el.clientWidth));
+    assert.equal(await grid.locator('thead').getByText(/MYR/).count(), 0);
+    const dimensions = await first.evaluate(row => ({
+      rowHeight: row.getBoundingClientRect().height,
+      imageHeight: row.querySelector('img').getBoundingClientRect().height,
+      headerHeight: document.querySelector('.masthead').getBoundingClientRect().height,
+      titleHeight: document.querySelector('.page-title').getBoundingClientRect().height
+    }));
+    assert.deepEqual(dimensions, { rowHeight: 56, imageHeight: 52, headerHeight: 49, titleHeight: 42 });
     const thumbnail = first.locator('.product-thumb');
     await thumbnail.hover();
     const preview = grid.locator('.quote-product-preview');
@@ -232,10 +240,26 @@ test('the compact quotation grid renders and saves over the iframe message contr
     const resizeMs = Date.now() - resizeStart;
     console.log(`Quotation 1,000-row resize took ${resizeMs} ms`);
     assert(resizeMs < 2500, `Full-grid resize took ${resizeMs} ms`);
-    await workroom.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const scrollGrid = grid.getByRole('region', { name: 'Quotation products' });
+    await scrollGrid.evaluate(el => el.scrollTo(100, 1000));
+    await workroom.waitForFunction(() => document.querySelector('.quote-grid').scrollTop === 1000);
+    const alignment = await scrollGrid.evaluate(el => ({
+      vertical: Math.abs(el.querySelector('thead').getBoundingClientRect().top - el.getBoundingClientRect().top - el.clientTop),
+      horizontal: Math.abs(el.querySelector('th').getBoundingClientRect().left - el.querySelector('tr[data-row] td').getBoundingClientRect().left),
+      pageScroll: window.scrollY,
+      gridLeft: el.scrollLeft
+    }));
+    assert.deepEqual(alignment, { vertical: 0, horizontal: 0, pageScroll: 0, gridLeft: 100 });
+    await grid.getByRole('button', { name: 'Catch Cost' }).click();
+    await grid.getByText('1000 costs updated.').waitFor();
+    await workroom.waitForFunction(() => {
+      const grid = document.querySelector('.quote-grid');
+      return grid?.scrollTop === 1000 && grid.scrollLeft === 100;
+    });
+    await scrollGrid.evaluate(el => el.scrollTo(0, el.scrollHeight));
     await grid.locator('[data-row=item-999]').waitFor();
     assert(await grid.locator('tbody tr[data-row]').count() < 100);
-    await workroom.evaluate(() => window.scrollTo(0, 0));
+    await scrollGrid.evaluate(el => el.scrollTo(0, 0));
     await first.waitFor();
 
     compactFixture = true;

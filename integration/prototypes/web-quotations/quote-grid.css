@@ -1,4 +1,5 @@
 .quote-grid {
+  --quote-row-height: 56px;
   overflow-x: auto;
   contain: inline-size;
 }
@@ -34,6 +35,7 @@
 }
 
 .quote-grid .product-name {
+  font-weight: 700;
   font-size: 11px;
   line-height: 1.25;
   overflow: hidden;
@@ -142,6 +144,7 @@
 }
 
 .quote-grid .cost-cell b {
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -177,9 +180,9 @@
   text-align: center;
   padding-block: 4px;
   border-bottom: 1px solid var(--line);
-  background: #163c59;
+  background: #133858;
   color: white;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.15;
 }
 
@@ -285,9 +288,238 @@
 .quote-counts dt { color: var(--muted); font-size: 10px; }
 .quote-counts dd { margin: 2px 0 0; font-size: 17px; font-weight: 700; }
 
+.wix-quotation-workroom {
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  background: #f1f5f9;
+  color: #203047;
+}
+
+.wix-quotation-workroom .quotation-header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 4;
+}
+
+.wix-quotation-workroom .masthead {
+  min-height: 49px;
+  padding: 0 24px;
+  gap: 18px;
+  background: #133858;
+  flex-wrap: nowrap;
+}
+
+.wix-quotation-workroom .masthead strong {
+  font-size: 20px;
+  letter-spacing: .3px;
+}
+
+.wix-quotation-workroom .department {
+  display: block;
+  border-color: #446781;
+  padding-inline-start: 18px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.wix-quotation-workroom #staff {
+  font-size: 11px;
+}
+
+.wix-quotation-workroom .page-title {
+  display: flex;
+  min-height: 42px;
+  gap: 10px;
+  margin: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--line);
+  background: white;
+}
+
+.wix-quotation-workroom .page-title h1 {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 2px 2px 0;
+  border-bottom: 2px solid #346ba7;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: #245b8e;
+}
+
+.wix-quotation-workroom .customer-control {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+  margin: 0;
+}
+
+.wix-quotation-workroom #customer {
+  width: clamp(120px, 19vw, 260px);
+  min-height: 30px;
+  padding: 3px 8px;
+  border-color: #bdcfe0;
+  background: white;
+  font-size: 12px;
+}
+
+.wix-quotation-workroom main:has(.quote-grid) {
+  padding: 14px 24px;
+}
+
+.wix-quotation-workroom .quote-summary {
+  padding: 12px 16px;
+}
+
+.wix-quotation-workroom .quote-customer {
+  margin-bottom: 7px;
+}
+
+.wix-quotation-workroom .quote-customer h2 {
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.wix-quotation-workroom .quote-customer .currency {
+  flex: none;
+  background: #cc1730;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wix-quotation-workroom .quote-summary .muted {
+  color: #526a83;
+  font-size: 11px;
+}
+
+.wix-quotation-workroom #catch-cost {
+  min-height: 28px;
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+.wix-quotation-workroom .quote-counts dt {
+  color: #455b72;
+  font-size: 11px;
+}
+
+.wix-quotation-workroom .quote-counts dd {
+  font-size: 20px;
+}
+
+.wix-quotation-workroom .quote-grid .image-cell {
+  padding: 1px 2px 2px;
+}
+
+.wix-quotation-workroom .quote-grid .product-thumb {
+  width: 100%;
+  height: calc(var(--quote-row-height) - 4px);
+  object-fit: contain;
+}
+
+.wix-quotation-workroom .quote-grid .quote-unit {
+  font-size: 10px;
+}
+
 @media (min-width: 601px) {
-  .windowed-quote-grid tbody tr[data-row] > td {
-    height: 46px;
+  .wix-quotation-workroom {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+  }
+
+  .wix-quotation-workroom .quotation-header {
+    flex: none;
+  }
+
+  .wix-quotation-workroom main,
+  .wix-quotation-workroom #content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .wix-quotation-workroom #content:has(.quote-grid) {
+    overflow: hidden;
+  }
+
+  .wix-quotation-workroom .quote-summary {
+    flex: none;
+  }
+
+  .wix-quotation-workroom .quote-grid {
+    overflow: auto;
+    overscroll-behavior: contain;
+    scroll-padding-top: 48px;
+    min-height: 0;
+    border-radius: 6px;
+  }
+
+  .wix-quotation-workroom .quote-grid:focus-visible {
+    outline: 2px solid #346ba7;
+    outline-offset: 1px;
+  }
+
+  .wix-quotation-workroom .quote-grid table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .wix-quotation-workroom .quote-grid thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .wix-quotation-workroom .quote-grid thead th {
+    background: #d2dfea;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .wix-quotation-workroom .quote-grid thead .calc-group {
+    background: #133858;
+  }
+
+  .wix-quotation-workroom .quote-grid thead .calc-headings th {
+    background: #e0ebf5;
+  }
+
+  .wix-quotation-workroom .quote-grid :is(th, td) {
+    padding-inline: 7px;
+    font-size: 12px;
+  }
+
+  .wix-quotation-workroom .quote-grid :is(.row-number, .previous-sp, .disc-cell, .calc-group),
+  .wix-quotation-workroom .quote-grid .calc-headings th {
+    font-size: 11px;
+  }
+
+  .wix-quotation-workroom .quote-grid input[type=number] {
+    min-height: 25px;
+    font-size: 11px;
+  }
+
+  .wix-quotation-workroom .quote-grid .calc-cell .update {
+    min-height: 25px;
+    padding-inline: 2px;
+    font-size: 10px;
+  }
+
+  .wix-quotation-workroom .quote-grid :is(thead th:nth-child(-n+2), td.row-number) {
+    text-align: center;
+  }
+
+  .wix-quotation-workroom .quote-grid tbody tr[data-row] > td {
+    height: var(--quote-row-height);
+  }
+
+  .wix-quotation-workroom .quote-grid .cost-cell small {
+    white-space: nowrap;
   }
 
   .windowed-quote-grid table {
@@ -312,10 +544,6 @@
     padding: 12px;
   }
 
-  main:has(.quote-grid) .page-title {
-    margin-bottom: 10px;
-  }
-
   main:has(.quote-grid) .toolbar {
     padding: 9px 12px;
   }
@@ -333,6 +561,88 @@
 }
 
 @media (max-width: 600px) {
+  .wix-quotation-workroom :is(.masthead, .page-title) {
+    padding-inline: 12px;
+    gap: 10px;
+  }
+
+  .wix-quotation-workroom .masthead strong {
+    font-size: 16px;
+  }
+
+  .wix-quotation-workroom .department {
+    padding-inline-start: 10px;
+    font-size: 12px;
+  }
+
+  .wix-quotation-workroom #customer {
+    min-height: 38px;
+    margin-block: 3px;
+    font-size: 16px;
+  }
+
+  .wix-quotation-workroom main:has(.quote-grid) {
+    padding: 12px;
+  }
+
+  .wix-quotation-workroom .quote-summary {
+    padding: 10px 12px;
+  }
+
+  .wix-quotation-workroom .quote-counts div {
+    padding-inline: 4px;
+  }
+
+  .wix-quotation-workroom #catch-cost {
+    min-height: 44px;
+  }
+
+  .wix-quotation-workroom .quote-grid tr[data-row] {
+    grid-template-columns: 60px minmax(0, 1fr) minmax(0, 1fr) 60px;
+    position: relative;
+  }
+
+  .wix-quotation-workroom .quote-grid tr[data-row] > td {
+    grid-column: span 2;
+  }
+
+  .wix-quotation-workroom .quote-grid td.row-number {
+    position: absolute;
+    inset: 2px auto auto 3px;
+    padding: 0;
+    font-size: 9px;
+    background: #f1f5f9;
+    color: #526a83;
+  }
+
+  .wix-quotation-workroom .quote-grid td.image-cell {
+    grid-column: 1;
+    align-self: center;
+    padding-top: 11px;
+  }
+
+  .wix-quotation-workroom .quote-grid td.desc-cell {
+    grid-column: 2 / -1;
+    align-content: center;
+  }
+
+  .wix-quotation-workroom .quote-grid td.calc-cell {
+    padding-inline: 5px;
+  }
+
+  .wix-quotation-workroom .quote-grid td.calc-cell:nth-last-child(3) {
+    grid-column: 1;
+  }
+
+  .wix-quotation-workroom .quote-grid td.calc-cell:nth-last-child(2) {
+    grid-column: 2 / 4;
+  }
+
+  .wix-quotation-workroom .quote-grid td.calc-cell:last-child {
+    grid-column: 4;
+    align-content: end;
+  }
+
   .masthead #menu {
     margin-left: auto;
   }
