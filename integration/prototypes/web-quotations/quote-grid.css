@@ -100,7 +100,20 @@
 }
 
 .quote-grid .disc-cell .quote-value {
-  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-columns: 12px minmax(0, 1fr) .8em;
+  column-gap: 0;
+}
+
+.quote-grid .disc-cell .quote-value > :last-child {
+  text-align: left;
+}
+
+.quote-grid .quote-value-suffix {
+  grid-template-columns: minmax(0, 1fr) 16px;
+}
+
+.quote-grid .quote-value-suffix > span:empty + .quote-unit {
+  visibility: hidden;
 }
 
 .quote-grid .quote-unit {
@@ -123,6 +136,10 @@
 
 .quote-grid .quote-left {
   text-align: left;
+}
+
+.quote-grid .quote-right {
+  text-align: right;
 }
 
 .quote-grid .remark-cell {
@@ -307,8 +324,9 @@
 .quote-counts dd { margin: 2px 0 0; font-size: 17px; font-weight: 700; }
 
 .wix-quotation-workroom {
-  font-family: Inter, "Segoe UI", Arial, sans-serif;
-  background: #f1f5f9;
+  font-family: "Purchase Dashboard Inter", "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+  font-size: 11px;
+  background: #f3f6f9;
   color: #203047;
 }
 
@@ -343,47 +361,55 @@
   font-size: 11px;
 }
 
-.wix-quotation-workroom .page-title {
+.wix-quotation-workroom .quotation-nav {
   display: flex;
-  min-height: 42px;
-  gap: 10px;
-  margin: 0;
-  padding: 0 24px;
-  border-bottom: 1px solid var(--line);
+  flex-direction: row;
+  height: 42px;
+  padding: 0 20px;
+  border-bottom: 1px solid #bdcddd;
   background: white;
 }
 
-.wix-quotation-workroom .page-title h1 {
-  align-self: stretch;
+.wix-quotation-workroom .quotation-nav [aria-current] {
   display: flex;
   align-items: center;
-  margin: 0;
   padding: 2px 2px 0;
-  border-bottom: 2px solid #346ba7;
-  font-size: 13px;
+  border-bottom: 3px solid #3766a2;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3766a2;
+}
+
+.wix-quotation-workroom .quotation-heading {
+  margin: 0 0 10px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 26px;
   letter-spacing: 0;
-  color: #245b8e;
 }
 
 .wix-quotation-workroom .customer-control {
-  display: flex;
-  align-items: center;
   min-width: 0;
-  gap: 8px;
-  margin: 0;
+  margin: 0 0 0 auto;
+}
+
+.wix-quotation-workroom .masthead .header-bottom {
+  margin-left: 0;
 }
 
 .wix-quotation-workroom #customer {
-  width: clamp(120px, 19vw, 260px);
-  min-height: 30px;
+  width: clamp(190px, 19vw, 280px);
+  min-height: 32px;
   padding: 3px 8px;
   border-color: #bdcfe0;
   background: white;
   font-size: 12px;
+  font-weight: 600;
 }
 
+.wix-quotation-workroom main,
 .wix-quotation-workroom main:has(.quote-grid) {
-  padding: 14px 24px;
+  padding: 18px 20px 14px;
 }
 
 .wix-quotation-workroom .quote-summary {
@@ -438,11 +464,6 @@
 }
 
 .wix-quotation-workroom .quote-grid .quote-unit {
-  font-size: 10px;
-}
-
-.wix-quotation-workroom .quote-profit-note {
-  color: #526a83;
   font-size: 10px;
 }
 
@@ -501,12 +522,14 @@
 
   .wix-quotation-workroom .quote-grid thead th {
     background: #d2dfea;
+    color: #203047;
     font-weight: 700;
     white-space: nowrap;
   }
 
   .wix-quotation-workroom .quote-grid thead .calc-group {
     background: #133858;
+    color: white;
   }
 
   .wix-quotation-workroom .quote-grid thead tr:first-child th:nth-last-child(2) {
@@ -519,8 +542,8 @@
   }
 
   .wix-quotation-workroom .quote-grid :is(th, td) {
-    padding-inline: 7px;
-    font-size: 12px;
+    padding-inline: 8px;
+    font-size: 11px;
   }
 
   .wix-quotation-workroom .quote-grid :is(.row-number, .previous-sp, .disc-cell, .calc-group),
@@ -590,7 +613,7 @@
 }
 
 @media (max-width: 600px) {
-  .wix-quotation-workroom :is(.masthead, .page-title) {
+  .wix-quotation-workroom :is(.masthead, .quotation-nav) {
     padding-inline: 12px;
     gap: 10px;
   }
@@ -604,12 +627,28 @@
     font-size: 12px;
   }
 
+  .wix-quotation-workroom .masthead {
+    flex-wrap: wrap;
+    padding-block: 10px;
+  }
+
+  .wix-quotation-workroom .masthead .header-bottom {
+    margin-left: auto;
+  }
+
+  .wix-quotation-workroom .customer-control {
+    flex-basis: 100%;
+    order: 1;
+  }
+
   .wix-quotation-workroom #customer {
+    width: 100%;
     min-height: 38px;
     margin-block: 3px;
     font-size: 16px;
   }
 
+  .wix-quotation-workroom main,
   .wix-quotation-workroom main:has(.quote-grid) {
     padding: 12px;
   }

@@ -54,8 +54,9 @@ function buildWixWorkroom(destination) {
     .replace('.map(width => `<col${width ? ` style="width:${width}px"`', '.map((width, index) => `<col${width ? ` style="width:calc(${width}px + var(--quote-extra-width, 0px) * ${index < 2 ? 0 : width / 1130})"`')
     .replaceAll('<small>MYR</small>', '')
     .replace('<small>MYR · CTN</small>', '')
-    .replace('Profit · MYR', 'Profit')
-    .replace('List cost · MYR', 'List cost')
+    .replace('class="quote-left" rowspan="2">Selling Price', 'class="quote-right" rowspan="2">Selling Price')
+    .replace('rowspan="2">List Cost', 'class="quote-right" rowspan="2">List Cost')
+    .replace('rowspan="2">Disc</th>', 'rowspan="2">Disc.</th>')
     .replace('Net cost · MYR per CTN', 'Net cost per CTN')
     .replace('<div class="product-name">${desc}</div>', '<div class="product-name" title="${desc}">${desc}</div>')
     .replace('<th rowspan="2" aria-label="Move"></th>', '');
@@ -70,7 +71,10 @@ function buildWixWorkroom(destination) {
       '<br><button data-go="catalogue">Open Catalogue</button>', '')
   ].join('\n');
 
-  const styles = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8') + '\n' +
+  const masterTheme = fs.readFileSync(path.join(__dirname, '../../../master-shared/workroom-theme.css'), 'utf8');
+  const masterFonts = masterTheme.match(/@font-face\{font-family:'Purchase Dashboard Inter';[^}]+\}/g);
+  if (masterFonts?.length !== 4) throw Error('Review the current MASTER workroom fonts.');
+  const styles = masterFonts.join('\n') + '\n' + fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8') + '\n' +
     fs.readFileSync(path.join(__dirname, 'quote-grid.css'), 'utf8') +
     '\n.product-thumb{width:100%;height:38px;object-fit:contain;display:block} .empty-thumb{color:#64748b}';
   fs.mkdirSync(destination, { recursive: true });

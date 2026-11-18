@@ -127,7 +127,10 @@ test('the compact quotation grid renders and saves over the iframe message contr
     rows[2].draft = { mode: 'EA', value: 36 / 0.92 / 4 / 12 };
     rows[3].costMyr = 8.9756521 * 0.88 * 4 * rows[3].ea;
     rows[4].costMyr = null;
+    rows[4].costDetails = undefined;
     rows[5].ea = null;
+    rows[5].costMyr = 87.26;
+    rows[6].draft = { mode: 'EA', value: 0.5 };
     rows[0].sortId = 'FO-00002';
     rows[1].sortId = 'FO-00010';
     rows[2].sortId = 'FO-00001';
@@ -186,9 +189,13 @@ test('the compact quotation grid renders and saves over the iframe message contr
       rowHeight: row.getBoundingClientRect().height,
       imageHeight: row.querySelector('img').getBoundingClientRect().height,
       headerHeight: document.querySelector('.masthead').getBoundingClientRect().height,
-      titleHeight: document.querySelector('.page-title').getBoundingClientRect().height
+      navHeight: document.querySelector('.quotation-nav').getBoundingClientRect().height,
+      headingHeight: document.querySelector('main h1').getBoundingClientRect().height,
+      menuColor: getComputedStyle(document.querySelector('.masthead')).backgroundColor,
+      tableHeaderColor: getComputedStyle(document.querySelector('thead th')).backgroundColor
     }));
-    assert.deepEqual(dimensions, { rowHeight: 56, imageHeight: 52, headerHeight: 49, titleHeight: 42 });
+    assert.deepEqual(dimensions, { rowHeight: 56, imageHeight: 52, headerHeight: 49, navHeight: 42,
+      headingHeight: 26, menuColor: 'rgb(19, 56, 88)', tableHeaderColor: 'rgb(210, 223, 234)' });
     const thumbnail = first.locator('.product-thumb');
     await thumbnail.hover();
     const preview = grid.locator('.quote-product-preview');
@@ -203,12 +210,27 @@ test('the compact quotation grid renders and saves over the iframe message contr
 
     assert.equal(await grid.getByRole('searchbox').count(), 0);
     assert.equal(await grid.locator('.quote-customer h2').textContent(), 'QA Trading Company Limited');
-    assert.match(await first.locator('.disc-cell').textContent(), /Disc 35\.00$/);
+    assert.equal(await first.locator('.row-number').textContent(), '002');
+    for (const name of ['Selling Price', 'List Cost']) {
+      assert.equal(await grid.getByRole('columnheader', { name, exact: true }).evaluate(el => getComputedStyle(el).textAlign), 'right');
+    }
+    assert(await grid.getByRole('columnheader', { name: 'Disc.', exact: true }).isVisible());
+    assert.deepEqual(await first.locator('.disc-cell .quote-value').allTextContents(), ['1.0.00%', '2.0.00%', '3.5.00']);
+    const decimals = await first.locator('.disc-cell .quote-value > :nth-child(2)').evaluateAll(amounts => amounts.map(amount => {
+      const text = amount.firstChild;
+      const offset = text.textContent.indexOf('.');
+      const range = document.createRange();
+      range.setStart(text, offset);
+      range.setEnd(text, offset + 1);
+      return range.getBoundingClientRect().left;
+    }));
+    assert.deepEqual(decimals, [decimals[0], decimals[0], decimals[0]]);
+    assert.deepEqual(await first.locator('.quote-value-suffix .quote-unit').allTextContents(), ['EA', 'CT', 'EA', 'CT']);
     assert.equal(await first.locator('.stale-cost').textContent(), '36.00');
     assert.equal(await first.locator('[data-previous-sp]').textContent(), '12.00 / CTN');
     assert.equal(await first.locator('.previous-sp small').textContent(), '16-11-26');
     assert.equal(await grid.locator('[data-row=item-1] .gp-risk').count(), 1);
-    assert.equal(await grid.locator('#quote-risk-count').textContent(), '1');
+    assert.equal(await grid.locator('#quote-risk-count').textContent(), '2');
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
     await grid.getByText('1000 costs updated.').waitFor();
     await first.locator('[data-calc=GP]').fill('25');
@@ -258,7 +280,8 @@ test('the compact quotation grid renders and saves over the iframe message contr
     const noCost = grid.locator('[data-row=item-4]');
     await noCost.locator('[data-mode=EA]').fill('2.50');
     assert.equal(await noCost.locator('[data-carton]').textContent(), '30.00');
-    assert.equal(await noCost.locator('[data-profit]').textContent(), 'No cost');
+    assert.equal(await noCost.locator('[data-profit]').textContent(), '');
+    assert.deepEqual(await noCost.locator('.quote-value-suffix > span:first-child').allTextContents(), ['30.00', '', '']);
     assert(await noCost.getByRole('switch').isDisabled());
     await noCost.locator('[data-calc=GP]').fill('12');
     await noCost.locator('[data-calc=GP]').press('Enter');
@@ -266,10 +289,11 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert(await noCost.getByRole('button', { name: 'Apply calculator', exact: false }).isDisabled());
 
     const noPack = grid.locator('[data-row=item-5]');
-    await noPack.locator('[data-mode=EA]').fill('2.50');
-    assert.equal(await noPack.locator('[data-carton]').textContent(), '—');
-    assert.equal(await noPack.locator('[data-profit]').textContent(), 'No pack size');
+    await noPack.locator('[data-mode=EA]').fill('80.00');
+    assert.equal(await noPack.locator('[data-carton]').textContent(), '');
+    assert.equal(await noPack.locator('[data-profit]').textContent(), '');
     assert(await noPack.getByRole('switch').isDisabled());
+    assert.equal(await grid.locator('[data-row=item-6] [data-profit]').textContent(), 'GP-50.00%CTN-12.00');
 
     if (process.env.QUOTATIONS_SCREENSHOTS) {
       fs.mkdirSync(process.env.QUOTATIONS_SCREENSHOTS, { recursive: true });

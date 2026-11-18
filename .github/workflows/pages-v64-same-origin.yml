@@ -1400,7 +1400,7 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 44230181244
+          run-id: 44246586754
           github-token: ${{ github.token }}
           path: ${{ format('{0}/web-quotations-baseline', runner.temp) }}
 
@@ -1415,9 +1415,9 @@ jobs:
           (
             cd "$site/master-quotations"
             sha256sum -c <<'SHA'
-          25f278140c2f3b7caa17ddcd18602407552eba3f34e18cc00d0092385e0ec4bf  index.html
-          ec6ae9d859d1c8011fdd57e0d63911109292e5b1811cd1ad9ca9fd80bffbaf0e  app.js
-          006afaae1e3bd5257c43004461acac12e6a8e0d16241ade81f73830bb57ba133  style.css
+          c3481351be75b1e9eceab464a3a9838117bfc5126af8264c2d3a5da7cdc5d50a  index.html
+          e022a97860b5349973a06e9caeb8a8e156224662a38bce1fe9cffae09bfbe6c8  app.js
+          dc886990cab49f0638b0060ffc6ad0ed1bdc3657cfeba4d1dffbd918a8daa8ca  style.css
           SHA
           )
           node integration/prototypes/web-quotations/build-wix-workroom.cjs "$overlay"
