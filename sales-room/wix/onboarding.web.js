@@ -220,9 +220,7 @@ async function loadSalesRoomCustomers() {
         companyName: normalize(item.title),
         customerShortName: upper(item.customerShortName),
         country: normalize(item.country),
-        qdStatus: upper(item.qdStatus),
         ...(isWebQuotationCustomer(item) ? { quotationMode: 'WEB', webQuotationStatus: upper(item.webQuotationStatus) } : {}),
-        qdFileId: staffMayAccessCustomer(staff, 'EDIT_QUOTATION', item.customerId) ? normalize(item.qdFileId) : '',
         customerStatus: upper(item.customerStatus),
         lifecycleStatus: upper(item.lifecycleStatus || 'ACTIVE'),
         accessStatus: upper(item.accessStatus || (upper(item.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
@@ -250,7 +248,7 @@ async function loadSalesRoomCustomers() {
       summary: {
         customerCount: customers.length,
         qdReadyCount: customers.filter(
-          (item) => item.quotationMode === 'WEB' ? item.webQuotationStatus === 'READY' : item.qdStatus === 'READY'
+          (item) => item.quotationMode === 'WEB' && item.webQuotationStatus === 'READY'
         ).length
       },
       customers
@@ -714,14 +712,6 @@ export const getSalesRoomCustomerDetail = webMethod(
         primaryUserId: normalize(customer.primaryUserId),
         companyWebsite: normalize(customer.companyWebsite),
         assignedStaffId: upper(customer.assignedStaffId),
-        qdOwnerStaffId: upper(customer.qdOwnerStaffId),
-        qdFileId: staffMayAccessCustomer(staff, 'EDIT_QUOTATION', customer.customerId) ? normalize(customer.qdFileId) : '',
-        qdFileLabel: normalize(customer.qdFileLabel),
-        qdSheetId: normalize(customer.qdSheetId),
-        qdSheetName: normalize(customer.qdSheetName),
-        qdTemplateVersion: normalize(customer.qdTemplateVersion),
-        qdLastVerifiedAt: customer.qdLastVerifiedAt || null,
-        qdStatus: upper(customer.qdStatus),
         ...(isWebQuotationCustomer(customer) ? { quotationMode: 'WEB', webQuotationStatus: upper(customer.webQuotationStatus) } : {}),
         customerStatus: upper(customer.customerStatus),
         lifecycleStatus: upper(customer.lifecycleStatus || 'ACTIVE'),
@@ -783,7 +773,7 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
       patch.reactivationStatus = 'NONE';
     } else if (normalizedAction === 'ACTIVATE' || normalizedAction === 'RESTORE' || normalizedAction === 'APPROVE_REACTIVATION') {
       patch.lifecycleStatus = 'ACTIVE';
-      patch.accessStatus = (isWebQuotationCustomer(customer) ? upper(customer.webQuotationStatus) === 'READY' : upper(customer.qdStatus) === 'READY') ? 'ACTIVE' : 'PENDING';
+      patch.accessStatus = (isWebQuotationCustomer(customer) && upper(customer.webQuotationStatus) === 'READY') ? 'ACTIVE' : 'PENDING';
       patch.reactivationStatus = normalizedAction === 'APPROVE_REACTIVATION' || (normalizedAction === 'ACTIVATE' && beforeReactivation === 'REQUESTED') ? 'APPROVED' : 'NONE';
     } else if (normalizedAction === 'REJECT_REACTIVATION') {
       patch.lifecycleStatus = beforeLifecycle;
@@ -1897,7 +1887,7 @@ export const recordSalesRoomActivity = webMethod(
         title: detail,
         auditId,
         customerId,
-        entityId: customer ? normalize(customer.qdFileId || customer.customerId) : upper(staff.staffId),
+        entityId: customer ? normalize(customer.customerId) : upper(staff.staffId),
         action,
         fieldId: '',
         fieldLabel: normalize(payload?.fieldLabel || detail),
