@@ -23,15 +23,25 @@ async function api(action, body, context = customerId()) {
   if (!response.ok) throw Error(result.error || 'The request could not be completed.');
   return result;
 }
-function draftPrice(row, input = drafts[key(row.id)] || row.draft) {
+function draftPrice(row, input = drafts[key(row.id)] || row.draft, roundEa = value => Number(value.toFixed(6))) {
   if (!input) return null;
   const value = input.value;
   const rate = current.customer.rateToMyr;
+  const hasPack = Number.isSafeInteger(row.ea) && row.ea > 0;
+  const hasFx = Number.isFinite(rate) && rate > 0;
+  const hasCost = Number.isFinite(row.costMyr) && row.costMyr > 0;
+  if ((input.mode === 'GP' && (!hasPack || !hasFx || !hasCost || value >= 100)) ||
+      (input.mode === 'CTN' && !hasPack) || !Number.isFinite(value)) return null;
   let ea = input.mode === 'GP' ? row.costMyr / (1 - value / 100) / rate / row.ea : input.mode === 'CTN' ? value / row.ea : value;
-  if (value === null || !Number.isFinite(value) || (input.mode === 'GP' && (value >= 100 || !(row.costMyr > 0))) || !(ea > 0)) return null;
-  ea = Number(ea.toFixed(6));
-  const ctn = Number((ea * row.ea).toFixed(6));
-  return { mode: input.mode, value, priceEa: ea, priceCtn: ctn, gp: row.costMyr === null ? null : (ctn * rate - row.costMyr) / (ctn * rate) * 100 };
+  if (!Number.isFinite(ea) || ea <= 0) return null;
+  ea = roundEa(ea);
+  if (!(ea > 0)) return null;
+  const rawCtn = hasPack ? ea * row.ea : null;
+  const ctn = Number.isFinite(rawCtn) && rawCtn > 0 ? Number(rawCtn.toFixed(6)) : null;
+  const revenue = ctn && hasFx ? ctn * rate : null;
+  const profitMyr = Number.isFinite(revenue) && revenue > 0 && hasCost ? revenue - row.costMyr : null;
+  return { mode: input.mode, value, priceEa: ea, priceCtn: ctn, profitMyr,
+    gp: profitMyr === null ? null : profitMyr / revenue * 100 };
 }
 const fixed = number => Number.isFinite(number) ? number.toFixed(2) : '—';
 const inputValue = number => Number.isFinite(number) ? number : '';
@@ -41,15 +51,22 @@ function calculatorInput(row) {
 function labeledValue(label, value, tone = '') {
   return `<div class="quote-value"><span class="quote-unit">${label}</span><span class="${tone}">${value}</span></div>`;
 }
+const optionalMoney = number => Number.isFinite(number) ? fixed(number) : '';
+function quotationAmount(value, unit, valueAttribute = '') {
+  return `<div class="quote-value quote-value-suffix"><span${valueAttribute}>${optionalMoney(value)}</span><span class="quote-unit">${unit}</span></div>`;
+}
+function quotationDiscount(label, value, percentage) {
+  return `<div class="quote-value"><span class="quote-unit">${label}.</span><span>${optionalMoney(value)}</span><span>${percentage && Number.isFinite(value) ? '%' : ''}</span></div>`;
+}
 function gpTone(gp) {
   if (!Number.isFinite(gp)) return '';
   const margin = Number(gp.toFixed(2));
   return margin < 8 ? 'gp-risk' : margin > 8 ? 'gp-healthy' : '';
 }
-function profit(row, price) {
-  const known = price && Number.isFinite(row.costMyr);
-  return labeledValue('GP', known ? fixed(price.gp) + '%' : '—', known ? gpTone(price.gp) : '') +
-    labeledValue('CTN', known ? fixed(price.priceCtn * current.customer.rateToMyr - row.costMyr) : '—');
+function profit(price) {
+  if (!Number.isFinite(price?.gp)) return '';
+  return labeledValue('GP', fixed(price.gp) + '%', gpTone(price.gp)) +
+    labeledValue('CTN', fixed(price.profitMyr));
 }
 function riskCount() {
   return current.rows.filter(row => gpTone(draftPrice(row)?.gp) === 'gp-risk').length;
@@ -84,14 +101,14 @@ function quoteRow(row, number) {
   const desc = escapeHtml(row.name);
   return `<tr data-row="${escapeHtml(row.id)}" class="${dirty(row) ? 'row-dirty' : ''}">
     <td class="move-cell"><button type="button" class="move-row" draggable="true" aria-label="Move ${desc}" title="Drag, or use Alt + Up or Down" ${!current.canEdit ? 'disabled' : ''}>⠿</button></td>
-    <td class="row-number">${String(number).padStart(4, '0')}</td>
+    <td class="row-number">${String(number).padStart(3, '0')}</td>
     <td class="image-cell"><span class="demo-thumb" aria-label="Sample product icon">${placeholder}</span></td>
     <td class="desc-cell"><span class="barcode">${escapeHtml(row.barcode)}</span><div class="product-name">${desc}</div><span class="packing">${escapeHtml(row.packing)}</span></td>
     <td class="previous-sp"><span class="mobile-label">Last SP</span><span data-previous-sp>${previous ? previousCurrency + fixed(previous.priceCtn) + ' / CTN' : ''}</span><small>${quoteDate(previous?.siDate)}</small></td>
-    <td><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><label class="quote-value"><span class="quote-unit">EA</span><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" value="${inputValue(price?.priceEa)}" ${disabled ? 'disabled' : ''}></label>${labeledValue('CTN', `<span data-carton>${fixed(price?.priceCtn)}</span>`)}</td>
-    <td><span class="mobile-label">Profit · MYR</span><span data-profit>${profit(row, price)}</span></td>
-    <td><span class="mobile-label">List cost · MYR</span>${labeledValue('EA', fixed(details.lpEa))}${labeledValue('CTN', fixed(details.lpCtn))}</td>
-    <td class="disc-cell"><span class="mobile-label">Discounts</span>${labeledValue('Disc 1', Number.isFinite(details.disc1) ? fixed(details.disc1) + '%' : '—')}${labeledValue('Disc 2', Number.isFinite(details.disc2) ? fixed(details.disc2) + '%' : '—')}${labeledValue('Disc 3', fixed(details.disc3))}</td>
+    <td><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><label class="quote-value quote-value-suffix"><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" value="${inputValue(price?.priceEa)}" ${disabled ? 'disabled' : ''}><span class="quote-unit">EA</span></label>${quotationAmount(price?.priceCtn, 'CT', ' data-carton')}</td>
+    <td><span class="mobile-label">Profit</span><span data-profit>${profit(price)}</span></td>
+    <td><span class="mobile-label">List cost</span>${quotationAmount(details.lpEa, 'EA')}${quotationAmount(details.lpCtn, 'CT')}</td>
+    <td class="disc-cell"><span class="mobile-label">Disc.</span>${quotationDiscount(1, details.disc1, true)}${quotationDiscount(2, details.disc2, true)}${quotationDiscount(3, details.disc3, false)}</td>
     <td class="cost-cell"><span class="mobile-label">Net cost · MYR per CTN</span><b class="${details.priceStale === true && Number.isFinite(row.costMyr) ? 'stale-cost' : ''}"${details.priceStale === true ? ' title="Point Base price needs verification"' : ''}>${fixed(row.costMyr)}</b><small class="${row.costError ? 'warning' : ''}" title="${escapeHtml(row.costError || row.costAt || '')}">${row.costError ? 'Check cost' : row.costAt ? '' : 'Awaiting cost'}</small></td>
     <td class="remark-cell"><span class="mobile-label">Remark</span>${escapeHtml(details.remark || '—')}</td>
     <td><span class="mobile-label">View Quote</span><div class="quote-actions"><button role="switch" aria-label="Show quote for ${desc}" aria-checked="${visible}" class="switch" data-action="toggle" ${disabled || (!visible && (!price || row.costMyr === null)) ? 'disabled' : ''}></button><span class="quote-label">${row.pending ? 'Confirming…' : visible ? quoteDate(row.published.publishedAt) : ''}</span></div>
@@ -170,8 +187,8 @@ function editPrice(row, tr, next, updateEa = false) {
   remember();
   const price = draftPrice(row);
   if (updateEa) tr.querySelector('[data-mode=EA]').value = inputValue(price?.priceEa);
-  tr.querySelector('[data-carton]').textContent = fixed(price?.priceCtn);
-  tr.querySelector('[data-profit]').innerHTML = profit(row, price);
+  tr.querySelector('[data-carton]').textContent = optionalMoney(price?.priceCtn);
+  tr.querySelector('[data-profit]').innerHTML = profit(price);
   const risk = riskCount();
   const count = $('#quote-risk-count');
   count.textContent = risk;

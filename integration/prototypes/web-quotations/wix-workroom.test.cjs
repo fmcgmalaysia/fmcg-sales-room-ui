@@ -121,9 +121,16 @@ test('the compact quotation grid renders and saves over the iframe message contr
     const rows = [makeRow(longName, 0), ...Array.from({ length: 999 }, (_, i) => makeRow('Product ' + (i + 1), i + 1))];
     rows[0].costDetails.disc3 = 5;
     rows[0].costDetails.priceStale = true;
+    rows[0].imageUrl = 'https://static.wixstatic.com/media/test-product.svg';
     rows[0].lastSale = { priceCtn: 12, currency: 'USD', siDate: '2026-11-16' };
     rows[1].draft = { mode: 'EA', value: 0.8 };
     rows[2].draft = { mode: 'EA', value: 36 / 0.92 / 4 / 12 };
+    rows[3].costMyr = 8.9756521 * 0.88 * 4 * rows[3].ea;
+    rows[4].costMyr = null;
+    rows[4].costDetails = undefined;
+    rows[5].ea = null;
+    rows[5].costMyr = 87.26;
+    rows[6].draft = { mode: 'EA', value: 0.5 };
     rows[0].sortId = 'FO-00002';
     rows[1].sortId = 'FO-00010';
     rows[2].sortId = 'FO-00001';
@@ -163,6 +170,9 @@ test('the compact quotation grid renders and saves over the iframe message contr
       const file = new URL(route.request().url()).pathname.slice(1);
       return route.fulfill({ path: path.join(destination, file) });
     });
+    await page.route('https://static.wixstatic.com/media/test-product.svg', route => route.fulfill({
+      contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="blue"/></svg>'
+    }));
     await page.goto(parent + '/quotations-test');
     const grid = page.frameLocator('#workroom');
     const first = grid.locator('tr[data-row="item-0"]');
@@ -174,21 +184,61 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(await grid.locator('.move-row').count(), 0);
     assert.equal(await grid.locator('#company, #actor').count(), 0);
     assert(await first.locator('.product-name').evaluate(el => el.scrollWidth <= el.clientWidth));
+    assert.equal(await grid.locator('thead').getByText(/MYR/).count(), 0);
+    const dimensions = await first.evaluate(row => ({
+      rowHeight: row.getBoundingClientRect().height,
+      imageHeight: row.querySelector('img').getBoundingClientRect().height,
+      headerHeight: document.querySelector('.masthead').getBoundingClientRect().height,
+      navHeight: document.querySelector('.quotation-nav').getBoundingClientRect().height,
+      headingHeight: document.querySelector('main h1').getBoundingClientRect().height,
+      menuColor: getComputedStyle(document.querySelector('.masthead')).backgroundColor,
+      tableHeaderColor: getComputedStyle(document.querySelector('thead th')).backgroundColor
+    }));
+    assert.deepEqual(dimensions, { rowHeight: 56, imageHeight: 52, headerHeight: 49, navHeight: 42,
+      headingHeight: 26, menuColor: 'rgb(19, 56, 88)', tableHeaderColor: 'rgb(210, 223, 234)' });
+    const thumbnail = first.locator('.product-thumb');
+    await thumbnail.hover();
+    const preview = grid.locator('.quote-product-preview');
+    assert(await preview.isVisible());
+    const previewBounds = await preview.evaluate(el => {
+      const rect = el.getBoundingClientRect();
+      return { width: rect.width, fits: rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight };
+    });
+    assert.deepEqual(previewBounds, { width: 200, fits: true });
+    await first.locator('.product-name').hover();
+    assert.equal(await preview.isVisible(), false);
 
     assert.equal(await grid.getByRole('searchbox').count(), 0);
     assert.equal(await grid.locator('.quote-customer h2').textContent(), 'QA Trading Company Limited');
-    assert.match(await first.locator('.disc-cell').textContent(), /Disc 35\.00$/);
+    assert.equal(await first.locator('.row-number').textContent(), '002');
+    for (const name of ['Selling Price', 'List Cost']) {
+      assert.equal(await grid.getByRole('columnheader', { name, exact: true }).evaluate(el => getComputedStyle(el).textAlign), 'right');
+    }
+    assert(await grid.getByRole('columnheader', { name: 'Disc.', exact: true }).isVisible());
+    assert.deepEqual(await first.locator('.disc-cell .quote-value').allTextContents(), ['1.0.00%', '2.0.00%', '3.5.00']);
+    const decimals = await first.locator('.disc-cell .quote-value > :nth-child(2)').evaluateAll(amounts => amounts.map(amount => {
+      const text = amount.firstChild;
+      const offset = text.textContent.indexOf('.');
+      const range = document.createRange();
+      range.setStart(text, offset);
+      range.setEnd(text, offset + 1);
+      return range.getBoundingClientRect().left;
+    }));
+    assert.deepEqual(decimals, [decimals[0], decimals[0], decimals[0]]);
+    assert.deepEqual(await first.locator('.quote-value-suffix .quote-unit').allTextContents(), ['EA', 'CT', 'EA', 'CT']);
     assert.equal(await first.locator('.stale-cost').textContent(), '36.00');
     assert.equal(await first.locator('[data-previous-sp]').textContent(), '12.00 / CTN');
     assert.equal(await first.locator('.previous-sp small').textContent(), '16-11-26');
     assert.equal(await grid.locator('[data-row=item-1] .gp-risk').count(), 1);
-    assert.equal(await grid.locator('#quote-risk-count').textContent(), '1');
+    assert.equal(await grid.locator('#quote-risk-count').textContent(), '2');
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
     await grid.getByText('1000 costs updated.').waitFor();
     await first.locator('[data-calc=GP]').fill('25');
     await first.getByRole('button', { name: 'Apply calculator', exact: false }).click();
     assert.equal(await first.locator('[data-mode=EA]').inputValue(), '1.00');
     await first.locator('[data-mode=EA]').fill('1.5');
+    assert.equal(await first.locator('[data-profit]').textContent(), 'GP50.00%CTN36.00');
+    assert.equal(await first.locator('[data-carton]').textContent(), '18.00');
     await first.getByRole('switch').click();
     await grid.getByText('Quotation is visible to this customer.').waitFor();
     await first.locator('[role=switch][aria-checked=true]').waitFor();
@@ -208,6 +258,47 @@ test('the compact quotation grid renders and saves over the iframe message contr
     await first.locator('[data-calc=GP]').press('ArrowRight');
     assert.equal(await first.locator('[data-calc=EA]:focus').count(), 1);
 
+    const roundingRow = grid.locator('[data-row=item-3]');
+    const margin = roundingRow.locator('[data-calc=GP]');
+    const selling = roundingRow.locator('[data-calc=EA]');
+    await margin.fill('12');
+    await margin.press('Enter');
+    assert.equal(await margin.inputValue(), '12');
+    assert.equal(await roundingRow.locator('.calc-margin span').textContent(), '%');
+    assert.equal(await selling.inputValue(), '8.98');
+    await roundingRow.getByRole('button', { name: 'Apply calculator', exact: false }).click();
+    assert.equal(await roundingRow.locator('[data-mode=EA]').inputValue(), '8.98');
+    assert.equal(await roundingRow.locator('[data-carton]').textContent(), '107.76');
+    await roundingRow.getByRole('switch').click();
+    await roundingRow.locator('[role=switch][aria-checked=true]').waitFor();
+    assert.equal(requests.filter(({ action }) => action === 'draft').at(-1).input.input.value, 8.98);
+    await selling.fill('8.9756521');
+    await selling.press('Enter');
+    assert.equal(await selling.inputValue(), '8.98');
+    assert.equal(await margin.inputValue(), '12');
+
+    const noCost = grid.locator('[data-row=item-4]');
+    await noCost.locator('[data-mode=EA]').fill('2.50');
+    assert.equal(await noCost.locator('[data-carton]').textContent(), '30.00');
+    assert.equal(await noCost.locator('[data-profit]').textContent(), '');
+    assert.deepEqual(await noCost.locator('.quote-value-suffix > span:first-child').allTextContents(), ['30.00', '', '']);
+    assert(await noCost.getByRole('switch').isDisabled());
+    await noCost.locator('[data-calc=GP]').fill('12');
+    await noCost.locator('[data-calc=GP]').press('Enter');
+    assert.equal(await noCost.locator('[data-calc=EA]').inputValue(), '');
+    assert(await noCost.getByRole('button', { name: 'Apply calculator', exact: false }).isDisabled());
+
+    const noPack = grid.locator('[data-row=item-5]');
+    await noPack.locator('[data-mode=EA]').fill('80.00');
+    assert.equal(await noPack.locator('[data-carton]').textContent(), '');
+    assert.equal(await noPack.locator('[data-profit]').textContent(), '');
+    assert(await noPack.getByRole('switch').isDisabled());
+    assert.equal(await grid.locator('[data-row=item-6] [data-profit]').textContent(), 'GP-50.00%CTN-12.00');
+
+    if (process.env.QUOTATIONS_SCREENSHOTS) {
+      fs.mkdirSync(process.env.QUOTATIONS_SCREENSHOTS, { recursive: true });
+      await roundingRow.screenshot({ path: path.join(process.env.QUOTATIONS_SCREENSHOTS, 'calculator-12-percent.png') });
+    }
     const frame = await page.locator('#workroom').elementHandle();
     const workroom = await frame.contentFrame();
     const resizeStart = Date.now();
@@ -217,10 +308,29 @@ test('the compact quotation grid renders and saves over the iframe message contr
     const resizeMs = Date.now() - resizeStart;
     console.log(`Quotation 1,000-row resize took ${resizeMs} ms`);
     assert(resizeMs < 2500, `Full-grid resize took ${resizeMs} ms`);
-    await workroom.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const scrollGrid = grid.getByRole('region', { name: 'Quotation products' });
+    await scrollGrid.evaluate(el => el.scrollTo(100, 1000));
+    await workroom.waitForFunction(() => document.querySelector('.quote-grid').scrollTop === 1000);
+    const alignment = await scrollGrid.evaluate(el => ({
+      vertical: Math.abs(el.querySelector('thead').getBoundingClientRect().top - el.getBoundingClientRect().top - el.clientTop),
+      horizontal: Math.abs(el.querySelector('th').getBoundingClientRect().left - el.querySelector('tr[data-row] td').getBoundingClientRect().left),
+      pageScroll: window.scrollY,
+      gridLeft: el.scrollLeft
+    }));
+    assert.deepEqual(alignment, { vertical: 0, horizontal: 0, pageScroll: 0, gridLeft: 100 });
+    if (process.env.QUOTATIONS_SCREENSHOTS) {
+      await page.screenshot({ path: path.join(process.env.QUOTATIONS_SCREENSHOTS, 'fixed-header-1024.png') });
+    }
+    await grid.getByRole('button', { name: 'Catch Cost' }).click();
+    await grid.getByText('1000 costs updated.').waitFor();
+    await workroom.waitForFunction(() => {
+      const grid = document.querySelector('.quote-grid');
+      return grid?.scrollTop === 1000 && grid.scrollLeft === 100;
+    });
+    await scrollGrid.evaluate(el => el.scrollTo(0, el.scrollHeight));
     await grid.locator('[data-row=item-999]').waitFor();
     assert(await grid.locator('tbody tr[data-row]').count() < 100);
-    await workroom.evaluate(() => window.scrollTo(0, 0));
+    await scrollGrid.evaluate(el => el.scrollTo(0, 0));
     await first.waitFor();
 
     compactFixture = true;
@@ -230,7 +340,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert(await grid.getByRole('button', { name: 'Catch Cost' }).isDisabled());
     await grid.locator('#customer').selectOption('CUS-QA-001');
     await first.waitFor();
-    for (const width of [1440, 1024, 768, 390, 320]) {
+    for (const width of [1880, 1440, 1024, 768, 390, 320]) {
       await page.setViewportSize({ width, height: 920 });
       const frame = await page.locator('#workroom').elementHandle();
       const workroom = await frame.contentFrame();
@@ -242,8 +352,15 @@ test('the compact quotation grid renders and saves over the iframe message contr
       assert.equal(metrics.width, width);
       assert(metrics.scroll <= width + 1, JSON.stringify(metrics));
       assert(metrics.height > 0, JSON.stringify(metrics));
-      if (width <= 600) assert.equal(metrics.font, '16px');
-      if (process.env.QUOTATIONS_SCREENSHOTS && [1440, 390, 320].includes(width)) {
+      if (width <= 600) {
+        assert.equal(metrics.font, '16px');
+        assert(await first.evaluate(row => {
+          const image = row.querySelector('img').getBoundingClientRect();
+          const description = row.querySelector('.desc-cell').getBoundingClientRect();
+          return image.right <= description.left && description.top <= image.top;
+        }));
+      }
+      if (process.env.QUOTATIONS_SCREENSHOTS && [1880, 1440, 390, 320].includes(width)) {
         fs.mkdirSync(process.env.QUOTATIONS_SCREENSHOTS, { recursive: true });
         await page.screenshot({ path: path.join(process.env.QUOTATIONS_SCREENSHOTS, `quote-workroom-${width}.png`) });
       }

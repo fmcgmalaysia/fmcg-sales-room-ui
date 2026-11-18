@@ -21,11 +21,12 @@ function buildWixWorkroom(destination) {
     section('function draftPrice(', 'function quoteRows(') + section('function renderQuotes(', 'function renderCatalogue('),
     "const search = $('#search').value.toLowerCase();\n  const rows = quoteRows().filter(row => [row.name, row.barcode, row.packing, row.costDetails?.remark].join(' ').toLowerCase().includes(search));",
     'const rows = quoteRows();'
-  ).replace('<div class="table-wrap quote-grid"><table>',
-    '<div class="table-wrap quote-grid"><table aria-rowcount="${rows.length + 2}">')
+  ).replace('function renderQuotes()', 'function renderQuotes(scrollPosition)')
+    .replace('<div class="table-wrap quote-grid"><table>',
+      '<div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 2}">')
     .replace("<tbody>${rows.map((row, index) => quoteRow(row, index + 1)).join('')}</tbody>",
       '<tbody>${initialQuoteRows(rows)}</tbody>')
-    .replace('</div>`);\n}', '</div>`);\n  mountQuoteRows(rows);\n}');
+    .replace('</div>`);\n}', '</div>`);\n  mountQuoteRows(rows, scrollPosition);\n}');
   const interaction = section('async function saveDraft(', 'function moveQuoteRow(');
   const shared = replaceOnce(render + interaction, "const draftKey = context + '|' + row.id;", 'const draftKey = key(row.id);')
     .replaceAll('disabled || (!visible', 'disabled || current.canPublish === false || (!visible')
@@ -39,9 +40,25 @@ function buildWixWorkroom(destination) {
     .replace(".value = inputValue(price?.priceEa);", ".value = price ? fixed(price.priceEa) : '';")
     .replace('const previous = row.previousSp;', 'const previous = row.lastSale;')
     .replaceAll('draftPrice(row)', 'sellingPrice(row)')
+    .replace('target ? draftPrice(row, target)', 'target ? calculatorPrice(row, target)')
+    .replace('const price = draftPrice(row, next);', 'const price = calculatorPrice(row, next);')
+    .replace("editPrice(row, tr, { mode: 'EA', value });", "editPrice(row, tr, { mode: 'EA', value: value === null ? null : roundCents(value) });")
+    .replaceAll('(!price || row.costMyr === null)', '!Number.isFinite(price?.gp)')
+    .replace('target?.mode === \'EA\' ? inputValue(target.value) : suggestion ? fixed(suggestion.priceEa)', 'suggestion ? fixed(suggestion.priceEa)')
+    .replace('data-calc="GP" type="number" step="1" placeholder="0%"', 'data-calc="GP" type="number" step="1" placeholder="0"')
+    .replace('<input aria-label="Target margin', '<label class="calc-margin"><input aria-label="Target margin')
+    .replace('${disabled ? \'disabled\' : \'\'}></td>\n    <td class="calc-cell"><span class="mobile-label">Selling', '${disabled ? \'disabled\' : \'\'}><span aria-hidden="true">%</span></label></td>\n    <td class="calc-cell"><span class="mobile-label">Selling')
     .replace('<tr data-row="${escapeHtml(row.id)}"', '<tr aria-rowindex="${number + 2}" data-row="${escapeHtml(row.id)}"')
     .replace(/    <td class="move-cell">[^\n]+\n/, '')
-    .replace('[24, 34, 35,', '[34, 35,')
+    .replace('[24, 34, 35, \'\', 77, 86, 72, 70, 73, 66, 156, 89, 45, 48, 42]', '[42, 62, \'\', 85, 96, 76, 75, 77, 74, 142, 72, 53, 56, 49]')
+    .replace('.map(width => `<col${width ? ` style="width:${width}px"`', '.map((width, index) => `<col${width ? ` style="width:calc(${width}px + var(--quote-extra-width, 0px) * ${index < 2 ? 0 : width / 1130})"`')
+    .replaceAll('<small>MYR</small>', '')
+    .replace('<small>MYR · CTN</small>', '')
+    .replace('class="quote-left" rowspan="2">Selling Price', 'class="quote-right" rowspan="2">Selling Price')
+    .replace('rowspan="2">List Cost', 'class="quote-right" rowspan="2">List Cost')
+    .replace('rowspan="2">Disc</th>', 'rowspan="2">Disc.</th>')
+    .replace('Net cost · MYR per CTN', 'Net cost per CTN')
+    .replace('<div class="product-name">${desc}</div>', '<div class="product-name" title="${desc}">${desc}</div>')
     .replace('<th rowspan="2" aria-label="Move"></th>', '');
   const output = [
     wixClient,
@@ -54,7 +71,10 @@ function buildWixWorkroom(destination) {
       '<br><button data-go="catalogue">Open Catalogue</button>', '')
   ].join('\n');
 
-  const styles = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8') + '\n' +
+  const masterTheme = fs.readFileSync(path.join(__dirname, '../../../master-shared/workroom-theme.css'), 'utf8');
+  const masterFonts = masterTheme.match(/@font-face\{font-family:'Purchase Dashboard Inter';[^}]+\}/g);
+  if (masterFonts?.length !== 4) throw Error('Review the current MASTER workroom fonts.');
+  const styles = masterFonts.join('\n') + '\n' + fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8') + '\n' +
     fs.readFileSync(path.join(__dirname, 'quote-grid.css'), 'utf8') +
     '\n.product-thumb{width:100%;height:38px;object-fit:contain;display:block} .empty-thumb{color:#64748b}';
   fs.mkdirSync(destination, { recursive: true });

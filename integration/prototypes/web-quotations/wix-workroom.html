@@ -3,24 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261118-master-quotations-compact-v2">
+  <meta name="build" content="20261118-master-quotations-support-style-v1">
   <title>Sales Management · Quotations</title>
-  <link rel="stylesheet" href="./style.css?v=20261118-master-quotations-compact-v2">
-  <script defer src="./app.js?v=20261118-master-quotations-compact-v2"></script>
+  <link rel="stylesheet" href="./style.css?v=20261118-master-quotations-support-style-v1">
+  <script defer src="./app.js?v=20261118-master-quotations-support-style-v1"></script>
 </head>
 <body class="wix-quotation-workroom">
-  <header class="masthead">
-    <strong>MASTER</strong>
-    <span class="department">Sales Management</span>
-    <div class="header-bottom">
-      <span id="staff"></span>
-    </div>
-  </header>
+  <div class="quotation-header">
+    <header class="masthead">
+      <strong>MASTER</strong>
+      <span class="department">Sales Management</span>
+      <div class="customer-control"><select id="customer" aria-label="Customer" disabled></select></div>
+      <div class="header-bottom">
+        <span id="staff"></span>
+      </div>
+    </header>
+    <nav class="quotation-nav" aria-label="Sales Management">
+      <span aria-current="page">Quotations</span>
+    </nav>
+  </div>
   <main>
-    <div class="page-title">
-      <h1>Quotations</h1>
-      <label class="customer-control">Customer <select id="customer" disabled></select></label>
-    </div>
+    <h1 class="quotation-heading">Quotations</h1>
     <p id="notice" role="status" aria-live="polite">Connecting to Sales Management…</p>
     <section id="content" aria-label="Quotation workroom"></section>
   </main>
