@@ -22,6 +22,8 @@ const compareSortIds = new Intl.Collator('en', { numeric: true, sensitivity: 'ba
 const formatCents = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 2 }).format;
 const roundCents = value => Number(formatCents(value));
 const calculatorPrice = (row, input) => draftPrice(row, input, roundCents);
+const calculatorMatchesPrice = (price, suggestion) => suggestion?.priceEa > 0 && price?.priceEa > 0 &&
+  roundCents(price.priceEa) === suggestion.priceEa;
 const desktopGrid = window.matchMedia('(min-width: 601px)');
 const quoteOverscan = 16;
 let quoteWindow;
@@ -101,6 +103,14 @@ function sellingPrice(row) {
   const local = drafts[key(row.id)];
   if (!local && row.published?.enabled) return draftPrice(row, { mode: 'EA', value: row.published.priceEa });
   return draftPrice(row);
+}
+
+function updateCalculatorApply(row, tr, price, suggestion) {
+  const button = tr.querySelector('[data-action=apply]');
+  const applied = calculatorMatchesPrice(price, suggestion);
+  button.toggleAttribute('data-applied', applied);
+  button.setAttribute('aria-label', `${applied ? 'Calculator price applied to' : 'Apply calculator for'} ${row.name}`);
+  button.disabled = applied || !suggestion || !current.canEdit || row.pending || busy;
 }
 
 function readStorage(name, fallback) {

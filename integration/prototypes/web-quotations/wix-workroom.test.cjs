@@ -247,7 +247,12 @@ test('the compact quotation grid renders and saves over the iframe message contr
     await first.locator('[data-calc=GP]').fill('25');
     await first.getByRole('button', { name: 'Apply calculator', exact: false }).click();
     assert.equal(await first.locator('[data-mode=EA]').inputValue(), '1.00');
+    const applied = first.getByRole('button', { name: /Calculator price applied to/ });
+    assert(await applied.isDisabled());
+    assert(await applied.locator('.calc-applied-check').isVisible());
     await first.locator('[data-mode=EA]').fill('1.5');
+    assert(await first.getByRole('button', { name: /Apply calculator for/ }).isEnabled());
+    assert.equal(await first.locator('.calc-applied-check').isVisible(), false);
     assert.equal(await first.locator('[data-profit]').textContent(), 'GP50.00%CTN36.00');
     assert.deepEqual(await first.locator('.gp-healthy').evaluate(el => {
       const style = getComputedStyle(el);

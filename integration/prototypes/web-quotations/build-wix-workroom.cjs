@@ -41,6 +41,10 @@ function buildWixWorkroom(destination) {
     .replace('const previous = row.previousSp;', 'const previous = row.lastSale;')
     .replaceAll('draftPrice(row)', 'sellingPrice(row)')
     .replace('target ? draftPrice(row, target)', 'target ? calculatorPrice(row, target)')
+    .replace('data-action="apply" aria-label="Apply calculator for ${desc}" ${disabled || !suggestion ? \'disabled\' : \'\'}>Apply',
+      'data-action="apply" aria-label="${calculatorMatchesPrice(price, suggestion) ? \'Calculator price applied to\' : \'Apply calculator for\'} ${desc}" ${calculatorMatchesPrice(price, suggestion) ? \'data-applied\' : \'\'} ${disabled || !suggestion || calculatorMatchesPrice(price, suggestion) ? \'disabled\' : \'\'}><span class="calc-apply-label">Apply</span><svg class="calc-applied-check" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 12c2 .4 3.6 1.8 5 4 2.3-4.7 5.9-8 11-10.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+    .replace("tr.querySelector('[data-carton]').textContent = optionalMoney(price?.priceCtn);", "tr.querySelector('[data-carton]').textContent = optionalMoney(price?.priceCtn);\n  const target = calculatorInput(row);\n  updateCalculatorApply(row, tr, price, target ? calculatorPrice(row, target) : null);")
+    .replace("tr.querySelector('[data-action=apply]').disabled = !price;", 'updateCalculatorApply(row, tr, sellingPrice(row), price);')
     .replace('const price = draftPrice(row, next);', 'const price = calculatorPrice(row, next);')
     .replace("editPrice(row, tr, { mode: 'EA', value });", "editPrice(row, tr, { mode: 'EA', value: value === null ? null : roundCents(value) });")
     .replaceAll('(!price || row.costMyr === null)', '!Number.isFinite(price?.gp)')

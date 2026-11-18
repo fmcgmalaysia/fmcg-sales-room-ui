@@ -528,6 +528,25 @@
   font-weight: 700;
 }
 
+.wix-quotation-workroom .calc-applied-check,
+.wix-quotation-workroom [data-applied] .calc-apply-label {
+  display: none;
+}
+
+.wix-quotation-workroom [data-applied] .calc-applied-check {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: auto;
+}
+
+.wix-quotation-workroom .quote-grid [data-applied]:disabled {
+  color: #1457dc;
+  background: #e8f0fe;
+  border-color: #c4d7f8;
+  opacity: 1;
+}
+
 .wix-quotation-workroom .quote-grid .disc-cell .quote-value {
   grid-template-columns: 12px 5ch .8em;
   column-gap: 0;
