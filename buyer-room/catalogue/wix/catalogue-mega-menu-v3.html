@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="catalogue-menu-build" content="20261118-catalogue-complete-v1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -34,7 +35,19 @@
     .pager button{width:28px;height:28px;border:0;background:transparent;color:var(--blue);font-size:21px;line-height:1;cursor:pointer}
     .pager button:disabled{color:#b8c2d0;cursor:default}
     .pager span{min-width:34px;text-align:center;color:var(--muted);font-size:12px}
+    @media(min-width:901px){
+      .panel{min-height:0}
+      .panel.show{display:block}
+      .left{height:100%;overflow:auto;border-right:0}
+      .right{display:none}
+      .groups{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+      .groups .sub{width:auto;min-height:36px;background:#fff3eb;color:#933713;padding:6px 12px}
+      .groups .sub:is(:hover,:focus-visible){background:#ffe2d3}
+      .sublist{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:none;grid-auto-flow:row;column-gap:16px}
+      .sublist .sub{min-height:34px;padding:5px 10px}
+    }
     @media(max-width:900px){
+      .groups{display:none}
       .panel{min-height:0;max-height:78vh;overflow-y:auto;border-bottom-width:2px}
       .panel.show{display:block}
       .left{border-right:0;padding:14px 14px 12px}
@@ -53,7 +66,10 @@
 </head>
 <body>
   <section id="panel" class="panel" aria-label="Catalogue mega menu" aria-hidden="true">
-    <div class="left"><div id="sublist" class="sublist" role="group" aria-label="Subcategories"></div></div>
+    <div class="left">
+      <div id="groups" class="groups" role="group" aria-label="All products in a category"></div>
+      <div id="sublist" class="sublist" role="group" aria-label="Subcategories"></div>
+    </div>
     <div class="right">
       <div id="brands" class="brands" aria-live="polite"></div>
       <div class="pager"><button id="prev" type="button" aria-label="Previous brands">‹</button><span id="pageLabel">1 / 1</span><button id="next" type="button" aria-label="Next brands">›</button></div>
@@ -62,7 +78,13 @@
   <script>
     const post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
     const panel=document.getElementById('panel'),sublist=document.getElementById('sublist'),brandsBox=document.getElementById('brands');
-    const pageSize=9;let cmsItems=[],currentMain='FOOD',currentSub=null,principals=[],page=0,requestId=0;
+    const groups=document.getElementById('groups');
+    const desktop=window.matchMedia('(min-width:901px)');
+    const groupLabels=new Map([
+      ['FOOD','All Food'],['HOUSEHOLDS','All Household'],
+      ['PERSONAL CARE','All Personal Care'],['OTHERS','All General Merchandise']
+    ]);
+    const pageSize=9;let cmsItems=[],currentMain='FOOD',currentSub=null,principals=[],page=0,requestId=0,menuSignature='';
     function setSub(item){if(item?.id===currentSub?.id)return;currentSub=item;page=0;principals=[];
       [...sublist.children].forEach(b=>{const selected=b.dataset.id===item?.id;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
       renderBrands();if(item)post('catalogueRequestPrinciples',{id:item.id,sub:item.title,requestId:++requestId});}
@@ -74,21 +96,41 @@
         if(entry.logo&&/^https:\/\//i.test(entry.logo)){const img=document.createElement('img');img.src=entry.logo;img.alt='';img.onerror=()=>{img.remove();mark.textContent=entry.name};mark.appendChild(img)}else{mark.textContent=entry.name}
         const name=document.createElement('span');name.className='brand-name';name.textContent=entry.name;b.append(mark,name);b.onclick=()=>post('cataloguePrinciple',{principle:entry.name,subId:currentSub?.id});brandsBox.appendChild(b)}
       document.getElementById('pageLabel').textContent=`${page+1} / ${pages}`;document.getElementById('prev').disabled=page===0;document.getElementById('next').disabled=page>=pages-1;}
-    function renderMain(main){currentMain=String(main||'FOOD');currentSub=null;sublist.replaceChildren();
+    function addGroup(label,items){
+      const ids=[...new Set(items.map(item=>item.id).filter(Boolean))];
+      const button=document.createElement('button');button.type='button';button.className='sub';
+      button.textContent=label;button.disabled=!ids.length;
+      button.onclick=()=>{if(ids.length)post('catalogueGroup',{ids})};
+      groups.appendChild(button);
+    }
+    function renderMain(main){currentMain=String(main||'FOOD');currentSub=null;sublist.replaceChildren();groups.replaceChildren();
       const items=cmsItems.filter(x=>x.mainCategory===currentMain).sort((a,b)=>a.title.localeCompare(b.title));
+      if(desktop.matches&&groupLabels.has(currentMain)){
+        addGroup(groupLabels.get(currentMain),items);
+        if(currentMain!=='FOOD'){
+          addGroup('All Non-Food',cmsItems.filter(item=>item.mainCategory!=='FOOD'&&groupLabels.has(item.mainCategory)));
+        }
+      }
       sublist.style.setProperty('--rows',String(Math.max(1,Math.ceil(items.length/2))));
-      for(const item of items){const b=document.createElement('button');b.type='button';b.className='sub';b.dataset.id=item.id;b.setAttribute('aria-pressed','false');
+      for(const item of items){const b=document.createElement('button');b.type='button';b.className='sub';b.dataset.id=item.id;
         const symbol=document.createElement('span');symbol.className='sub-symbol';symbol.setAttribute('aria-hidden','true');
         const label=document.createElement('span');label.textContent=item.title;b.append(symbol,label);
-        b.onmouseenter=()=>setSub(item);b.onfocus=()=>setSub(item);b.onclick=()=>{setSub(item);post('catalogueSub',{id:item.id,sub:item.title})};sublist.appendChild(b)}
-      setSub(items[0]||null);panel.classList.add('show');panel.setAttribute('aria-hidden','false')}
+        if(!desktop.matches){b.setAttribute('aria-pressed','false');b.onmouseenter=()=>setSub(item);b.onfocus=()=>setSub(item)}
+        b.onclick=()=>{if(!desktop.matches)setSub(item);post('catalogueSub',{id:item.id,sub:item.title})};sublist.appendChild(b)}
+      if(!desktop.matches)setSub(items[0]||null);
+      panel.classList.add('show');panel.setAttribute('aria-hidden','false')}
     document.getElementById('prev').onclick=()=>{page--;renderBrands()};document.getElementById('next').onclick=()=>{page++;renderBrands()};
     panel.addEventListener('mouseenter',()=>post('catalogueMegaEnter'));panel.addEventListener('mouseleave',()=>post('catalogueMegaLeave'));
     window.addEventListener('message',e=>{const d=e.data||{};
-      if(d.type==='catalogueMenuData'){cmsItems=Array.isArray(d.items)?d.items:[];if(panel.classList.contains('show'))renderMain(currentMain)}
-      if(d.type==='showMain')renderMain(String(d.main||'FOOD'));
-      if(d.type==='cataloguePrinciples'&&d.id===currentSub?.id&&d.requestId===requestId){principals=Array.isArray(d.items)?d.items.filter(x=>x&&x.name):[];renderBrands();if(!principals.length)brandsBox.firstChild.textContent='No brands linked to this subcategory yet.'}
+      if(d.type==='catalogueMenuData'){
+        const items=Array.isArray(d.items)?d.items:[];
+        const signature=JSON.stringify(items.map(item=>[item.id,item.title,item.mainCategory]));
+        if(signature!==menuSignature){cmsItems=items;menuSignature=signature;if(panel.classList.contains('show'))renderMain(currentMain)}
+      }
+      if(d.type==='showMain'&&(!panel.classList.contains('show')||currentMain!==String(d.main||'FOOD')))renderMain(String(d.main||'FOOD'));
+      if(!desktop.matches&&d.type==='cataloguePrinciples'&&d.id===currentSub?.id&&d.requestId===requestId){principals=Array.isArray(d.items)?d.items.filter(x=>x&&x.name):[];renderBrands();if(!principals.length)brandsBox.firstChild.textContent='No brands linked to this subcategory yet.'}
     });
+    desktop.addEventListener('change',()=>{if(panel.classList.contains('show'))renderMain(currentMain)});
     const announceReady=()=>post('catalogueMegaReady');announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
   </script>
 </body>

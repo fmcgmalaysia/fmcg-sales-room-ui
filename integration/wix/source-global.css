@@ -28,3 +28,33 @@
     min-height: calc(100dvh - 31px) !important;
   }
 }
+
+/* Catalogue navigation section and its Wix colour layer. */
+#comp-mto6waot,
+#bgLayers_comp-mto6waot > div:first-child {
+  background-color: #fff !important;
+}
+
+@media (max-width: 900px) {
+  /* The existing desktop masthead remains the desktop authority. */
+  #comp-mumb0yrl {
+    display: none !important;
+  }
+
+  #comp-mto6waot,
+  #comp-mto6waot > .comp-mto6waot-container,
+  #comp-mto74j19 {
+    height: 144px !important;
+    min-height: 144px !important;
+  }
+
+  /* Keep the list and its bottom sheet inside the visible workroom. */
+  #comp-mt8ndgyv,
+  #comp-mt8ndgyv > .comp-mt8ndgyv-container,
+  #comp-mu3ql0ya {
+    height: max(300px, calc(100vh - 144px)) !important;
+    min-height: max(300px, calc(100vh - 144px)) !important;
+    height: max(300px, calc(100dvh - 144px)) !important;
+    min-height: max(300px, calc(100dvh - 144px)) !important;
+  }
+}

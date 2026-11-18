@@ -5,6 +5,7 @@ import wixRealtimeBackend from 'wix-realtime-backend';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { requireStaffCustomerAccess } from 'backend/masterStaffAccessClient.js';
 import { isWebQuotationReady } from 'backend/webQuotationCustomer.js';
+import { removedSelectionExpired } from 'backend/buyerSelectionRetention.js';
 
 const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
@@ -20,13 +21,9 @@ export const getCatalogueSelectionState = webMethod(
   async (assistCustomerId = '') => {
     const context = await resolveSelectionContext_(assistCustomerId);
     const items = await selectionItemsForCustomer_(context.customerId);
-    // A removed item stays visually Selected in Catalogue so the buyer always
-    // returns to the same Buyer Room record instead of creating a duplicate.
-    // CMS persistence defines selection; QD routing is a downstream state.
-    // Selection is durable as soon as it reaches Wix CMS. QD routing is a
-    // downstream Sales Room task and must never make the Catalogue button
-    // revert to "TRY AGAIN" or let the buyer create duplicate selections.
-    const selectedItems = items;
+    // Keep recent removals recoverable; the same durable selection can be reused after expiry.
+    const now = Date.now();
+    const selectedItems = items.filter(item => !removedSelectionExpired(selectionPayload_(item), now));
     const activeItems = selectedItems.filter((item) => !selectionPayload_(item).removed);
     const counts = { food: 0, household: 0, personalCare: 0, general: 0 };
     activeItems.forEach((item) => {

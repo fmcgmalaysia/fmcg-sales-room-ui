@@ -17,7 +17,10 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261117-catalogue-layout-v1';
+const CATALOGUE_BUILD_VERSION = '20261118-catalogue-complete-v1';
+const joinedMobileSelections = new Set();
+const MOBILE_SELECTION_FLIGHT_MS = 120000;
+const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -38,6 +41,38 @@ let catalogueBrowseSubIds = [];
 let catalogueBrowseKey = '';
 let catalogueBrowsePosition = null;
 
+function mobileSelectionFlightKey(productId) {
+    return selectionContext?.mode === 'buyer' && catalogueBrowseKey
+        ? 'catalogueSelectionFlightV1:' + catalogueBrowseKey + ':' + encodeURIComponent(productId)
+        : '';
+}
+
+function readMobileSelectionFlight(key) {
+    if (!key) return null;
+    try {
+        const value = JSON.parse(local.getItem(key) || 'null');
+        return value && typeof value.owner === 'string' && Number.isFinite(value.expiresAt) ? value : null;
+    } catch (error) { return null; }
+}
+
+function claimMobileSelectionFlight(key) {
+    if (!key) return '';
+    const owner = Date.now() + '-' + Math.random().toString(36).slice(2);
+    try {
+        local.setItem(key, JSON.stringify({ owner, expiresAt: Date.now() + MOBILE_SELECTION_FLIGHT_MS }));
+        return owner;
+    } catch (error) { return ''; }
+}
+
+function releaseMobileSelectionFlight(key, owner) {
+    if (!owner || readMobileSelectionFlight(key)?.owner !== owner) return;
+    try { local.removeItem(key); } catch (error) {}
+}
+
+function publishCatalogueSearchValue() {
+    try { $w('#html3').postMessage({ type: 'catalogueHeaderFilter', query: catalogueWorkspaceFilter.query }); } catch (error) {}
+}
+
 function recordCatalogueBrowse(subIds, position = null) {
     catalogueBrowseRevision += 1;
     catalogueBrowseSubIds = subIds;
@@ -45,12 +80,11 @@ function recordCatalogueBrowse(subIds, position = null) {
 }
 
 function workspaceFilterMessage() {
-    const message = { type: 'catalogueWorkspaceFilter', ...catalogueWorkspaceFilter };
+    const message = { type: 'catalogueWorkspaceFilter', ...catalogueWorkspaceFilter, browseRevision: catalogueBrowseRevision };
     if (wixWindowFrontend.formFactor !== 'Mobile') return message;
     const position = catalogueBrowsePosition;
     catalogueBrowsePosition = null;
-    return { ...message,
-        browseRevision: catalogueBrowseRevision, position };
+    return { ...message, position };
 }
 
 function rememberMobileCataloguePosition(message) {
@@ -87,6 +121,7 @@ async function restoreMobileCataloguePosition(customerId) {
     if (query) {
         try { $w('#input2').value = query; } catch (error) {}
     }
+    publishCatalogueSearchValue();
     sendCatalogueWorkspaceData();
 }
 
@@ -110,7 +145,8 @@ async function loadPrincipleLogos() {
 
 async function getPrinciplesForSub(subId) {
     if (!subId) return [];
-    if (logoLoadPromise) await logoLoadPromise;
+    if (!logoLoadPromise) logoLoadPromise = loadPrincipleLogos();
+    await logoLoadPromise;
     if (principleCache.has(subId)) return principleCache.get(subId);
     const result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').hasSome('subCategories', [subId]).limit(1000).distinct('principle');
     const names = (result.items || []).map(value => String(value || '').trim()).filter(Boolean);
@@ -133,10 +169,19 @@ function sendCatalogueMenu(message) {
     try { $w('#html5').postMessage(message); } catch (error) {}
 }
 
+function sameCatalogueIdSet(current, next) {
+    return current.size === next.size && [...next].every(id => current.has(id));
+}
+
 function sidebarSelectionState(state) {
-    selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
-    activeSelectedProductIds = new Set((state?.activeSelectedProductIds || state?.selectedProductIds || []).map(String));
-    catalogueSelectionLimit = Number(state?.selectionLimit) || 100;
+    const selected = new Set((state?.selectedProductIds || []).map(String));
+    const active = new Set((state?.activeSelectedProductIds || state?.selectedProductIds || []).map(String));
+    const limit = Number(state?.selectionLimit) || 100;
+    if (catalogueSelectionResolved && catalogueSelectionLimit === limit &&
+        sameCatalogueIdSet(selectedProductIds, selected) && sameCatalogueIdSet(activeSelectedProductIds, active)) return;
+    selectedProductIds = selected;
+    activeSelectedProductIds = active;
+    catalogueSelectionLimit = limit;
     catalogueSelectionTotal = activeSelectedProductIds.size;
     catalogueSelectionResolved = true;
     sendCatalogueWorkspaceData();
@@ -311,8 +356,20 @@ function sendCatalogueWorkspaceFilter(update) {
 }
 
 async function loadSelectionState(assistCustomerId = '') {
+    const pendingAtReadStart = new Set([...joinedMobileSelections].filter(productId =>
+        readMobileSelectionFlight(mobileSelectionFlightKey(productId))?.expiresAt > Date.now()));
     const state = await getCatalogueSelectionState(assistCustomerId);
     sidebarSelectionState(state);
+    if (state?.ok && selectionContext?.mode === 'buyer' && catalogueBrowseKey === 'catalogueBrowseReturnV1:' + state.customerId) {
+        for (const productId of joinedMobileSelections) {
+            const saved = activeSelectedProductIds.has(productId);
+            const flight = readMobileSelectionFlight(mobileSelectionFlightKey(productId));
+            if (!saved && (pendingAtReadStart.has(productId) || flight?.expiresAt > Date.now())) continue;
+            joinedMobileSelections.delete(productId);
+            selectionBusyIds.delete(productId);
+            $w('#html5').postMessage({ type: 'catalogueWorkspaceSelection', ok: saved, productId });
+        }
+    }
     return state;
 }
 
@@ -538,6 +595,7 @@ function setupNav() {
             await hideMenu();
             if (nativeSearch) nativeSearch.value = '';
             showAllCatalogueWorkspaceProducts();
+            publishCatalogueSearchValue();
             await dataset.setFilter(wixData.filter());
         } else if (message.type === 'catalogueAccount') {
             if (catalogueBrowseKey) {
@@ -587,11 +645,12 @@ function setupNav() {
             }
             hideMenu();
         } else if (message.type === 'catalogueGroup') {
-            const ids = Array.isArray(message.ids) ? message.ids.filter(Boolean) : [];
+            const requestedIds = new Set(Array.isArray(message.ids) ? message.ids : []);
+            const ids = (catalogueMenuMessage?.items || []).map(item => item.id).filter(id => requestedIds.has(id));
             if (ids.length) {
                 await Promise.all([
                     dataset.setFilter(wixData.filter().hasSome('subCategories', ids)),
-                    showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids))
+                    showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids), ids)
                 ]);
             }
             hideMenu();
@@ -611,7 +670,6 @@ function setupNav() {
     mega.collapse();
     try { dataset.setPageSize(30); } catch (error) {}
     loadMenuData();
-    logoLoadPromise = loadPrincipleLogos();
     setInterval(async () => {
         if (!isOpen) { lastScrollY = null; return; }
         if (scrollCheckPending) return;
@@ -637,19 +695,23 @@ function setupCatalogueWorkspace() {
             const principle = typeof message.principle === 'string' ? message.principle.trim() : '';
             const main = typeof message.main === 'string' ? message.main.toUpperCase() : '';
             const subId = typeof message.subId === 'string' ? message.subId : '';
-            const categories = (catalogueMenuMessage?.items || []).filter(item => item.mainCategory === main);
+            const nonFood = message.scope === 'NON_FOOD';
+            const categories = (catalogueMenuMessage?.items || []).filter(item =>
+                nonFood ? NON_FOOD_CATEGORY_KEYS.has(item.mainCategory) : item.mainCategory === main);
             if (principle && !catalogueWorkspaceAllProducts.some(product => product.principle.toLowerCase() === principle.toLowerCase())) return;
-            if ((main && !categories.length) || (subId && !categories.some(item => item.id === subId))) return;
+            if (((main || nonFood) && !categories.length) || (subId && !categories.some(item => item.id === subId))) return;
             try { $w('#input2').value = ''; } catch (error) {}
-            if (main) {
+            if (main || nonFood) {
                 const ids = subId ? [subId] : categories.map(item => item.id);
                 await showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids), ids);
+                publishCatalogueSearchValue();
                 return;
             }
             catalogueWorkspaceQueryVersion += 1;
             catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
             catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle };
             recordCatalogueBrowse([]);
+            publishCatalogueSearchValue();
             sendCatalogueWorkspaceData();
         } else if (message.type === 'catalogueWorkspacePosition') {
             rememberMobileCataloguePosition(message);
@@ -659,12 +721,28 @@ function setupCatalogueWorkspace() {
             openBuyerRoomWindow();
         } else if (message.type === 'catalogueWorkspaceSelect') {
             const productId = String(message.productId || '').trim();
-            if (!selectionContext || !productId || selectionBusyIds.has(productId)) return;
-            if (selectedProductIds.has(productId)) { openBuyerRoomWindow(); return; }
+            if (!productId || selectionBusyIds.has(productId)) return;
+            const context = selectionContext;
+            if (!context) {
+                workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: false, productId });
+                return;
+            }
+            if (selectedProductIds.has(productId)) {
+                workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
+                return;
+            }
             selectionBusyIds.add(productId);
+            const assistCustomerId = context.assistCustomerId || '';
+            const flightKey = mobileSelectionFlightKey(productId);
+            if (readMobileSelectionFlight(flightKey)?.expiresAt > Date.now()) {
+                joinedMobileSelections.add(productId);
+                return;
+            }
+            const flightOwner = claimMobileSelectionFlight(flightKey);
             try {
-                const result = await addCatalogueSelection(productId, selectionContext.assistCustomerId || '');
+                const result = await addCatalogueSelection(productId, assistCustomerId);
                 if (!result?.ok) throw new Error(result?.error || 'Could not save this selection.');
+                if (selectionContext !== context) return;
                 selectedProductIds.add(productId);
                 activeSelectedProductIds.add(productId);
                 catalogueSelectionTotal = activeSelectedProductIds.size;
@@ -672,8 +750,21 @@ function setupCatalogueWorkspace() {
                 sendCatalogueWorkspaceData();
             } catch (error) {
                 console.error('Catalogue workspace selection failed', error);
+                if (selectionContext !== context) return;
+                try {
+                    const state = await getCatalogueSelectionState(assistCustomerId);
+                    if (selectionContext !== context) return;
+                    if (state?.ok && (state.activeSelectedProductIds || []).includes(productId)) {
+                        sidebarSelectionState(state);
+                        workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
+                        return;
+                    }
+                } catch (readError) {
+                    console.warn('Catalogue selection status could not be confirmed', readError);
+                }
                 workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: false, productId });
             } finally {
+                releaseMobileSelectionFlight(flightKey, flightOwner);
                 selectionBusyIds.delete(productId);
             }
         }
