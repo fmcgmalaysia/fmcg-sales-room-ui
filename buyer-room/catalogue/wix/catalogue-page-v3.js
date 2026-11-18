@@ -790,6 +790,8 @@ function openBuyerRoomWindow() {
 
 function setupFluidCatalogueLayout() {
     const classMap = [
+        ['#section12', 'catalogue-native-masthead'],
+        ['#section7', 'catalogue-navigation-stage'],
         ['#section6', 'catalogue-results-stage']
     ];
 

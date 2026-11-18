@@ -30,28 +30,34 @@
 }
 
 /* Catalogue navigation section and its Wix colour layer. */
-#comp-mto6waot,
-#bgLayers_comp-mto6waot > div:first-child {
+.catalogue-navigation-stage,
+.catalogue-navigation-stage > div:first-child > div:first-child {
   background-color: #fff !important;
 }
 
 @media (max-width: 900px) {
   /* The existing desktop masthead remains the desktop authority. */
-  #comp-mumb0yrl {
+  .catalogue-native-masthead {
     display: none !important;
   }
 
-  #comp-mto6waot,
-  #comp-mto6waot > .comp-mto6waot-container,
-  #comp-mto74j19 {
+  .catalogue-navigation-stage,
+  .catalogue-navigation-stage > div:nth-child(2),
+  .catalogue-navigation-stage div:has(> wix-iframe),
+  .catalogue-navigation-stage wix-iframe,
+  .catalogue-navigation-stage wix-iframe > div,
+  .catalogue-navigation-stage iframe {
     height: 144px !important;
     min-height: 144px !important;
   }
 
   /* Keep the list and its bottom sheet inside the visible workroom. */
-  #comp-mt8ndgyv,
-  #comp-mt8ndgyv > .comp-mt8ndgyv-container,
-  #comp-mu3ql0ya {
+  .catalogue-results-stage,
+  .catalogue-results-stage > div:nth-child(2),
+  .catalogue-results-stage div:has(> wix-iframe),
+  .catalogue-results-stage wix-iframe,
+  .catalogue-results-stage wix-iframe > div,
+  .catalogue-results-stage iframe {
     height: max(300px, calc(100vh - 144px)) !important;
     min-height: max(300px, calc(100vh - 144px)) !important;
     height: max(300px, calc(100dvh - 144px)) !important;
