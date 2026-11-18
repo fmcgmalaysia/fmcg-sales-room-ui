@@ -52,6 +52,16 @@ test('reads complete rows only for submitted barcodes and captures duplicate req
   const completeRows = reads.filter(read => read.r >= 3 && read.nc === 27);
   assert.deepEqual(completeRows, [{ name: 'FOOD', r: 3, c: 1, nr: 1, nc: 27 }]);
 });
+test('forwards the source freshness light and note without changing numeric cost interpretation', () => {
+  const stale = fixture(); stale[4] = '🔴'; stale[15] = '100 FOC 10';
+  const current = fixture('9999999999999'); current[4] = '🟠';
+  const { result } = capture({ FOOD: [stale, current] }, ['0012345678901', '9999999999999']);
+  assert.equal(result['0012345678901'].priceStale, true);
+  assert.equal(result['0012345678901'].note, '100 FOC 10');
+  assert.equal(result['0012345678901'].netCostCtn, 147.10);
+  assert.equal(result['0012345678901'].costStatus, 'CAPTURED');
+  assert.equal(result['9999999999999'].priceStale, false);
+});
 test('not found stays unavailable, never zero', () => {
   const { result } = capture({}); const cost = result['0012345678901'];
   assert.deepEqual(cost.costIssues, ['BARCODE_NOT_FOUND']);

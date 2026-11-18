@@ -46,8 +46,8 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readC
     const scope = { staffId, customer };
     if (action === 'quotes') {
       const rows = await quotation.list(scope);
-      const { preferredCurrency, rateToMyr } = customer;
-      return { staffId, customer: { customerId, preferredCurrency, rateToMyr }, rows,
+      const { preferredCurrency, rateToMyr, fullName } = customer;
+      return { staffId, customer: { customerId, preferredCurrency, rateToMyr, ...(fullName ? { fullName } : {}) }, rows,
         canEdit: can('EDIT', 'EDIT_QUOTATION', customerId), canPublish: can('EDIT', 'PUBLISH_QUOTATION', customerId) };
     }
     if (action === 'cost') return quotation.catchCost(scope);

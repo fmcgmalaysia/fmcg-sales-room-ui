@@ -1400,22 +1400,28 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 44001925961
+          run-id: 44230181244
           github-token: ${{ github.token }}
           path: ${{ format('{0}/web-quotations-baseline', runner.temp) }}
 
-      - name: Verify the base and install only the Quotations and Sales assets
+      - name: Verify the base and install only the Quotations assets
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'web-quotations-only'
         run: |
           site="$RUNNER_TEMP/web-quotations-site"
           overlay="$RUNNER_TEMP/web-quotations-overlay"
           mkdir "$site"
           tar --extract --file "$RUNNER_TEMP/web-quotations-baseline/artifact.tar" --directory "$site"
-          test "$(find "$site" -type f | wc -l)" -eq 113
-          test ! -e "$site/master-quotations"
-          node integration/prototypes/web-quotations/prepare-pages-overlay.cjs "$site/index.html" "$overlay"
-          test "$(find "$overlay" -type f | wc -l)" -eq 4
-          cp --recursive "$overlay/." "$site/"
+          test "$(find "$site" -type f | wc -l)" -eq 116
+          (
+            cd "$site/master-quotations"
+            sha256sum -c <<'SHA'
+          25f278140c2f3b7caa17ddcd18602407552eba3f34e18cc00d0092385e0ec4bf  index.html
+          ec6ae9d859d1c8011fdd57e0d63911109292e5b1811cd1ad9ca9fd80bffbaf0e  app.js
+          006afaae1e3bd5257c43004461acac12e6a8e0d16241ade81f73830bb57ba133  style.css
+          SHA
+          )
+          node integration/prototypes/web-quotations/build-wix-workroom.cjs "$overlay"
+          cp "$overlay/index.html" "$overlay/app.js" "$overlay/style.css" "$site/master-quotations/"
           test "$(find "$site" -type f | wc -l)" -eq 116
 
       - name: Upload the isolated Web Quotations Pages package

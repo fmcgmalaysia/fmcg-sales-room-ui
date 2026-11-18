@@ -55,7 +55,10 @@ export function createMasterQuoteProjection({ readContext, latest, read, insert 
         (stored.selectionEpoch || '') !== (quote.selectionEpoch || '')) {
       throw Error('Quotation version conflicts with its receipt.');
     }
-    return { ok: true, customerId, selectionId, version, requestId, ...(stored.superseded ? { superseded: true } : {}) };
+    const storedAt = Date.parse(stored._createdDate);
+    return { ok: true, customerId, selectionId, version, requestId,
+      ...(quote.enabled && !stored.superseded && Number.isFinite(storedAt) ? { publishedAt: new Date(storedAt).toISOString() } : {}),
+      ...(stored.superseded ? { superseded: true } : {}) };
   };
 }
 

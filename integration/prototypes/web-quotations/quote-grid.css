@@ -1,9 +1,11 @@
 .quote-grid {
   overflow-x: auto;
+  contain: inline-size;
 }
 
 .quote-grid table {
-  min-width: 1370px;
+  width: max(100%, 1370px);
+  min-width: 0;
 }
 
 .quote-grid :is(th, td) {
@@ -34,6 +36,8 @@
 .quote-grid .product-name {
   font-size: 11px;
   line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -79,7 +83,7 @@
 }
 
 .quote-grid .quote-unit {
-  color: #60758a;
+  color: #667382;
   font-size: 9px;
   font-weight: 400;
   text-align: left;
@@ -88,6 +92,30 @@
 .quote-grid .previous-sp {
   color: #657488;
   white-space: nowrap;
+}
+
+.quote-grid .previous-sp small, .quote-grid .quote-label {
+  display: block;
+  font-variant-numeric: normal;
+  font-size: 10px;
+}
+
+.quote-grid .quote-left {
+  text-align: left;
+}
+
+.quote-grid .remark-cell {
+  overflow-wrap: anywhere;
+}
+
+.quote-grid .gp-risk, .quote-counts .gp-risk, .quote-grid .stale-cost {
+  color: #c71930;
+  font-weight: 600;
+}
+
+.quote-grid .gp-healthy {
+  color: #245caf;
+  font-weight: 600;
 }
 
 .quote-grid .desc-cell {
@@ -116,7 +144,10 @@
 }
 
 .quote-grid .calc-cell input {
-  width: min(100%, 54px);
+  width: 100%;
+  font-size: 10px;
+  padding-inline: 3px;
+  text-align: right;
 }
 
 .quote-grid .calc-cell input::placeholder {
@@ -127,7 +158,10 @@
   text-align: center;
   padding-block: 4px;
   border-bottom: 1px solid var(--line);
-  background: #dce9f7;
+  background: #163c59;
+  color: white;
+  font-size: 10px;
+  line-height: 1.15;
 }
 
 .quote-grid .calc-headings th {
@@ -151,7 +185,8 @@
 
 .quote-grid .calc-cell .update {
   min-height: 23px;
-  font-size: 10px;
+  font-size: 9px;
+  padding-inline: 3px;
 }
 
 .quote-grid .switch {
@@ -174,7 +209,85 @@
   margin-left: auto;
 }
 
+.wix-quotation-workroom .masthead .header-bottom {
+  width: auto;
+}
+
+.quote-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 53fr) minmax(0, 47fr);
+  border-bottom: 1px solid var(--line);
+  border-radius: 7px;
+  margin-bottom: 10px;
+  padding: 9px 12px;
+}
+
+.quote-customer {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.quote-customer h2 {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+
+.quote-customer .currency {
+  border-radius: 0;
+  background: #c71930;
+  color: white;
+}
+
+.quote-summary .toolbar-meta {
+  gap: 6px 12px;
+  flex-wrap: wrap;
+}
+
+.quote-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(85px, 1fr));
+  margin: 0;
+  text-align: center;
+}
+
+.wix-quotation-workroom .quote-actions:has(.switch) {
+  align-items: center;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.quote-counts div {
+  border-left: 1px solid var(--line);
+  padding: 3px 8px;
+}
+
+.quote-counts dt { color: var(--muted); font-size: 10px; }
+.quote-counts dd { margin: 2px 0 0; font-size: 17px; font-weight: 700; }
+
 @media (min-width: 601px) {
+  .windowed-quote-grid tbody tr[data-row] > td {
+    height: 46px;
+  }
+
+  .windowed-quote-grid table {
+    overflow-anchor: none;
+  }
+
+  .windowed-quote-grid .remark-cell {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .windowed-quote-grid .quote-spacer td {
+    height: 0;
+    padding: 0;
+    border: 0;
+  }
+
   main:has(.quote-grid) {
     max-width: none;
     padding: 12px;
@@ -185,8 +298,19 @@
   }
 
   main:has(.quote-grid) .toolbar {
-    padding: 5px 9px;
+    padding: 9px 12px;
   }
+}
+
+@media (max-width: 768px) {
+  .quote-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .quote-counts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .quote-counts div:first-child { border-left: 0; }
 }
 
 @media (max-width: 600px) {
@@ -198,6 +322,7 @@
   }
 
   .quote-grid table {
+    width: 100%;
     min-width: 0;
   }
 
@@ -228,6 +353,7 @@
 
   .quote-grid .product-name {
     white-space: normal;
+    overflow-wrap: anywhere;
     font-size: 13px;
   }
 
@@ -238,6 +364,7 @@
 
   .quote-grid .calc-cell input {
     width: min(100%, 88px);
+    font-size: 16px;
   }
 
   .quote-grid .quote-unit {

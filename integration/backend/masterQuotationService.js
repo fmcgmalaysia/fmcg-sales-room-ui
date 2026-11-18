@@ -36,13 +36,14 @@ function rowSnapshot(row, cost) {
   if (!positive(costMyr)) return { costError: 'Point Base cost unavailable. Previous cost retained.' };
   return { costMyr, costAt: cost.capturedAt, costError: '', costDetails: {
     lpEa: cost.lpPc, lpCtn: cost.lpCtn, disc1: cost.disc1 * 100, disc2: cost.disc2 * 100, disc3: cost.disc3,
+    ...(typeof cost.priceStale === 'boolean' ? { priceStale: cost.priceStale } : {}),
     remark: typeof cost.note === 'string' ? cost.note.slice(0, 160) : ''
   } };
 }
 
 // Adapters run on MASTER only. deliver accepts a fixed customer-safe projection and
 // must return a fresh or durable receipt for the same idempotency key.
-export function createMasterQuotationService({ revisions, readSelections, readSelection, readCosts, deliver }) {
+export function createMasterQuotationService({ revisions, readSelections, readSelection, readCosts, deliver, readLastInvoicedPrices }) {
   async function selections(customerId) {
     const rows = await readSelections(customerId);
     if (!Array.isArray(rows) || rows.some(row => row.customerId !== customerId || row.removed)) throw Error('Selection scope could not be confirmed.');
@@ -60,10 +61,47 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
   }
 
   return {
+    async refreshScheduledCosts({ customerId, rows, costs, runDay }) {
+      if (!Array.isArray(rows) || rows.some(row => row.customerId !== customerId || row.removed)) {
+        throw Error('Scheduled quotation selection scope could not be confirmed.');
+      }
+      const latest = revisions.latestFor ? await revisions.latestFor(customerId, rows.map(row => row.id)) : null;
+      const result = { updated: 0, unchanged: 0, pending: 0, failed: 0 };
+      for (let index = 0; index < rows.length; index += 8) {
+        await Promise.all(rows.slice(index, index + 8).map(async row => {
+          try {
+            const last = latest ? latest.get(row.id) : await revisions.latest(customerId, row.id);
+            const previous = last?.snapshot || blank;
+            if (previous.pending) { result.pending++; return; }
+            const cost = rowSnapshot(row, costs.get(row.barcode));
+            if (cost.costError) { result.failed++; return; }
+            if (previous.costMyr === cost.costMyr && !previous.costError &&
+                Object.entries(cost.costDetails).length === Object.entries(previous.costDetails || {}).length &&
+                Object.entries(cost.costDetails).every(([key, value]) => previous.costDetails?.[key] === value)) {
+              result.unchanged++; return;
+            }
+            if (previous.costAt && Date.parse(previous.costAt) >= Date.parse(cost.costAt)) {
+              result.unchanged++; return;
+            }
+            await append(customerId, row.id, last?.revision ?? 0, digest('scheduled-cost', runDay, row.id),
+              digest('scheduled-cost-data', cost), { ...previous, ...cost });
+            result.updated++;
+          } catch { result.failed++; }
+        }));
+      }
+      return result;
+    },
+
     async list({ customer }) {
       const { customerId } = customer;
       const rows = await selections(customerId);
-      const batched = revisions.latestFor ? await revisions.latestFor(customerId, rows.map(row => row.id)) : null;
+      const [batched, lastSales] = await Promise.all([
+        revisions.latestFor ? revisions.latestFor(customerId, rows.map(row => row.id)) : null,
+        readLastInvoicedPrices?.(customerId, rows).catch(error => {
+          console.error('MASTER_QUOTATION_SI_READ_FAILED', error?.code || 'UNCONFIRMED');
+          return new Map();
+        })
+      ]);
       return Promise.all(rows.map(async row => {
         const last = batched ? batched.get(row.id) : await revisions.latest(customerId, row.id);
         const { pending, ...snapshot } = last?.snapshot || blank;
@@ -71,7 +109,9 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
           snapshot.published = { ...snapshot.published, enabled: false };
         }
         return { id: row.id, barcode: row.barcode, name: row.name, packing: row.packing, ea: row.ea, imageUrl: row.imageUrl,
-          ...snapshot, pending: Boolean(pending), revision: last?.revision ?? 0 };
+          ...(row.sortId ? { sortId: row.sortId } : {}),
+          ...snapshot, ...(readLastInvoicedPrices ? { lastSale: lastSales.get(row.barcode) ?? null } : {}),
+          pending: Boolean(pending), revision: last?.revision ?? 0 };
       }));
     },
 
@@ -150,6 +190,8 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       const { priceEa, priceCtn, currency, version } = pending;
       const visible = enabled && receipt.superseded !== true;
       const published = { priceEa, priceCtn, currency, version, enabled: visible,
+        ...(visible && typeof receipt.publishedAt === 'string' && Number.isFinite(Date.parse(receipt.publishedAt))
+          ? { publishedAt: receipt.publishedAt } : {}),
         ...(pending.selectionEpoch ? { selectionEpoch: pending.selectionEpoch } : {}) };
       const priorPrice = previous.published;
       const previousSp = visible && priorPrice?.enabled && Number.isFinite(priorPrice.priceCtn) &&

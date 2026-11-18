@@ -36,7 +36,8 @@ function customerView(customer) {
   if (!isWebQuotationReady(customer)) return null;
   const preferredCurrency = text(customer.preferredCurrency || customer.tradingCurrency).toUpperCase();
   if (!/^[A-Z]{3}$/.test(preferredCurrency)) return null;
-  return { customerId: customer.customerId, name: text(customer.customerShortName || customer.title), preferredCurrency,
+  return { customerId: customer.customerId, name: text(customer.customerShortName || customer.title),
+    fullName: text(customer.title), preferredCurrency,
     quotationMode: 'WEB', webQuotationStatus: 'READY', accessStatus: 'ACTIVE' };
 }
 
@@ -64,8 +65,10 @@ async function packSelections(selections) {
   }
   return selections.map(({ productId, fallbackEa, ...row }) => {
     const product = products.get(productId);
-    const ea = product && text(product.barcode) === row.barcode ? Number(product.ea) : fallbackEa;
-    return { ...row, ea: Number.isSafeInteger(ea) && ea > 0 ? ea : null };
+    const matches = product && text(product.barcode) === row.barcode;
+    const ea = matches ? Number(product.ea) : fallbackEa;
+    return { ...row, ea: Number.isSafeInteger(ea) && ea > 0 ? ea : null,
+      ...(matches && text(product.pointBaseSortId) ? { sortId: text(product.pointBaseSortId) } : {}) };
   });
 }
 

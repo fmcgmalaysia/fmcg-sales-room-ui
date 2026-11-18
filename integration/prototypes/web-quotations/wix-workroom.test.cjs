@@ -119,11 +119,23 @@ test('the compact quotation grid renders and saves over the iframe message contr
     const makeRow = (name, index) => ({ name, id: 'item-' + index, barcode: String(2000000000000 + index), packing: '710ML x 12', ea: 12,
       costMyr: 36, costDetails: { lpEa: 3, lpCtn: 36, disc1: 0, disc2: 0, disc3: 0, remark: '100 FOC 10' }, revision: 0 });
     const rows = [makeRow(longName, 0), ...Array.from({ length: 999 }, (_, i) => makeRow('Product ' + (i + 1), i + 1))];
+    rows[0].costDetails.disc3 = 5;
+    rows[0].costDetails.priceStale = true;
+    rows[0].lastSale = { priceCtn: 12, currency: 'USD', siDate: '2026-11-16' };
+    rows[1].draft = { mode: 'EA', value: 0.8 };
+    rows[2].draft = { mode: 'EA', value: 36 / 0.92 / 4 / 12 };
+    rows[0].sortId = 'FO-00002';
+    rows[1].sortId = 'FO-00010';
+    rows[2].sortId = 'FO-00001';
+    rows[3].sortId = 'NF-00001';
     const requests = [];
+    let compactFixture = false;
     await page.exposeFunction('handleQuotation', (action, customerId, input) => {
       requests.push({ action, customerId, input });
       if (action === 'customers') return { staffId: 'STF-QA', staffName: 'Test staff', customers: [{ customerId: 'CUS-QA-001', name: 'QA Trading' }, { customerId: 'CUS-QA-002', name: 'Read only' }] };
-      if (action === 'quotes') return { staffId: 'STF-QA', customer: { customerId, preferredCurrency: 'USD', rateToMyr: 4 }, canEdit: customerId === 'CUS-QA-001', rows: customerId === 'CUS-QA-001' ? rows : [makeRow('Read only product', 1)] };
+      if (action === 'quotes') return { staffId: 'STF-QA', customer: { customerId, preferredCurrency: 'USD', rateToMyr: 4,
+        fullName: customerId === 'CUS-QA-001' ? 'QA Trading Company Limited' : 'Read only' },
+        canEdit: customerId === 'CUS-QA-001', rows: customerId === 'CUS-QA-001' ? (compactFixture ? rows.slice(0, 4) : rows) : [makeRow('Read only product', 1)] };
       if (action === 'draft') {
         const row = rows.find(item => item.id === input.selectionId);
         row.draft = input.input;
@@ -131,7 +143,8 @@ test('the compact quotation grid renders and saves over the iframe message contr
       }
       if (action === 'publish') {
         const row = rows.find(item => item.id === input.selectionId);
-        row.published = { enabled: input.enabled, priceEa: row.draft.value, priceCtn: row.draft.value * row.ea };
+        row.published = { enabled: input.enabled, priceEa: row.draft.value, priceCtn: row.draft.value * row.ea,
+          publishedAt: '2026-11-17T18:00:00.000Z' };
         return { revision: ++row.revision };
       }
       if (action === 'cost') {
@@ -140,7 +153,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
       }
       throw Error('Unexpected action');
     });
-    await page.route(parent + '/quotations-test', route => route.fulfill({ contentType: 'text/html', body: `<style>body{margin:0}iframe{width:100%;height:100vh;border:0}</style><iframe id="workroom" src="${asset}/index.html"></iframe><script type="module">${bridge}
+    await page.route(parent + '/quotations-test', route => route.fulfill({ contentType: 'text/html', body: `<style>body{margin:0}iframe{display:block;width:100%;height:100vh;border:0}</style><iframe id="workroom" src="${asset}/index.html"></iframe><script type="module">${bridge}
       const frame = document.getElementById('workroom');
       connectMasterQuotationFrame({ onMessage: fn => window.addEventListener('message', event => {
         if (event.origin === '${asset}' && event.source === frame.contentWindow) fn(event);
@@ -154,17 +167,27 @@ test('the compact quotation grid renders and saves over the iframe message contr
     const grid = page.frameLocator('#workroom');
     const first = grid.locator('tr[data-row="item-0"]');
     await first.waitFor();
-    assert.equal(await grid.locator('tbody tr').count(), 1000);
+    assert.equal(await grid.locator('table').getAttribute('aria-rowcount'), '1002');
+    assert(await grid.locator('tbody tr[data-row]').count() < 100);
+    assert.deepEqual(await grid.locator('tbody tr[data-row]').evaluateAll(trs => trs.slice(0, 5).map(tr => tr.dataset.row)),
+      ['item-2', 'item-0', 'item-1', 'item-3', 'item-4']);
+    assert.equal(await grid.locator('.move-row').count(), 0);
     assert.equal(await grid.locator('#company, #actor').count(), 0);
     assert(await first.locator('.product-name').evaluate(el => el.scrollWidth <= el.clientWidth));
 
-    await grid.getByRole('searchbox').fill(longName);
-    assert.equal(await grid.locator('tbody tr').count(), 1);
+    assert.equal(await grid.getByRole('searchbox').count(), 0);
+    assert.equal(await grid.locator('.quote-customer h2').textContent(), 'QA Trading Company Limited');
+    assert.match(await first.locator('.disc-cell').textContent(), /Disc 35\.00$/);
+    assert.equal(await first.locator('.stale-cost').textContent(), '36.00');
+    assert.equal(await first.locator('[data-previous-sp]').textContent(), '12.00 / CTN');
+    assert.equal(await first.locator('.previous-sp small').textContent(), '16-11-26');
+    assert.equal(await grid.locator('[data-row=item-1] .gp-risk').count(), 1);
+    assert.equal(await grid.locator('#quote-risk-count').textContent(), '1');
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
     await grid.getByText('1000 costs updated.').waitFor();
     await first.locator('[data-calc=GP]').fill('25');
     await first.getByRole('button', { name: 'Apply calculator', exact: false }).click();
-    assert.equal(await first.locator('[data-mode=EA]').inputValue(), '1');
+    assert.equal(await first.locator('[data-mode=EA]').inputValue(), '1.00');
     await first.locator('[data-mode=EA]').fill('1.5');
     await first.getByRole('switch').click();
     await grid.getByText('Quotation is visible to this customer.').waitFor();
@@ -172,25 +195,59 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(requests.find(request => request.action === 'draft').input.input.value, 1.5);
     assert.equal(requests.find(request => request.action === 'publish').input.revision, 1);
     assert.equal(await first.locator('[data-carton]').textContent(), '18.00');
-    assert(await first.getByRole('button', { name: 'Save draft' }).isDisabled());
+    assert.equal(await first.locator('.quote-label').textContent(), '18-11-26');
+    assert.equal(await first.getByRole('button', { name: 'Save draft' }).count(), 0);
+    const ea = first.locator('[data-mode=EA]');
+    await ea.fill('3');
+    await ea.press('Enter');
+    await first.locator('[role=switch][aria-checked=false]').waitFor();
+    assert.equal(await ea.inputValue(), '3.00');
+    assert.equal(requests.filter(request => request.action === 'publish').at(-1).input.enabled, false);
+    await ea.press('ArrowDown');
+    assert.equal(await grid.locator('[data-row=item-1] [data-mode=EA]:focus').count(), 1);
+    await first.locator('[data-calc=GP]').press('ArrowRight');
+    assert.equal(await first.locator('[data-calc=EA]:focus').count(), 1);
 
+    const frame = await page.locator('#workroom').elementHandle();
+    const workroom = await frame.contentFrame();
+    const resizeStart = Date.now();
+    await page.setViewportSize({ width: 1024, height: 920 });
+    await workroom.waitForFunction(() => innerWidth === 1024 && document.querySelector('tbody tr').getBoundingClientRect().height > 0,
+      undefined, { timeout: 15000 });
+    const resizeMs = Date.now() - resizeStart;
+    console.log(`Quotation 1,000-row resize took ${resizeMs} ms`);
+    assert(resizeMs < 2500, `Full-grid resize took ${resizeMs} ms`);
+    await workroom.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await grid.locator('[data-row=item-999]').waitFor();
+    assert(await grid.locator('tbody tr[data-row]').count() < 100);
+    await workroom.evaluate(() => window.scrollTo(0, 0));
+    await first.waitFor();
+
+    compactFixture = true;
+    await grid.locator('#customer').selectOption('CUS-QA-002');
+    await grid.getByText('Read only product', { exact: true }).waitFor();
+    assert(await grid.locator('[data-mode=EA]').isDisabled());
+    assert(await grid.getByRole('button', { name: 'Catch Cost' }).isDisabled());
+    await grid.locator('#customer').selectOption('CUS-QA-001');
+    await first.waitFor();
     for (const width of [1440, 1024, 768, 390, 320]) {
       await page.setViewportSize({ width, height: 920 });
-      await first.waitFor();
-      const metrics = await first.evaluate(el => ({ width: innerWidth, scroll: document.documentElement.scrollWidth, font: getComputedStyle(el.querySelector('[data-mode]')).fontSize }));
+      const frame = await page.locator('#workroom').elementHandle();
+      const workroom = await frame.contentFrame();
+      await workroom.waitForFunction(width => innerWidth === width, width, { timeout: 3000 }).catch(async error => {
+        throw Error(`Expected iframe width ${width}, got ${await workroom.evaluate(() => innerWidth)}`, { cause: error });
+      });
+      const metrics = await first.evaluate(el => ({ width: innerWidth, scroll: document.documentElement.scrollWidth, height: el.getBoundingClientRect().height,
+        font: getComputedStyle(el.querySelector('[data-mode]')).fontSize }));
       assert.equal(metrics.width, width);
       assert(metrics.scroll <= width + 1, JSON.stringify(metrics));
+      assert(metrics.height > 0, JSON.stringify(metrics));
       if (width <= 600) assert.equal(metrics.font, '16px');
       if (process.env.QUOTATIONS_SCREENSHOTS && [1440, 390, 320].includes(width)) {
         fs.mkdirSync(process.env.QUOTATIONS_SCREENSHOTS, { recursive: true });
         await page.screenshot({ path: path.join(process.env.QUOTATIONS_SCREENSHOTS, `quote-workroom-${width}.png`) });
       }
     }
-    await grid.locator('#customer').selectOption('CUS-QA-002');
-    const readonly = grid.getByText('Read only product', { exact: true });
-    await readonly.waitFor();
-    assert(await grid.locator('[data-mode=EA]').isDisabled());
-    assert(await grid.getByRole('button', { name: 'Catch Cost' }).isDisabled());
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
