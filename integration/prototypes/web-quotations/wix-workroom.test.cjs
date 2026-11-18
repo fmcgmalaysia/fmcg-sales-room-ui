@@ -106,7 +106,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
   const { chromium } = require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
   const destination = fs.mkdtempSync(path.join(os.tmpdir(), 'quotations-workroom-'));
   const asset = 'https://quote-ui.example.invalid';
-  const parent = 'https://fmcg999.wixstudio.com';
+  const parent = process.env.MASTER_QUOTATION_TEST_ORIGIN || 'https://www.ltpos.ai';
   buildWixWorkroom(destination);
   const app = fs.readFileSync(path.join(destination, 'app.js'), 'utf8');
   assert.doesNotMatch(app, /qa-quote-order|#actor|\/api\//);

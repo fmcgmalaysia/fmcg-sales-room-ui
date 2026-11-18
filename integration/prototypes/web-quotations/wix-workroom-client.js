@@ -2,7 +2,9 @@
  * supplies scope through postMessage. This iframe never assigns a role. */
 const $ = selector => document.querySelector(selector);
 const content = $('#content');
-const trustedParent = 'https://fmcg999.wixstudio.com';
+const trustedParents = new Set(['https://www.ltpos.ai', 'https://ltpos.ai', 'https://fmcg999.wixstudio.com']);
+const referrerOrigin = document.referrer ? new URL(document.referrer).origin : '';
+let trustedParent = trustedParents.has(referrerOrigin) ? referrerOrigin : '';
 const requests = new Map();
 const calculator = new Map();
 const publicationAttempts = new Map();
@@ -179,6 +181,9 @@ window.addEventListener('resize', hideProductPreview, { passive: true });
 
 function api(action, input, context = customerId()) {
   if (parent === window) return Promise.reject(Error('Open Quotations from the MASTER workroom.'));
+  if (!trustedParent && (referrerOrigin || action !== 'customers')) {
+    return Promise.reject(Error('Open Quotations from the MASTER workroom.'));
+  }
   const id = requestId();
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -186,16 +191,19 @@ function api(action, input, context = customerId()) {
       reject(Error('The response could not be confirmed. Retry the same action.'));
     }, 35000);
     requests.set(id, { action, context, resolve, reject, timer });
-    parent.postMessage({ type: 'MASTER_QUOTATION_REQUEST', requestId: id, action, customerId: context, input }, trustedParent);
+    const message = { type: 'MASTER_QUOTATION_REQUEST', requestId: id, action, customerId: context, input };
+    if (trustedParent) parent.postMessage(message, trustedParent);
+    else for (const origin of trustedParents) parent.postMessage(message, origin);
   });
 }
 
 window.addEventListener('message', event => {
-  if (event.source !== parent || event.origin !== trustedParent) return;
+  if (event.source !== parent || !trustedParents.has(event.origin) || (trustedParent && event.origin !== trustedParent)) return;
   const m = event.data;
   if (m?.type !== 'MASTER_QUOTATION_RESULT') return;
   const pending = requests.get(m.requestId);
   if (!pending || m.action !== pending.action || m.customerId !== pending.context) return;
+  trustedParent = event.origin;
   requests.delete(m.requestId);
   clearTimeout(pending.timer);
   if (m.ok === true) pending.resolve(m.result);

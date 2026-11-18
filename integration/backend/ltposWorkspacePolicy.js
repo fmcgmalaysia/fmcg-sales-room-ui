@@ -6,7 +6,8 @@ export function projectLtposWorkspaces(record) {
     ['purchase', 'PURCHASE'],
     ['support', 'SUPPORT'],
     ['warehouse', 'WAREHOUSE'],
-    ['finance', 'ACCOUNT']
+    ['finance', 'ACCOUNT'],
+    ['sales-management', 'SALES MANAGEMENT']
   ];
   const workspaceIds = choices.filter(([, department]) =>
     ['NCT', 'GHR'].some(company => canEnterDepartment(record, department, 'VIEW', company))

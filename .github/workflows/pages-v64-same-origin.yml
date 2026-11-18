@@ -1401,7 +1401,7 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 44254812496
+          run-id: 44293027398
           github-token: ${{ github.token }}
           path: ${{ format('{0}/web-quotations-baseline', runner.temp) }}
 
@@ -1416,13 +1416,14 @@ jobs:
           (
             cd "$site/master-quotations"
             sha256sum -c <<'SHA'
-          e5d3ea3da9eb30ddb3e792a99449def53c67cc6adc7b4abf0ec4d9f1d3ff78e9  index.html
-          8604346c68efbb97c19e4518a217e4fc19a8ca2bd83f173ce765cf1874351127  app.js
-          e083219913d77381813157ac5c081e9f108f6c99a3011c5feec302ec19be55a2  style.css
+          330c6dd0db780aa2d068fbcbc3861f96815bceab47edd23db69e2bd4c8f5e983  index.html
+          8cc89121d4d78011560f164d42f0f641c788536d65666a14498cce96768e4ce9  app.js
+          caf8b0eaa559a984074a6e3588f6ff043fc794788f41b5802061c627e538c40c  style.css
           SHA
           )
           node integration/prototypes/web-quotations/build-wix-workroom.cjs "$overlay"
-          cp "$overlay/index.html" "$overlay/app.js" "$overlay/style.css" "$site/master-quotations/"
+          cmp "$overlay/style.css" "$site/master-quotations/style.css"
+          cp "$overlay/index.html" "$overlay/app.js" "$site/master-quotations/"
           test "$(find "$site" -type f | wc -l)" -eq 116
 
       - name: Upload the isolated Web Quotations Pages package
