@@ -217,7 +217,9 @@ test('the compact quotation grid renders and saves over the iframe message contr
     for (const name of ['Selling Price', 'List Cost', 'Net Cost']) {
       assert.equal(await grid.getByRole('columnheader', { name, exact: true }).evaluate(el => getComputedStyle(el).textAlign), 'right');
     }
-    assert(await grid.getByRole('columnheader', { name: 'Disc.', exact: true }).isVisible());
+    assert(await grid.getByRole('columnheader', { name: 'Discount', exact: true }).isVisible());
+    assert.equal(await grid.locator('.calc-group').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(220, 231, 241)');
+    assert.equal(await first.locator('td.calc-cell').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(247, 249, 252)');
     assert.deepEqual(await first.locator('.disc-cell .quote-value').allTextContents(), ['1.0.00%', '2.0.00%', '3.5.00']);
     const decimals = await first.locator('.disc-cell .quote-value > :nth-child(2)').evaluateAll(amounts => amounts.map(amount => {
       const text = amount.firstChild;

@@ -61,7 +61,7 @@ function buildWixWorkroom(destination) {
     .replace('<small>MYR · CTN</small>', '')
     .replace('class="quote-left" rowspan="2">Selling Price', 'class="quote-right" rowspan="2">Selling Price')
     .replace('rowspan="2">List Cost', 'class="quote-right" rowspan="2">List Cost')
-    .replace('rowspan="2">Disc</th>', 'rowspan="2">Disc.</th>')
+    .replace('rowspan="2">Disc</th>', 'rowspan="2">Discount</th>')
     .replace('rowspan="2">Net Cost', 'class="quote-right" rowspan="2">Net Cost')
     .replace('Net cost · MYR per CTN', 'Net cost per CTN')
     .replace('<div class="product-name">${desc}</div>', '<div class="product-name" title="${desc}">${desc}</div>')

@@ -494,6 +494,10 @@
   font-weight: 600;
 }
 
+.wix-quotation-workroom .quote-grid td.calc-cell {
+  background: #f7f9fc;
+}
+
 .wix-quotation-workroom .quote-grid .cost-cell .stale-cost {
   color: #e51b2b;
   font-size: 12px;
@@ -554,7 +558,8 @@
   .wix-quotation-workroom .quote-grid thead {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 3;
+    box-shadow: 0 1px 0 #abc2d8;
   }
 
   .wix-quotation-workroom .quote-grid thead th {
@@ -565,8 +570,9 @@
   }
 
   .wix-quotation-workroom .quote-grid thead .calc-group {
-    background: #133858;
-    color: white;
+    background: #dce7f1;
+    color: #203047;
+    border-inline-start: 1px solid #c2d2e1;
   }
 
   .wix-quotation-workroom .quote-grid thead tr:first-child th:nth-last-child(2) {
@@ -575,7 +581,11 @@
   }
 
   .wix-quotation-workroom .quote-grid thead .calc-headings th {
-    background: #e0ebf5;
+    background: #edf3f8;
+  }
+
+  .wix-quotation-workroom .quote-grid .calc-cell:nth-last-child(3) {
+    border-inline-start: 1px solid #c2d2e1;
   }
 
   .wix-quotation-workroom .quote-grid :is(th, td) {
