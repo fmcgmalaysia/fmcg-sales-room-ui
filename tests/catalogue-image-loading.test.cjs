@@ -17,7 +17,7 @@ test('list images request a bounded CDN thumbnail while product detail uses the 
   assert.match(small, /\/v1\/fit\/w_168,h_168/);
   assert.match(small, /loading="lazy"/);
   assert.match(small, /decoding="async"/);
-  assert.match(small, /width="168" height="168"/);
+  assert.doesNotMatch(small, /(?:width|height)="168"/);
   const large = methods.imageMarkup({ image: source }, true);
   assert.match(large, new RegExp('src="' + source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"'));
   assert.doesNotMatch(large, /\/v1\/fit\//);
