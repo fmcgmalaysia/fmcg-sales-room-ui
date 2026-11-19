@@ -174,6 +174,11 @@
   <script>
     const state={products:[],selectionProducts:[],selectedIds:new Set(),activeSelectedIds:new Set(),pendingSelectionIds:new Set(),activeId:'',query:'',main:'',subIds:[],principle:'',selectionView:'',selectionLimit:100,selectionTotal:0,selectionFoodCount:0,selectionNonFoodCount:0,selectionCountsReady:false,selectionReady:false,busyId:'',selectionErrorIds:new Set(),optimisticProducts:new Map(),buyerRoomUrl:''};
     let renderLimit=120;
+    let buyerNavigationPending=false;
+    function continueBuyerNavigation(){
+      if(!buyerNavigationPending||state.busyId||state.pendingSelectionIds.size)return;
+      buyerNavigationPending=false;post('catalogueWorkspaceBuyerRoom');
+    }
     let browseRevision, positionFrame;
     function reportCataloguePosition() {
       if (!mobile.matches || !Number.isInteger(browseRevision) || state.selectionView || positionFrame) return;
@@ -421,7 +426,9 @@
         }
         render(true);
         sendNextSelection();
+        continueBuyerNavigation();
       }
+      if(d.type==='cataloguePrepareBuyerRoom'){buyerNavigationPending=true;continueBuyerNavigation()}
       if(d.type==='catalogueWorkspaceFilter')applyCatalogueFilter(d);
       if(d.type==='catalogueWorkspaceMenuState')document.body.classList.toggle('mega-open',Boolean(d.open))
     });

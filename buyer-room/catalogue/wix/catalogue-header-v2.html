@@ -56,9 +56,9 @@
   </div></header>
   <script>
     const post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-    const buttons=[...document.querySelectorAll('.navbtn')];const buyerRoom=document.getElementById('buyerRoom');let active='',hoverTimer,staffPreview=false;
+    const buttons=[...document.querySelectorAll('.navbtn')];const buyerRoom=document.getElementById('buyerRoom');let active='',hoverTimer,staffPreview=false,buyerRoomPending=false;
     buyerRoom.addEventListener('click',event=>{
-      if(!buyerRoom.hasAttribute('href')){event.preventDefault();return}
+      if(!buyerRoom.hasAttribute('href')||buyerRoomPending){event.preventDefault();return}
       if(staffPreview||matchMedia('(max-width:900px)').matches){event.preventDefault();post('catalogueBuyerRoom')}
     });
     function paint(){buttons.forEach(button=>button.classList.toggle('active',button.dataset.key===active))}
@@ -84,6 +84,10 @@
         for(const [id,value] of [['mobileCompany',data.sheetName],['mobileActor',data.signedInName]]){
           const label=document.getElementById(id);label.textContent=String(value||'').trim();label.title=label.textContent
         }
+      }else if(data.type==='catalogueBuyerRoomPending'){
+        buyerRoomPending=Boolean(data.pending);buyerRoom.setAttribute('aria-disabled',String(buyerRoomPending));
+        buyerRoom.setAttribute('aria-busy',String(buyerRoomPending));
+        buyerRoom.querySelector('.label').textContent=buyerRoomPending?'Opening…':staffPreview?'Choose customer':'Buyer Room';
       }else if(data.type==='catalogueHeaderFilter'){
         clearTimeout(mobileSearchTimer);
         mobileSearch.value=String(data.query||'');
