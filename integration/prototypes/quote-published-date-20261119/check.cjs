@@ -6,7 +6,7 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { load, createStore, initialState } = require('../web-quotations/isolation.cjs');
 const { patchBuyerQuoteDate } = require('./patch.cjs');
-const baseline = fs.readFileSync(process.env.BUYER_BASELINE || 'C:/FMCG-WIX-LOCAL/handoff/quote-date-feedback-20261119/live/buyer-room.html', 'utf8');
+const baseline = fs.readFileSync(process.env.BUYER_BASELINE || path.resolve(__dirname,'../../../buyer-room.html'), 'utf8');
 test('published date comes from immutable CMS receipt, with no new writes or changed version cache key', async () => {
   const state = initialState();
   const wixData = createStore(state, () => {});
