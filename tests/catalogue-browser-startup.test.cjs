@@ -45,11 +45,12 @@ test('browser still waits for authoritative staff identity before publishing cus
     { authorized: true, canViewAllCustomers: true, staffName: 'Fixture staff' },
     { ok: true, customerId: 'CUS-FIXTURE', companyName: 'Fixture Trading', activeSelectedProductIds: [] });
   const started = p.callbacks[0]();
+  assert.equal(started, undefined, 'Wix can mount the page while identity is checked');
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(p.calls.slice(-2), ['selection', 'staff']);
   assert.deepEqual(p.messages, []);
   p.releaseStaff();
-  await started;
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(p.messages.at(-1).sheetName, 'Fixture Trading');
   assert.equal(p.messages.at(-1).signedInName, 'Fixture staff');
   assert.equal(p.messages.at(-1).buyerRoomUrl, 'https://fixture.test/buyer-room?assist=CUS-FIXTURE');
@@ -60,8 +61,9 @@ test('browser still rejects a different customer response and denied staff', asy
     const p = page('browser', { authorized, canViewAllCustomers: true },
       { ok: true, customerId: 'CUS-OTHER', companyName: 'Other Trading' });
     const started = p.callbacks[0]();
+    assert.equal(started, undefined);
     p.releaseStaff();
-    await started;
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(p.messages.length, 0);
     assert.deepEqual(p.redirects, [authorized ? '/blank-1' : '/']);
   }

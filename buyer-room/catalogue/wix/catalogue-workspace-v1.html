@@ -5,7 +5,7 @@
 <meta name="catalogue-category-ready-build" content="20261117-catalogue-category-ready-v1">
 <meta name="catalogue-mobile-names-build" content="20261117-catalogue-mobile-names-v1">
 <meta name="catalogue-mobile-detail-build" content="20261118-catalogue-mobile-detail-v1">
-<meta name="catalogue-workroom-build" content="20261119-catalogue-sort-cost-v1">
+<meta name="catalogue-workroom-build" content="20261119-catalogue-critical-load-v1">
 <meta name="catalogue-selection-return-build" content="20261117-catalogue-selection-return-v1">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -172,7 +172,7 @@
     <dialog class="detail-modal" id="detailModal" aria-labelledby="detailName"></dialog>
   </main>
   <script>
-    const state={products:[],selectionProducts:[],selectedIds:new Set(),activeSelectedIds:new Set(),pendingSelectionIds:new Set(),activeId:'',query:'',main:'',subIds:[],principle:'',selectionView:'',selectionLimit:100,selectionTotal:0,selectionFoodCount:0,selectionNonFoodCount:0,selectionCountsReady:false,busyId:'',selectionErrorIds:new Set(),optimisticProducts:new Map(),buyerRoomUrl:''};
+    const state={products:[],selectionProducts:[],selectedIds:new Set(),activeSelectedIds:new Set(),pendingSelectionIds:new Set(),activeId:'',query:'',main:'',subIds:[],principle:'',selectionView:'',selectionLimit:100,selectionTotal:0,selectionFoodCount:0,selectionNonFoodCount:0,selectionCountsReady:false,selectionReady:false,busyId:'',selectionErrorIds:new Set(),optimisticProducts:new Map(),buyerRoomUrl:''};
     let renderLimit=120;
     let browseRevision, positionFrame;
     function reportCataloguePosition() {
@@ -324,7 +324,16 @@
       if(state.principle&&text(p.principle).toLowerCase()!==state.principle.toLowerCase())return false;
       if(q&&!`${p.name} ${p.description} ${p.barcode} ${p.principle}`.toLowerCase().includes(q))return false;
       return true})}
-    function imageMarkup(p,large=false){return p.image?`<img src="${esc(p.image)}" alt="">`:`<span class="fallback">${large?'IMAGE PENDING':'NO IMAGE'}</span>`}
+    function thumbnailUrl(source){
+      try{
+        const url=new URL(source);
+        if(url.origin==='https://static.wixstatic.com'&&/^\/media\/[^/]+$/.test(url.pathname)){
+          return url.origin+url.pathname+'/v1/fit/w_168,h_168,q_85,enc_auto/product.png';
+        }
+      }catch{}
+      return source;
+    }
+    function imageMarkup(p,large=false){return p.image?`<img src="${esc(large?p.image:thumbnailUrl(p.image))}" loading="lazy" decoding="async"${large?'':' width="168" height="168"'} alt="">`:`<span class="fallback">${large?'IMAGE PENDING':'NO IMAGE'}</span>`}
     function render(preserveScroll=false){const scrollTop=rows.scrollTop,allItems=filtered(),items=allItems.slice(0,renderLimit),pending=state.selectionCountsReady?'':'—';document.getElementById('selectionCount').textContent=state.selectionCountsReady?state.selectionTotal:pending;document.getElementById('selectionLimit').textContent=state.selectionLimit;document.getElementById('foodSelectionCount').textContent=state.selectionCountsReady?state.selectionFoodCount:pending;document.getElementById('nonFoodSelectionCount').textContent=state.selectionCountsReady?state.selectionNonFoodCount:pending;document.getElementById('selectionAllowance').textContent=`Your account allows up to ${state.selectionLimit} selected SKUs.`;document.getElementById('selectionFilter').classList.toggle('active',state.selectionView==='ALL');document.getElementById('foodSelectionFilter').classList.toggle('active',state.selectionView==='FOOD');document.getElementById('nonFoodSelectionFilter').classList.toggle('active',state.selectionView==='NON_FOOD');
       document.body.classList.toggle('selection-view',Boolean(state.selectionView));
       if(!allItems.length){rows.innerHTML='<div class="empty">No products match the current filter.</div>';showDetail(null);updateDetailNavigation(allItems);return}
@@ -336,8 +345,8 @@
       const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;document.getElementById('productImage').innerHTML=imageMarkup(p,true);document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
       const price=Number(p.unitPrice);document.getElementById('detailPrice').textContent=Number.isFinite(price)&&price>0?`${text(p.currency)||'USD'} ${price.toFixed(2)}`:'QUOTE REQUIRED';document.getElementById('priceUnit').textContent=Number.isFinite(price)&&price>0?'/ PC':'';
       const isSelected=selected(p),hasError=state.selectionErrorIds.has(p.id);
-      button.disabled=isSelected;button.classList.toggle('selected',isSelected);
-      button.textContent=isSelected?'✓ Selected':hasError?'Try Select for Quote Again':'+ Select for Quote';
+      button.disabled=isSelected||!state.selectionReady;button.classList.toggle('selected',isSelected);
+      button.textContent=isSelected?'✓ Selected':!state.selectionReady?'Loading account…':hasError?'Try Select for Quote Again':'+ Select for Quote';
       button.onclick=()=>{if(!isSelected)selectProduct(p.id)}}
     function markSelected(product){
       if(state.activeSelectedIds.has(product.id))return;
@@ -356,6 +365,7 @@
       post('catalogueWorkspaceSelect',{productId});
     }
     function selectProduct(productId){
+      if(!state.selectionReady)return;
       if(state.selectedIds.has(text(productId)))return;
       const product=state.products.find(item=>item.id===productId);
       if(!product)return;
@@ -391,6 +401,7 @@
           else markSelected(product);
         }
         state.selectionCountsReady=d.selectionCountsReady!==false;state.buyerRoomUrl=text(d.buyerRoomUrl);
+        state.selectionReady=d.selectionReady!==false;
         render(true);
       }
       if(d.type==='catalogueWorkspaceSelection'){
