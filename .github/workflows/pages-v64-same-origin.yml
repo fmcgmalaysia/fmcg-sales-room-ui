@@ -106,6 +106,7 @@ on:
           - master-department-brand-only
           - catalogue-complete-only
           - quotation-buyer-followup-only
+          - purchase-support-shortfall-only
           - sales-qd-retirement-only
           - purchase-supplier-profile-fields-only
           - master-dialog-headers-only
@@ -1557,6 +1558,31 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/quote-followup-site', runner.temp) }}
+
+
+      - name: Download the verified Purchase and Support release base
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-support-shortfall-only'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: github-pages
+          run-id: 44518607453
+          github-token: ${{ github.token }}
+          path: ${{ format('{0}/purchase-support-base', runner.temp) }}
+
+      - name: Test and stage only Purchase and Support shortfall resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-support-shortfall-only'
+        run: |
+          site="$RUNNER_TEMP/purchase-support-site"
+          mkdir "$site"
+          tar --extract --file "$RUNNER_TEMP/purchase-support-base/artifact.tar" --directory "$site"
+          node --test integration/tests/purchase-support-shortfall.test.cjs integration/tests/customer-allocation-ui.test.cjs integration/tests/purchase-source-grid.test.cjs integration/tests/support-workroom.test.cjs integration/tests/support-split-quantity-preview.test.cjs integration/tests/purchase-quantity-cases.test.cjs integration/tests/purchase-quantity-projection.test.cjs integration/tests/customer-allocation-save.test.cjs
+          node integration/releases/stage-purchase-support-shortfall.cjs "$site"
+
+      - name: Upload the scoped Purchase and Support release
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-support-shortfall-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-support-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment

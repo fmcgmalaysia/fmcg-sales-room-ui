@@ -6,7 +6,7 @@ import { readPurchasePlan, readPurchaseShares, confirmedPurchaseState } from 'ba
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js';
 import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
-import { projectQuantityCases, quantityCasesVersion, customerCaseFeedback } from 'backend/purchaseQuantityCases.js';
+import { projectQuantityCases, quantityCasesVersion, customerCaseFeedback, customerShortfallRoute } from 'backend/purchaseQuantityCases.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readShipmentPlans } from 'backend/customerShipmentPlan.js';
 import { readSalesDemand } from 'backend/salesOrderAdjustment.js';
@@ -16,6 +16,9 @@ import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVers
 import { projectDeskDeliverySummaries } from 'backend/deskDelivery.js';
 import { customerAllocationContext, readAllocationLoans, projectSupplyAllocation } from 'backend/customerAllocationContext.js';
 import { allocationOriginInfo } from 'backend/allocationOriginInfo.js';
+import { readSupportDesks } from 'backend/supportDesk.js';
+import { deskTaskPortions } from 'backend/shortloadResolutionModel.js';
+import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -171,6 +174,24 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   }
   const supply=projectSupplyAllocation({company,tasks:rows},physicalAllocation);
   for(const row of rows){const allocation=supply.find(item=>item.taskId===row.id);if(allocation)row.supplyAllocation=allocation;}
+  const workspace={company,tasks:rows};
+  const handoffs=rows.flatMap(row=>{const route=customerShortfallRoute(workspace,row);return route?[[row,route]]:[];});
+  if(handoffs.length){
+    const hasRoute=handoffs.some(([,route])=>route.revision);
+    const desks=hasRoute?readSupportDesks(activity,company):[],flows=hasRoute?readPhysicalOutflows(activity):[];
+    for(const [row,route] of handoffs){
+      const desk=route.revision?desks.find(state=>state.customerId===row.customerId):null;
+      const assignment=desk?.assignments.find(item=>item.taskId===row.id);
+      const handled=Boolean(route.revision&&assignment?.shortfallRevision===route.revision);
+      const pending=handled?deskTaskPortions(activity,desk,row,flows).find(part=>part.desk===0):null;
+      const missing=pending?Math.min(route.toArrange,Math.max(0,pending.quantity-pending.allocated-route.waiting)):0;
+      row.customerShortfall={...route,
+        splitRequired:route.route==='SUPPORT_SPLIT'&&!handled&&route.received>0&&route.received<route.demand&&route.toArrange>0,
+        arranged:handled,
+        remainder:missing>0?{quantity:pending.quantity,covered:pending.allocated,missing}:null
+      };
+    }
+  }
   const borrowing=readAllocationLoans(activity);
   for(const row of rows){row.borrowingPayable=borrowing.filter(loan=>loan.borrowerTaskId===row.id).reduce((n,loan)=>n+loan.outstanding,0);row.borrowingReceivable=borrowing.filter(loan=>loan.lenderTaskId===row.id).reduce((n,loan)=>n+loan.outstanding,0);row.borrowingOutstanding=row.borrowingPayable+row.borrowingReceivable;if(row.borrowingOutstanding>0)row.archived=false;}
   const pendingRoots=new Set(confirmed.pending.map(item=>item.rootId));

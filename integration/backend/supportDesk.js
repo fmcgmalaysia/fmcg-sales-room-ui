@@ -3,6 +3,7 @@ import { operationId, createOperationJournal } from 'backend/purchaseOperationJo
 import { readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
 import { adjustableDeliveryLine, deskTaskPortions, readShortloadResolutions, readDeskCommitments } from 'backend/shortloadResolutionModel.js';
 import { readPhysicalOutflows, deskLoadedInvoiceQuantity } from 'backend/physicalOutflow.js';
+import { customerShortfallRoute } from 'backend/purchaseQuantityCases.js';
 const ACTION='SUPPORT_DESK_SAVED';
 const deskValid=value=>Number.isSafeInteger(value)&&value>=1&&value<=3;
 const textValid=value=>typeof value==='string'&&value.length>0&&value.length<=100;
@@ -62,6 +63,15 @@ function membershipBaseline(context,taskId,customerId){
   .map(row=>[row.details.list.id,row.details.list.revision]).sort(([a],[b])=>a.localeCompare(b));
  return operationId(task?.requested??task?.ord,task?.archived,task?.transactionCurrency,deliveries);
 }
+function checkShortfallSplit(context,input,parts){
+ const task=context.tasks.find(row=>row.id===input.taskId&&row.customerId===input.customerId);
+ const current=task&&customerShortfallRoute(context,task);
+ const assigned=parts?.filter(part=>part.desk>0)||[];
+ if(current?.route!=='SUPPORT_SPLIT'||current.revision!==input.shortfallRevision||current.toArrange<=0||
+    current.received<=0||current.received>=current.demand||assigned.length!==1||
+    assigned[0].quantity!==current.received||parts.find(part=>part.desk===0)?.quantity!==current.demand-current.received)
+  throw Error('Received quantities or the Purchase decision changed. Refresh before confirming the split.');
+}
 export function createSupportDeskOperations({store,names,readContext,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async request=>{
@@ -76,6 +86,7 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
      const context=await readContext(company,staff);
      requireConfirmedProcurement(context,[input.taskId]);
      if(membershipBaseline(context,input.taskId,input.customerId)!==plan.baseline)throw Error('Desk details changed. Refresh before editing.');
+     if(input.shortfallRevision)checkShortfallSplit(context,input,plan.state.assignments.find(row=>row.taskId===input.taskId)?.parts);
     }
     return persist(plan.event,request,plan.state,plan.digest);
    }});
@@ -84,7 +95,7 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
   if(!['NCT','GHR'].includes(company)||!names[company]||staff?.packingDepartment!=='SUPPORT'||!staff.memberId||!staff.staffId||!staff.staffName)throw Error('Support access is required.');
   if(!/^[a-f0-9-]{36}$/i.test(requestId||'')||!input||!textValid(input.customerId)||!(deskValid(input.desk)||['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)&&input.desk===0)||typeof input.revision!=='string'||input.revision.length>100||!['DESK_ASSIGN','DESK_SPLIT','DESK_SHIPMENT','DESK_REFERENCES','DESK_ARCHIVE','DESK_ORDER'].includes(input.action))throw Error('Select a customer and Desk 1, 2 or 3.');
   let normalized;
-  if(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)){if(!textValid(input.taskId)||input.action==='DESK_SPLIT'&&!validParts(input.parts))throw Error('Select an active customer task and valid Desk quantities.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,taskId:input.taskId,...(input.action==='DESK_SPLIT'?{parts:input.parts.map(part=>({desk:part.desk,quantity:part.quantity})).sort((a,b)=>a.desk-b.desk)}:{})};}
+  if(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)){if(!textValid(input.taskId)||input.action==='DESK_SPLIT'&&(!validParts(input.parts)||input.shortfallRevision!==undefined&&!textValid(input.shortfallRevision)))throw Error('Select an active customer task and valid Desk quantities.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,taskId:input.taskId,...(input.action==='DESK_SPLIT'?{parts:input.parts.map(part=>({desk:part.desk,quantity:part.quantity})).sort((a,b)=>a.desk-b.desk),...(input.shortfallRevision?{shortfallRevision:input.shortfallRevision}:{})}:{})};}
   else if(input.action==='DESK_SHIPMENT'){
    if(input.details){if(!detailShipmentValid(input)||!['poNo','soNo'].every(key=>referenceText(input.details[key]))||!detailReferenceValid(input.details))throw Error('Enter valid Desk references, deposit details and shipment dates.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,transport:input.transport,date:input.date,arrival:input.arrival,lastGateIn:input.lastGateIn,departureDate:input.departureDate,details:{poNo:input.details.poNo.trim(),soNo:input.details.soNo.trim(),invoiceNoDraft:input.details.invoiceNoDraft.trim(),depositAmountCents:input.details.depositAmountCents,depositDate:input.details.depositDate,depositCurrency:input.details.depositCurrency}};}
    else{if(!transports.includes(input.transport)||!dateValid(input.date)||!(input.arrival===''||dateValid(input.arrival)&&input.arrival>=input.date))throw Error('Enter valid shipment and arrival dates.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,transport:input.transport,date:input.date,arrival:input.arrival};}
@@ -138,6 +149,15 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
    if(changedShipmentFields.includes('lastGateIn')&&normalized.lastGateIn&&!/:(00|15|30|45)$/.test(normalized.lastGateIn))throw Error('Select Last Gate In minutes 00, 15, 30 or 45.');
   }
   if(normalized.details?.depositAmountCents!==null&&normalized.details?.depositAmountCents!==undefined){const currencies=[...new Set(tasks.filter(task=>(readShortloadResolutions(context.activity).some(row=>row.taskId===task.id)||before.assignments.find(row=>row.taskId===task.id)?.parts)?deskTaskPortions(context.activity,before,task).some(part=>part.desk===input.desk&&part.quantity>0):supportDeskForTask(before,task.id)===input.desk).map(task=>task.transactionCurrency))];if(currencies.length!==1||currencies[0]!==normalized.details.depositCurrency)throw Error('Desk deposit currency must match its assigned order currency.');}
+  if(normalized.action==='DESK_SHIPMENT'&&!changedShipmentFields.length){
+   const previous=before.references?.find(row=>row.desk===input.desk);
+   const unchanged=!normalized.details||Object.entries(normalized.details).every(([key,value])=>
+    value===(previous?.[key]??(key==='depositAmountCents'?null:'')));
+   if(unchanged){
+    const receipt={ok:true,company,requestId,noChange:true,deskState:before};
+    return prepareOnly?{receipt}:receipt;
+   }
+  }
   const state=copy(before);delete state.revision;
   if(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)){
    const split=input.action==='DESK_SPLIT';
@@ -159,8 +179,16 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
      if(list?.status!=='CANCELLED'&&list&&(!adjustable||list.currency!==task.transactionCurrency))throw Error('This Desk has saved Warehouse work or uses a different currency. Resolve it before changing this task.');
      if(adjustable)hold.membershipChanges={...hold.membershipChanges,[task.id]:requestId};
     }
+   const previousAssignment=before.assignments.find(row=>row.taskId===input.taskId);
+   const activeHandoff=customerShortfallRoute(context,task);
+   if(split&&!input.shortfallRevision&&activeHandoff?.route==='SUPPORT_SPLIT'&&activeHandoff.toArrange>0&&activeHandoff.received>0&&
+      activeHandoff.received<activeHandoff.demand&&previousAssignment?.shortfallRevision!==activeHandoff.revision){
+    checkShortfallSplit(context,input,requested);
+   }
+   if(split&&input.shortfallRevision)checkShortfallSplit(context,input,requested);
+   const shortfallRevision=input.shortfallRevision||previousAssignment?.shortfallRevision;
    const dispositionRevision=readShortloadResolutions(context.activity).filter(row=>row.taskId===input.taskId&&row.customerId===input.customerId).at(-1)?.revision||'';
-   state.assignments=state.assignments.filter(row=>row.taskId!==input.taskId).concat({taskId:input.taskId,desk:input.desk,...(split||dispositionRevision?{parts:requested,dispositionRevision}:{})}).sort((a,b)=>a.taskId.localeCompare(b.taskId));
+   state.assignments=state.assignments.filter(row=>row.taskId!==input.taskId).concat({taskId:input.taskId,desk:input.desk,...(split||dispositionRevision?{parts:requested,dispositionRevision,...(shortfallRevision?{shortfallRevision}:{})}:{})}).sort((a,b)=>a.taskId.localeCompare(b.taskId));
   }
   else if(input.action==='DESK_SHIPMENT'){
    state.shipments=state.shipments.filter(row=>row.desk!==input.desk).concat({...previousShipment,desk:input.desk,transport:input.transport,date:input.date,arrival:input.arrival,...(normalized.details?{detailsVersion:3,lastGateIn:normalized.lastGateIn,departureDate:normalized.departureDate}:{}),...(changedShipmentFields.length?{bookedBy:staff.staffName}:{})}).sort((a,b)=>a.desk-b.desk);
@@ -213,9 +241,9 @@ export function checkSupportDeskInvoice(context,readiness,input,owner){
 
 // Invoice admission shares the Desk revision chain with task moves and shipment edits.
 // This is a business hold, never a timeout-expiring application lock.
-export function readSupportDeskLocks(context){
+export function readSupportDeskLocks(context,readShipments=readCustomerShipments){
  const locks=readSupportDesks(context.activity,context.company).flatMap(state=>(state.locks||[]).map(lock=>({...copy(lock),customerId:state.customerId,status:'PENDING'})));
- const shipments=readCustomerShipments(context.activity);
+ const shipments=readShipments(context.activity);
  for(const intent of context.activity.filter(row=>row.action==='SUPPORT_INVOICE_PREPARED'&&row.details?.desk)){
   const ready=context.activity.find(row=>row.title===operationId(intent._id,'SUPPORT_INVOICE_INPUT_SAVED')),shipment=ready&&shipments.find(row=>row.id===ready.description);
   if(shipment?.status==='CANCELLED')continue;

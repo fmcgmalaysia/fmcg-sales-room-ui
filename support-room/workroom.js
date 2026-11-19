@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  document.documentElement.dataset.supportBuild='20261115-support-shared-activity-v1';
+  document.documentElement.dataset.supportBuild='20261119-master-workroom-domain-v1';
   const $=id=>document.getElementById(id),esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const number=(value,places=0)=>typeof value==='number'&&Number.isFinite(value)?value.toLocaleString('en-GB',{minimumFractionDigits:places,maximumFractionDigits:places}):'—';
   const supportDayFormat=new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'2-digit',timeZone:'UTC'});
@@ -12,7 +12,7 @@
   const deliveryAttempts=new Map();let delivering=false;
   const detailsDrafts=new Map();let detailsContext=null,detailOpener=null;
   const pending=new Map(),activeReadSets=new Map(),bookingAttempts=new Map(),invoiceAttempts=new Map(),selectedLines=new Set(),documentAttempts=new Map();let parentOrigin='',bookingOrder='',bookingBusy=false,invoiceBusy=false,reviewOrder='',documentContext=null,documentBusy=false,dragContext=null;const rowPreferences=new Map();
-  try{const ref=new URL(location.ancestorOrigins?.[0]||document.referrer);if(['fmcg999.wixstudio.com','fmcg999-master.editor.wix.com'].includes(ref.hostname))parentOrigin=ref.origin;}catch(_){}
+  try{const ref=new URL(location.ancestorOrigins?.[0]||document.referrer);if((['fmcg999.wixstudio.com','fmcg999-master.editor.wix.com'].includes(ref.hostname)||['https://www.ltpos.ai','https://ltpos.ai'].includes(ref.origin)))parentOrigin=ref.origin;}catch(_){}
   $('guide-items').innerHTML=guides.map(([code,label,zh])=>'<div class="guide-item"><strong>'+code+'</strong><span>'+label+'<small>'+zh+'</small></span></div>').join('');
   function send(type,input,identity){
     if(parent===window||!parentOrigin)return Promise.reject(Error('Open this workroom from the MASTER Support page. 请从 MASTER Support 页面打开。'));
@@ -26,9 +26,74 @@
     if(message.type==='FULFILMENT_LOGIN_RESULT'&&message.ok){load();return;}
     if(!request||message.company!==request.company||message.type!==request.resultType)return;
     clearTimeout(request.timer);pending.delete(message.requestId);
-    if(message.ok!==true||message.result?.ok===false){const error=Error(message.error||message.result?.error||'Could not load current orders.');error.retryable=message.result?.retryable;request.reject(error);}
+    if(message.ok!==true||message.result?.ok===false){const error=Error(message.error||message.result?.error||'Could not load current orders.');error.retryable=message.result?.retryable;if(message.type==='FULFILMENT_READ_RESULT')error.readStatus=message.readStatus;request.reject(error);}
     else request.resolve(message.result);
   });
+  let productCbm=null,productOrder=null,holdProductOrder=false;
+  function productOrderKey(){return JSON.stringify([company,selectedCustomer,activeDesk,activeDesk?deskBatch():null]);}
+  function productDeskLines(rows,invoiced){
+    if(invoiced||productOrder?.key!==productOrderKey())return rows;
+    const rank=new Map(productOrder.ids.map((id,index)=>[id,index]));
+    return [...rows].sort((a,b)=>(rank.get(a.taskId)??rank.size)-(rank.get(b.taskId)??rank.size));
+  }
+  async function sortProductDesk(button){
+    const key=productOrderKey();
+    if(productOrder?.key===key){productOrder=null;render();return;}
+    const order=activeOrder();
+    if(!order||deskLock()||button.disabled)return;
+    const ids=viewLines(order).map(line=>line.taskId);
+    button.disabled=true;
+    try{
+      const result=await send('SUPPORT_PRODUCT_REQUEST',{action:'SORT',taskIds:ids});
+      if(key!==productOrderKey()||deskLock())return;
+      if(!Array.isArray(result.taskIds)||result.taskIds.length!==ids.length||new Set(result.taskIds).size!==ids.length||
+         result.taskIds.some(id=>!ids.includes(id)))throw Error('Product order could not be confirmed.');
+      const current=activeOrder();
+      if(!current||viewLines(current).map(line=>line.taskId).join('|')!==ids.join('|'))throw Error('The Desk changed. Sort it again.');
+      if(!result.matched)throw Error('Pointbase product order was unavailable for these rows.');
+      productOrder={key,ids:result.taskIds};
+      render();
+    }catch(error){if(key===productOrderKey())$('notice').textContent=error.message;}
+    finally{button.disabled=false;}
+  }
+  function openProductCbm(taskId){
+    const row=activeOrder()?.lines.find(line=>line.taskId===taskId);
+    if(!row||row.cbm>0||currentDeskInvoice())return;
+    productCbm={taskId,key:productOrderKey(),preview:null};
+    info('Missing CBM','<p><strong>'+esc(row.name)+'</strong> · '+esc(row.barcode)+'</p>'+
+      '<p>Ask Super Admin to update CBM / CTN in Pointbase first.</p><p id="product-cbm-status" role="status"></p>'+
+      '<button type="button" data-product-cbm="CBM_PREVIEW">Fetch from Pointbase</button>');
+  }
+  async function runProductCbm(button){
+    const context=productCbm,action=button.dataset.productCbm,status=$('product-cbm-status');
+    if(!context||context.key!==productOrderKey()||button.disabled||!status)return;
+    button.disabled=true;
+    status.textContent=action==='CBM_PREVIEW'?'Checking Pointbase…':'Confirming CBM…';
+    const current=()=>productCbm===context&&context.key===productOrderKey()&&$('information').open;
+    try{
+      const result=await send('SUPPORT_PRODUCT_REQUEST',{action,taskId:context.taskId,...(action==='CBM_APPLY'?{preview:context.preview}:{})});
+      if(action==='CBM_APPLY'){
+        if(context.key===productOrderKey())await load([0,1]);
+        if(!current())return;
+        const saved=result.results.filter(row=>row.status!=='unconfirmed').length;
+        const remaining=result.results.length-saved;
+        status.textContent=saved+' task'+(saved===1?'':'s')+' updated.'+(remaining?' '+remaining+' unconfirmed. Refresh and reopen remaining red CBM alerts.':'');
+        button.hidden=true;
+        return;
+      }
+      if(!current())return;
+      context.preview={revision:result.revision,cbmPerCtn:result.cbmPerCtn};
+      status.textContent=number(result.cbmPerCtn,4)+' m³ / CTN · '+result.affected.length+' active task'+(result.affected.length===1?'':'s');
+      button.dataset.productCbm='CBM_APPLY';
+      button.textContent='Apply CBM';
+    }catch(error){
+      if(current()){
+        status.textContent=error.message;
+        button.dataset.productCbm='CBM_PREVIEW';
+        button.textContent='Fetch again';
+      }
+    }finally{button.disabled=false;}
+  }
   function info(title,html){$('print-saved-invoice').hidden=true;$('information-title').textContent=title;$('information-body').innerHTML=html;$('information').showModal();}
   function matching(rows,filterCustomer=true){const query=$('search').value.trim().toLowerCase(),customer=filterCustomer?$('customer-filter').value:'';return rows.filter(row=>(!customer||row.customerId===customer||row.id===customer)&&(!query||[row.customerName,row.name,row.orderId,row.number,row.currency,...(row.invoices||[]).map(invoice=>invoice.number)].filter(Boolean).join(' ').toLowerCase().includes(query)));}
   function table(headers,rows,cls=''){return '<table class="work-table '+cls+'"><thead><tr>'+headers.map(([label,num])=>'<th'+(num?' class="num"':'')+'>'+label+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+(rows.length?'':'<tr><td class="empty" colspan="'+headers.length+'">No matching records</td></tr>')+'</tbody></table>';}
@@ -168,6 +233,20 @@
     if(!attempt||!model)return null;const hold=model.deskLocks.find(row=>row.customerId===customerId&&row.desk===attempt.input.desk.number&&row.status==='ISSUED'&&row.requestId===attempt.requestId),invoice=hold&&model.invoices.find(row=>row.id===hold.invoiceId);
     return invoice&&invoice.customerId===customerId&&invoice.number===attempt.input.number&&invoice.lines.length===attempt.input.lines.length&&attempt.input.lines.every(line=>invoice.lines.some(saved=>saved.taskId===line.taskId&&saved.quantity===line.quantity))?invoice:null;
   }
+  async function checkSupportReceipt(parts,saveCompany,confirmed,definiteRejection){
+    const retryDelays=definiteRejection?[]:[5000,15000,45000];
+    for(let i=0;i<=retryDelays.length;i++){
+      if(company!==saveCompany)return false;
+      await load(parts,true);
+      if(company!==saveCompany)return false;
+      if(confirmed())return true;
+      if(i<retryDelays.length){
+        await new Promise(resolve=>setTimeout(resolve,retryDelays[i]));
+        if(document.hidden||navigator.onLine===false)return false;
+      }
+    }
+    return false;
+  }
   $('invoice-form').onsubmit=async event=>{
     event.preventDefault();if(invoiceBusy)return;const order=activeOrder();if(!order)return;const saveCompany=company,key=company+'|'+reviewOrder;let attempt=invoiceAttempts.get(key);
     if(!attempt&&!deskReceiptsComplete(order)){$('invoice-status').textContent='Complete receiving for every line on this Desk before confirming its invoice.';return;}
@@ -175,7 +254,7 @@
     if(!attempt){const lines=selectedReview(order).map(line=>({...line,quantity:Number(document.querySelector('[data-invoice-qty="'+line.taskId+'"]')?.value)}));if(!lines.length||lines.some(line=>!Number.isSafeInteger(line.quantity)||line.quantity<1||line.quantity>line.invoiceReadyQty))return;attempt={requestId:crypto.randomUUID(),review:lines,input:{version:data.invoiceVersion,desk:{number:activeDesk,revision:deskState().revision},customerId:order.customerId,orderId:lines[0].orderId,...(new Set(lines.map(line=>line.orderId)).size>1?{orderIds:[...new Set(lines.map(line=>line.orderId))]}:{}),number:$('invoice-number').value.trim(),lines:lines.map(line=>({taskId:line.taskId,quantity:line.quantity}))}};if(!attempt.input.number)return;invoiceAttempts.set(key,attempt);}
     invoiceBusy=true;$('invoice-confirm').disabled=true;$('invoice-fields').disabled=true;$('invoice-withdraw').disabled=true;document.querySelectorAll('[data-invoice-qty]').forEach(input=>input.disabled=true);$('invoice-status').textContent='Creating invoice…';
     try{const result=await send('SUPPORT_INVOICE_SAVE_REQUEST',attempt.input,attempt.requestId);if(result.company!==saveCompany||result.requestId!==attempt.requestId||!result.shipmentId)throw Error('Invoice creation could not be confirmed.');invoiceAttempts.delete(key);selectedLines.clear();$('invoice-review').close();if(company===saveCompany){await load([0,1,2,3]);selectedCustomer=order.customerId;if(deskLock()?.archiveRequired===true){render();return;}view='transactions';$('customer-filter').value=selectedCustomer;render();}}
-    catch(error){$('invoice-status').textContent='Checking saved invoice…';if(company===saveCompany)await load([0,1,2,3]);if(company===saveCompany&&confirmedInvoiceAttempt(attempt,data,order.customerId)){invoiceAttempts.delete(key);selectedLines.clear();$('invoice-review').close();selectedCustomer=order.customerId;if(deskLock()?.archiveRequired===true){render();return;}view='transactions';$('customer-filter').value=selectedCustomer;render();}else{$('invoice-status').textContent=error.message;$('invoice-confirm').textContent='Retry Confirmation';$('invoice-withdraw').hidden=false;}}
+    catch(error){$('invoice-status').textContent='Checking the original invoice request…';if(await checkSupportReceipt([0,2,3],saveCompany,()=>confirmedInvoiceAttempt(attempt,data,order.customerId),error.retryable===false)){invoiceAttempts.delete(key);selectedLines.clear();$('invoice-review').close();selectedCustomer=order.customerId;if(deskLock()?.archiveRequired===true){render();return;}view='transactions';$('customer-filter').value=selectedCustomer;render();}else{$('invoice-status').textContent=error.message;$('invoice-confirm').textContent='Retry Confirmation';$('invoice-withdraw').hidden=false;}}
     finally{invoiceBusy=false;$('invoice-confirm').disabled=false;$('invoice-withdraw').disabled=false;}
   };
   $('invoice-withdraw').onclick=async()=>{const key=company+'|'+reviewOrder,attempt=invoiceAttempts.get(key);if(!attempt||invoiceBusy)return;invoiceBusy=true;$('invoice-withdraw').disabled=true;$('invoice-confirm').disabled=true;attempt.cancelId=attempt.cancelId||crypto.randomUUID();try{const result=await send('SUPPORT_INVOICE_CANCEL_REQUEST',{invoiceRequestId:attempt.requestId},attempt.cancelId);if(!result.cancelled||result.requestId!==attempt.cancelId)throw Error('Withdrawal is not confirmed.');invoiceAttempts.delete(key);selectedLines.clear();$('invoice-review').close();await load([0,1,2,3]);}catch(error){$('invoice-status').textContent=error.message;}finally{invoiceBusy=false;$('invoice-withdraw').disabled=false;$('invoice-confirm').disabled=false;}};
@@ -245,8 +324,8 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     try{if(!attempt){const file=$('document-file').files[0];if(!file||file.size>3*1024*1024||file.size<5)throw Error('Select a PDF up to 3 MiB.');const bytes=new Uint8Array(await file.arrayBuffer());if(new TextDecoder().decode(bytes.slice(0,5))!=='%PDF-')throw Error('Select a valid PDF.');if(ctx.recovery){if(ctx.recovery.blocked)throw Error('The original request needs review.');const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(value=>value.toString(16).padStart(2,'0')).join('');if(file.size!==ctx.recovery.size||digest!==ctx.recovery.sha256)throw Error('Select the exact original PDF. The original request is retained. 请选择原PDF，原请求已保留。');}const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(Error('File could not be read.'));reader.readAsDataURL(file);});const chargeLines=ctx.charge&&!ctx.recovery?chargeValues():null;const invoiceId=ctx.charge?'':ctx.code==='SI'?$('document-invoice').value:ctx.invoiceId,scope=ctx.charge==='STANDALONE_DN'?'CUSTOMER':ctx.charge?'INVOICE':ctx.customerScope?'CUSTOMER':ctx.desk?'DESK':invoiceId&&['SI','CN','DN','$'].includes(ctx.code)?'INVOICE':'ORDER',amountCents=ctx.charge?(chargeLines?.reduce((n,row)=>n+row.amountCents,0)??ctx.recovery.input.amountCents):['CN','DN','$'].includes(ctx.code)?Math.round(Number($('document-amount').value)*100):0;attempt=ctx.recovery?{requestId:ctx.recovery.requestId,input:{...ctx.recovery.input,base64}}:{requestId:crypto.randomUUID(),input:{version:data.documentVersion,code:ctx.code,customerId:ctx.customerId,orderId:ctx.orderId,invoiceId,scope,...(ctx.charge?{invoiceKind:ctx.charge,chargeCurrency:$('charge-currency').value,chargeLines}:{}),...(ctx.replacesDocumentId?{replacesDocumentId:ctx.replacesDocumentId}:{}),...(ctx.desk?{desk:ctx.desk,batchId:ctx.batchId}:{}),...(ctx.code==='$'?{depositPayment:$('document-deposit').checked}:{}),reference:$('document-reference').value.trim(),amountCents,base64}};documentAttempts.set(key,attempt);}
       $('document-fields').disabled=true;const result=await send('SUPPORT_DOCUMENT_SAVE_REQUEST',attempt.input,attempt.requestId);if(result.company!==saveCompany||result.requestId!==attempt.requestId||!result.documentId)throw Error('Document upload could not be confirmed.');documentAttempts.delete(key);$('documents').close();if(company===saveCompany)await load(ctx.charge==='STANDALONE_DN'?[0,4]:[4]);
     }catch(error){
-      $('document-status').textContent='Checking saved document…';if(company===saveCompany)await load([4]);
-      if(company===saveCompany&&window.SupportWorkroom.confirmedDocumentAttempt(attempt,data)){documentAttempts.delete(key);$('documents').close();}
+      if(attempt)$('document-status').textContent='Checking the original upload…';
+      if(attempt&&await checkSupportReceipt([4],saveCompany,()=>window.SupportWorkroom.confirmedDocumentAttempt(attempt,data),error.retryable===false)){documentAttempts.delete(key);$('documents').close();}
       else{$('document-status').textContent=error.message;if(attempt)$('document-upload').textContent='Retry Upload';}
     }
     finally{documentBusy=false;$('document-upload').disabled=false;}
@@ -259,8 +338,8 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
   function activeOrder(){
     const orders=data.orders.filter(row=>row.customerId===selectedCustomer),customer=data.customers.find(row=>row.id===selectedCustomer);if(!customer)return null;
     const hold=deskLock(),invoice=currentDeskInvoice(),all=orders.flatMap(row=>row.lines),open=all.filter(line=>line.invoicedQty<(line.orderQty??0));
-    const frozen=invoice?invoice.lines.map(part=>{const source=all.find(row=>row.taskId===part.taskId)||{},ea=source.pricePc>0&&source.priceCtn>0?source.priceCtn/source.pricePc:null;return {...source,...part,orderQty:part.quantity,allocQty:part.quantity,loadedQty:part.quantity,invoiceReadyQty:0,invoicedQty:part.quantity,priceCtn:part.sellingPriceCtn,pricePc:ea?part.sellingPriceCtn/ea:null,currency:invoice.currency};}):null;
-    const lines=frozen||open.flatMap(line=>{if(!activeDesk)return [{...line,orderQty:Math.max(0,line.orderQty-line.invoicedQty),allocQty:Math.max(0,line.allocQty-line.invoicedQty),loadedQty:Math.max(0,line.loadedQty-line.invoicedQty),invoicedQty:0}];if(line.deskPortions?.length){const part=line.deskPortions.find(row=>row.desk===activeDesk);return part&&part.quantity>(part.invoiced||0)?[{...line,portionDesk:part.desk,orderQty:part.quantity-(part.invoiced||0),allocQty:Math.max(0,(part.planned??part.allocated)-(part.invoiced||0)),loadedQty:Math.max(0,part.loaded-(part.invoiced||0)),invoicedQty:0,invoiceReadyQty:part.invoiceReadyQty}]:[];}return taskDesk(line.taskId)===activeDesk?[line]:[];}),currencies=[...new Set(lines.map(line=>line.currency).filter(Boolean))];
+    const frozen=invoice?invoice.lines.map(part=>{const source=all.find(row=>row.taskId===part.taskId)||{},ea=source.pricePc>0&&source.priceCtn>0?source.priceCtn/source.pricePc:null;return {...source,...part,cbm:Number.isFinite(part.cbm)&&part.cbm>0?part.cbm:null,orderQty:part.quantity,allocQty:part.quantity,loadedQty:part.quantity,invoiceReadyQty:0,invoicedQty:part.quantity,priceCtn:part.sellingPriceCtn,pricePc:ea?part.sellingPriceCtn/ea:null,currency:invoice.currency};}):null;
+    const lines=frozen||open.flatMap(line=>{if(!activeDesk)return [{...line,orderQty:Math.max(0,line.orderQty-line.invoicedQty),allocQty:Math.max(0,line.allocQty-line.invoicedQty),loadedQty:Math.max(0,line.loadedQty-line.invoicedQty),invoicedQty:0}];if(line.deskPortions?.length){const part=line.deskPortions.find(row=>row.desk===activeDesk);return part&&part.quantity>(part.invoiced||0)?[{...line,portionDesk:part.desk,orderQty:part.quantity-(part.invoiced||0),allocQty:Math.max(0,(part.planned??part.allocated)-(part.invoiced||0)),deskAllocDisplay:Math.max(0,part.allocated-(part.invoiced||0)),loadedQty:Math.max(0,part.loaded-(part.invoiced||0)),invoicedQty:0,invoiceReadyQty:part.invoiceReadyQty}]:[];}return taskDesk(line.taskId)===activeDesk?[line]:[];}),currencies=[...new Set(lines.map(line=>line.currency).filter(Boolean))];
     return {...(orders[0]||{}),id:'TASKS:'+selectedCustomer+':DESK:'+activeDesk,customerId:selectedCustomer,customerName:customer.name,country:customer.country||orders[0]?.country||'',port:customer.port||orders[0]?.port||'',orders,lines,currency:currencies.length===1?currencies[0]:currencies.length?currencies.join(', '):customer.currency||orders[0]?.currency||''};
   }
   function invoiceCurrency(order){const currencies=[...new Set(selectedReview(order).map(line=>line.currency))];return currencies.length===1?currencies[0]:'';}
@@ -269,11 +348,23 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
   function deskState(){return data?.desks?.find(row=>row.customerId===selectedCustomer)||{company,customerId:selectedCustomer,revision:'',assignments:[],shipments:[]};}
   function deskBatch(desk=activeDesk,customerId=selectedCustomer){return data.desks?.find(row=>row.customerId===customerId)?.batches?.find(row=>row.desk===desk)?.id||'';}
   function initialDeskBatch(desk,customerId=selectedCustomer){return data.desks?.find(row=>row.customerId===customerId)?.batches?.find(row=>row.desk===desk)?.initialId||'';}
+  function allocationCell(line,locked){
+    const decision=line.customerShortfall;
+    const quantity=line.deskAllocDisplay??decision?.received??line.allocated;
+    if(!Number.isSafeInteger(quantity)||quantity<0)return number(line.allocQty);
+    const display=number(quantity);
+    if(decision?.splitRequired&&!locked&&(!line.portionDesk||line.portionDesk===taskDesk(line.taskId))){
+      return '<button type="button" class="support-shortfall-split" style="background:#E51B2B;color:white;border:0;border-radius:999px;padding:3px 8px" data-desk-split="'+esc(line.taskId)+'" '+(!data.deskAvailable||deskBusy||deskPending()||invoiceBusy?'disabled':'')+'>'+display+' · Split</button>';
+    }
+    const complete=quantity>=line.orderQty||(decision?.arranged&&line.portionDesk!==0);
+    return '<span style="border-radius:999px;padding:3px 8px;background:'+(complete?'#E4EEFC':'#FFF0D9')+'">'+display+'</span>';
+  }
   function taskDesk(taskId){return deskState().assignments.find(row=>row.taskId===taskId)?.desk||0;}
   function deskPending(){return deskAttempts.get(company+'|'+selectedCustomer);}
   let deskSplitDialog;
   function openDeskSplit(taskId){
     const line=data.orders.flatMap(order=>order.lines).find(line=>line.taskId===taskId);if(!line||deskBusy||deskPending())return;
+    if(line.customerShortfall?.splitRequired)return openPurchaseSplit(line);
     const assignment=deskState().assignments.find(row=>row.taskId===taskId),total=line.orderQty-line.invoicedQty,parts=line.deskPortions?.length?line.deskPortions:assignment?.parts||[{desk:assignment?.desk||0,quantity:total}];
     const unassigned=Math.max(0,(parts.find(part=>part.desk===0)?.quantity||0)-(parts.find(part=>part.desk===0)?.invoiced||0));
     const sources=parts.filter(part=>part.desk>0&&part.quantity>(part.invoiced||0));
@@ -330,11 +421,44 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
       if(ok){deskSplitDialog.close();await load([0,1,2]);}else if(deskPending())button.textContent='Retry same save 重试本次保存';else{fields().forEach(input=>input.disabled=locked(input));preview();}
     };preview();deskSplitDialog.showModal();
   }
+  function openPurchaseSplit(line){
+    const {received,demand,revision}=line.customerShortfall;
+    const current=taskDesk(line.taskId);
+    const available=(current?[current]:[1,2,3]).filter(desk=>!deskLock(desk));
+    if(!available.length){$('notice').textContent='No Desk is available for this split 当前没有可拆分的 Desk。';return;}
+    if(!deskSplitDialog){deskSplitDialog=document.createElement('dialog');deskSplitDialog.className='desk-split-dialog';document.body.append(deskSplitDialog);}
+    deskSplitDialog.setAttribute('aria-labelledby','desk-split-title');
+    deskSplitDialog.innerHTML='<form><header class="dialog-header"><h2 id="desk-split-title">Split shipment 分批出货</h2></header><div class="split-body"><b>'+esc(line.name)+'</b><label>Desk<select required>'+available.map(desk=>'<option value="'+desk+'">Desk '+desk+'</option>').join('')+'</select></label><div class="split-pending"><span>Current batch 本批</span><strong>'+number(received)+' CTN</strong></div><div class="split-pending"><span>Pending 待安排</span><strong>'+number(demand-received)+' CTN</strong></div><p id="split-status" role="status"></p></div><footer><button type="button" data-close>Cancel 取消</button><button type="submit" class="primary">Confirm 确认</button></footer></form>';
+    const form=deskSplitDialog.querySelector('form'),button=form.querySelector('[type=submit]'),select=form.querySelector('select');
+    const canClose=()=>!deskBusy&&!deskPending();
+    form.querySelector('[data-close]').onclick=()=>{if(canClose())deskSplitDialog.close();};
+    deskSplitDialog.oncancel=event=>{if(!canClose())event.preventDefault();};
+    form.onsubmit=async event=>{
+      event.preventDefault();if(deskBusy)return;
+      const desk=Number(select.value);button.disabled=true;select.disabled=true;
+      const input=deskPending()?.input||{action:'DESK_SPLIT',customerId:line.customerId,taskId:line.taskId,desk,revision:deskState().revision,shortfallRevision:revision,parts:[{desk,quantity:received},{desk:0,quantity:demand-received}]};
+      const ok=await saveDeskChange(input,'split-status');
+      if(ok){deskSplitDialog.close();await load([0,1,2]);return;}
+      button.disabled=false;
+      if(deskPending())button.textContent='Retry same save 重试本次保存';
+      else {select.disabled=false;deskSplitDialog.close();await load([0,1,2]);}
+    };
+    deskSplitDialog.showModal();
+  }
   async function saveDeskChange(input,statusId='notice'){
     if(deskBusy)return false;const saveCompany=company,customerId=input.customerId,key=company+'|'+customerId;let attempt=deskAttempts.get(key);
     if(!attempt){attempt={requestId:crypto.randomUUID(),input};deskAttempts.set(key,attempt);}deskBusy=true;render();const status=$(statusId);if(status)status.textContent='Saving Desk details…';
     try{
       const result=await send('SUPPORT_BOOKING_SAVE_REQUEST',attempt.input,attempt.requestId),archive=attempt.input.action==='DESK_ARCHIVE';
+      if(result.noChange===true&&!archive&&attempt.input.action==='DESK_SHIPMENT'
+        &&result.company===saveCompany&&result.requestId===attempt.requestId
+        &&result.deskState?.customerId===customerId&&result.deskState.company===saveCompany
+        &&result.deskState.revision===attempt.input.revision){
+        deskAttempts.delete(key);
+        detailsDrafts.delete(saveCompany+'|'+customerId+'|'+attempt.input.desk);
+        if(company===saveCompany&&selectedCustomer===customerId)$('notice').textContent='No changes to save.';
+        return true;
+      }
       if(result.company!==saveCompany||result.requestId!==attempt.requestId||archive&&result.archivedInvoiceId!==attempt.input.invoiceId||result.deskState?.customerId!==customerId||!result.deskState.revision||!Array.isArray(result.deskState.assignments)||!Array.isArray(result.deskState.shipments)||result.deskState.company!==saveCompany)throw Error('Desk save could not be confirmed. Retry the same save.');
       deskAttempts.delete(key);
       if(company===saveCompany&&data){
@@ -352,7 +476,28 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
       }
       return true;
     }
-    catch(error){if(/Desk details changed|Select an active customer task|Enter valid shipment|Enter valid Desk|New shipment dates|Select Last Gate In|Desk deposit currency|Select a customer|Desk is locked|valid SO|whole customer demand|split form|existing delivery remainder|Issued Desk batch changed|authorized to Warehouse|locked by its Sales Invoice|Confirmed, loaded or invoiced|authorization is still processing|Complete receiving for every line/.test(error.message))deskAttempts.delete(key);if(status&&$(statusId)===status)status.textContent=error.message;return false;}
+    catch(error){
+      const rejected=/Desk details changed|Select an active customer task|Enter valid shipment|Enter valid Desk|New shipment dates|Select Last Gate In|Desk deposit currency|Select a customer|Desk is locked|valid SO|whole customer demand|split form|existing delivery remainder|Issued Desk batch changed|authorized to Warehouse|locked by its Sales Invoice|Confirmed, loaded or invoiced|authorization is still processing|Complete receiving for every line/.test(error.message)||error.retryable===false;
+      if(rejected)deskAttempts.delete(key);
+      else if(company===saveCompany){
+        if(status&&$(statusId)===status)status.textContent='Checking the original Desk save…';
+        for(const delay of [0,5000,15000,45000]){
+          if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
+          if(company!==saveCompany||document.hidden||navigator.onLine===false)break;
+          let receipt;
+          try{receipt=await send('SUPPORT_DESK_STATUS_REQUEST',{saveRequestId:attempt.requestId,customerId,revision:attempt.input.revision,action:attempt.input.action});}catch(_){}
+          if(company!==saveCompany)break;
+          if(receipt?.ok===true&&receipt.company===saveCompany&&receipt.requestId===attempt.requestId&&receipt.customerId===customerId){
+            deskAttempts.delete(key);
+            detailsDrafts.delete(saveCompany+'|'+customerId+'|'+attempt.input.desk);
+            window.DeskDelivery?.invalidate(saveCompany,customerId,attempt.input.desk);
+            await load(attempt.input.action==='DESK_ARCHIVE'?[0,1,2,3]:[1,2],true);
+            if(company===saveCompany&&selectedCustomer===customerId)$('notice').textContent='Saved';
+            return true;
+          }
+        }
+      }
+      if(status&&$(statusId)===status)status.textContent=error.message;return false;}
     finally{deskBusy=false;render();if(referenceEdit?.waiting){referenceEdit.waiting=false;queueMicrotask(()=>saveReferenceDraft());}}
   }
   function openDeskBooking(){
@@ -366,7 +511,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
   function detailsValues(order){const references=deskReferences(order),shipment=deskState().shipments.find(row=>row.desk===activeDesk)||{};return {poNo:references.poNo,soNo:references.soNo,depositAmount:references.depositAmountCents===null||references.depositAmountCents===undefined?'':(references.depositAmountCents/100).toFixed(2),depositDate:references.depositDate||'',transport:shipment.transport||'',date:shipment.date||'',lastGateIn:shipment.lastGateIn||'',departureDate:shipment.departureDate||'',arrival:shipment.arrival||'',invoiceNoDraft:references.invoiceNoDraft||''};}
   function inputFromDetails(values,order){const raw=values.depositAmount.trim();if(raw&&!/^(?:\d+|\d*\.\d{1,2})$/.test(raw))throw Error('Enter a deposit amount with up to two decimal places.');const [whole,fraction='']=raw.split('.'),depositAmountCents=raw?Number(whole||0)*100+Number((fraction+'00').slice(0,2)):null;return {action:'DESK_SHIPMENT',customerId:selectedCustomer,desk:activeDesk,revision:deskState().revision,transport:values.transport,date:values.date,arrival:values.arrival,lastGateIn:values.lastGateIn,departureDate:values.departureDate,details:{poNo:values.poNo.trim(),soNo:values.soNo.trim(),invoiceNoDraft:values.invoiceNoDraft.trim(),depositAmountCents,depositDate:values.depositDate,depositCurrency:depositAmountCents===null?'':order.currency}};}
   function openDetails(section,opener){
-    const shipment=section==='shipment';$('desk-details').dataset.section=section;$('desk-details').querySelector('h2').textContent=shipment?'Shipment Details':'Order Details';const order=activeOrder();if(!order||!activeDesk||deskLock()||deskBusy)return;detailOpener=opener;const key=detailsKey(),values=detailsDrafts.get(key)||detailsValues(order);detailsContext={company,customerId:selectedCustomer,desk:activeDesk,key};dialogCustomer('desk-details-context',order.customerName,'Desk '+activeDesk);for(const input of $('desk-details-form').elements)if(input.name){input.disabled=(input.closest('section')===input.closest('fieldset')?.lastElementChild)!==shipment;input.value=values[input.name]??'';if(input.name==='depositAmount'){input.dataset.moneyUnset=input.value.trim()?'0':'1';if(!input.value.trim())input.value='0.00';input.oninput=()=>{input.dataset.moneyUnset=input.value.trim()?'0':'1';};}}showPlanningControls(values,shipment);$('desk-details-fields').disabled=Boolean(deskPending());$('desk-details-status').textContent=deskPending()?'The earlier save is unconfirmed. Retry the original save before editing.':shipment?'':'Deposit is recorded for this Desk only; it does not post a financial receipt. 订金资料不自动入账。';$('desk-details').showModal();$(section==='shipment'?'details-transport':'details-po').focus();}
+    const shipment=section==='shipment';$('desk-details').dataset.section=section;$('desk-details').querySelector('h2').textContent=shipment?'Shipment Details':'Order Details';const order=activeOrder();if(!order||!activeDesk||deskLock()||deskBusy)return;detailOpener=opener;const key=detailsKey(),values=detailsDrafts.get(key)||detailsValues(order);detailsContext={company,customerId:selectedCustomer,desk:activeDesk,key,original:detailsValues(order)};dialogCustomer('desk-details-context',order.customerName,'Desk '+activeDesk);for(const input of $('desk-details-form').elements)if(input.name){input.disabled=(input.closest('section')===input.closest('fieldset')?.lastElementChild)!==shipment;input.value=values[input.name]??'';if(input.name==='depositAmount'){input.dataset.moneyUnset=input.value.trim()?'0':'1';if(!input.value.trim())input.value='0.00';input.oninput=()=>{input.dataset.moneyUnset=input.value.trim()?'0':'1';};}}showPlanningControls(values,shipment);$('desk-details-fields').disabled=Boolean(deskPending());$('desk-details-status').textContent=deskPending()?'The earlier save is unconfirmed. Retry the original save before editing.':shipment?'':'Deposit is recorded for this Desk only; it does not post a financial receipt. 订金资料不自动入账。';updateDeskDetailsSave(values,order);$('desk-details').showModal();$(section==='shipment'?'details-transport':'details-po').focus();}
   function showPlanningControls(values,shipment){
     const gateDate=$('gate-date'),hour=$('gate-hour'),minute=$('gate-minute'),legacy=$('gate-legacy-minute');
     const value=values.lastGateIn||'';
@@ -395,15 +540,33 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     const depositDate=form.elements.depositDate;
     if(!depositDate.disabled&&!depositDate.checkValidity())throw Error('Enter a valid deposit date.');
   }
-  function retainDetails(){if(!detailsContext||$('desk-details-fields').disabled)return;const values={...detailsValues(activeOrder()),...Object.fromEntries(new FormData($('desk-details-form')))},deposit=$('desk-details-form').elements.namedItem('depositAmount');if(!deposit.disabled&&deposit.dataset.moneyUnset==='1'&&Number(deposit.value)===0)values.depositAmount='';const gateDate=$('gate-date'),hour=$('gate-hour').value,minute=$('gate-minute').value;if(!gateDate.disabled)values.lastGateIn=gateDate.value&&hour&&minute?gateDate.value+'T'+hour+':'+minute:'';values.invoiceNoDraft=detailsDrafts.get(detailsContext.key)?.invoiceNoDraft||detailsValues(activeOrder()).invoiceNoDraft;detailsDrafts.set(detailsContext.key,values);}
+  function retainDetails(){if(!detailsContext||$('desk-details-fields').disabled)return;const values={...detailsValues(activeOrder()),...Object.fromEntries(new FormData($('desk-details-form')))},deposit=$('desk-details-form').elements.namedItem('depositAmount');if(!deposit.disabled&&deposit.dataset.moneyUnset==='1'&&Number(deposit.value)===0)values.depositAmount='';const gateDate=$('gate-date'),hour=$('gate-hour').value,minute=$('gate-minute').value;if(!gateDate.disabled)values.lastGateIn=gateDate.value&&hour&&minute?gateDate.value+'T'+hour+':'+minute:'';values.invoiceNoDraft=detailsDrafts.get(detailsContext.key)?.invoiceNoDraft||detailsValues(activeOrder()).invoiceNoDraft;detailsDrafts.set(detailsContext.key,values);updateDeskDetailsSave(values,activeOrder());}
+  function sameDeskDetails(values,original,order){
+    return JSON.stringify(inputFromDetails(values,order))===JSON.stringify(inputFromDetails(original,order));
+  }
+  function updateDeskDetailsSave(values,order){
+    const button=$('desk-details-form').querySelector('[type="submit"]');
+    let unchanged=false;
+    try{unchanged=sameDeskDetails(values,detailsContext.original,order);}catch(_){}
+    button.disabled=deskBusy||(!deskPending()&&unchanged);
+  }
   $('desk-details-fields').addEventListener('input',retainDetails);$('desk-details-fields').addEventListener('change',retainDetails);
-  $('desk-details-form').onsubmit=event=>{event.preventDefault();if(deskBusy||!detailsContext)return;const order=activeOrder();retainDetails();try{if(!deskPending())validatePlanningDetails(detailsDrafts.get(detailsContext.key),detailsValues(order));const input=deskPending()?.input||inputFromDetails(detailsDrafts.get(detailsContext.key),order);detailsContext.submitted=true;$('desk-details').close();saveDeskChange(input);}catch(error){$('desk-details-status').textContent=error.message;}};
+  $('desk-details-form').onsubmit=event=>{event.preventDefault();if(deskBusy||!detailsContext)return;const order=activeOrder();retainDetails();try{if(!deskPending()){const values=detailsDrafts.get(detailsContext.key);if(sameDeskDetails(values,detailsContext.original,order))return;validatePlanningDetails(values,detailsValues(order));}const input=deskPending()?.input||inputFromDetails(detailsDrafts.get(detailsContext.key),order);detailsContext.submitted=true;$('desk-details').close();saveDeskChange(input);}catch(error){$('desk-details-status').textContent=error.message;}};
   $('desk-details').addEventListener('close',()=>{if(detailsContext&&!detailsContext.submitted&&!deskPending())detailsDrafts.delete(detailsContext.key);});
   function deskReceiptsComplete(order){
     return Boolean(activeDesk&&order?.lines.length&&data?.delivery?.receiptReadiness?.some(row=>row.customerId===selectedCustomer&&row.desk===activeDesk&&row.batchId===deskBatch()&&row.revision===deskState().revision));
   }
-  function openInvoiceNumber(opener){const order=activeOrder();if(!order||!activeDesk||deskLock()||deskBusy||!deskReceiptsComplete(order))return;detailOpener=opener;detailsContext={company,customerId:selectedCustomer,desk:activeDesk,key:detailsKey()};dialogCustomer('desk-invoice-context',order.customerName,'Desk '+activeDesk);$('desk-invoice-input').value=deskReferences(order).invoiceNoDraft||company+'-INV-';$('desk-invoice-status').textContent='Number draft only. Formal invoice review and locking remain required. 此处只记录待开票号码。';$('desk-invoice-review').disabled=Boolean(deskPending())||!order.lines.length||order.lines.some(line=>line.invoiceReadyQty<(line.orderQty-line.invoicedQty));$('desk-invoice-number').showModal();$('desk-invoice-input').focus();}
-  $('desk-invoice-form').onsubmit=event=>{event.preventDefault();if(deskBusy||!detailsContext)return;const order=activeOrder();if(!deskReceiptsComplete(order)){$('desk-invoice-status').textContent='Complete receiving for every line on this Desk before editing the Invoice No.';return;}const values=detailsValues(order);values.invoiceNoDraft=$('desk-invoice-input').value.trim();if(values.invoiceNoDraft===company+'-INV-')values.invoiceNoDraft='';detailsDrafts.set(detailsContext.key,values);const input=deskPending()?.input||inputFromDetails(values,order);$('desk-invoice-number').close();saveDeskChange(input);};
+  function openInvoiceNumber(opener){const order=activeOrder();if(!order||!activeDesk||deskLock()||deskBusy||!deskReceiptsComplete(order))return;detailOpener=opener;detailsContext={company,customerId:selectedCustomer,desk:activeDesk,key:detailsKey()};dialogCustomer('desk-invoice-context',order.customerName,'Desk '+activeDesk);$('desk-invoice-input').value=deskReferences(order).invoiceNoDraft||company+'-INV-';$('desk-invoice-status').textContent='Number draft only. Formal invoice review and locking remain required. 此处只记录待开票号码。';$('desk-invoice-review').disabled=Boolean(deskPending())||!order.lines.length||order.lines.some(line=>line.invoiceReadyQty<(line.orderQty-line.invoicedQty));updateDeskInvoiceSave();$('desk-invoice-number').showModal();$('desk-invoice-input').focus();}
+  function deskInvoiceDraft(){
+    const number=$('desk-invoice-input').value.trim();
+    return number===company+'-INV-'?'':number;
+  }
+  function updateDeskInvoiceSave(){
+    $('desk-invoice-form').querySelector('[type="submit"]').disabled=deskBusy||(!deskPending()
+      &&deskInvoiceDraft()===(deskReferences(activeOrder()).invoiceNoDraft||''));
+  }
+  $('desk-invoice-input').addEventListener('input',updateDeskInvoiceSave);
+  $('desk-invoice-form').onsubmit=event=>{event.preventDefault();if(deskBusy||!detailsContext)return;const order=activeOrder();if(!deskReceiptsComplete(order)){$('desk-invoice-status').textContent='Complete receiving for every line on this Desk before editing the Invoice No.';return;}const values=detailsValues(order);const draft=deskInvoiceDraft();if(!deskPending()&&draft===values.invoiceNoDraft)return;values.invoiceNoDraft=draft;detailsDrafts.set(detailsContext.key,values);const input=deskPending()?.input||inputFromDetails(values,order);$('desk-invoice-number').close();saveDeskChange(input);};
   $('desk-invoice-review').onclick=()=>{const order=activeOrder();if(!order||deskPending()||deskBusy)return;if(!deskReceiptsComplete(order)){$('desk-invoice-status').textContent='Complete receiving for every line on this Desk before editing the Invoice No.';return;}const number=$('desk-invoice-input').value.trim();$('desk-invoice-number').close();openInvoiceReview(order.id);if($('invoice-review').open)$('invoice-number').value=number===company+'-INV-'?'':number;};
   window.addEventListener('beforeunload',event=>{if(detailsDrafts.size){event.preventDefault();event.returnValue='';}});
 
@@ -554,9 +717,9 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
       cbm:quantitiesKnown&&lines.every(line=>line[key]===0||valid(line.cbm)&&line.cbm>0)?lines.reduce((sum,line)=>sum+(line[key]===0?0:line[key]*line.cbm),0):null,
       amount:quantitiesKnown&&currencyKnown&&lines.every(line=>line[key]===0||valid(line.priceCtn))?lines.reduce((sum,line)=>sum+(line[key]===0?0:Math.round(line[key]*line.priceCtn*100)),0)/100:null};
   }
-  function quantityPair(planned,loaded,places,unit='',invoiced=false,missingCbm=false){
+  function quantityPair(planned,loaded,places,unit='',invoiced=false,missingCbm=false,cbmTaskId=''){
     const value=item=>item===null?'Incomplete':number(item,places);
-    const basis=(item,missing)=>missing&&item===null?'<button type="button" class="cbm-issue-pill" data-cbm aria-label="Missing CBM" title="CBM unavailable">'+number(0,3)+'</button>':value(item);
+    const basis=(item,missing)=>missing&&cbmTaskId?'<button type="button" class="cbm-issue-pill" data-cbm="'+esc(cbmTaskId)+'" aria-label="Missing CBM" title="CBM unavailable">'+number(0,3)+'</button>':value(item);
     const part=(label,item,missing=false)=>'<span class="quantity-basis"><small>'+label+'</small><b>'+basis(item,missing)+(unit?' <small>'+unit+'</small>':'')+'</b></span>';
     return '<span class="quantity-comparison">'+(invoiced?'':part('Planned',planned,missingCbm))+part(invoiced?'Invoiced':'Loaded',loaded,missingCbm&&invoiced)+'</span>';
   }
@@ -574,8 +737,10 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
       '<div class="shipment-columns '+(activeDesk?'':'shipment-overview')+'"><section class="shipment-details"><h3>Customer Details</h3>'+read('Country',countryLabel(order.country))+read('Port Name',order.port)+(activeDesk?'<div class="shipment-invoice"><span>Sales Invoice No.</span><button type="button" class="invoice-number-link '+(!invoice&&!hold?.number&&!references.invoiceNoDraft?'invoice-prefix':'invoice-assigned')+'" '+(invoice?'data-invoice="'+esc(invoice.id)+'"':'data-edit-invoice-number')+' '+(invoice||canEdit&&deskReceiptsComplete(order)?'':'disabled')+(!invoice&&activeDesk&&!deskReceiptsComplete(order)?' aria-describedby="desk-invoice-wait"':'')+'>'+esc(invoiceLabel)+'</button>'+(!invoice&&activeDesk&&!deskReceiptsComplete(order)?'<small id="desk-invoice-wait">Awaiting complete receipt 待收齐</small>':'')+'</div>':'')+'</section>'+
       (activeDesk?'<section class="shipment-order">'+section('Order Details','order')+read('PO',activeDesk?references.poNo:'Per Desk')+read('SO',activeDesk?references.soNo:'Per Desk')+read('Deposit Amount',activeDesk?depositAmount:'Per Desk')+read('Deposit Date',activeDesk?day(references.depositDate):'Per Desk')+read('ETD',activeDesk?day(shipment?.date):'Per Desk')+'</section>'+
       '<section class="shipment-shipping">'+section('Shipment Details','shipment')+read('Logistic',activeDesk?transportLabel(shipment?.transport):'Per Desk')+read('Booked By',activeDesk?shipment?.bookedBy:'Per Desk')+read('Last Gate In',activeDesk&&shipment?.lastGateIn?day(shipment.lastGateIn)+' · '+shipment.lastGateIn.slice(11,16):activeDesk?'—':'Per Desk')+read('Departure Date',activeDesk?day(shipment?.departureDate):'Per Desk')+read('ETA',activeDesk?day(shipment?.arrival):'Per Desk')+'</section>':'')+headerTotals(planned,loaded,currency,invoice)+'</div>'+(activeDesk?headerDocuments(order):'')+(hold?.status==='ISSUED'&&hold.archiveRequired===true?'<div class="shipment-save-retry"><button type="button" class="primary" data-archive-desk>Archive &amp; Free Desk</button></div>':'')+
-      '<div class="shipment-authorization-status" role="status"></div>'+(pendingDesk?'<div class="shipment-save-retry"><button type="button" class="link" data-retry-desk '+(deskBusy?'disabled':'')+'>Retry Desk Save</button></div>':'')+'</article><div class="shipment-task-count"><span>'+lines.length+(lines.length===1?' task':' tasks')+'</span>'+(hold?'<span>Desk locked · Documents and payments remain available</span>':'')+copyAction+'</div>';
+      '<div class="shipment-authorization-status" role="status"></div>'+(pendingDesk?'<div class="shipment-save-retry"><button type="button" class="link" data-retry-desk '+(deskBusy?'disabled':'')+'>Retry Desk Save</button></div>':'')+'</article><div class="shipment-task-count"><span>'+lines.length+(lines.length===1?' task':' tasks')+'</span>'+(hold?'<span>Desk locked · Documents and payments remain available</span>':'')+(!hold&&lines.length>1?'<button type="button" class="link" data-product-sort>'+(productOrder?.key===productOrderKey()?'Restore Desk Order':'Sort by Product Order')+'</button>':'')+copyAction+'</div>';
   }
+
+  function deskAssignmentLabel(desk){return desk?'Desk '+desk:'Pending';}
 
   function splitDeskLabel(line){
     const desk=line.portionDesk??(currentDeskInvoice()?activeDesk:null);
@@ -584,12 +749,12 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
       : (line.deskPortions||[]).map(part=>({desk:part.desk,quantity:part.quantity-(part.invoiced||0)}));
     return portions.filter(part=>part.quantity>0).sort((a,b)=>(a.desk||4)-(b.desk||4)).map(part=>
       '<span class="desk-portion'+(part.desk?'':' desk-portion-pending')+'">'+
-      (part.desk?'Desk '+part.desk:'Pending')+(activeDesk?'':' · '+number(part.quantity))+'</span>').join('')||'—';
+      deskAssignmentLabel(part.desk)+(activeDesk?'':' · '+number(part.quantity)+' CTN')+'</span>').join('')||'—';
   }
 
   function orderContent(order){
-    const lines=viewLines(order),invoiced=Boolean(currentDeskInvoice());$('count').textContent=lines.length+' tasks';
-    return deskHeader(order,lines)+'<div class="desk-task-table">'+table([[''],['Desk'],['Descriptions'],['Price',true],['Order Qty',true],['Alloc Qty',true],['Loaded Qty',true],['Line CBM',true],['Line Amount',true],['Expiry'],['Message']],lines.map(line=>{const planned=quantityTotals([line],'allocQty'),loaded=quantityTotals([line],'loadedQty'),locked=(data.deskLocks||[]).some(hold=>hold.customerId===selectedCustomer&&hold.desk===(line.portionDesk??taskDesk(line.taskId))&&(hold.status!=='ISSUED'||hold.archiveRequired===true)),hasSplit=Boolean(data.desks?.some(state=>state.customerId===selectedCustomer&&state.assignments.some(row=>row.taskId===line.taskId&&row.parts))||line.deskPortions?.length>1);return '<tr data-task="'+esc(line.taskId)+'"><td class="desk-drag-cell"><button type="button" class="row-drag" data-drag-task="'+esc(line.taskId)+'" draggable="'+(!invoiced&&(!activeDesk||!deskBusy&&!deskPending()&&!deskLock()))+'" '+(invoiced||activeDesk&&(deskBusy||deskPending()||deskLock())?'disabled':'')+' aria-label="Move row" title="Drag, or press Alt + Up or Down">⠿</button></td><td class="desk-cell">'+(hasSplit?'<button type="button" class="desk-portions" title="Manage split shipment 分批出货" data-desk-split="'+esc(line.taskId)+'" '+(!data.deskAvailable||deskBusy||deskPending()||invoiceBusy?'disabled':'')+'>'+splitDeskLabel(line)+'</button>':'<select class="'+(taskDesk(line.taskId)===0?'unassigned':'')+'" data-desk-task="'+esc(line.taskId)+'" aria-label="Desk for '+esc(line.name||line.taskId)+'" '+(!data.deskAvailable||data.deskMetadataVersion<2||deskBusy||deskPending()||invoiceBusy||locked||invoiceAttempts.has(company+'|'+order.id)?'disabled':'')+'><option value="0" '+(taskDesk(line.taskId)===0?'selected':'')+'>—</option>'+[1,2,3].map(desk=>'<option value="'+desk+'" '+(taskDesk(line.taskId)===desk?'selected':'')+' '+(deskLock(desk)&&taskDesk(line.taskId)!==desk?'disabled':'')+'>'+desk+'</option>').join('')+'<option value="SPLIT">Split… 分批</option></select>')+'</td><td class="description"><small>'+esc(line.barcode)+'</small><strong>'+esc(line.name)+'</strong><small>'+esc(line.packing)+'</small></td><td class="num price-cell"><span>'+number(line.pricePc,2)+'</span><span>'+number(line.priceCtn,2)+'</span></td><td class="num">'+number(line.orderQty)+'</td><td class="num">'+number(line.allocQty)+'</td><td class="num">'+number(line.loadedQty)+'</td><td class="num">'+quantityPair(planned.cbm,loaded.cbm,4,'',invoiced,!(line.cbm>0))+'</td><td class="num">'+quantityPair(planned.amount,loaded.amount,2,'',invoiced)+'</td><td>'+esc((line.expiryDates||[]).map(expiryDay).join(' · ')||'—')+'</td><td>'+(window.departmentMessages?.sourceCell([line.taskId])||'')+'</td></tr>'; }),'detail order-tasks')+'</div>';
+    const invoiced=Boolean(currentDeskInvoice()),sorted=productOrder?.key===productOrderKey(),lines=productDeskLines(viewLines(order),invoiced);holdProductOrder=sorted&&!invoiced;$('count').textContent=lines.length+' tasks';
+    return deskHeader(order,lines)+'<div class="desk-task-table">'+table([[''],['Desk'],['Descriptions'],['Price',true],['Order Qty',true],['Alloc Qty',true],['Loaded Qty',true],['Line CBM',true],['Line Amount',true],['Expiry'],['Message']],lines.map(line=>{const planned=quantityTotals([line],'allocQty'),loaded=quantityTotals([line],'loadedQty'),locked=(data.deskLocks||[]).some(hold=>hold.customerId===selectedCustomer&&hold.desk===(line.portionDesk??taskDesk(line.taskId))&&(hold.status!=='ISSUED'||hold.archiveRequired===true)),hasSplit=Boolean(data.desks?.some(state=>state.customerId===selectedCustomer&&state.assignments.some(row=>row.taskId===line.taskId&&row.parts))||line.deskPortions?.length>1);return '<tr data-task="'+esc(line.taskId)+'"><td class="desk-drag-cell"><button type="button" class="row-drag" data-drag-task="'+esc(line.taskId)+'" draggable="'+(!holdProductOrder&&!invoiced&&(!activeDesk||!deskBusy&&!deskPending()&&!deskLock()))+'" '+(holdProductOrder||invoiced||activeDesk&&(deskBusy||deskPending()||deskLock())?'disabled':'')+' aria-label="Move row" title="Drag, or press Alt + Up or Down">⠿</button></td><td class="desk-cell">'+(hasSplit?'<button type="button" class="desk-portions" title="Manage split shipment 分批出货" data-desk-split="'+esc(line.taskId)+'" '+(!data.deskAvailable||deskBusy||deskPending()||invoiceBusy?'disabled':'')+'>'+splitDeskLabel(line)+'</button>':'<select class="'+(taskDesk(line.taskId)===0?'unassigned':'')+'" data-desk-task="'+esc(line.taskId)+'" aria-label="Desk for '+esc(line.name||line.taskId)+'" '+(!data.deskAvailable||data.deskMetadataVersion<2||deskBusy||deskPending()||invoiceBusy||locked||invoiceAttempts.has(company+'|'+order.id)?'disabled':'')+'><option value="0" '+(taskDesk(line.taskId)===0?'selected':'')+'>'+deskAssignmentLabel(0)+'</option>'+[1,2,3].map(desk=>'<option value="'+desk+'" '+(taskDesk(line.taskId)===desk?'selected':'')+' '+(deskLock(desk)&&taskDesk(line.taskId)!==desk?'disabled':'')+'>'+deskAssignmentLabel(desk)+'</option>').join('')+'<option value="SPLIT">Split… 分批</option></select>')+'</td><td class="description"><small>'+esc(line.barcode)+'</small><strong>'+esc(line.name)+'</strong><small>'+esc(line.packing)+'</small></td><td class="num price-cell"><span>'+number(line.pricePc,2)+'</span><span>'+number(line.priceCtn,2)+'</span></td><td class="num">'+number(line.orderQty)+'</td><td class="num">'+(invoiced?number(line.allocQty):allocationCell(line,locked))+'</td><td class="num">'+number(line.loadedQty)+'</td><td class="num">'+quantityPair(planned.cbm,loaded.cbm,4,'',invoiced,line.orderQty>0&&!(line.cbm>0),invoiced||locked?'':line.taskId)+'</td><td class="num">'+quantityPair(planned.amount,loaded.amount,2,'',invoiced)+'</td><td>'+esc((line.expiryDates||[]).map(expiryDay).join(' · ')||'—')+'</td><td>'+(line.customerShortfall?.splitRequired?'<span>Purchase stopped waiting. Please split the shipment.<br><small>Purchase 通知不再等货，请进行拆单。</small></span>':'')+(window.departmentMessages?.sourceCell([line.taskId])||'')+'</td></tr>'; }),'detail order-tasks')+'</div>';
   }
 
   function render(){
@@ -598,7 +763,9 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     $('company-name').textContent=company==='NCT'?'North Cape Trading Sdn. Bhd.':'Global HR';$('title').textContent={customers:'Customers',orders:'Orders',transactions:'Invoices & Payments',invoiceRegister:'Invoice Register'}[view]||'Customers';
     if(!data){$('content').innerHTML='<div class="loading">'+(busy?'Loading customer orders…':'Customer orders have not loaded.')+'</div>';$('count').textContent='';return;}
     if(view==='customers'){
-      const rows=data.customers;$('count').textContent=rows.length+' customers';
+      const query=matchMedia('(max-width:1023px)').matches?$('search').value.trim().toLowerCase():'';
+      const rows=query?data.customers.filter(row=>[row.name,row.country,row.port].some(value=>String(value||'').toLowerCase().includes(query))):data.customers;
+      $('count').textContent=rows.length+' customers';
       const summary=new Map();
       for(const order of data.orders)for(const line of order.lines){
         if(!(line.orderQty>line.invoicedQty))continue;
@@ -607,7 +774,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
         const portions=line.deskPortions?.length?line.deskPortions:[{desk:data.desks?.find(desk=>desk.customerId===order.customerId)?.assignments.find(row=>row.taskId===line.taskId)?.desk||0,quantity:line.orderQty,invoiced:line.invoicedQty}];
         for(const part of portions)counts[part.desk]+=Math.max(0,part.quantity-(part.invoiced||0));
       }
-      $('content').innerHTML=table([['No.'],['Profile'],['Customer'],['Country'],['Port Name'],['Currency'],['Desk'],['']],rows.map((row,index)=>{
+      $('content').innerHTML=table([['No.'],['Profile'],['Customer'],['Country'],['Port Name'],['Currency'],['Payment Term'],['Desk Details'],['']],rows.map((row,index)=>{
         const counts=summary.get(row.id)||[];
         const desks=!data.deskAvailable||!data.delivery?'—':[1,2,3,0].filter(desk=>counts[desk]>0).map(desk=>'<span class="overview-desk'+(desk?'':' pending')+'">'+(desk?'Desk '+desk:'Pending')+' · '+number(counts[desk])+' CTN</span>').join('')||'—';
         const pendingArchive=(data.deskLocks||[]).some(lock=>lock.customerId===row.id&&lock.status==='ISSUED'&&lock.archiveRequired===true);
@@ -615,7 +782,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
         const retryArchive=recovery?.action==='DESK_ARCHIVE';
         const actionable=counts.some(quantity=>quantity>0)||pendingArchive||retryArchive;
         const deskDisplay=desks+(retryArchive?' <span class="overview-desk pending">Archive confirmation pending</span>':pendingArchive?' <span class="overview-desk pending">Awaiting archive</span>':'');
-        return '<tr'+(actionable?' data-customer-row':'')+'><td class="overview-number">'+String(index+1).padStart(3,'0')+'</td><td class="overview-profile-cell">'+ (row.profile?'<button type="button" class="icon-link overview-profile" data-profile="'+esc(row.id)+'" aria-label="Edit profile for '+esc(row.name)+'">'+profileIcon+'</button>':'') +'</td><td><strong>'+esc(row.name)+'</strong></td><td>'+esc(row.country||'—')+'</td><td>'+esc(row.port||'—')+'</td><td>'+esc(row.currency||'—')+'</td><td><div class="overview-desks">'+deskDisplay+'</div></td><td class="overview-entry-cell">'+(actionable?'<button type="button" class="customer-order-entry" data-customer-orders="'+esc(row.id)+'" aria-label="Open orders for '+esc(row.name)+'">'+entryIcon+'</button>':'')+'</td></tr>';
+        return '<tr'+(actionable?' data-customer-row':'')+'><td class="overview-number">'+String(index+1).padStart(3,'0')+'</td><td class="overview-profile-cell">'+ (row.profile?'<button type="button" class="icon-link overview-profile" data-profile="'+esc(row.id)+'" aria-label="Edit profile for '+esc(row.name)+'">'+profileIcon+'</button>':'') +'</td><td><strong>'+esc(row.name)+'</strong></td><td>'+esc(row.country||'—')+'</td><td>'+esc(row.port||'—')+'</td><td>'+esc(row.currency||'—')+'</td><td>'+customerPaymentTerm(row)+'</td><td><div class="overview-desks">'+deskDisplay+'</div></td><td class="overview-entry-cell">'+(actionable?'<button type="button" class="customer-order-entry" data-customer-orders="'+esc(row.id)+'" aria-label="Open orders for '+esc(row.name)+'">'+entryIcon+'</button>':'')+'</td></tr>';
       }));
       return;
     }
@@ -638,13 +805,113 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     window.DeskDelivery?.mountSupport({company,model:data,root:$('content'),customerId:selectedCustomer,desk:activeDesk,lines:viewLines(order),showOpenedTime:true,canSend:activeDesk>0&&!busy&&!deskBusy&&!deskPending()&&!invoiceBusy&&!deskLock(),send,
       applyReceipt(result){if(company!==deliveryCompany||!data)return;deskReceiptEpoch++;if(result.deskState){data.desks=data.desks.filter(row=>row.customerId!==result.deskState.customerId).concat(result.deskState);if(readCache?.company===company&&readCache.results[2].status==='fulfilled')readCache.results[2].value.desks=data.desks;}data.delivery.pendingAuthorizations=(data.delivery.pendingAuthorizations||[]).filter(row=>row.requestId!==result.requestId);data.delivery.lists=data.delivery.lists.filter(row=>row.id!==result.list.id).concat(result.list);if(readCache?.company===company&&readCache.results[1].status==='fulfilled')readCache.results[1].value=data.delivery;if(selectedCustomer===deliveryCustomer)$('notice').textContent=result.status==='CANCELLED'?'Warehouse task recalled.':'Desk authorized to Warehouse.';render();},invalidate(){if(company===deliveryCompany)load([0,1,2,3]);}});
   }
-  const profileFields=[['preferredCurrency','Currency',['','USD','MYR','SGD','RMB','JPY']],['destinationPortName','Port Name'],['picTitle','Contact Title',['','MR','MRS','MS','DR']],['picName','Contact Name'],['mobileNo','Mobile No.'],['whatsapp','WhatsApp',['','YES','NO']],['primaryEmail','Email'],['companyWebsite','Website'],['address1','Address Line 1'],['address2','Address Line 2'],['address3','Address Line 3'],['natureOfBusiness','Business Type',['','WHOLESALE','RETAIL','E-COMMERCE','SOURCING AGENT','OTHERS']]];
+  function customerPaymentTerm(row){
+    if(!row.profile)return '—';
+    if(row.profile.paymentTerm)return esc(row.profile.paymentTerm);
+    return '<button type="button" class="payment-term-needed" data-profile="'+esc(row.id)+'" data-profile-focus="paymentTerm">Set payment term</button>';
+  }
+  const profileFields=[['preferredCurrency','Currency',['','USD','MYR','SGD','RMB','JPY']],['paymentTerm','Payment Term',["","COD","30%+70%","7 Days","14 Days","21 Days","30 Days","45 Days","60 Days"]],['destinationPortName','Port Name'],['picTitle','Contact Title',['','MR','MRS','MS','DR']],['picName','Contact Name'],['mobileNo','Mobile No.'],['whatsapp','WhatsApp',['','YES','NO']],['primaryEmail','Email'],['companyWebsite','Website'],['address1','Address Line 1'],['address2','Address Line 2'],['address3','Address Line 3'],['natureOfBusiness','Business Type',['','WHOLESALE','RETAIL','E-COMMERCE','SOURCING AGENT','OTHERS']]];
   let profileCustomer='',profileBusy=false,profileSnapshot=null;const profileAttempts=new Map();
-  function openProfile(id){const customer=data.customers.find(row=>row.id===id);if(!customer?.profile)return;profileCustomer=id;profileSnapshot=customer.profile;const attempt=profileAttempts.get(company+'|'+id);$('profile-identity').textContent=customer.name+' · '+(customer.country||'—');$('profile-fields').innerHTML=profileFields.map(([key,label,choices])=>'<label>'+label+(choices?'<select name="'+key+'">'+choices.map(value=>'<option '+(String(profileSnapshot[key]||'')===value?'selected ':'')+'value="'+esc(value)+'">'+esc(value||'—')+'</option>').join('')+'</select>':'<input name="'+key+'" maxlength="500" value="'+esc(profileSnapshot[key]||'')+'">')+'</label>').join('');$('profile-fields').disabled=Boolean(attempt);$('profile-save').disabled=profileBusy;$('profile-save').textContent=attempt?'Retry Save':'Save';$('profile-status').textContent=attempt?'The earlier save was not confirmed. Retry the same changes.':'Changes are shared with Sales. Existing invoices remain unchanged.';$('customer-profile').showModal();}
-  $('profile-form').onsubmit=async event=>{event.preventDefault();if(profileBusy||!profileSnapshot)return;const saveCompany=company,key=company+'|'+profileCustomer;let attempt=profileAttempts.get(key);if(!attempt){const patch={};for(const [field] of profileFields){const value=$('profile-fields').querySelector('[name="'+field+'"]').value.trim();if(value!==String(profileSnapshot[field]||''))patch[field]=value;}if(!Object.keys(patch).length){$('customer-profile').close();return;}attempt={requestId:crypto.randomUUID(),input:{customerId:profileCustomer,revision:profileSnapshot.revision,patch}};profileAttempts.set(key,attempt);}profileBusy=true;$('profile-fields').disabled=true;$('profile-save').disabled=true;$('profile-status').textContent='Saving…';try{const result=await send('SUPPORT_CUSTOMER_SAVE_REQUEST',attempt.input,attempt.requestId);if(result.company!==saveCompany||result.requestId!==attempt.requestId||result.customerId!==attempt.input.customerId||!result.saved)throw Error('Customer profile save could not be confirmed.');profileAttempts.delete(key);$('customer-profile').close();if(company===saveCompany)await load([5]);}catch(error){$('profile-status').textContent=error.message;if(/profile changed|Invalid |Only editable/.test(error.message)){profileAttempts.delete(key);$('profile-save').textContent='Save';}else $('profile-save').textContent='Retry Save';}finally{profileBusy=false;$('profile-save').disabled=false;}};
-  async function load(parts,quiet=false){
+  let profileOriginalValues,profileSession=0,profileNeedsReadback=false;
+  function editableProfileValues() {
+    return Object.fromEntries(profileFields.map(([key]) => {
+      const value = $('profile-fields').querySelector('[name="'+key+'"]').value.trim();
+      return [key, key==='primaryEmail' ? value.toLowerCase() : value];
+    }));
+  }
+  function changedProfileFields() {
+    return Object.fromEntries(Object.entries(editableProfileValues()).filter(([key,value]) => value !== profileOriginalValues[key]));
+  }
+  function updateProfileSaveButton() {
+    const attempt=profileAttempts.get(company+'|'+profileCustomer);
+    $('profile-save').disabled=profileBusy || profileNeedsReadback || (!attempt && !Object.keys(changedProfileFields()).length);
+  }
+  $('profile-fields').addEventListener('input',()=>{
+    if(!profileBusy&&!profileNeedsReadback&&Object.keys(changedProfileFields()).length&&$('profile-status').dataset.saved==='true'){
+      $('profile-status').dataset.saved='false';
+      $('profile-status').textContent='Changes are shared with Sales.';
+    }
+    updateProfileSaveButton();
+  });
+  function openProfile(id,focusField){const customer=data.customers.find(row=>row.id===id);if(!customer?.profile||profileBusy)return;profileSession++;profileNeedsReadback=false;$('profile-status').dataset.saved='false';profileCustomer=id;profileSnapshot=customer.profile;const attempt=profileAttempts.get(company+'|'+id);$('profile-identity').textContent=customer.name+' · '+(customer.country||'—');$('profile-fields').innerHTML=profileFields.map(([key,label,choices])=>'<label>'+label+(choices?'<select name="'+key+'"'+(key==='paymentTerm'&&!profileSnapshot[key]?' class="payment-term-unset"':'')+'>'+choices.map(value=>'<option '+(String(profileSnapshot[key]||'')===value?'selected ':'')+'value="'+esc(value)+'">'+esc(value||'—')+'</option>').join('')+'</select>':'<input name="'+key+'" maxlength="500" value="'+esc(profileSnapshot[key]||'')+'">')+'</label>').join('');$('profile-fields').disabled=Boolean(attempt);profileOriginalValues=editableProfileValues();updateProfileSaveButton();$('profile-save').textContent=attempt?'Retry Save':'Save';$('profile-status').textContent=attempt?'The earlier save was not confirmed. Retry the same changes.':focusField==='paymentTerm'?'Choose the customer’s payment term.':'Changes are shared with Sales.';$('customer-profile').showModal();if(focusField==='paymentTerm')$('profile-fields').querySelector('[name=paymentTerm]').focus();}
+  $('profile-form').onsubmit=async event=>{
+    event.preventDefault();
+    if(profileBusy||profileNeedsReadback||!profileSnapshot)return;
+    const saveCompany=company,customerId=profileCustomer,key=company+'|'+customerId,session=profileSession;
+    const sameForm=()=>company===saveCompany&&profileSession===session&&$('customer-profile').open;
+    let attempt=profileAttempts.get(key);
+    if(!attempt){
+      const patch=changedProfileFields();
+      if(!Object.keys(patch).length)return;
+      attempt={requestId:crypto.randomUUID(),input:{customerId,revision:profileSnapshot.revision,patch}};
+      profileAttempts.set(key,attempt);
+    }
+    profileBusy=true;
+    $('profile-fields').disabled=true;
+    $('profile-save').disabled=true;
+    $('profile-status').textContent='Saving…';
+    try{
+      const result=await send('SUPPORT_CUSTOMER_SAVE_REQUEST',attempt.input,attempt.requestId);
+      if(result.company!==saveCompany||result.requestId!==attempt.requestId||result.customerId!==customerId||!result.saved)
+        throw Error('Customer profile save could not be confirmed.');
+      profileAttempts.delete(key);
+      if(sameForm()){
+        profileNeedsReadback=!result.unchanged;
+        $('profile-save').textContent='Save';
+        $('profile-status').dataset.saved=String(!result.unchanged);
+        $('profile-status').textContent=result.unchanged?'No changes to save.':'Saved 已保存';
+        if(result.unchanged)profileOriginalValues=editableProfileValues();
+      }
+      if(!result.unchanged&&company===saveCompany){
+        try{await load([5],true);}catch(_){}
+        if(sameForm()){
+          const fresh=data?.customers.find(row=>row.id===customerId)?.profile;
+          if(fresh?.revision&&fresh.revision!==attempt.input.revision){
+            profileSnapshot=fresh;
+            for(const [field] of profileFields)$('profile-fields').querySelector('[name="'+field+'"]').value=fresh[field]||'';
+            profileOriginalValues=editableProfileValues();
+            profileNeedsReadback=false;
+          }else{
+            $('profile-status').textContent='Saved 已保存 · Close and reopen before making another change.';
+          }
+        }
+      }
+    }catch(error){
+      const rejected=/profile changed|Invalid |Only editable/.test(error.message);
+      if(rejected)profileAttempts.delete(key);
+      if(sameForm()){
+        $('profile-status').textContent=error.message;
+        $('profile-save').textContent=rejected?'Save':'Retry Save';
+      }
+    }finally{
+      profileBusy=false;
+      if(sameForm()){
+        $('profile-fields').disabled=profileNeedsReadback||profileAttempts.has(key);
+        updateProfileSaveButton();
+      }
+    }
+  };
+  // Resume reads share the normal request sequence and never submit a write.
+  let resumeNeeded=false,hiddenAt=null,lastResumeAt=-Infinity;
+  function resumeWouldInterruptWork(){
+    return deskBusy||bookingBusy||invoiceBusy||documentBusy||profileBusy||delivering||dragContext
+      ||deskAttempts.size||bookingAttempts.size||invoiceAttempts.size||documentAttempts.size
+      ||profileAttempts.size||deliveryAttempts.size||window.DeskDelivery?.supportPending()
+      ||referenceDirty()||detailsDrafts.size||document.querySelector('dialog[open]')
+      ||document.activeElement?.matches('input,select,textarea');
+  }
+  function resumeSupportRead(){
+    if(!resumeNeeded||busy||document.hidden||navigator.onLine===false||resumeWouldInterruptWork()
+      ||Date.now()-lastResumeAt<10000)return false;
+    lastResumeAt=Date.now();
+    if(!data)$('notice').textContent='Restoring connection… 正在恢复连接…';
+    load(undefined,true,true);
+    return true;
+  }
+  async function load(parts,quiet=false,fromResume=false){
+    resumeNeeded=false;
     const sequence=++readSequence,epoch=deskReceiptEpoch,cache=readCache?.company===company&&data?readCache:null;busy=true;$('refresh').disabled=true;
-    if(!quiet){$('notice').textContent='Loading customer orders…';render();}
+    if(!quiet){$('login').hidden=true;$('notice').textContent='Loading customer orders…';render();}
     const requested=new Set(Array.isArray(parts)&&cache?parts:[0,1,2,3,4,5]);for(const active of activeReadSets.values())for(const index of active)requested.add(index);activeReadSets.set(sequence,requested);
     const types=['FULFILMENT_READ_REQUEST','PACKING_READ_REQUEST','SUPPORT_BOOKING_READ_REQUEST','SUPPORT_INVOICE_READ_REQUEST','SUPPORT_DOCUMENT_READ_REQUEST','SUPPORT_CUSTOMER_READ_REQUEST'];
     const settled=promise=>promise.then(value=>({status:'fulfilled',value}),reason=>({status:'rejected',reason}));
@@ -660,6 +927,11 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
       });
     }));
     activeReadSets.delete(sequence);if(sequence!==readSequence)return;
+    if(fromResume&&resumeWouldInterruptWork()){
+      resumeNeeded=true;
+      busy=false;$('refresh').disabled=false;
+      return;
+    }
     if(epoch!==deskReceiptEpoch&&readCache?.company===company){results[2]=readCache.results[2];results[1]=readCache.results[1];}
     if(quiet&&cache){
       for(const index of [1,2])if(results[index].status==='rejected')results[index]=cache.results[index];
@@ -667,14 +939,30 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
       if(results.every((result,index)=>result===cache.results[index]||businessPayload(result)===businessPayload(cache.results[index]))){busy=false;$('refresh').disabled=false;return;}
     }
     readCache={company,results};
-    busy=false;$('refresh').disabled=false;
-    if(results[0].status==='rejected'){data=null;$('notice').textContent=results[0].reason.message;$('login').hidden=false;render();return;}
+    busy=false;$('refresh').disabled=false;$('refresh').hidden=true;
+    if(results[0].status==='rejected'){
+      data=null;
+      const status=results[0].reason?.readStatus;
+      resumeNeeded=status!=='SIGN_IN_REQUIRED'&&status!=='ACCESS_DENIED';
+      $('refresh').hidden=!resumeNeeded;
+      if(resumeNeeded&&!fromResume){
+        setTimeout(()=>{if(sequence===readSequence)resumeSupportRead();},1000);
+      }
+      $('login').hidden=status!=='SIGN_IN_REQUIRED';
+      $('notice').textContent={
+        SIGN_IN_REQUIRED:'Sign in to continue. 请登入后继续。',
+        ACCESS_DENIED:'You do not have access to this workspace. 你没有这个工作室的访问权限。',
+        SESSION_UNCONFIRMED:'Could not check your sign-in status. 暂时无法确认登入状态。'
+      }[status]||'Could not load customer orders. 暂时无法读取客户订单。';
+      render();
+      return;
+    }
     try{data=window.SupportWorkroom.project(results[0].value,results[1].status==='fulfilled'?results[1].value:null,results[2].status==='fulfilled'?results[2].value:null,results[3].status==='fulfilled'?results[3].value:null,results[4].status==='fulfilled'?results[4].value:null,results[5].status==='fulfilled'?results[5].value:null);$('staff').textContent=data.staff?.staffName||'';$('login').hidden=true;$('notice').textContent=[results[1].status==='rejected'?'Warehouse quantities could not be loaded; shown as —.':'',results[2].status==='rejected'?'Shipment details could not be loaded.':'',results[3].status==='rejected'?'Invoice readiness could not be loaded.':'',results[4].status==='rejected'?'Support documents could not be loaded.':'',results[5].status==='rejected'?'Full customer directory is unavailable; showing customers with existing orders only.':''].filter(Boolean).join(' ');
       for(const held of results[2].status==='fulfilled'?results[2].value.pendingDeskInvoices||[]:[]){const key=company+'|TASKS:'+held.customerId+':DESK:'+held.desk;if(!invoiceAttempts.has(key)){const lines=held.input.lines.map(part=>{const original=data.orders.flatMap(row=>row.lines).find(line=>line.taskId===part.taskId);return {...original,taskId:part.taskId,quantity:part.quantity,invoiceReadyQty:part.quantity};});invoiceAttempts.set(key,{requestId:held.requestId,input:held.input,review:lines});}}
       for(const hold of data.deskLocks.filter(row=>row.status==='ISSUED')){const key=company+'|TASKS:'+hold.customerId+':DESK:'+hold.desk;if(invoiceAttempts.get(key)?.requestId===hold.requestId)invoiceAttempts.delete(key);}
       for(const [key,attempt]of documentAttempts){if(JSON.parse(key)[0]===company&&window.SupportWorkroom.confirmedDocumentAttempt(attempt,data)){documentAttempts.delete(key);if(documentContext&&documentKey(documentContext)===key)$('documents').close();}}
       const filter=$('customer-filter').value;$('customer-filter').innerHTML='<option value="">Select Customer</option>'+data.customers.map(row=>'<option value="'+esc(row.id)+'">'+esc(row.name)+'</option>').join('');$('customer-filter').value=data.customers.some(row=>row.id===filter)?filter:'';
-    }catch(error){data=null;$('notice').textContent=error.message;}render();
+    }catch(error){data=null;$('refresh').hidden=false;$('notice').textContent=error.message;}render();
   }
   let lastWarehouseRefresh=0;
   function refreshWarehouseWhenIdle(){
@@ -685,7 +973,19 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     load([1,2],true);
   }
   setInterval(refreshWarehouseWhenIdle,30000);
-  document.addEventListener('visibilitychange',refreshWarehouseWhenIdle);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden){hiddenAt=Date.now();return;}
+    if(data&&!busy&&hiddenAt!==null&&Date.now()-hiddenAt>=60000)resumeNeeded=true;
+    hiddenAt=null;
+    if(!resumeSupportRead()&&!resumeNeeded)refreshWarehouseWhenIdle();
+  });
+  window.addEventListener('offline',()=>{if(data)resumeNeeded=true;});
+  window.addEventListener('online',resumeSupportRead);
+  window.addEventListener('pageshow',event=>{
+    if(!event.persisted)return;
+    if(data&&!busy)resumeNeeded=true;
+    resumeSupportRead();
+  });
   document.addEventListener('click',event=>{const target=event.target;
     const control=target.closest('button,a,input,select,textarea,label');
     const button=control?control.closest('button'):target.closest('[data-customer-row]')?.querySelector('.customer-order-entry');
@@ -693,7 +993,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     if(button.dataset.close){$(button.dataset.close).close();return;}
     if(button.dataset.view){view=button.dataset.view;if(view==='customers')selectedCustomer='';$('search').value='';$('customer-filter').value=view==='customers'?'':selectedCustomer;render();}
     if(button.dataset.customerOrders||button.dataset.customerTransactions){chooseCustomer(button.dataset.customerOrders||button.dataset.customerTransactions);view=button.dataset.customerOrders?'orders':'transactions';const recovery=deskPending()?.input;if(view==='orders'&&recovery?.action==='DESK_ARCHIVE')activeDesk=recovery.desk;$('search').value='';render();}
-    if(button.dataset.profile)openProfile(button.dataset.profile);
+    if(button.dataset.profile)openProfile(button.dataset.profile,button.dataset.profileFocus);
     if(button.dataset.order){selectedOrder=button.dataset.order;selectedLines.clear();view='order';render();}
     if(button.hasAttribute('data-clear-selection')){selectedLines.clear();render();}
     if(button.hasAttribute('data-autocount'))openAutoCount();
@@ -706,7 +1006,9 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     if(button.hasAttribute('data-retry-desk')){const attempt=deskPending();if(attempt){if(attempt.input.action==='DESK_ARCHIVE')openDeskArchive();else if(attempt.input.action==='DESK_REFERENCES'&&referenceEdit?.customerId===attempt.input.customerId)saveReferenceDraft(true);else saveDeskChange(attempt.input);}}
     if(button.hasAttribute('data-create-invoice')){const invoice=currentDeskInvoice();if(invoice)showInvoice(invoice.id);else openInvoiceReview(activeOrder()?.id);}
     if(button.dataset.tab){tab=button.dataset.tab;render();}
-    if(button.hasAttribute('data-cbm'))info('CBM Required','<p>Please contact Warehouse to update the product data as soon as possible.</p><p>请尽快联系货仓以更新产品数据。</p>');
+    if(button.dataset.cbm)openProductCbm(button.dataset.cbm);
+    if(button.dataset.productCbm)void runProductCbm(button);
+    if(button.hasAttribute('data-product-sort'))void sortProductDesk(button);
     if(button.hasAttribute('data-booking-picker')){const order=activeOrder();info('Shipment Details',order.orders.map(item=>'<p><button class="link" data-shipment="'+esc(item.id)+'">'+day(item.orderDate)+' · '+esc(item.currency)+' · '+esc(transportLabel(item.booking?.transport))+' · '+day(item.booking?.date)+'</button></p>').join(''));}
     if(button.dataset.shipment){$('information').close();openBooking(button.dataset.shipment);}
     if(button.dataset.newCharge)info('Add document','<div class="charge-document-choice"><button type="button" class="primary" data-charge-choice="CHARGE" data-customer="'+esc(button.dataset.newCharge)+'">Invoice</button><button type="button" data-charge-choice="STANDALONE_DN" data-customer="'+esc(button.dataset.newCharge)+'">Debit Note</button></div>');
@@ -715,6 +1017,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     if(button.dataset.doc)openDocument(button.dataset.doc,button.dataset.customer,button.dataset.orderId,button.dataset.invoiceId);
   });
   $('back').onclick=()=>{view=view==='customer'?'customers':'orders';$('search').value='';render();};$('search').oninput=render;
+  matchMedia('(max-width:1023px)').addEventListener('change',()=>{if(view==='customers'&&$('search').value)render();});
   const monthParts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit'}).formatToParts(new Date()).map(part=>[part.type,part.value]));
   $('invoice-month').value=monthParts.year+'-'+monthParts.month;
   const yearLabel=$('invoice-year'),monthSelect=$('invoice-month-select');
