@@ -46,7 +46,7 @@ test('reads real CMS brand and Point Base sort ID without treating principle as 
 test('search continues to reset the full product source and rejects stale category responses', () => {
  const search=catalogue.slice(catalogue.indexOf('const applySearch'),catalogue.indexOf('const applySearch')+1500);
  assert.match(search,/catalogueWorkspaceProducts = \[\.\.\.catalogueWorkspaceAllProducts\]/);
- assert.match(search,/catalogueWorkspaceQueryVersion \+= 1/);
+ assert.match(search,/const queryVersion = \+\+catalogueWorkspaceQueryVersion/);
  assert.match(search,/sendCatalogueWorkspaceData\(\)/);
  assert.match(catalogue,/queryVersion !== catalogueWorkspaceQueryVersion/);
 });
