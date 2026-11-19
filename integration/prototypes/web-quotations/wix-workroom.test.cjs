@@ -1,0 +1,413 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { randomUUID } = require('node:crypto');
+const { test } = require('node:test');
+const { buildWixWorkroom } = require('./build-wix-workroom.cjs');
+
+const bridge = fs.readFileSync(path.join(__dirname, '../../wix/master-quotations-bridge.js'), 'utf8');
+const moduleUrl = source => 'data:text/javascript;base64,' + Buffer.from(source).toString('base64');
+
+test('the iframe bridge preserves correlation and never forwards a client-supplied staff identity', async () => {
+  const { connectMasterQuotationFrame } = await import(moduleUrl(bridge));
+  const requests = [];
+  const replies = [];
+  let listener;
+  connectMasterQuotationFrame({ onMessage: fn => { listener = fn; }, postMessage: message => replies.push(message) },
+    async (...args) => { requests.push(args); return { accessDenied: true }; });
+  const requestId = randomUUID();
+  const command = { type: 'MASTER_QUOTATION_REQUEST', action: 'draft', customerId: 'CUS-QA-001', requestId,
+    staffId: 'FORGED', companyId: 'NCT', input: { requestId, revision: 0, selectionId: 'item-1', input: { mode: 'EA', value: 1.5 }, staffId: 'FORGED' } };
+
+  await listener({ data: { ...command, requestId: 'not-a-uuid' } });
+  await listener({ data: { ...command, input: { ...command.input, revision: -1 } } });
+  assert.equal(requests.length, 0);
+  await listener({ data: command });
+  assert.deepEqual(requests, [['draft', 'CUS-QA-001', { requestId, revision: 0, selectionId: 'item-1', input: { mode: 'EA', value: 1.5 } }]]);
+  assert.equal(replies.at(-1).requestId, requestId);
+  assert.equal(replies.at(-1).customerId, command.customerId);
+  assert.equal(replies.at(-1).accessDenied, true);
+});
+
+test('quotation actions recheck the original staff policy and send no unassigned customer to the workroom', async () => {
+  const backend = path.join(__dirname, '../../backend');
+  const policy = fs.readFileSync(path.join(backend, 'staffManagementPolicy.js'), 'utf8');
+  const source = fs.readFileSync(path.join(backend, 'masterQuotationAccess.js'), 'utf8').replace('backend/staffManagementPolicy.js', moduleUrl(policy));
+  const { createMasterQuotationActions } = await import(moduleUrl(source));
+  const customers = ['CUS-QA-001', 'CUS-QA-002', 'CUS-QA-003'].map((customerId, i) => ({ customerId,
+    name: 'QA ' + i, assignedStaffId:i===1?'STF-OTHER':'STF-QA', preferredCurrency: 'USD', rateToMyr: 4, quotationMode: 'WEB', webQuotationStatus: i === 2 ? 'PENDING' : 'READY' }));
+  let identityReads = 0;
+  let customerReads = 0;
+  const writes = [];
+  const staff = { title: 'STF-QA', staffName: 'Test staff', staffStatus: 'ACTIVE', staffAccess: {
+    quotationAccess:'EDIT', departmentAccess: { 'SALES MANAGEMENT': 'EDIT' }, companyIds: ['GHR'], salesRoom: 'EDIT', salesFunction: 'SALES',
+    customerAccess: { 'CUS-QA-001': 'EDIT', 'CUS-QA-003': 'EDIT' }
+  } };
+  const run = createMasterQuotationActions({
+    readIdentity: async () => { identityReads++; return { record: staff }; },
+    readCustomers: async () => customers,
+    readCustomer: async id => { customerReads++; return customers.find(customer => customer.customerId === id); },
+    quotation: { list: async () => [{ id: 'prod-1' }], publish: async (scope, input) => { writes.push({ scope, input }); return { revision: 1 }; } }
+  });
+  assert.deepEqual(await run('customers', ''), { staffId: 'STF-QA', staffName: 'Test staff', customers: [{ customerId: 'CUS-QA-001', name: 'QA 0' }] });
+  assert.deepEqual(await run('quotes', 'CUS-QA-002'), { accessDenied: true });
+  assert.equal(customerReads, 1,'ownership is read from the authoritative customer record');
+  assert.deepEqual(await run('quotes', 'CUS-QA-003'), { accessDenied: true });
+  assert.equal((await run('quotes', 'CUS-QA-001')).canPublish, true);
+  assert.deepEqual(await run('publish', 'CUS-QA-001', { enabled: true }), { revision: 1 });
+  assert.equal(writes[0].scope.staffId, 'STF-QA');
+  staff.staffAccess.quotationAccess = '';
+  assert.deepEqual(await run('quotes', 'CUS-QA-001'), {accessDenied:true});
+  assert.deepEqual(await run('publish', 'CUS-QA-001', { enabled: true }), { accessDenied: true });
+  staff.staffStatus = 'INACTIVE';
+  assert.deepEqual(await run('customers', ''), { accessDenied: true });
+  assert.equal(identityReads, 8);
+  assert.equal(writes.length, 1);
+});
+
+test('a persisted revision acknowledges the insert result and retries an uncertain insert without duplicating it', async () => {
+  const source = fs.readFileSync(path.join(__dirname, '../../backend/masterQuotationRevisionStore.js'), 'utf8');
+  const { createMasterQuotationRevisionStore } = await import(moduleUrl(source));
+  const rows = new Map();
+  let reads = 0;
+  let loseReceipt = false;
+  const store = createMasterQuotationRevisionStore({
+    latest: async (customer, selection) => [...rows.values()].filter(row => row.customerId === customer && row.selectionId === selection).at(-1),
+    insert: async row => {
+      if (rows.has(row._id)) throw Error('Duplicate key');
+      rows.set(row._id, row);
+      if (loseReceipt) throw Error('Response lost');
+      return row;
+    },
+    read: async id => { reads++; return rows.get(id); }
+  });
+  const first = { customerId: 'CUS-QA-001', selectionId: 'item-1', expectedRevision: 0,
+    commandId: randomUUID(), fingerprint: 'draft-1.50', snapshot: { priceEa: 1.5 } };
+  const race = { ...first, commandId: randomUUID(), fingerprint: 'draft-1.75', snapshot: { priceEa: 1.75 } };
+  const simultaneous = await Promise.allSettled([store.append(first), store.append(race)]);
+  assert.deepEqual(simultaneous.map(result => result.status), ['fulfilled', 'rejected']);
+  assert.equal(reads, 1);
+  assert.equal(rows.size, 1);
+  reads = 0;
+  const second = { ...first, expectedRevision: 1, commandId: randomUUID(), fingerprint: 'publish-1.50' };
+  assert.equal((await store.append(second)).revision, 2);
+  assert.equal(reads, 0);
+  loseReceipt = true;
+  const third = { ...second, expectedRevision: 2, commandId: randomUUID(), fingerprint: 'withdraw-1.50' };
+  assert.equal((await store.append(third)).revision, 3);
+  assert.equal(reads, 1);
+  assert.equal((await store.append(third)).revision, 3);
+  assert.equal((await store.append(first)).revision, 1);
+  assert.equal(rows.size, 3);
+});
+
+test('the compact quotation grid renders and saves over the iframe message contract', async () => {
+  const { chromium } = require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+  const destination = fs.mkdtempSync(path.join(os.tmpdir(), 'quotations-workroom-'));
+  const asset = 'https://quote-ui.example.invalid';
+  const parent = process.env.MASTER_QUOTATION_TEST_ORIGIN || 'https://www.ltpos.ai';
+  buildWixWorkroom(destination);
+  // Exercise the current published client plus this isolated cost patch, rather
+  // than the pre-row-publication generator retained for older release fixtures.
+  const { patchPublishSwitch } = require('../quotation-publish-switch-20261119/patch.cjs');
+  const { patchCostRead } = require('../quotation-cost-batch-20261119/patch.cjs');
+  fs.writeFileSync(path.join(destination, 'app.js'), patchCostRead(patchPublishSwitch(fs.readFileSync(
+    path.join(__dirname, '../../releases/quote-buyer-sales-catalogue/master-quotations/app.js'), 'utf8').replace(/\r\n/g, '\n'))));
+  const app = fs.readFileSync(path.join(destination, 'app.js'), 'utf8');
+  assert.doesNotMatch(app, /qa-quote-order|#actor|\/api\//);
+  const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe' });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 920 } });
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    const longName = 'Magiclean Kitchen Cleaner (TP) - Ocean and Love Story Limited Edition';
+    const makeRow = (name, index) => ({ name, id: 'item-' + index, barcode: String(2000000000000 + index), packing: '710ML x 12', ea: 12,
+      costMyr: 36, costDetails: { lpEa: 3, lpCtn: 36, disc1: 0, disc2: 0, disc3: 0, remark: '100 FOC 10' }, revision: 0 });
+    const rows = [makeRow(longName, 0), ...Array.from({ length: 999 }, (_, i) => makeRow('Product ' + (i + 1), i + 1))];
+    rows[0].costDetails.disc3 = 5;
+    rows[0].costDetails.priceStale = true;
+    rows[0].imageUrl = 'https://static.wixstatic.com/media/test-product.svg';
+    rows[0].lastSale = { priceCtn: 12, currency: 'USD', siDate: '2026-11-16' };
+    rows[1].draft = { mode: 'EA', value: 0.8 };
+    rows[2].draft = { mode: 'EA', value: 36 / 0.92 / 4 / 12 };
+    rows[3].costMyr = 8.9756521 * 0.88 * 4 * rows[3].ea;
+    rows[4].costMyr = null;
+    rows[4].costDetails = undefined;
+    rows[5].ea = null;
+    rows[5].costMyr = 87.26;
+    rows[6].draft = { mode: 'EA', value: 0.5 };
+    rows[0].sortId = 'FO-00002';
+    rows[1].sortId = 'FO-00010';
+    rows[2].sortId = 'FO-00001';
+    rows[3].sortId = 'NF-00001';
+    const requests = [];
+    let compactFixture = false;
+    const costOutcomes = [{ pending: false, updated: 4, unchanged: 0, failed: 6 }, null];
+    await page.exposeFunction('handleQuotation', (action, customerId, input) => {
+      requests.push({ action, customerId, input });
+      if (action === 'customers') return { staffId: 'STF-QA', staffName: 'Test staff', customers: [{ customerId: 'CUS-QA-001', name: 'QA Trading' }, { customerId: 'CUS-QA-002', name: 'Read only' }] };
+      if (action === 'quotes') return { staffId: 'STF-QA', customer: { customerId, preferredCurrency: 'USD', rateToMyr: 4,
+        fullName: customerId === 'CUS-QA-001' ? 'QA Trading Company Limited' : 'Read only' },
+        canEdit: customerId === 'CUS-QA-001', rows: customerId === 'CUS-QA-001' ? (compactFixture ? rows.slice(0, 4) : rows) : [makeRow('Read only product', 1)] };
+      if (action === 'draft') {
+        const row = rows.find(item => item.id === input.selectionId);
+        row.draft = input.input;
+        return { revision: ++row.revision };
+      }
+      if (action === 'publish') {
+        const row = rows.find(item => item.id === input.selectionId);
+        row.published = { enabled: input.enabled, priceEa: row.draft.value, priceCtn: row.draft.value * row.ea,
+          publishedAt: '2026-11-17T18:00:00.000Z' };
+        return { revision: ++row.revision };
+      }
+      if (action === 'cost') {
+        const outcome = costOutcomes.length ? costOutcomes.shift() : { pending: false, updated: rows.length, unchanged: 0, failed: 0 };
+        if (!outcome) throw Error('Point Base unavailable');
+        for (const row of rows) row.costAt = '2026-11-17T08:00:00.000Z';
+        return { ...outcome, rows: rows.map(({id,costMyr,costAt,costDetails}) => ({id,costMyr,costAt,costDetails})) };
+      }
+      if (action === 'cost-status') return { pending: false, updated: 0, unchanged: rows.length, failed: 0 };
+      throw Error('Unexpected action');
+    });
+    await page.route(parent + '/quotations-test', route => route.fulfill({ contentType: 'text/html', body: `<style>body{margin:0}iframe{display:block;width:100%;height:100vh;border:0}</style><iframe id="workroom" src="${asset}/index.html"></iframe><script type="module">${bridge}
+      const frame = document.getElementById('workroom');
+      connectMasterQuotationFrame({ onMessage: fn => window.addEventListener('message', event => {
+        if (event.origin === '${asset}' && event.source === frame.contentWindow) fn(event);
+      }), postMessage: data => frame.contentWindow.postMessage(data, '${asset}') }, window.handleQuotation);
+      </script>` }));
+    await page.route(asset + '/*', route => {
+      const file = new URL(route.request().url()).pathname.slice(1);
+      return route.fulfill({ path: path.join(destination, file) });
+    });
+    await page.route('https://static.wixstatic.com/media/test-product.svg', route => route.fulfill({
+      contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="blue"/></svg>'
+    }));
+    await page.goto(parent + '/quotations-test');
+    const grid = page.frameLocator('#workroom');
+    const first = grid.locator('tr[data-row="item-0"]');
+    await first.waitFor();
+    assert.equal(await grid.locator('table').getAttribute('aria-rowcount'), '1002');
+    assert(await grid.locator('tbody tr[data-row]').count() < 100);
+    assert.deepEqual(await grid.locator('tbody tr[data-row]').evaluateAll(trs => trs.slice(0, 5).map(tr => tr.dataset.row)),
+      ['item-2', 'item-0', 'item-1', 'item-3', 'item-4']);
+    assert.equal(await grid.locator('.move-row').count(), 0);
+    assert.equal(await grid.locator('#company, #actor').count(), 0);
+    assert(await first.locator('.product-name').evaluate(el => el.scrollWidth <= el.clientWidth));
+    assert.equal(await grid.locator('thead').getByText(/MYR/).count(), 0);
+    const dimensions = await first.evaluate(row => ({
+      rowHeight: row.getBoundingClientRect().height,
+      imageHeight: row.querySelector('img').getBoundingClientRect().height,
+      headerHeight: document.querySelector('.masthead').getBoundingClientRect().height,
+      navHeight: document.querySelector('.quotation-nav').getBoundingClientRect().height,
+      headingHeight: document.querySelector('main h1').getBoundingClientRect().height,
+      menuColor: getComputedStyle(document.querySelector('.masthead')).backgroundColor,
+      tableHeaderColor: getComputedStyle(document.querySelector('thead th')).backgroundColor
+    }));
+    assert.deepEqual(dimensions, { rowHeight: 56, imageHeight: 52, headerHeight: 49, navHeight: 42,
+      headingHeight: 26, menuColor: 'rgb(19, 56, 88)', tableHeaderColor: 'rgb(210, 223, 234)' });
+    const thumbnail = first.locator('.product-thumb');
+    await thumbnail.hover();
+    const preview = grid.locator('.quote-product-preview');
+    assert(await preview.isVisible());
+    const previewBounds = await preview.evaluate(el => {
+      const rect = el.getBoundingClientRect();
+      return { width: rect.width, fits: rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight };
+    });
+    assert.deepEqual(previewBounds, { width: 200, fits: true });
+    await first.locator('.product-name').hover();
+    assert.equal(await preview.isVisible(), false);
+
+    assert.equal(await grid.getByRole('searchbox').count(), 0);
+    assert.equal(await grid.locator('.quote-customer h2').textContent(), 'QA Trading Company Limited');
+    assert.equal(await first.locator('.row-number').textContent(), '002');
+    for (const name of ['Selling Price', 'List Cost', 'Net Cost']) {
+      assert.equal(await grid.getByRole('columnheader', { name, exact: true }).evaluate(el => getComputedStyle(el).textAlign), 'right');
+    }
+    assert(await grid.getByRole('columnheader', { name: 'Discount', exact: true }).isVisible());
+    assert.equal(await grid.locator('.calc-group').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(19, 54, 80)');
+    assert.equal(await grid.locator('.quotation-title-row').getByLabel('Customer').count(), 1);
+    assert.deepEqual(await first.locator('input[data-mode=EA], input[data-calc=GP]').evaluateAll(inputs =>
+      inputs.map(input => input.getBoundingClientRect().height)), [25, 25]);
+    assert.equal(await first.locator('td.calc-cell').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(247, 249, 252)');
+    assert.deepEqual(await first.locator('.disc-cell .quote-value').allTextContents(), ['1.0.00%', '2.0.00%', '3.5.00']);
+    const decimals = await first.locator('.disc-cell .quote-value > :nth-child(2)').evaluateAll(amounts => amounts.map(amount => {
+      const text = amount.firstChild;
+      const offset = text.textContent.indexOf('.');
+      const range = document.createRange();
+      range.setStart(text, offset);
+      range.setEnd(text, offset + 1);
+      return range.getBoundingClientRect().left;
+    }));
+    assert.deepEqual(decimals, [decimals[0], decimals[0], decimals[0]]);
+    assert.deepEqual(await first.locator('.quote-value-suffix .quote-unit').allTextContents(), ['EA', 'CT', 'EA', 'CT']);
+    assert.equal(await first.locator('.stale-cost').textContent(), '36.00');
+    assert.deepEqual(await first.locator('.stale-cost').evaluate(e => [getComputedStyle(e).color, getComputedStyle(e).fontSize]), ['rgb(229, 27, 43)', '12px']);
+    assert.equal(await first.locator('[data-previous-sp]').textContent(), '12.00 / CTN');
+    assert.equal(await first.locator('.previous-sp small').textContent(), '16-11-26');
+    assert.equal(await grid.locator('[data-row=item-1] .gp-risk').count(), 1);
+    assert.equal(await grid.locator('#quote-risk-count').textContent(), '2');
+    await grid.getByRole('button', { name: 'Catch Cost' }).click();
+    await grid.locator('#notice.cost-warning').getByText('Catch Cost: 4 updated · 0 unchanged · 6 unavailable.').waitFor();
+    await grid.getByRole('button', { name: 'Catch Cost' }).click();
+    await grid.locator('#notice').getByText('Catch Cost: 0 updated · 1000 unchanged · 0 unavailable.').waitFor();
+    assert.equal(await grid.locator('#notice').evaluate(e => e.classList.contains('error')), false);
+    await first.locator('[data-calc=GP]').fill('25');
+    await first.getByRole('button', { name: 'Apply calculator', exact: false }).click();
+    assert.equal(await first.locator('[data-mode=EA]').inputValue(), '1.00');
+    const applied = first.getByRole('button', { name: /Calculator price applied to/ });
+    assert(await applied.isDisabled());
+    assert(await applied.locator('.calc-applied-check').isVisible());
+    await first.locator('[data-mode=EA]').fill('1.5');
+    assert(await first.getByRole('button', { name: /Apply calculator for/ }).isEnabled());
+    assert.equal(await first.locator('.calc-applied-check').isVisible(), false);
+    assert.equal(await first.locator('[data-profit]').textContent(), 'GP50.00%CTN36.00');
+    assert.deepEqual(await first.locator('.gp-healthy').evaluate(el => {
+      const style = getComputedStyle(el);
+      return [style.color, style.fontWeight];
+    }), ['rgb(20, 87, 220)', '700']);
+    assert.equal(await first.locator('[data-carton]').textContent(), '18.00');
+    await first.getByRole('switch').click();
+    await grid.getByText('Quotation is visible to this customer.').waitFor();
+    await first.locator('[role=switch][aria-checked=true]').waitFor();
+    assert.equal(requests.find(request => request.action === 'draft').input.input.value, 1.5);
+    assert.equal(requests.find(request => request.action === 'publish').input.revision, 1);
+    assert.equal(await first.locator('[data-carton]').textContent(), '18.00');
+    assert.equal(await first.locator('.quote-label').textContent(), '18-11-26');
+    assert.equal(await first.getByRole('button', { name: 'Save draft' }).count(), 0);
+    const ea = first.locator('[data-mode=EA]');
+    await ea.fill('3');
+    await ea.press('Enter');
+    await first.locator('[role=switch][aria-checked=false]').waitFor();
+    assert.equal(await ea.inputValue(), '3.00');
+    assert.equal(requests.filter(request => request.action === 'publish').at(-1).input.enabled, false);
+    await ea.fill('5.2');
+    await ea.press('ArrowDown');
+    assert.equal(await ea.inputValue(), '5.20');
+    assert.equal(await grid.locator('[data-row=item-1] [data-mode=EA]:focus').count(), 1);
+    await ea.fill('3');
+    await ea.press('Enter');
+    assert.equal(await grid.locator('input[data-calc=EA]').count(), 0);
+
+    const roundingRow = grid.locator('[data-row=item-3]');
+    const margin = roundingRow.locator('[data-calc=GP]');
+    const selling = roundingRow.locator('[data-calculated-selling]');
+    await margin.fill('5');
+    await ea.click();
+    assert.equal(await ea.inputValue(), '3.00');
+    await ea.pressSequentially('27');
+    assert.equal(await ea.inputValue(), '27');
+    assert.notEqual(await first.evaluate(e=>getComputedStyle(e).backgroundColor), 'rgb(255, 250, 241)');
+    await ea.fill('3');
+    await ea.press('Enter');
+    await margin.click();
+    assert.equal(await margin.inputValue(), '5');
+    await margin.pressSequentially('12');
+    await margin.press('Enter');
+    assert.equal(await margin.inputValue(), '12');
+    assert.equal(await roundingRow.locator('.calc-margin span').textContent(), '%');
+    assert.equal(await selling.textContent(), '8.98');
+    await roundingRow.getByRole('button', { name: 'Apply calculator', exact: false }).click();
+    assert.equal(await roundingRow.locator('[data-mode=EA]').inputValue(), '8.98');
+    assert.equal(await roundingRow.locator('[data-carton]').textContent(), '107.76');
+    await roundingRow.getByRole('switch').click();
+    await roundingRow.locator('[role=switch][aria-checked=true]').waitFor();
+    assert.equal(requests.filter(({ action }) => action === 'draft').at(-1).input.input.value, 8.98);
+    assert.equal(await selling.textContent(), '8.98');
+    assert.equal(await margin.inputValue(), '12');
+
+    const noCost = grid.locator('[data-row=item-4]');
+    await noCost.locator('[data-mode=EA]').fill('2.50');
+    assert.equal(await noCost.locator('[data-carton]').textContent(), '30.00');
+    assert.equal(await noCost.locator('[data-profit]').textContent(), '');
+    assert.deepEqual(await noCost.locator('.quote-value-suffix > span:first-child').allTextContents(), ['30.00', '', '']);
+    assert(await noCost.getByRole('switch').isDisabled());
+    await noCost.locator('[data-calc=GP]').fill('12');
+    await noCost.locator('[data-calc=GP]').press('Enter');
+    assert.equal(await noCost.locator('[data-calculated-selling]').textContent(), '0.00');
+    assert(await noCost.getByRole('button', { name: 'Apply calculator', exact: false }).isDisabled());
+
+    const noPack = grid.locator('[data-row=item-5]');
+    await noPack.locator('[data-mode=EA]').fill('80.00');
+    assert.equal(await noPack.locator('[data-carton]').textContent(), '');
+    assert(await noPack.locator('.quote-value-suffix > [data-carton] + .quote-unit').isVisible());
+    assert.equal(await noPack.locator('[data-profit]').textContent(), '');
+    assert(await noPack.getByRole('switch').isDisabled());
+    assert.equal(await grid.locator('[data-row=item-6] [data-profit]').textContent(), 'GP-50.00%CTN-12.00');
+
+    if (process.env.QUOTATIONS_SCREENSHOTS) {
+      fs.mkdirSync(process.env.QUOTATIONS_SCREENSHOTS, { recursive: true });
+      await roundingRow.screenshot({ path: path.join(process.env.QUOTATIONS_SCREENSHOTS, 'calculator-12-percent.png') });
+    }
+    const frame = await page.locator('#workroom').elementHandle();
+    const workroom = await frame.contentFrame();
+    const resizeStart = Date.now();
+    await page.setViewportSize({ width: 1024, height: 920 });
+    await workroom.waitForFunction(() => innerWidth === 1024 && document.querySelector('tbody tr').getBoundingClientRect().height > 0,
+      undefined, { timeout: 15000 });
+    const resizeMs = Date.now() - resizeStart;
+    console.log(`Quotation 1,000-row resize took ${resizeMs} ms`);
+    assert(resizeMs < 2500, `Full-grid resize took ${resizeMs} ms`);
+    const scrollGrid = grid.getByRole('region', { name: 'Quotation products' });
+    await scrollGrid.evaluate(el => el.scrollTo(100, 1000));
+    await workroom.waitForFunction(() => document.querySelector('.quote-grid').scrollTop === 1000);
+    const alignment = await scrollGrid.evaluate(el => ({
+      vertical: Math.abs(el.querySelector('thead').getBoundingClientRect().top - el.getBoundingClientRect().top - el.clientTop),
+      horizontal: Math.abs(el.querySelector('th').getBoundingClientRect().left - el.querySelector('tr[data-row] td').getBoundingClientRect().left),
+      pageScroll: window.scrollY,
+      gridLeft: el.scrollLeft
+    }));
+    assert.deepEqual(alignment, { vertical: 0, horizontal: 0, pageScroll: 0, gridLeft: 100 });
+    if (process.env.QUOTATIONS_SCREENSHOTS) {
+      await page.screenshot({ path: path.join(process.env.QUOTATIONS_SCREENSHOTS, 'fixed-header-1024.png') });
+    }
+    await grid.getByRole('button', { name: 'Catch Cost' }).click();
+    await grid.getByText('Catch Cost: 1000 updated · 0 unchanged · 0 unavailable.').waitFor();
+    await workroom.waitForFunction(() => {
+      const grid = document.querySelector('.quote-grid');
+      return grid?.scrollTop === 1000 && grid.scrollLeft === 100;
+    });
+    await scrollGrid.evaluate(el => el.scrollTo(0, el.scrollHeight));
+    await grid.locator('[data-row=item-999]').waitFor();
+    assert(await grid.locator('tbody tr[data-row]').count() < 100);
+    await scrollGrid.evaluate(el => el.scrollTo(0, 0));
+    await first.waitFor();
+
+    compactFixture = true;
+    await grid.locator('#customer').selectOption('CUS-QA-002');
+    await grid.getByText('Read only product', { exact: true }).waitFor();
+    assert(await grid.locator('[data-mode=EA]').isDisabled());
+    assert(await grid.getByRole('button', { name: 'Catch Cost' }).isDisabled());
+    await grid.locator('#customer').selectOption('CUS-QA-001');
+    await first.waitFor();
+    for (const width of [1880, 1440, 1024, 768, 390, 320]) {
+      await page.setViewportSize({ width, height: 920 });
+      const frame = await page.locator('#workroom').elementHandle();
+      const workroom = await frame.contentFrame();
+      await workroom.waitForFunction(width => innerWidth === width, width, { timeout: 3000 }).catch(async error => {
+        throw Error(`Expected iframe width ${width}, got ${await workroom.evaluate(() => innerWidth)}`, { cause: error });
+      });
+      const metrics = await first.evaluate(el => ({ width: innerWidth, scroll: document.documentElement.scrollWidth, height: el.getBoundingClientRect().height,
+        font: getComputedStyle(el.querySelector('[data-mode]')).fontSize }));
+      assert.equal(metrics.width, width);
+      assert(metrics.scroll <= width + 1, JSON.stringify(metrics));
+      assert(metrics.height > 0, JSON.stringify(metrics));
+      if (width <= 600) {
+        assert.equal(metrics.font, '16px');
+        assert(await first.evaluate(row => {
+          const image = row.querySelector('img').getBoundingClientRect();
+          const description = row.querySelector('.desc-cell').getBoundingClientRect();
+          return image.right <= description.left && description.top <= image.top;
+        }));
+      }
+      if (process.env.QUOTATIONS_SCREENSHOTS && [1880, 1440, 390, 320].includes(width)) {
+        fs.mkdirSync(process.env.QUOTATIONS_SCREENSHOTS, { recursive: true });
+        await page.screenshot({ path: path.join(process.env.QUOTATIONS_SCREENSHOTS, `quote-workroom-${width}.png`) });
+      }
+    }
+    assert.deepEqual(errors, []);
+  } finally {
+    await browser.close();
+    fs.rmSync(destination, { recursive: true, force: true });
+  }
+});

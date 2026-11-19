@@ -1,0 +1,28 @@
+CURRENT after1cf4cb1 — isolated source/share protection, NOT production integration
+
+Added procurement-stock-guard.cjs over before/after server product projections.
+Existing source/customer provenance, physical balances, claims, dispatched quantities,
+packing holds and borrowing records cannot change as a side effect of procurement.
+Source share cannot erase committed stock or approved future replacement; received or
+transfer-bound PO substitution refuses. New PO source must have zero physical stock.
+Exact original domain after-images can feed original Purchase projector without writes;
+overlay only permits company task/order/activity/PO tables, not stock or staff tables.
+
+Confirmed free surplus accepted beyond customer share is not negative replacement debt.
+Known zero-share confirmed PO sources without a customer task now receive into available
+stock with ownerTaskId null and EXPLICIT_ONLY. Unknown/nonzero ownerless share refuses.
+Free source cannot be either side's customer borrowing entitlement. Original real PO
+and approved receipt ceiling remain required; this does NOT admit unapproved overdelivery.
+Model preview mechanically rebuilt; no new browser path or real business mutation.
+
+Evidence: original Purchase+new guard/projection12pass212.5595ms. New free-source tests
+initially failed from TEST fixtures (missing correction reason, undefined defaulted to0);
+fixed tests, focused3pass100.8796ms. Shared model change justified all stock-current
+candidate regression:251pass0fail1121.6337ms, discovered exact paths with rg.
+One earlier read used nonexistent guessed borrowing-model test filename; corrected using
+file discovery, not counted as a test. No credit data available: UNKNOWN.
+
+OPEN: guard not wired into actual complete Purchase prepare; current source metadata
+plan/update mapping, all cost/task writers, special-source migration, production scale,
+recovery operation tooling, all read adapters/UI/shadow/ACTIVE and formal release gates.
+Pure guard/authority tests are NOT proof these workflows run in Wix. Production unchanged.

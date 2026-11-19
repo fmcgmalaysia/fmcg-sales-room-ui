@@ -1,0 +1,54 @@
+{
+  "scope": "Existing synthetic StockProtocolTest only; Admin functional test; no record mutations or deletes",
+  "savedEditorCode": {
+    "file": "stockProtocolReadCapacity.web.js",
+    "lfCharacters": 3106,
+    "sha256": "0ea4df405c12cf11f7441233edd689b86af126b25a5d394852375ab76a8c038d",
+    "matchesRepositoryCandidate": true,
+    "published": false
+  },
+  "runs": [
+    {
+      "ok": true,
+      "schema": "STOCK_NATIVE_READ_SAMPLE_V1",
+      "readOnly": true,
+      "collection": "StockProtocolTest",
+      "company": "NCT",
+      "readCalls": 3,
+      "elapsedMilliseconds": 495,
+      "existingSyntheticRecordFound": true,
+      "samples": [
+        {"kind":"EXISTING_SYNTHETIC_PAGE","milliseconds":238,"returnedRows":13,"totalCount":13},
+        {"kind":"EXACT_EXISTING_SYNTHETIC","milliseconds":124,"returnedRows":1,"totalCount":1},
+        {"kind":"COMPANY_SYNTHETIC_PAGE","milliseconds":133,"returnedRows":13,"totalCount":13}
+      ],
+      "productionCapacityAccepted": false
+    },
+    {
+      "ok": true,
+      "schema": "STOCK_NATIVE_READ_SAMPLE_V1",
+      "readOnly": true,
+      "collection": "StockProtocolTest",
+      "company": "NCT",
+      "readCalls": 12,
+      "elapsedMilliseconds": 1969,
+      "existingSyntheticRecordFound": true,
+      "samples": [
+        {"kind":"EXISTING_SYNTHETIC_PAGE","milliseconds":276,"returnedRows":13,"totalCount":13},
+        {"kind":"EXACT_EXISTING_SYNTHETIC","milliseconds":127,"returnedRows":1,"totalCount":1},
+        {"kind":"COMPANY_SYNTHETIC_PAGE","milliseconds":253,"returnedRows":13,"totalCount":13},
+        {"kind":"EXACT_EXISTING_SYNTHETIC","milliseconds":114,"returnedRows":1,"totalCount":1},
+        {"kind":"COMPANY_SYNTHETIC_PAGE","milliseconds":129,"returnedRows":13,"totalCount":13},
+        {"kind":"EXACT_EXISTING_SYNTHETIC","milliseconds":203,"returnedRows":1,"totalCount":1},
+        {"kind":"COMPANY_SYNTHETIC_PAGE","milliseconds":199,"returnedRows":13,"totalCount":13},
+        {"kind":"EXACT_EXISTING_SYNTHETIC","milliseconds":113,"returnedRows":1,"totalCount":1},
+        {"kind":"COMPANY_SYNTHETIC_PAGE","milliseconds":138,"returnedRows":13,"totalCount":13},
+        {"kind":"EXACT_EXISTING_SYNTHETIC","milliseconds":182,"returnedRows":1,"totalCount":1},
+        {"kind":"COMPANY_SYNTHETIC_PAGE","milliseconds":121,"returnedRows":13,"totalCount":13},
+        {"kind":"EXACT_EXISTING_SYNTHETIC","milliseconds":114,"returnedRows":1,"totalCount":1}
+      ],
+      "productionCapacityAccepted": false
+    }
+  ],
+  "unmeasured": ["Original300line preparation","Conditional domain writes","Stock collection indexes","Large history","File callbacks","Interrupted recovery"]
+}

@@ -1,0 +1,687 @@
+2026-10-25 — renewed autonomous continuation while user rests
+
+User requests continued implementation, native acceptance, publication and GitHub
+sync; blockers must not prevent independent background work. No relaxation of
+per-action sensitive grants, protected original flows, no main merge, no Packing
+scope, actual dispatch/invoices or UNKNOWN-operation rules. Same actual checkout
+and branch. Fresh root framework/START_HERE/system boundaries/checkout supplement
+and efficiency guide read; selected historical output truncations reread by range.
+Recovery original d447185/runtime32b812c, main live149 unchanged at start; candidate
+82e011c confirmed successfully synced to origin PR220 before this continuation.
+
+EMPLOYEE READ ACCEPTANCE — actual native log receipts, not title inference
+Release Manager official Test Open link is /master?siteRevision=153. Previous
+?rc=test-site page URL was not the native page link (that syntax is documented for
+HTTP-function test endpoints). Changed to actual native version URL, not a guessed
+URL parameter grid. Both earlier Chrome and IAB attempts on old URL gave no result.
+Native log stream opened and exactly one readonly reload on correct153 observed:
+PURCHASE489ms + WAREHOUSE543ms; each queries2, inserts0/bulkInserts0/patchAttempts0,
+mutationAttempted:false, complete:true, ordinaryStaffReadAccepted:true,
+ordinaryReadDenied:true; all six fixed records remain original complete versions.
+The raw permission-denied messages are EXPECTED negative-control reads, followed
+by successful elevated reads under original role authorization. Native backend
+AND frontend PAGE_PURCHASE/PAGE_WAREHOUSE receipts seen in Wix Logs. Title remains
+old; title alone is not acceptance or failure. No completed RUN was replayed.
+No full ordinary write-terminal/stale-attempt acceptance inferred; no ACTIVE.
+Private screenshot C:/FMCG-WIX-LOCAL/tmp-r2-ordinary-read-native-20261025.png.
+Original pending manual-new-tab request is now unnecessary; user need not act.
+
+Closed native page with ONE true->false unique replacement, full clipboard equals
+local CLOSED hash45d9f220a71d9c89ea6ae2d2b041346b7d253b938fb273d0b5c7da23736ffa79.
+Backend mutation gate remained false throughout. Test-site update attempted via
+Create Test Site after closing page; awaiting independent native version receipt,
+do NOT claim new Test154 yet or all deployed gates closed. Test153 itself is READ
+ONLY at0%, no business writer active. No main Publish or Pages dispatch.
+
+Real Purchase test153 navigation initially showed original-identity error, then
+automated navigation yielded about:blank embed. Only page-running message seen in
+fresh Wix Logs; do not diagnose it as security or SDK rejection. IAB correct-version
+comparison attempted independently, no refresh loop. Original public user forms
+and existing signed-in IAB Purchase tab1 untouched.
+
+SOURCE SDK AUTHORITY — LOCAL candidate only, not installed
+Fresh native Source Packages lists @wix/data1.0.534, @wix/site-window1.59.0 and no
+@wix/essentials. No package installed/upgraded. Native r2nctSalesIntake.js entire
+clipboard exactly equals prepatch generated a8f9c6c91d86deebaa1323cc1ba923d3eb3cfdb5dcd7c63ca5b6cd372a34d52b.
+Compiler r2-source-conditional-overlay.cjs now minimally imports official SDK auth
+and elevates ONLY three conditional patches after original delivery authorization.
+Expected candidate hash0603924ea913ac0d36699ac1943252a91a0124767c8d2c299e350bbdeff97a45.
+No elevated remove, no query/insert/update/save/truncate capability, no new public
+method, no Source quotation/selection/FX/identity changes. Existing exact source
+payload conditions, owner identity and receipt mappings unchanged. Original Source
+onboarding module remains untouched. This is explicit local/native candidate drift,
+not an unapproved silent sync. Keep original native copy until dependency/grant.
+
+Precise async question sent once: install SOURCE official @wix/essentials1.0.15 and
+allow ONLY original-authorized conditional OWN temporary order-lock release, not
+business records/old or UNKNOWN locks, no generic delete or staff/CMS permission.
+No answer yet; do not equate blanket autonomy with action-time sensitive grant.
+Continue independent work without waiting or repeated questions.
+
+Tests: focused37pass0fail496.8237ms after correcting ONE new test's nonexistent
+ordinary onboarding path to packet's actual source input (initial36pass1ENOENT,
+not a business defect). Existing late-finalization/delayed-lock/newer-date scenarios
+all retained and pass. Final full stock1596pass0fail0skip0cancelled51200.8561ms,
+retained C:/FMCG-WIX-LOCAL/tmp-r2-source-authority-full-tests-20261025.txt.
+Initial Windows rg glob errors corrected to scoped real paths; no identical retry.
+Token/cache/Credit task attribution UNKNOWN; no saving claim.
+
+NEXT independent tasks: native business/schema/allwriter acceptance and server-owned
+activation verifier integration; no fabricated coverage flags. Review latest actual
+ALLOC app ARRANGE_AVAILABLE route before treating old ALLOC_ENTRY missing-button
+notes as current; it is now wired at app.js:859, actual native/public acceptance
+still pending. Existing HTTPS review obsolete, do not hand it off as final UI.
+Remaining original-role Source SDK component/own-lock grant, conditional release
+scope, precise paired installation, current manifest/staged Pages artifacts, native
+allwriter evidence, activation gates and public Buyer/split/borrow/repay remain.
+Original production code/resources preserved; no permanent data deletion.
+
+SUBSEQUENT EXACT GRANT AND NATIVE SOURCE INSTALL
+User answered "允许上述精确范围" to official Source dependency1.0.15 + existing
+original-authorized, condition-protected OWN temporary order-lock releases only.
+No business-row, old/UNKNOWN lock deletion, ACL/staff/quote change authorized.
+Both remove call sites retain exact existing payload condition, exact collection
+and stable order-lock ID. Sales wrapper retains local random-owner equality;
+standalone adapter also requires ORDER_MUTATION_LOCK +32hex R2 owner marker.
+This adds no generic remove export or unconditional cleanup/recovery path.
+
+Installed SOURCE @wix/essentials1.0.15; original data1.0.534/site-window1.59.0
+remain unchanged in fresh actual list. One Installed-tab click timed out after
+the package action, old editor then disappeared from inventory. Fresh observed
+editor51427514 was claimed, not repeated install/refresh or alternate failure
+URL. New editor package list independently confirms all three exact versions.
+Private tmp-r2-source-dependency-20261025.png records native proof.
+
+Fresh full-native before images match previous generated originals. Applied only
+Source intake3match patch-elevation replacement +unique import +unique guarded
+lock removal; onboarding only unique import +unique owner-checked remove call.
+EVERY entire native after-image equals local generated source:
+intake before a8f9c6c91d86deebaa1323cc1ba923d3eb3cfdb5dcd7c63ca5b6cd372a34d52b
+after d22a886252c68e89400ba546a6668c113e80096294d916e808dcfc6948e63807
+onboarding before31f03a7d7b3f61ae7f92c77907d981d3a3b15085d91db9612e30d4c770c58b2c
+after a791bd4d10f9f5e1cd6ee03ea9e22241ed7c853f2f3a678808956d5182b1a444
+Autosave icon checked; screenshot tmp-r2-source-authority-installed-20261025.png.
+No Source order submitted, no native lock deletion, no old table edited.
+
+Latest focused37pass0fail595.2667ms; full stock1596pass0fail0skip0cancelled80181.529ms
+after the new narrowly authorized own-lock elevation, not reuse of earlier count.
+Retained C:/FMCG-WIX-LOCAL/tmp-r2-source-owned-lock-full-tests-20261025.txt.
+build-isolated-cohort --check passes105new backend modules/8relays; inventory only.
+
+MASTER Release Manager independently confirms Test1540%, Live149100%; closed page
+installed before Test154 update. Private tmp-r2-test154-closed-20261025.png. This
+supersedes earlier test-update-pending text above. No native Run/mutation reopened.
+
+SOURCE Release Manager BEFORE test update: Live766100%, pre-existing Test5830%.
+Preserved screenshot tmp-r2-source-before-test-20261025.png. This was an old zero
+traffic test revision, not current published flow. Normal task-scoped Create Test
+Site action requested after exact two-module sync; native final new-version receipt
+still pending at this entry. Do not claim Source main Publish or accepted business
+rights from the action; fixed actual siteRevision link must come from native Open.
+
+Existing heartbeat automation idautomation resumed ACTIVE under newest explicit
+request to keep working during rest, same15min interval/name/target; no duplicate
+or other monitors touched. Prompt points to actual STATUS/latest handoff and keeps
+no-agent/no-model-switch/current protections. It initially mentioned pending Source
+grant; THIS explicit reply/install supersedes that text. Continue independent work,
+do not ask identical permission again. Record current native/runtime facts first.
+
+FINAL NATIVE RECEIPT FOR THIS INCREMENT
+Source Release Manager refreshed ONCE after the changed test deployment; now
+Live766100% / Test7670% independently confirmed. Private screenshot
+C:/FMCG-WIX-LOCAL/tmp-r2-source-test767-20261025.png. Official Open button provided
+/fmcgmalaysia?siteRevision=767; used that exact version for known /sales-room route.
+New isolated test tab51427526 ends with about:blank embed; connected native Source
+Wix Logs showed no result. This is not R2 business acceptance or a claimed auth
+fault. Do not loop refresh/new tabs or operate user's existing Source forms.
+MASTER Live149/Test154 remains as recorded. No main-site Publish on either site.
+Code2072b73 successfully pushed (82e011c..2072b73), existing PR220. No Pages action,
+main merge, workflow/environment permission edit, real loan/order/receipt mutation
+or physical dispatch. Candidate-only source implementation is now INSTALLED exact,
+not merely local; native business operation terminal acceptance still missing.
+
+Next autonomous increment should choose ONE actual missing release gate, preferably
+the server-owned verifier/native small borrow/repay composition or actual native
+readiness checks; reuse complete1596result until a relevant change. Do not keep
+reopening setup, rerunning completed fixtures or adding peripheral UI polish.
+Keep dedicated test work physically in StockProtocolTest with fixed new bounded
+scope and no delete/reset/unknown replay; actual business/all-writer flags must
+remain honest. Complete activation-wrapper/real native coverage before ACTIVE.
+User's last exact Source dependency/owner-release grant is fulfilled, no human
+action currently needed for that grant. Scheduled continuation ACTIVE15min means
+work must continue; do not pause merely because browser currently fails when there
+is independent server-owned acceptance implementation available.
+
+USER EXPANDED TEST SCOPE / BORROW-REPAYMENT INCREMENT
+User explicitly authorizes actual Buyer Room orders and any fake pre-launch test
+data; do not ask identical ordinary test-data permission again. Packing remains
+deferred; no physical dispatch/invoice/payment, permanent deletion or expanded
+sensitive access inferred. Current work resumes the SAME framework/version; no
+full-project rescan. Original production baseline and live sites unchanged.
+
+Implemented new Admin-only, default-CLOSED diagnostic:
+r2BorrowRepaymentAcceptance.web.js, generated by build-r2-borrow-repayment.cjs
+from r2-borrow-repayment-acceptance.cjs. ALL writes physically StockProtocolTest
+prefix SPT-R2BORROW-20261025-6c93:, no remove/reset/adoption/activation capability.
+Uses actual compiled R2 conditional store, commit and borrowing/receipt command
+factories plus original PO/role validators under synthetic server-owned actors.
+This is NOT ordinary-employee authentication or actual business-writer coverage.
+Fixtures retain immutable original receipt commands across bounded checkpoints;
+do not recompute original PO versions while the same save is pending.
+
+Focused original + actual compiled-isolated replay56pass0fail0skip0cancelled
+1302.6695ms. Verified: borrow30 => physical100 / A30 / B70; receipt20 => physical120
+/ A30 / B90 / repaid20; receipt80 => physical200 / A100 / B100 / repaid30, one
+CLOSED relation and exactly2 receipt events. Unknown insert simulation stops at
+one attempted write and rejects re-seeding without any cleanup. Earlier local
+fixture failures were its own codec normalization/missing normalizeListedRow and
+recomputed receipt-version envelope; fixed only diagnostic, no business patch.
+
+Native new file initially auto-appended .web.js twice. Rename/type attempts were
+blocked by Wix code editing ownership; observed Start Coding restored it. Correct
+filename now r2BorrowRepaymentAcceptance.web.js, full native CLOSED image equals
+local SHA2565a1ce491d56149a410bc4c3fe97fd5e7ef8c7fdfa8e6f5321454ab952252f468.
+Native CLOSED INSPECT completed, log R2BORROW_RECEIPT stageCLOSED, all counts0,
+mutationAttemptedfalse. BABEL>500KB styling deoptimization notice is not failure.
+Only dedicated enabled literal changed after exact1match full compare, OPEN hash
+971e3426e66477f19be93b19fae5f8b89ecd17e7ece7635db214b4846b0f2860.
+Native SEED invoked ONCE through inner function tester (not toolbar Preview).
+Terminal receipt pending at this entry. DO NOT repeat SEED or infer success from
+absence of error. Inspect exact terminal result; UNKNOWN retains rows untouched.
+Close this diagnostic enabled literal when this round ends or encounters UNKNOWN.
+SEED terminal native receipt subsequently CONFIRMED: oktrue stageSEEDED generation0,
+queries3 inserts6 patches0 deletes0. Borrow step invoked next, terminal pending.
+No business ACTIVE, Pages deployment, site Test refresh/main Publish or Buyer
+order yet. No changes to protected original workflows or old UNKNOWN fixtures.
+
+SUBSEQUENT NATIVE BORROW SUCCESS / RETAINED RECEIPT CHECK
+User asked "能继续吗" after intentional interruption; resumed same task. Full
+fresh native read confirmed old CLOSED image intact before opening test-only gate.
+No new test permission needed. SEED above is confirmed, never seed again.
+BORROW request6c930001-2026-4250-8250-000000000001 reached known checkpoints:
+BEFORE4/6, APPLY2/6, APPLY6/6, VERIFY4/6; same digest/planHash throughout.
+Then native OPERATION_COMPLETE stockGeneration1 pendingnull. Actual INSPECT:
+queries7 writes0, onHand100 borrowerAllocated30 lenderAllocated70 repaid0,
+debtClosedfalse receiptCount0; conservation VERIFIED, no physical stock invented.
+These fixed test commands use synthetic server-owned actors, NOT native employee
+or R2 business-table acceptance. Codebb27f1c pushed successfully(ab7b6bf..bb27f1c).
+
+RECEIVE_PARTIAL invoked ONCE: native terminal okfalse, queries4 inserts1 patches0
+deletes0, "Retained fixture command identity conflict". Thus only the immutable
+fixture command was inserted; no Warehouse receipt/current-stock commit started.
+Do not reseed, reborrow, delete/adopt records or claim receipt/repayment accepted.
+Local counterexample reproduced EXACT same failure when SDK reordered JSON keys.
+Minimum LOCAL diagnostic-only fix rebuilds exact original request field order
+before comparing its EXISTING hash, rejects missing/extra fields or changed values,
+and preserves saved request/version. No business runtime/coordinator patch.
+Read-only INSPECT now reports stored/observed/originalFieldOrder command digests
+to verify this inference natively BEFORE continuing RECEIVE_PARTIAL.
+Focused60pass0fail1111.8888ms includes actual generated R2 replay, reordered keys,
+changed quantity, injected fields, UNKNOWN single-write stop and original workflows.
+Final fullstock1606pass0fail0skip0cancelled62693.9667ms AFTER this fix/tests; retained
+C:/FMCG-WIX-LOCAL/tmp-r2-borrow-repayment-full-tests-20261025.txt. Reuse it unchanged.
+
+Native minimal fix NOT CONFIRMED INSTALLED. Prepared3unique edit groups against
+full-native OPEN hash971e3426...f2860: helper at coverage line, read-only INSPECT
+metadata, retained-request check/use. First group UI action timed out30s and CUA
+kernel reset. Could have only filled Find/Replace or partially applied; DO NOT
+assume no change/success or resend. Full native code read required before editing.
+The dedicated test gate was true at last CONFIRMED source read; closure is NOT
+confirmed. Public main/Test builds were not refreshed, no public test interface
+for this module, no automated invocation, Admin-only fixed diagnostic, no deletes.
+Close it once actual editor access returns. Business ACTIVE remains OFF.
+
+After CUA reset, actual Chrome extension browserID changed3=>2; old3 now IAB.
+Fresh inventory retained tab51427484. Selected actual Chrome2 by returned identity,
+not another profile/browser. getTab returned "Debugger unattached". Asked once for
+extension reconnect; user answered "已经链接". Subsequent getTab STILL unattached;
+fresh user.openTabs could list original editor, documented user.claimTab also
+returned unattached. Stop this path, no new-tab/refresh/reinstall/control bypass.
+No further browser write/test invocation since the timeout. User-facing distinction:
+extension inventory reachable, operational debugger connection unavailable; not a
+claimed security refusal or defect diagnosis. Other background work can proceed.
+Native current file name correct r2BorrowRepaymentAcceptance.web.js. This entry
+supersedes earlier "borrow terminal pending" text. Retained fake business state
+is generation1 with approved borrowing; partial receipt not yet committed.
+
+Next exact recovery: restored editor fresh full read => compare old OPEN, new
+OPEN/CLOSED and possible3patch combinations => minimum remaining diagnostic edit;
+native INSPECT confirms request digest originalFieldOrder equals stored; then
+same retained RECEIVE_PARTIAL, fixed RECEIVE_REST, readonly final conservation;
+close gate with exact full equality. No repeated SEED/BORROW or UNKNOWN fixtures.
+Then remaining genuine allwriter/paired/readiness/activation/UI/public gates;
+never fabricate writerCoverage to unblock Buyer orders. Packing deferred.
+
+USER SCREENSHOT / BRIEF CONTROL RECOVERY / STOP LONG INPUT PATH
+User supplied codex-clipboard-a868bf1d...png showing original MASTER code and blank
+ChatGPT sidebar; screenshot alone is not permission/connection proof. One focused
+fresh getTab succeeded. Actual AX explicitly said code panel read-only because
+editing code in another tab, offering Take Control. Normal Take Control cleared
+read-only; full native code copied again EXACT old OPEN hash971e3426...f2860.
+No helper/INSPECT-digests/new check present: FIRST timed-out edit was NOT applied.
+This ownership message is evidence for that read-only event, not an explanation
+for every subsequent failure or claimed security block.
+Second attempt ONLY filled419char Find then1451char Replace via typeText; timed
+out60s with kernel reset again. NO Replace All call or function Run was in that
+attempt, so none invoked. Stop long typeText path after2failures. A future restored
+session should use small normal paste input, fresh focus and exact full readback,
+not repeat long typing, whole-file overwrite, another failed URL or security change.
+After reset actual browser IDs invalidated again; nameChrome original-tab binding
+returned Debugger unattached. No further control attempts. Asked once whether
+Chrome currently has the ChatGPT started debugging banner; await new external
+evidence, don't instruct repeated refresh/reinstall. Native gate closure remains
+unconfirmed, business ACTIVE staysOFF, no test auto-run or public new version.
+
+Existing automation idautomation kept same name/target/ACTIVE15min, prompt UPDATED
+through app tool, receipt statusACTIVE. Replaced stale pending Source grant and
+old1596/local-only claims, preserved quiet notification preference and all existing
+boundaries. No duplicate/model/agent/other-schedule changes. Latest user permits
+actual Buyer orders/fake data, but native business allwriter/activation/UI acceptance
+still incomplete. No new test/deployment permission sought or inferred.
+
+2026-10-25 10:51 MYT HEARTBEAT — INDEPENDENT RELEASE ARTIFACT PREFLIGHT
+Latest Git before this incrementbb72a0bc4edbaaea94c46405a93bb626b6182c94, tracked
+checkout clean. Reused already-read framework and1606passing result, no rerun.
+No fresh native/browser attempts: user then answered debugging-banner question
+"没有横条". This agrees with unattached control, not a new restored connection;
+do not retry the stopped path or ask repeat install/permissions/ordinary test grant.
+The unfinished test-only native gate remains explicitly unconfirmed, no new Run.
+
+Completed a separate genuine release-preparation gate WITHOUT browser/upload:
+build-isolated-cohort --check105backend/8relays passes. Read actual static-only
+stage-isolated-cohort.cjs and existing static-release tests; use R2 packager, NOT
+the older non-isolated stage-business-ui-install path. Existing1606result includes
+the packaging guard tests, no need to rerun for seeing their summary.
+Created NEW dedicated local directory (nonexistent verified before generation):
+C:/FMCG-WIX-LOCAL/release-candidates/r2-20261025-bb72a0b
+Actual packager verifies every source against gitshow exact codeCommit, includes
+only public static allowlist, excludes backend/handoff/CSV/native evidence/.git/
+untracked and retired artifacts. Artifact112resources,113files including manifest.
+Independent full112byte-hash/path check PASSES; no extra file. Manifest:
+isolated-stock-release.json SHA256
+ee14a190f740a57292c81c81194f0a770dd8f64754be8afa947a278a62d31a13
+versionbb72a0bc4edbaaea94c46405a93bb626b6182c94. All acceptance fields remain false:
+backendInstalled,wixPublished,currentStockActivated,realBorrowingVerified.
+This is local packaging ONLY: Pages unchanged, no upload/dispatch/permissions,
+no Wix Test/main publish, public/Buyer actual tests not completed. Generated
+artifact outside checkout is NOT staged to Git. Reuse manifest and checks until
+asset sources change; a later actual deployment must build its exact selected Git
+ref, not relabel this artifact as a newer commit or claim it installed backend.
+Production recovery/current native state unchanged. Continue genuine independent
+readiness/allwriter work while control unavailable, not cosmetic preview work or
+another copy of completed tests. No new required user action notification.
+
+2026-10-25 11:08 MYT RESTART READBACK / NATIVE INPUT STILL UNCONFIRMED
+User restarted the desktop chat app. Dedicated browser extension API is no longer
+available in this session; the supported Windows computer-use skill was read in
+full (current 26.1021.31345 including API/guidance/confirmations). Native Chrome
+window66680/MASTER Studio is readable via the desktop API, not proof that the old
+extension debugger reattached. Existing code panel still shows the old coverage
+line immediately followed by try, with the unmodified retained borrowing fixture.
+This visible excerpt is NOT a whole-file equality or confirmed gate closure.
+
+No refresh, navigation, Replace, function Run, code typing or Publish performed.
+Fresh indexed editor click failed before input: coordinate input geometry is
+unavailable. One fresh screenshot-backed coordinate click at visible editor did
+not confirm editor focus: AX still reports address bar. Stop that input path;
+do not issue Ctrl+A, type, Replace or Run while focus is wrong. No inference about
+Wix auth/safety/root cause; desktop screenshot includes another app overlay, which
+was not controlled. Whole native source comparison and diagnostic gate closure
+remain outstanding. No SEED/BORROW/recovery replay or business writes occurred.
+
+After restart the chat's writable workspace is only its visualization directory,
+not this checkout. Ordinary git status was denied/incomplete; properly approved
+read-only escalation confirmed tracked worktree CLEAN at cb1c0af. Do not treat an
+incomplete ordinary-sandbox result as repository corruption or change Git config.
+Local full1606result remains reusable; no unchanged tests rerun. Native activation
+factory has no deployed server-owned verifier; callback booleans or synthetic
+fixture coverage cannot count as actual installation/all-writer acceptance.
+Original business ACTIVE OFF, two live versions/Pages/public tests unchanged.
+
+2026-10-25 CONTINUATION — READ-ONLY AUDIT SUBGATE / NATIVE DIAGNOSTIC FIX INSTALLED
+Implemented fresh-cohort-activation-schema.cjs plus standalone compiled Admin-only
+r2activationSchema.web.js and builder. Reads only R2NCTActivity/R2NCTActivity1
+metadata twice each with stable same-admin checks; no items/index API, elevation,
+field/ACL mutation, bootstrap, activation or coverage capability. Reports exact
+missing/mistyped persisted control and activation audit fields, never full native
+business acceptance. Prior bootstrap/schema check did not require writerBuild,
+activationRequestId/MemberId/EvidenceDigest. This is a contract gap, NOT proof that
+those fields are missing from the actual live schemas; fresh read still required.
+ALLOC stockAllocatedCumulative is derived by the original paired Purchase
+projection from current stock, NOT a CMS counter to add; no redundant field added.
+New actual generated endpoint and original bootstrap/activation regression:
+24pass0fail0skip0cancelled266.3571ms. Build --check passes. Existing1606baseline
+reused, NOT rerun or relabelled as a larger full-suite native result. This audit
+reader is local-only, NOT installed or used as complete activation evidence.
+
+User clicked code area as requested. Fresh native Wix explicitly showed other-tab
+read-only and Take Control. Normal screenshot click restored editing after delayed
+UI response. AX focused_element remains address bar even when actual code selection
+is verified, so it is not reliable alone for this embedded editor. No blind typing.
+Documented sky.set_value works for native Find/Replace/JSON parameter fields; no
+long typeText retry. This is normal native UI, not browser debugger/hidden state.
+
+Full old diagnostic compared in23 disjoint700-character normal Find selections;
+all15648content characters match old OPEN, with UI selection omitting final LF.
+Canonical single-EOF-LF old hash971e3426...f2860. Applied exactly3unique prepared
+Find/Replace groups (419->1451,136->496,365->417 chars), one Replace All each.
+Full after-image compared in19 disjoint900-character normal Find selections;
+all17092content characters exact, same omitted selection EOF-LF qualification.
+Canonical new OPENcd1e66118cb6f89260bb5824d21cdeea41ca15f0cd1f5ecc08f222777296c101;
+new CLOSED7a1787740e1f78e11c961990756756da5de33b90499749e5c0027f3f9a00e72d.
+No full-file overwrite, business root/code edit, SEED/BORROW replay or Publish.
+
+Native INSPECT successfully returned8queries/0writes, generation1 physical100,
+A30/B70/repaid0/receiptCount0. Retained partial request hash stored and
+originalFieldOrder both8b5ed8aacdfdf94d9957569a6829174a; observed reordered
+18ca187ba2dd90c7887965a12ce5ef67. Field-order diagnosis now NATIVE CONFIRMED.
+Then fixed RECEIVE_PARTIAL selected in actual inner Set Parameters editor7777;
+inner Run7756 clicked ONCE. Terminal pending at this entry; do not resubmit until
+actual terminal receipt is known. Test-only gate remains OPEN, no public automatic
+caller; close after round or UNKNOWN. Business ACTIVE remains OFF. New audit
+subgate alone is explicitly tested to FAIL actual activation with zero CAS.
+
+SUBSEQUENT PARTIAL RECEIPT TERMINAL CONFIRMED
+Four bounded same-request calls confirmed BEFORE4/5 -> APPLY3/5 -> VERIFY2/5 ->
+OPERATION_COMPLETE generation2 pendingnull. Same request6c930002...0002,
+digest874ea3fe2a36e2f49f1b652c147f215d,
+planHash77e0353807084f0dd384920eadaf01f7,
+key29a9c080516d71d946098cab61f7a01f throughout. No new request or lock removal.
+Terminal receipt4a4926f18b6210cb5f6dd927e6a227e9, PO
+f3f6285c64d776b11b03cfa798d02d3d. A new read-only INSPECT invoked once after
+terminal; pending at this append. Do NOT repeat RECEIVE_PARTIAL. Full remaining
+receipt not started yet. Local audit-reader16ebd17 successfully pushed PR220.
+
+PARTIAL CONSERVATION VERIFIED / FINAL RECEIPT STARTED
+Native readonly INSPECT8queries/0writes generation2 confirmed onHand120, A30/B90,
+repaid20, one receipt, debtClosedfalse. No duplicate borrower ALLOC. Then fixed
+RECEIVE_REST request6c930003...0003 started; first known BEFORE4/6,
+digest7fb8a2c7217ecd6b6112bc1539687e42,
+planHash4126203363a5ad7eda4dc31bf8972d5a,
+keyeb7a11d281b028fb57979ec2a2fbea11. Same-request continuation invoked once from
+that confirmed checkpoint; terminal pending here. Do not repeat partial receipt
+or seed/borrow, no auto-reset/cleanup on UNKNOWN. Packing/dispatch still disabled.
+
+FINAL RECEIPT TERMINAL CONFIRMED (FINAL INSPECT STILL PENDING)
+Same fixed6c930003...0003 confirmed BEFORE4/6 -> APPLY2/6 -> APPLY6/6 -> VERIFY4/6
+-> OPERATION_COMPLETE generation3 pendingnull, same digest/planHash/key above.
+Receiptb2d5ae89bafd3115b8ea338e667908f9, same original PO. Final readonly INSPECT
+invoked ONCE after terminal, await result before claiming full conservation/debt
+closure. Do not repeat RECEIVE_REST/RECEIVE_PARTIAL/BORROW/SEED. Gate remains OPEN
+until this read completes, then close and confirm CLOSED with zero operations.
+
+Final INSPECT first invocation displayed explicit Network Error with no result.
+This is READ-ONLY in the exact installed source (all8operations are queries), not
+an ambiguous warehouse write; neither completed receipt was resubmitted. One
+bounded READ-ONLY INSPECT retry invoked after confirming this distinction. If it
+also fails, stop that read path, close gate and retain final conservation as NOT
+observed. Network Error is not proof an old execution terminated. All actual
+receipt mutations already have generation3/pendingnull terminal completion.
+
+FINAL CONSERVATION VERIFIED / GATE SOURCE CLOSED
+The ONE read-only retry returned FINAL_VERIFIED generation3, queries8/inserts0/
+patches0/deletes0, physical200/A100/B100/repaid30/debtClosedtrue/receiptCount2.
+Thus partial and full repayment conservation passed natively on this dedicated
+fixture; NOT ordinary-staff business-table/public UI acceptance. No further
+SEED/BORROW/receipt execution allowed for this completed fixture.
+Only enabledtrue->false unique literal replaced. Full CLOSED code compared in19
+900-character normal Find selections:17093content chars, canonical singleEOF-LF
+hash7a1787740e1f78e11c961990756756da5de33b90499749e5c0027f3f9a00e72d.
+No other code delta. Opening same function parameter panel for INSPECT CLOSED
+zero-operation receipt; terminal pending at this append. Business ACTIVE OFF.
+
+CLOSED RUNTIME RECEIPT CONFIRMED
+Actual same function INSPECT after closure returned stageCLOSED/blockedtrue,
+queries0/inserts0/patches0/deletes0/mutationAttemptedfalse. Source and runtime gate
+closure BOTH confirmed; no further open/fixture replay needed. This supersedes
+all prior gate-unconfirmed/native-repayment-missing entries. New dedicated
+borrow->partial20->rest80->closed-debt native fixture composition is now complete.
+Still not real employee/business tables/UI/public release acceptance. Continue
+new audit-schema reader installation and actual allwriter/paired/release gates;
+never fill coverage from this synthetic fixture. Both live sites/Pages unchanged.
+
+AUDIT READER NATIVE INSTALL IN PROGRESS — DO NOT PUBLISH PLACEHOLDER
+New absent-name check passed, created exactly r2activationSchema.web.js via Add
+web module. Not an existing/protected file. Native code-editor set_value4553chars
+inserted the intended source before Wix default template instead of replacing
+the whole model; UI value/AX initially stale. Ctrl+A actual selection reveals
+intended source plus original multiply example. No reader function invoked, no
+site/Test/main Publish. Correct ONLY this newly created file with normal exact
+Find/Replace whole-new-file content, then full readback before any execution.
+Do not repeat code-editor set_value or long typeText; Find/Replace field set_value
+has already yielded canonical-exact source on the previous diagnostic. Native
+reader target canonical SHA256e28d3336d9a918a455b251b3246b89f5325ade27c0cbfc3231ee488407cf251a,
+4553characters. No production code/ACL/employee/data mutation. Borrow diagnostic
+remains CLOSED with zero-operation receipt, completed fixture never re-executed.
+
+AUDIT READER SOURCE NOW EXACT — TEMPLATE RESIDUE RESOLVED BEFORE ANY RUN
+Normal Find/Replace whole-content match applied ONCE to this NEW own file only,
+not an existing module; exact4553char candidate supplied in Replace field. Native
+Find selection readback confirms all19disjoint250char ranges match canonical
+sourcee28d3336...251a, including sole Permissions.Admin export and no multiply/
+default example. UI selected_text omits a selected range's terminal LF and can
+summarize long MULTILINE selections with an ellipsis even below900chars. Therefore
+use250char ranges for formatted files; never treat condensed selection as source.
+All ranges verified, only observed terminal-LF omission normalized; short raw
+content not guessed/reformatted. No native execution occurred before exact check.
+Browser window now1037px wide; fresh screenshot coordinates used, not old1536px.
+Wix shows Other users have stopped editing/Start Coding (ownership state only).
+New inspector gutter clicked once to open parameter panel, await actual panel;
+no metadata operation yet. Do not claim schema fields present or missing natively.
+
+Audit-reader inner Set Parameters confirmed inspectActivationAuditSchema(input).
+Code-editor set_value is not model replacement: initial parameter input included
+both own JSON and default null input. Never ran malformed input. Ctrl+A observed
+only that short parameter JSON, then short11-character type_text replaced it;
+fresh native Value exactly{"input":{}}. This is NOT a repeat of stopped long-text
+typing. Actual inner Run21893 invoked ONCE after parameter and full-source check.
+Read-only metadata terminal pending. No item/index/elevation/schema mutation.
+
+NATIVE AUDIT SCHEMA READ COMPLETE — EXACT8MISSING TEXT FIELDS
+Native R2ACTIVATION_SCHEMA_RECEIPT returned activationAuditSchemaMatchesfalse,
+two matching metadata observations per table,14required fields/table. Both
+R2NCTActivity and R2NCTActivity1 lack writerBuild, activationRequestId,
+activationMemberId,activationEvidenceDigest, all expectedTEXT. No type conflicts.
+Metadata hashes5b4222be7834c58fc2d4cd905b0ae9c8adbb5ccca310246d3fb99062747bf398
+and737c061f022767ab5dc8544b55b397409b0362e3d9c343500ca1b7d2ed7dde53.
+No business rows/index API read, no field/ACL/record mutation. This is now actual
+native evidence, not a guessed missing-field conclusion from the old121field
+contract. Next scoped install: add these8TEXT fields via existing CMS admin UI,
+no new mutation endpoint, permission/index changes or old table edits; then repeat
+the read-only verifier. New reader native source exacte28d3336...251a, no template.
+Borrow native fixture COMPLETE/CLOSED; no more completed-command replay.
+
+NCT AUDIT FIELD INSTALL COMPLETE IN CMS UI, METADATA RECHECK STILL REQUIRED
+In exact R2 NCT Activity CMS (one existing maintenance control row), Manage Fields
+->AddField->Text->ChooseFieldType, saved each once with exact matching Field name
+and Field ID: writerBuild,activationRequestId,activationMemberId,
+activationEvidenceDigest. Each returned Manage Fields and appeared in the new
+field list/tree; no defaults/validations/encryption/ACL/index/row edits. No Save
+UNKNOWN. No existing field replaced. GHR four fields NOT installed at this entry;
+returning CMS breadcrumb to select R2 GHR Activity next. Final native readonly
+audit inspector must run again after both tables, not rely only on UI success.
+
+GHR AUDIT FIELD INSTALL COMPLETE IN CMS UI — BOTH TABLES RECHECK NEXT
+Exact R2 GHR Activity selected from native CMS list/title, not original GHR. Added
+and saved once each Text writerBuild,activationRequestId,activationMemberId,
+activationEvidenceDigest, exact same Field name/Field ID. All4names visible after
+last Save returned Manage Fields, no uncertain save. Total8additive TEXT fields
+installed across two NEW R2 tables only. No row/default/validation/encryption/ACL/
+index/old-table edit. Both maintain original one control row; no business ACTIVE.
+Closing CMS viewer to re-run the unchanged Admin readonly audit inspector once.
+Native post-install metadata receipt still pending; do not infer from UI alone.
+Raw native accessibility frames may expose signed instance URLs; never copy/use/
+export those URLs or whole raw logs. Output scoped labels with URL values omitted.
+
+NETWORK PAUSE / RESUME — POST-INSTALL NATIVE SCHEMA CHECK PASSED
+User explicitly paused for network outage. All app input/Git writes stopped;
+automation idautomation setPAUSED, receipt confirmed. At pause only the unchanged
+readonly audit metadata call was pending; no order/stock mutation in flight from
+our current action. User explicitly resumed after network recovery.
+Initial restored reads exposed stale cached UI IDs; one attempted readonly Run
+click rejected element21893 unavailable, so no new native call dispatched. Normal
+selection recovery then reported user input detected; complied with required fresh
+get_window_state. Fresh actual UI contains completed post-install native receipt:
+activationAuditSchemaMatchestrue, issues[],14required fields per exact table.
+R2NCTActivity metadataSha256
+460bdbe64dc36f4f6e7aa1076809f9219c46e394c182aa8188c532135c26687e;
+R2NCTActivity1 metadataSha256
+ccb78f89636b5264f7d5a4875ede0c493097335e8254f1e6b47ba01fd6860155.
+Both paired metadata reads stable/Admin-only, all8new TEXT fields confirmed.
+No field Save repeated. No index/business-row read or mutation, full-business-
+schema/writer/activation flags remainfalse. This completes ONLY native activation
+audit-field installation/subgate, not all business schema or server-owned verifier.
+Actual reader parameter UI now innerRun28670/input28689 (not old21893/21912);
+all element IDs must be fresh. Existing Chrome window66680 still same editor.
+New ownership read-only/TakeControl shown; no edit/control change attempted during
+this result check. Borrow fixture COMPLETE/CLOSED; do not re-run completed steps.
+Continue actual remaining server-owned acceptance/allwriter/paired/public work.
+
+NCT BUSINESS READ PREREQUISITES — ORIGINAL INTAKE FIELDS AND REAL QUERY SHAPES
+Added standalone Admin-only r2readPreflight.web.js, no ordinary business imports,
+index API, SDK elevation, writes, schema/ACL mutation or activation capability.
+Expanded prior stock-only metadata contract with actual original nctIntake fields
+and PurchaseOrders title/details; actual intake after-images fit typed contract.
+Actual runtime product search/page query trace matches diagnostic predicates and
+stable barcode/_id order. Never invokes workspace/GP refresh or fakes ACTIVE.
+Each fixed company/scope observes two complete stable Admin metadata images,
+executes bounded strong exact/compound/array queries, exports counts only/no rows.
+New9tests pass; new+existing audit23pass214.98ms; related originalquery/borrow/intake
+23pass546.3654ms. Unchanged full1606pass62693.9667ms reused, not rerun or added up.
+Whole original native inspector08251f9a...36678 exact in58disjoint250char selections.
+Native NCT TASKS first identified actual manualCostField ARRAY, not the inspector's
+over-strict ARRAY_STRING expectation. Corrected ONLY two new inspector constants
+using2-match exact ReplaceAll; no business/CMS change. Full revised14266char native
+source again58/58canonical-exact a23452ea25e8ecc3c17a3e2dd10ea21fceaa89908766efa018d6ddd58826b58e.
+All7NCT scopes now positive native receipt: ORDERS27/TASKS29/JOURNAL34/PO4/
+PRODUCTS19/POSITIONS26/CLAIMS16 field checks, all155present,22queries executed.
+See R2_READ_PREFLIGHT_NATIVE_20261025.json for exact metadata hashes and receipts.
+Query pages empty; populated semantics/typed business writes/allwriter coverage
+are expressly NOT inferred. GHR readbacks next. ACTIVE OFF, no Publish/Pages.
+Native UI parameters reset/readback lag across tool cells; two combined helper
+guards stopped before typing/Run when selection not yet visible. No wrong request
+or duplicate execution. Use separate native observations after reset/selection;
+do not repeat input just because immediate AX state is stale.
+
+BOTH COMPANIES NATIVE READ PREREQUISITES COMPLETE; PAGES SCOPE EXACTLY AUTHORIZED
+All7GHR scopes now separately returned positive native receipts too. Together14
+company-scope calls on10actual R2 tables,310required field checks/44query executions,
+zero business or schema mutations. See updated R2_READ_PREFLIGHT_NATIVE_20261025.json.
+Full reader nativea23452ea...6b58e unchanged after the two inspector enum fixes.
+This qualifies EMPTY native query shapes/metadata, not populated query semantics,
+actual ordinary staff terminal writes, allwriter/activation/public acceptance.
+Stopped coordinate-only combined parameter helper after selection guards failed;
+no incorrect input dispatched. Actual JSON first character578,655 often focuses,
+but role/selection may update later than AX. Supported parameter-control set_value
+can INSERT/leave trailing text, not replace full model. Before any Run use CtrlA,
+fresh selected_text equal to WHOLE short parameter Value, replace ONLY that short
+JSON with type_text, then independently confirm exact Value and actual inner Run.
+One temporary incomplete/malformed parameter draft was repaired before any Run;
+not a source/business data change. Avoid speculative coordinate/focus retries.
+Native typed DATE/NULL/zero/arrays shared-adapter proof already exists from20261023
+NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt; fixed consumed fixtures must never rerun.
+New table metadata does not retroactively turn that into actual business-row proof.
+Public GitHub API READONLY confirms original7Pages policies unchanged. Local gh
+not installed/onPATH; no credential extraction or tool installation. User explicitly
+allowed adding ONLY taskbranch feat/stock-current-state-protocol-20261021 temporarily
+at deployment, then delete newrule/restore original7; exact async answer received.
+No policy added/removed, no dispatch/Pages/WixmainPublish. Keep this precise grant,
+do not ask it again; fresh policy comparison before use and preserve original7IDs.
+
+RESUME AFTER BATTERY — NEW EMPLOYEE TERMINAL CLOSED NATIVE INSTALL COMPLETE
+See R2_EMPLOYEE_TERMINAL_20261025.txt. Paused immediately for user battery, automation
+PAUSED; latest user explicitly resumed and prioritizes actual split/borrow UI.
+Restored same automationACTIVE15min. Actual six new diagnostic files existed
+untracked; reviewed, no repeated20focused tests416.4079ms or unchanged full1606.
+New backend was already CLOSED native845165d1...f692/13484chars/54segments exact.
+Current Chrome initially COMMAND CENTER sheet; no sheet content/output or edits.
+Observed tab inventory, indexed tab click geometry unavailable; normal Ctrl2
+selected existing MASTER. Indexed PageCode also geometry unavailable; stopped
+indexed-click route, normal fresh screenshot coordinates worked. No connection
+reinstall/refresh/new-page loop. Existing R2 Capacity Test opened; actual4354char
+baseline whole18segments exact45d9f220...ffa79. Appended own2820char addition by
+unique tail ReplaceAll ONCE, not whole-file replacement. Whole CLOSED7175char
+page29segments exact58728f7f...5e67; old capacity/employee gates/body retained.
+New backend and new page still CLOSED, no new native fixture RUN/INSPECT, zero
+new test records, no Test-site update/Pages/mainPublish or businessACTIVE.
+Next actual0%-Test original-staff terminal proof, then actual UI/activation path;
+user does not want another offline replay or background-only result handoff.
+
+2026-10-25 CONTINUATION — INTERACTIVE EXERCISE, NOT BUYER/WIX RELEASE
+See OPERATION_PRACTICE_20261025.txt and R2_OPERATION_PRACTICE_UI_20261025.json.
+Work Chrome fresh read SourceStudio succeeded; Ctrl2 action stopped by tool URL
+confidence enforcement. No further native input/shortcut/workaround. Continued
+background and produced self-contained clickable test host of existing forms,
+not another static replay. Original pure borrowing/receipt/plan/batch/arrangement
+rules calculate isolated fake data. UI negative/positive split/borrow, partial/
+full repayment, moved/archived relationship and restart all pass;0pageErrors and
+0external requests in independent headless local-only Chrome. Never native proof.
+Minimal UNRELEASED ALLOC CSS2rules fix460px reason overflow. Local paired manifests
+and old refusal-only preview regenerated; actual business originals untouched.
+New exercise HTML SHAa5fb5897c432dcf5f9d0424afce3bbc040064375397e4292ea66e2f0337fe49c.
+42affected tests0fail862.0788ms;17packaging/isolation0fail1040.7758ms.1606full reused.
+Original native terminal gates CLOSED, ACTIVE off/coverage EMPTY. No new CMS/ACL/
+Pages grant/dispatch/Test update/Publish. Main149/766/Test154/767 last receipts.
+Deliver local exercise honestly; continue true staff/allwriter/verifier/paired
+Wix/Pages/Buyer path. Precise temporary Pages branch grant already approved.
+
+2026-10-25 09:52 UTC HEARTBEAT — ACTUAL STATIC RELEASE PACKAGE PREPARED
+The prior package bb72a0b predated the demonstrated dialog CSS correction; this
+is a real static change, not a documentation-only rebuild. Reused framework,
+native receipts and all unchanged test outputs. Normal stage-isolated-cohort.cjs
+verified every source asset against committed c4bc72d97341c10269a8bb0a993ff3576ccfdb9a
+then created NEW outside-checkout folder C:/FMCG-WIX-LOCAL/release-candidates/
+r2-20261025-c4bc72d. No original package overwritten/deleted. Separate complete
+disk audit confirms112asset hashes plus one manifest; no unlisted extra files.
+Compared with previous112assets: only purchase-live/borrow-approval.css changed.
+Manifest SHA256c350a3a4c5d110632901bb67adeeb17f7af3e800587e1039a199873129f54a83.
+R2_STATIC_PACKAGE_20261025.json preserves the exact artifact. Standalone exercise,
+backend/handoff/private evidence/CSV are absent. No Pages rule, dispatch, release,
+native UI request, test fixture or ACTIVE mutation attempted. Native URL-policy
+stop remains respected; user needs no new action for this background preparation.
+Next handoff-only commit does not invalidate this pinned code package. Do not
+regenerate solely for a new documentation hash or call local staging publication.
+
+2026-10-25 AFTER FORCED RESTART — NATIVE EMPLOYEE TERMINAL PASS; CLOSEDTEST156
+User returned; new cua browser extension2 resumes existing Master51427484. Reads,
+semantic clicks, ordinary editor CtrlA/C source copies and minimal FindReplace now
+work. Full before/after copies confirm only2new gates changed forTest155 then both
+restored exactly CLOSED845165d1...f692/58728f7f...5e67. Temporary same-account Start
+Coding prompt handled normally, not a permission expansion. Initial transient
+Find field failures made no source writes; state inspected before proceeding.
+ReleaseManager confirms Test1550%, then after closing Test1560%; Live149100% stays.
+Actual native Wix Logs durable INSPECT receipts for P+W both4records/terminaltrue/
+ordinaryStaffWriteAcceptedtrue/mutationAttemptedfalse with exact build/source.
+Eight fixed terminal rows retained, no RUN replay/reset/deletion. Old fixtures
+untouched. Explicit blank?siteRevision=155 same-session reload retained the page's
+BEFORE-RUN session guard and recovered by readonly inspection. No success inferred
+from browser title or empty console. Native JSON/source exact evidence in
+R2_EMPLOYEE_TERMINAL_NATIVE_20261025.json and R2_EMPLOYEE_TERMINAL_20261025.txt.
+Our explicit155 test tab closed; Master51427484 and ReleaseManager51427584 kept.
+Private screenshots thread-only, not exported. Browser control failure no longer
+blocks native continuation. NEXT true allwriter/read/typed-business/recovery/
+server-owned verifier, paired install/Pages then Buyer functional acceptance.
+Not authorization to fillverified from this SDK-only subgate; ACTIVE/coverage
+remainOFF/EMPTY. No packing expansion/mainPublish/Pages rule/dispatch/ACL change.
+SourceLive766/Test767 unchanged. Reuse pinned c4bc72d112asset package across these
+evidence-only commits. No unchanged tests rerun or new model/agent.
+
+SAME RESUME — FRESH EIGHT-PAGE PAIRING CONFIRMED WITHOUT REINSTALLATION
+Actual relay manifest defines8pages. Read every existing saved Wix page through
+normal visible code-editor selection/copy, full contents hashed off-page; never
+hidden Monaco objects/DOM application state. MASTER Purchase17569chars exacte8d4...
+bcbd6, Warehouse10763exact2110...f1e60, Support1824exact857d...4abe1, Finance10564
+exact087a...8b57a. SourceSales27195exactc3cd...08559. SourceBuyer13144sha14dc...cfca4,
+Catalogue29346sha747c...48d5, OrderReceived830sha8282...3120 initially differed.
+Stopped writes, preserved actual native copies privately, compared each exact
+candidate; ALL THREE were candidate===native+'\n' only. No semantic conflict or
+reason to overwrite current source. JSON preserves BOTH raw/native and candidate
+hashes and explicit comparison; no global trimming or unexamined normalization.
+R2_PAGE_RELAY_NATIVE_20261025.json records all8functional text matches. No page
+code/quote/download/customer mapping/finance/packing/auth/CMS change. No native
+backend dependency or business/public verification inferred. Source51427514 now
+OrderReceived editor retained; Master51427484 Finance editor retained; saved code
+is correct, so do not reinstall these8identical relays in subsequent turns.
+Real remaining gap is native allwriter/read/typed records/recovery/server-owned
+activation verifier, not missing real UI relay code. Pages still not deployed,
+SourceLive766/Test767 last receipts, MASTERLive149/Test1560%closed confirmed.

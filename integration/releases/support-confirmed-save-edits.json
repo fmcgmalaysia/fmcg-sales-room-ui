@@ -1,0 +1,71 @@
+{
+  "support-room/workroom.html": {
+    "before": "63f9f40e47110fabeee6b3c8f9cbe44a4d209faeefecdfc037685076ccd648d9",
+    "after": "23c1dab5d5c5b9eba75939335b6784f8019c1bbeea582744c85c405c02ff143f",
+    "hunks": [
+      {
+        "index": 19,
+        "before": [
+          "<link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261027-chat-latest-v1\"><script src=\"../master-shared/task-chat.js?v=20261113-support-desk-layout-v4\"></script><script src=\"workroom-model.js?v=20261113-support-standalone-dn-v1\"></script><script src=\"../master-shared/desk-delivery.js?v=20261114-support-manual-desk-archive-v1\"></script><script src=\"workroom.js?v=20261114-support-manual-desk-archive-v1\"></script></body></html>"
+        ],
+        "after": [
+          "<link rel=\"stylesheet\" href=\"../master-shared/task-chat.css?v=20261027-chat-latest-v1\"><script src=\"../master-shared/task-chat.js?v=20261113-support-desk-layout-v4\"></script><script src=\"workroom-model.js?v=20261113-support-standalone-dn-v1\"></script><script src=\"../master-shared/desk-delivery.js?v=20261114-support-manual-desk-archive-v1\"></script><script src=\"workroom.js?v=20261114-support-confirmed-save-v1\"></script></body></html>"
+        ]
+      }
+    ]
+  },
+  "support-room/workroom.js": {
+    "before": "b8a2c3c31bfbd3f27aaeca48bfecd9318ec07b0ec28ca5c0167983fc3275f37a",
+    "after": "4b6086e2b24de104fdacabea82d3131992f78917a6591c87fec1f771faef6cc3",
+    "hunks": [
+      {
+        "index": 411,
+        "before": [
+          "    $('desk-original-po').textContent=originalPoNumbers(order).join(' · ')||'No customer PO provided.';$('desk-reference-fields').disabled=false;$('desk-reference-save').disabled=referenceEdit.saving;",
+          "    $('desk-reference-save').textContent=referenceEdit.failed?'Retry Save':'Save now';$('desk-reference-status').textContent=referenceEdit.failed?'The previous save is not confirmed. Retry the same references.':'Changes save automatically. 自动保存修改。';",
+          "    $('desk-references').querySelector('footer [data-close]').textContent='Close';$('desk-references').showModal();",
+          "  }",
+          "  async function saveReferenceDraft(retry=false,close=false){",
+          "    clearTimeout(referenceTimer);const edit=referenceEdit;if(!edit)return;edit.close=edit.close||close;",
+          "    if(edit.saving)return;if(edit.failed&&!retry)return;if(edit.company!==company||!data)return;",
+          "    if(edit.saved===referenceValue(edit.values)){if(edit.close)$('desk-references').close();return;}",
+          "    if(deskBusy){edit.waiting=true;return;}edit.waiting=false;edit.failed=false;edit.saving=true;",
+          "    const state=data.desks.find(row=>row.customerId===edit.customerId),retained=deskAttempts.get(company+'|'+edit.customerId);",
+          "    const input=retained?.input||{action:'DESK_REFERENCES',customerId:edit.customerId,desk:edit.desk,revision:state?.revision||'',...edit.values};",
+          "    $('desk-reference-save').disabled=true;$('desk-reference-save').textContent='Saving…';",
+          "    const ok=await saveDeskChange(input,'desk-reference-status');edit.saving=false;$('desk-reference-save').disabled=false;",
+          "    if(!ok){edit.failed=true;$('desk-reference-save').textContent='Retry Save';return;}",
+          "    edit.saved=referenceValue(input);$('desk-reference-save').textContent='Save now';",
+          "    if(edit.saved!==referenceValue(edit.values)){queueMicrotask(()=>saveReferenceDraft());return;}",
+          "    $('desk-reference-status').textContent='Saved 已保存';if(edit.close)$('desk-references').close();",
+          "  }",
+          "  $('desk-reference-fields').addEventListener('input',()=>{",
+          "    if(!referenceEdit)return;referenceEdit.values={soNo:$('desk-so-number').value.trim(),poNo:$('desk-po-number').value.trim()};"
+        ],
+        "after": [
+          "    $('desk-original-po').textContent=originalPoNumbers(order).join(' · ')||'No customer PO provided.';$('desk-reference-fields').disabled=false;$('desk-reference-save').disabled=referenceEdit.saving;$('desk-reference-save').hidden=!referenceDirty();",
+          "    $('desk-reference-save').textContent=referenceEdit.failed?'Retry Save':'Save now';$('desk-reference-status').textContent=referenceEdit.failed?'The previous save is not confirmed. Retry the same references.':'Changes save automatically. 自动保存修改。';",
+          "    $('desk-references').querySelector('footer [data-close]').textContent='Close';$('desk-references').showModal();",
+          "  }",
+          "  async function saveReferenceDraft(retry=false,close=false){",
+          "    clearTimeout(referenceTimer);const edit=referenceEdit;if(!edit)return;edit.close=edit.close||close;",
+          "    if(edit.saving)return;if(edit.failed&&!retry)return;if(edit.company!==company||!data)return;",
+          "    if(edit.saved===referenceValue(edit.values)){$('desk-reference-save').hidden=true;if(edit.close)$('desk-references').close();return;}",
+          "    if(deskBusy){edit.waiting=true;return;}edit.waiting=false;edit.failed=false;edit.saving=true;",
+          "    const state=data.desks.find(row=>row.customerId===edit.customerId),retained=deskAttempts.get(company+'|'+edit.customerId);",
+          "    const input=retained?.input||{action:'DESK_REFERENCES',customerId:edit.customerId,desk:edit.desk,revision:state?.revision||'',...edit.values};",
+          "    $('desk-reference-save').disabled=true;$('desk-reference-save').textContent='Saving…';",
+          "    const ok=await saveDeskChange(input,'desk-reference-status');edit.saving=false;if(referenceEdit!==edit)return;$('desk-reference-save').disabled=false;",
+          "    if(!ok){edit.failed=true;$('desk-reference-save').textContent='Retry Save';return;}",
+          "    edit.saved=referenceValue(input);$('desk-reference-save').textContent='Save now';",
+          "    if(edit.saved!==referenceValue(edit.values)){queueMicrotask(()=>saveReferenceDraft());return;}",
+          "    $('desk-reference-status').textContent='Saved 已保存';$('desk-reference-save').hidden=true;if(edit.close)$('desk-references').close();",
+          "  }",
+          "  $('desk-reference-fields').addEventListener('input',()=>{",
+          "    if(!referenceEdit)return;referenceEdit.values={soNo:$('desk-so-number').value.trim(),poNo:$('desk-po-number').value.trim()};$('desk-reference-save').hidden=!referenceDirty();",
+          "    if(!referenceDirty()){$('desk-reference-status').textContent='';clearTimeout(referenceTimer);return;}"
+        ]
+      }
+    ]
+  }
+}

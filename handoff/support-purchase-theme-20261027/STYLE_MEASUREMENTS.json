@@ -1,0 +1,279 @@
+{
+  "purchaseReference": {
+    "body": null,
+    "brand": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(255, 255, 255)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", Arial, sans-serif",
+      "height": 20,
+      "line": "20px",
+      "padding": "0px",
+      "size": "20px",
+      "weight": "700",
+      "width": 86.6500015258789
+    },
+    "company": {
+      "bg": "rgb(255, 255, 255)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", Arial, sans-serif",
+      "height": 32,
+      "line": "15.6px",
+      "padding": "0px 40px 0px 12px",
+      "size": "12px",
+      "weight": "600",
+      "width": 240
+    },
+    "companyHeading": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(100, 123, 147)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 18,
+      "line": "18px",
+      "padding": "0px",
+      "size": "12px",
+      "weight": "400",
+      "width": 969.6000366210938
+    },
+    "department": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(255, 255, 255)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", Arial, sans-serif",
+      "height": 16.899999618530273,
+      "line": "16.9px",
+      "padding": "0px 0px 0px 18px",
+      "size": "13px",
+      "weight": "500",
+      "width": 190.6875
+    },
+    "header": {
+      "bg": "rgb(19, 56, 88)",
+      "color": "rgb(255, 255, 255)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 49,
+      "line": "15.6px",
+      "padding": "0px 24px",
+      "size": "12px",
+      "weight": "400",
+      "width": 1521.5999755859375
+    },
+    "links": [
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/style.css?v=20261018-department-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/task-grid.css?v=20261018-department-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-shared/task-signals.css?v=20261018-department-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-shared/stock-exceptions.css?v=20261018-department-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/dashboard.css?v=20261018-department-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/header.css?v=20261018-department-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/active-orders.css?v=20261018-department-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-shared/workroom-theme.css?v=20261018-department-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-shared/task-chat.css?v=20261020-sales-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-shared/mobile-menu.css?v=20261018-department-mobile-qty-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-shared/quantity-alignment.css?v=20261018-department-mobile-qty-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/split-rows.css?v=20261020-order-adjustment-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-shared/action-affordances.css?v=20261020-action-affordances-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/active-layout.css?v=20261026-receipt-review-v1"
+    ],
+    "main": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 641.2000122070312,
+      "line": "normal",
+      "padding": "18px 20px",
+      "size": "11px",
+      "weight": "400",
+      "width": 1521.5999755859375
+    },
+    "nav": {
+      "bg": "rgb(255, 255, 255)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 42,
+      "line": "normal",
+      "padding": "0px 20px",
+      "size": "12px",
+      "weight": "400",
+      "width": 1521.5999755859375
+    },
+    "navButton": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 41.20000076293945,
+      "line": "normal",
+      "padding": "0px 2px",
+      "size": "12px",
+      "weight": "600",
+      "width": 67.2874984741211
+    },
+    "td": {
+      "bg": "rgb(255, 255, 255)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 51.20000076293945,
+      "line": "14px",
+      "padding": "3px 8px",
+      "size": "11px",
+      "weight": "400",
+      "width": 48
+    },
+    "th": {
+      "bg": "rgb(210, 223, 234)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 32.20000076293945,
+      "line": "15.4px",
+      "padding": "3px 8px",
+      "size": "11px",
+      "weight": "700",
+      "width": 48
+    },
+    "title": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 26,
+      "line": "26px",
+      "padding": "0px",
+      "size": "20px",
+      "weight": "800",
+      "width": 969.6000366210938
+    }
+  },
+  "support": {
+    "body": null,
+    "brand": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(255, 255, 255)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 20,
+      "line": "20px",
+      "padding": "0px",
+      "size": "20px",
+      "weight": "700",
+      "width": 86.6500015258789
+    },
+    "company": {
+      "bg": "rgb(255, 255, 255)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 32,
+      "line": "normal",
+      "padding": "0px 40px 0px 12px",
+      "size": "12px",
+      "weight": "600",
+      "width": 240
+    },
+    "companyHeading": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(100, 123, 147)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 18,
+      "line": "18px",
+      "padding": "0px",
+      "size": "12px",
+      "weight": "400",
+      "width": 196.9125061035156
+    },
+    "department": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(255, 255, 255)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 16.899999618530273,
+      "line": "16.9px",
+      "padding": "0px 0px 0px 18px",
+      "size": "13px",
+      "weight": "500",
+      "width": 144.15000915527344
+    },
+    "header": {
+      "bg": "rgb(19, 56, 88)",
+      "color": "rgb(255, 255, 255)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 49,
+      "line": "15.6px",
+      "padding": "0px 24px",
+      "size": "12px",
+      "weight": "400",
+      "width": 1521.5999755859375
+    },
+    "links": [
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/support-room/draft.css?v=20261021-support-preview-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/support-room/draft-compact.css?v=20261021-support-preview-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-shared/workroom-theme.css?v=20261018-department-messages-v1",
+      "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/support-room/workroom.css?v=20261027-support-purchase-theme-v1"
+    ],
+    "main": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 496.2000122070313,
+      "line": "15.4px",
+      "padding": "18px 20px 36px",
+      "size": "11px",
+      "weight": "400",
+      "width": 1521.5999755859375
+    },
+    "nav": {
+      "bg": "rgb(255, 255, 255)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 42,
+      "line": "normal",
+      "padding": "0px 20px",
+      "size": "12px",
+      "weight": "400",
+      "width": 1521.5999755859375
+    },
+    "navButton": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(55, 102, 162)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 42,
+      "line": "normal",
+      "padding": "0px 2px",
+      "size": "12px",
+      "weight": "600",
+      "width": 119.4124984741211
+    },
+    "td": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 44,
+      "line": "14px",
+      "padding": "6px 8px",
+      "size": "11px",
+      "weight": "400",
+      "width": 463.5375061035156
+    },
+    "th": {
+      "bg": "rgb(210, 223, 234)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 32,
+      "line": "15.4px",
+      "padding": "7px 8px",
+      "size": "11px",
+      "weight": "700",
+      "width": 463.5375061035156
+    },
+    "title": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(32, 48, 71)",
+      "font": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+      "height": 26,
+      "line": "26px",
+      "padding": "0px",
+      "size": "20px",
+      "weight": "800",
+      "width": 196.9125061035156
+    }
+  },
+  "dialog": {
+    "overflow": false,
+    "titleFont": "\"Purchase Dashboard Inter\", \"Segoe UI\", \"Microsoft YaHei\", Arial, sans-serif",
+    "titleSize": "14px",
+    "titleWeight": "700",
+    "width": 480
+  }
+}

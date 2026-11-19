@@ -1,0 +1,81 @@
+#app .active-order-table.draft-column-layout{min-width:1320px}
+#app .active-order-table.draft-column-layout :is(th,td):nth-child(7){text-align:left!important}
+#app .active-order-table.draft-column-layout :is(th,td):nth-child(8){text-align:right!important}
+#app .active-order-table.draft-column-layout :is(th,td):is(:nth-child(6),:nth-child(9),:nth-child(10)){text-align:center!important}
+#app .active-order-table.draft-column-layout :is(th,td):nth-child(11){text-align:right!important}
+#app .active-order-table.draft-column-layout .supplier-plan-link{display:inline-flex;align-items:center;gap:5px;max-width:100%;font-size:11px;line-height:1.45;overflow-wrap:normal;word-break:normal}
+#app .active-order-table.draft-column-layout .supplier-plan-link[data-draft-heads-only]{flex-wrap:wrap;min-height:24px}
+#app .active-order-table.draft-column-layout .supplier-head{flex:0 0 16px;margin-right:0}
+#app .active-order-table.draft-column-layout .draft-cost-stack{font-variant-numeric:tabular-nums;font-size:11px;font-weight:400;line-height:1.5}
+#app .active-order-table.draft-column-layout .draft-cost-stack>span{display:flex;align-items:baseline;justify-content:flex-end;gap:6px;min-height:17px;color:#203047;font-size:11px;font-weight:400}
+#app .active-order-table.draft-column-layout :is([data-id],[data-split-parent]) .draft-cost-net::before{content:'Avg';font-size:9px;color:#64758a}
+#app .active-order-table.draft-column-layout :is([data-id],[data-split-parent]) .draft-cost-line::before{content:'Total';font-size:9px;color:#64758a}
+#app .active-order-table.draft-column-layout [data-source-id] .draft-cost-stack>span::before{content:none}
+#app .active-order-table.draft-column-layout [data-draft-has-sources] .received-quantity>span.quantity-reference{background:none!important;color:inherit!important;border:0;padding:0;min-width:0;cursor:default}
+#app .active-order-table.draft-column-layout .draft-receipt-shortfall{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:19px;padding:0 8px;border:0;border-radius:14px;background:#E51B2B;color:white;font-family:inherit;font-size:11px;font-weight:600;line-height:1;cursor:pointer}
+#app .active-order-table.draft-column-layout [data-source-id] .received-quantity [data-quantity-case]{display:none}
+dialog.draft-receipt-dialog{position:fixed;inset:0;margin:auto;transform:none;width:360px;max-width:calc(100vw - 32px);height:fit-content;padding:0;border:0;border-radius:8px;color:#17314f;box-shadow:0 18px 55px #17314f40}
+dialog.draft-receipt-dialog::backdrop{background:#17314f66}
+.draft-receipt-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:#e5eff8}
+.draft-receipt-head h2{margin:0;font-size:15px;font-weight:600}
+.draft-receipt-head button{border:0;background:none;color:#17314f;padding:0 3px;font-size:20px;cursor:pointer}
+.draft-receipt-body{padding:16px}
+.draft-receipt-body p{margin:0 0 15px;font-size:11px;color:#52687e}
+.draft-receipt-body label{display:block;margin-bottom:6px;font-size:11px}
+.draft-receipt-body select{box-sizing:border-box;width:100%;min-height:34px;border:1px solid #b9ccdf;border-radius:4px;padding:6px 8px;background:white;color:#17314f;font-size:12px}
+.draft-receipt-foot{display:flex;justify-content:flex-end;gap:8px;padding:11px 16px;border-top:1px solid #dae4ef;background:#f8fafc}
+.draft-receipt-foot button{border:1px solid #c3d2e0;border-radius:4px;padding:6px 13px;background:white;color:#17314f;font-size:12px;cursor:pointer}
+.draft-receipt-foot button.draft-receipt-confirm{border-color:#2563EB;background:#2563EB;color:white}
+#app .active-order-table.draft-column-layout .draft-allocation-warning{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;min-width:25px;padding:2px;border:0;border-radius:4px;background:transparent;color:#E51B2B;cursor:pointer;vertical-align:middle}
+#app .active-order-table.draft-column-layout .draft-allocation-warning svg{display:block;width:21px;height:21px}
+#app .active-order-table.draft-column-layout .draft-allocation-warning:hover{color:#c91425;transform:translateY(-1px)}
+#app .active-order-table.draft-column-layout .draft-allocation-warning:focus-visible{outline:2px solid #2563EB;outline-offset:2px}
+
+#app .active-order-table.draft-column-layout .draft-cost-stack>span:empty{display:none}
+
+/* User-approved hierarchy and original PO hover treatment. */
+#app .active-order-table.draft-column-layout tbody tr:is([data-id],[data-split-parent]):not(.selected):not(.highlight)>td{background:#fff!important}
+#app .active-order-table.draft-column-layout tbody tr[data-source-id]:not(.selected):not(.highlight)>td{background:#edf4fb!important}
+#app .active-order-table.draft-column-layout td:last-child,#app .active-order-table.draft-column-layout td:last-child :is(button,small,span){text-align:right!important}
+#app .active-order-table.draft-column-layout td:last-child button{transition:transform .12s ease}
+#app .active-order-table.draft-column-layout td:last-child button:hover{transform:translateY(-1px);text-decoration:underline}
+#app .po-doc-badge.pending[data-po-doc-type="PO"]{background:#E51B2B!important;color:#fff!important}
+.receipt-feedback-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;background:#edf4fb;padding:10px;border-radius:5px}.receipt-feedback-summary small{display:block;color:#64758a}.receipt-feedback-summary strong{display:block;font-size:16px;margin-top:4px}.receipt-feedback-field{margin:14px 0}.receipt-feedback-field>label{display:block;font-weight:600;margin-bottom:6px}.receipt-feedback-field select{width:100%;padding:8px;border:1px solid #b9ccdf;border-radius:4px;background:#fff;color:inherit}.receipt-feedback-options label{display:flex;align-items:flex-start;gap:8px;margin:9px 0}.receipt-feedback-options input{margin-top:3px}.receipt-feedback-warning{color:#E51B2B;font-weight:700}.receipt-feedback-options[hidden]{display:none}
+#modal.receipt-feedback-dialog{position:fixed;inset:0;margin:auto;transform:none;box-sizing:border-box;width:420px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 32px);height:fit-content;padding:0;border:0;border-radius:8px;background:#fff;color:#17314f;box-shadow:0 18px 55px #17314f40}
+#modal.receipt-feedback-dialog::backdrop{background:#17314f66}
+#modal.receipt-feedback-dialog #dialogContent{display:flex;flex-direction:column;max-height:inherit}
+#modal.receipt-feedback-dialog .dialoghead{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px;background:#e5eff8;border-bottom:1px solid #d5e2ee;gap:12px}
+#modal.receipt-feedback-dialog .dialoghead h2{margin:0;font:700 16px/22px Arial,'Microsoft YaHei',sans-serif}
+#modal.receipt-feedback-dialog .dialoghead .muted{display:block;margin-top:4px;font-size:10px;line-height:15px;color:#64758a}
+#modal.receipt-feedback-dialog .close{border:0;background:none;color:#17314f;font-size:22px;line-height:24px;width:24px;height:24px;padding:0}
+#modal.receipt-feedback-dialog .dialogbody{padding:14px 16px;overflow:auto;font:12px/1.5 Arial,'Microsoft YaHei',sans-serif}
+#modal.receipt-feedback-dialog .receipt-feedback-warning{margin:0 0 12px;color:#52687e;font-size:11px;line-height:17px;font-weight:400}
+#modal.receipt-feedback-dialog .receipt-feedback-warning small{font-size:10px;color:#718499}
+#modal.receipt-feedback-dialog .receipt-feedback-summary{gap:0;padding:10px 0;text-align:center}
+#modal.receipt-feedback-dialog .receipt-feedback-summary>div+div{border-left:1px solid #cdddeb}
+#modal.receipt-feedback-dialog .receipt-feedback-summary small{font-size:10px;line-height:15px}
+#modal.receipt-feedback-dialog .receipt-feedback-summary strong{font-size:17px;line-height:23px;margin-top:3px}
+#modal.receipt-feedback-dialog .receipt-feedback-summary>div:last-child strong{color:#E51B2B}
+#modal.receipt-feedback-dialog .receipt-feedback-field{margin:13px 0 0}
+#modal.receipt-feedback-dialog .receipt-feedback-field>label{font-size:11px;margin-bottom:5px}
+#modal.receipt-feedback-dialog .receipt-feedback-field>div{padding:8px 10px;background:#f5f8fb;border:1px solid #e1e9f0;border-radius:4px;font-size:11px}
+#modal.receipt-feedback-dialog .receipt-feedback-field select{box-sizing:border-box;height:34px;min-height:34px;padding:5px 8px;font:11px Arial,'Microsoft YaHei',sans-serif}
+#modal.receipt-feedback-dialog .receipt-feedback-options{margin-top:12px;padding-top:4px;border-top:1px solid #e1e9f0}
+#modal.receipt-feedback-dialog .receipt-feedback-options label{display:flex;width:100%;box-sizing:border-box;align-items:flex-start;gap:9px;margin:0;padding:8px 0;font-size:11px;line-height:16px;cursor:pointer}
+#modal.receipt-feedback-dialog .receipt-feedback-options input{flex:0 0 15px;width:15px;height:15px;margin:1px 0 0;accent-color:#2563eb}
+#modal.receipt-feedback-dialog .receipt-feedback-options small{display:block;color:#718499;font-size:10px;line-height:15px;margin-top:1px}
+#modal.receipt-feedback-dialog .dialogfoot{display:flex;justify-content:flex-end;padding:10px 16px;background:#f5f8fb;border-top:1px solid #d5e2ee}
+#modal.receipt-feedback-dialog .dialogfoot>.muted{display:none}
+#modal.receipt-feedback-dialog .dialogfoot .actions{display:flex;gap:8px}
+#modal.receipt-feedback-dialog .dialogfoot .btn{height:30px;min-height:30px;padding:5px 13px;border:1px solid #b9ccdf;border-radius:4px;background:#fff;color:#17314f;font-size:11px;line-height:18px}
+#modal.receipt-feedback-dialog .dialogfoot .primary{background:#2563eb;border-color:#2563eb;color:#fff}
+#modal.receipt-feedback-dialog #dialogError:empty{display:none}
+
+#app .active-order-table.draft-column-layout .received-quantity>span.receipt-complete{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:19px;padding:0 8px;border:0;border-radius:14px;background:#dbeafe!important;color:#1e40af!important;font-family:inherit;font-size:11px;font-weight:600;line-height:1;cursor:default;box-sizing:border-box}
+
+#app .active-order-table.draft-column-layout tr[data-draft-parent-sources]>.supplier-cell>.supplier-plan-link{display:none!important}
+
+/* Hide shipment captions only; preserve batch identity and Split Row. */
+#app .active-order-table .split-batch-label{display:none!important}
+
+#app .active-order-table.draft-column-layout .received-quantity>span.receipt-stopped{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:19px;padding:0 8px;border:0;border-radius:14px;background:#fee2e2!important;color:#b91c1c!important;font-family:inherit;font-size:11px;font-weight:600;line-height:1;cursor:default;box-sizing:border-box}

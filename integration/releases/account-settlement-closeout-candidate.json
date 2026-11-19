@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-11",
+  "branch": "feat/account-settlement-closeout",
+  "base": "75a57910d047158819e8cfe57d80aa5bbad0c65e",
+  "objective": "Audited supplier invoice reconciliation, payment proof and shared Purchase payment follow-up",
+  "status": "candidate-not-published",
+  "recovery": "Warehouse published 08fefdc7b1dbc60f7925f00bbfd37abc56253398, recorded at 75a5791. Existing scoped user-verified Send Order baseline remains protected.",
+  "authority": "Existing live Master modules and Account page freshly copied and matched HEAD before isolated patches. Exact draft readbacks stored in handoff/account-settlement-closeout-20261011. Purchase Home unchanged before marker-only update.",
+  "storage": "Existing PO details.finance, document identities and company/PURCHASE operation journal. No new collection, banking transaction, quantity or quoted-price mutation.",
+  "markers": {
+    "account": "2026-10-11-account-settlement-v3",
+    "purchase": "2026-10-11-account-settlement-v20"
+  },
+  "verification": {
+    "integrationTests": 191,
+    "integrationPassed": 191,
+    "localBrowser": "Invoice amounts, CN not applicable, two partial payments and re-check tested on isolated fixture. Latest locked Sales Invoice gate additionally covered by core test; final current browser rerun pending.",
+    "productionFinancialRecordsWritten": false
+  },
+  "wix": {"draftExact": true, "published": false},
+  "pages": {"deployed": false},
+  "appsScript": {
+    "project": "MASTER PURCHASE DOCUMENTS",
+    "savedDraftExact": true,
+    "deployedVersion": 1,
+    "candidate": "DO remains Purchase folder; payment proofs route exclusively to fixed company Account folders. Existing secret, access, PDF identity, retry and file sharing unchanged."
+  },
+  "pending": [
+    "Deployment permissions, immutable Apps Script version, Pages and Wix publication",
+    "Real public proof upload on dedicated disposable test PO and public cross-room verification",
+    "Separate audited receipt correction and short-delivery resolution workflows",
+    "Extra received-stock allocation workflow",
+    "Bank and Debtor connections and future Support Sales Invoice entry",
+    "User real-world acceptance; no main merge or new verified baseline"
+  ]
+}

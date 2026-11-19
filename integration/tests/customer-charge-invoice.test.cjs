@@ -1,0 +1,92 @@
+const test=require('node:test'),assert=require('node:assert/strict'),crypto=require('node:crypto'),load=require('./load-master-module.cjs');
+const {createSupportDocumentOperations,supportDocumentVersion,readSupportDocuments}=load('supportDocuments.js'),{createFinanceCustomerAccountOperations,customerAccountVersion,readCustomerAccountDocuments,readCustomerAccountEvidence}=load('customerAccountLedger.js'),{projectCustomerAccount}=load('customerDebtor.js'),{projectCustomerTransactionHistory}=load('customerTransactionHistory.js');
+const at='2026-11-01T10:00:00Z';
+function fixture(){
+ const records=new Map(),calls=[];let seq=0,lost=false;
+ const store={read:async(c,id)=>structuredClone(records.get(c+'/'+id)||null),insert:async(c,row)=>{const key=c+'/'+row._id;if(records.has(key))throw Error('duplicate');records.set(key,structuredClone(row));if(lost&&row.action==='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'){lost=false;throw Error('lost acknowledgement');}return structuredClone(row);},remove:async(c,id)=>records.delete(c+'/'+id)};
+ const context=async(company='NCT')=>({company,customers:[{id:'C',name:'Customer',currency:'USD'}],tasks:[],activity:[...records].filter(([key])=>key.startsWith(company+'/')).map(([,row])=>structuredClone(row))});
+ const names={NCT:{activity:'NCT'},GHR:{activity:'GHR'}},support={memberId:'SUPPORT',staffId:'S',staffName:'Support',packingDepartment:'SUPPORT'},staff={memberId:'FINANCE',staffId:'F',staffName:'Finance',canPostCustomerAccount:true};
+ const upload=createSupportDocumentOperations({store,names,readContext:context,readCustomers:async({company})=>({company,customers:[{id:'C',name:'Customer',currency:'USD'}]}),documentService:async input=>{calls.push(input);return input.action==='ALLOCATE'?{fileId:'charge-file-identity-'+ ++seq}:{...input,ok:true,customerLinkReady:true,size:Buffer.from(input.base64,'base64').length};},now:()=>new Date(at)}),save=createFinanceCustomerAccountOperations({store,names,readContext:context,now:()=>new Date(at)});
+ const request=async(changes={},company='NCT')=>({company,staff:support,requestId:crypto.randomUUID(),input:{invoiceKind:'CHARGE',code:'SI',scope:'INVOICE',orderId:'',customerId:'C',version:supportDocumentVersion(await context(company)),reference:'NCT-INV-CHARGE-01',amountCents:25000,chargeLines:[{description:'Ocean freight',amountCents:20000},{description:'Insurance',amountCents:5000}],base64:Buffer.from('%PDF-1.4\nTEST CHARGES '+crypto.randomUUID()).toString('base64'),...changes}});
+ const confirm=async(id,changes={},company='NCT')=>({company,staff,requestId:crypto.randomUUID(),input:{action:'CONFIRM_DOCUMENT',sourceDocumentId:id,customerId:'C',version:customerAccountVersion(await context(company)),number:'NCT-INV-CHARGE-01',date:'2026-11-01',currency:'USD',amountCents:25000,...changes}});
+ return {records,calls,context,upload,save,request,confirm,lose:()=>lost=true};
+}
+test('Support charge PDF is reference only; Finance creates one receivable and customer download without stock or Desk',async()=>{const f=fixture(),r=await f.request(),uploaded=await f.upload(r);let c=await f.context();assert.equal(projectCustomerAccount(c).entries.length,0);assert.equal(projectCustomerTransactionHistory(c,'C').transactions.length,0);const proof=readSupportDocuments(c.activity,'NCT')[0];assert.equal(proof.invoiceId,uploaded.documentId);assert.equal(f.calls[1].type,'SUPPORT_SI');assert.equal(f.calls[1].customerScope,'INVOICE');assert.equal(f.calls[1].businessId,proof.id);assert.equal(readCustomerAccountEvidence(c)[0].type,'CHARGE_INV');await f.save(await f.confirm(proof.id));c=await f.context();const account=projectCustomerAccount(c),history=projectCustomerTransactionHistory(c,'C');assert.equal(account.balances[0].balanceCents,25000);assert.equal(account.entries.length,1);assert.equal(history.transactions.length,1);assert.equal(history.transactions[0].kind,'CHARGE');assert.equal(history.transactions[0].quantity,null);assert.equal(history.transactions[0].lines[0].description,'Ocean freight');assert.equal(history.transactions[0].documents[0].fileId,proof.fileId);assert.equal(history.transactions[0].documents[0].ready,true);assert.equal(history.transactions[0].documents[0].code,'SI');assert.equal(c.tasks.length,0);assert.equal(c.activity.some(e=>/WAREHOUSE|DESK|CUSTOMER_SHIPMENT/.test(e.action)),false);});
+test('Finance confirms its own charge lines and actual total while Support reference survives',async()=>{const f=fixture(),uploaded=await f.upload(await f.request());await f.save(await f.confirm(uploaded.documentId,{amountCents:24000,chargeLines:[{description:'Ocean freight',amountCents:19000},{description:'Insurance',amountCents:5000}]}));const c=await f.context(),doc=readCustomerAccountDocuments(c.activity)[0];assert.equal(doc.amountCents,24000);assert.equal(doc.referenceAmountCents,25000);assert.equal(doc.chargeLines[0].amountCents,19000);assert.equal(readSupportDocuments(c.activity,'NCT')[0].chargeLines[0].amountCents,20000);});
+test('charge amount disagreement rejects instead of displaying reference lines as confirmed amounts',async()=>{const f=fixture(),uploaded=await f.upload(await f.request());await assert.rejects(f.save(await f.confirm(uploaded.documentId,{amountCents:24000})),/charge lines/);assert.equal(projectCustomerAccount(await f.context()).entries.length,0);});
+test('charge confirmation timeout recovers once; changed posted content remains locked',async()=>{const f=fixture(),uploaded=await f.upload(await f.request()),r=await f.confirm(uploaded.documentId);f.lose();await assert.rejects(f.save(r),/lost acknowledgement/);await f.save(r);await f.save(r);assert.equal(projectCustomerAccount(await f.context()).entries.length,1);assert.equal(f.calls.filter(x=>x.action==='ALLOCATE').length,1);await assert.rejects(f.save(await f.confirm(uploaded.documentId,{amountCents:26000})),/cannot be overwritten/);});
+test('same customer PDF cannot be uploaded twice to create duplicate charge invoices',async()=>{const f=fixture(),r=await f.request();await f.upload(r);const next=await f.request({base64:r.input.base64,reference:'OTHER'});await assert.rejects(f.upload(next),/already recorded or attached/);assert.equal(f.calls.filter(x=>x.action==='ALLOCATE').length,1);});
+test('Sales role, forged invoice identity and mismatched charge totals fail before file allocation',async()=>{for(const mode of ['role','identity','total']){const f=fixture(),r=await f.request();if(mode==='role')r.staff={...r.staff,packingDepartment:'SALES'};if(mode==='identity')r.input.invoiceId='FOREIGN';if(mode==='total')r.input.amountCents=100;await assert.rejects(f.upload(r));assert.equal(f.calls.length,0);}});
+test('ordinary SI still requires the real issued goods invoice',async()=>{const f=fixture(),r=await f.request();delete r.input.invoiceKind;delete r.input.chargeLines;await assert.rejects(f.upload(r));assert.equal(f.calls.length,0);});
+test('a fee already posted as a debit note cannot create a second receivable',async()=>{const f=fixture(),uploaded=await f.upload(await f.request());f.records.set('NCT/DN',{_id:'DN',action:'CUSTOMER_ACCOUNT_DOCUMENT_SAVED',result:'SAVED',details:{document:{id:'DN',company:'NCT',customerId:'C',type:'DEBIT_NOTE',number:'DN1',date:'2026-11-01',currency:'USD',amountCents:25000,fileId:'debit-proof-file',sha256:'b'.repeat(64)}}});await assert.rejects(f.save(await f.confirm(uploaded.documentId,{existingDebitNoteId:'DN'})),/second receivable/);assert.equal(projectCustomerAccount(await f.context()).balances[0].balanceCents,25000);assert.equal(readCustomerAccountDocuments((await f.context()).activity).length,1);});
+test('NCT/GHR separate charge ledgers and customer lookup reject another customer',async()=>{const f=fixture(),n=await f.upload(await f.request()),g=await f.upload(await f.request({reference:'GHR-INV-CHARGE-01'},'GHR'));await f.save(await f.confirm(n.documentId));await f.save(await f.confirm(g.documentId,{number:'GHR-INV-CHARGE-01',amountCents:25000},'GHR'));assert.equal(projectCustomerAccount(await f.context()).balances[0].balanceCents,25000);assert.equal(projectCustomerAccount(await f.context('GHR')).balances[0].balanceCents,25000);const bad=await f.request({customerId:'OTHER'});await assert.rejects(f.upload(bad),/unavailable/);});
+
+test('standalone DN PDF needs no shipment, adds one receivable, and two receipts settle only that DN',async()=>{
+ const f=fixture(),reference='NCT-DN-000001',description='10 PACK OF SNACK ON BEHALF OF CUSTOMER';
+ const request=await f.request({invoiceKind:'STANDALONE_DN',code:'DN',scope:'CUSTOMER',reference,chargeCurrency:'USD',amountCents:230,chargeLines:[{description,amountCents:230}]});
+ const uploaded=await f.upload(request);
+ assert.equal((await f.upload(request)).documentId,uploaded.documentId);
+ let context=await f.context();
+ const evidence=readCustomerAccountEvidence(context)[0];
+ assert.equal(evidence.type,'DEBIT_NOTE');
+ assert.equal(evidence.status,'AWAITING_REVIEW');
+ assert.equal(evidence.chargeLines[0].description,description);
+ assert.equal(projectCustomerAccount(context).entries.length,0);
+ assert.equal(projectCustomerTransactionHistory(context,'C').documents.length,0);
+ assert.equal(f.calls[1].businessId,'');
+ assert.equal(f.calls[1].type,'SUPPORT_DN');
+ assert.equal(f.calls[1].customerScope,'CUSTOMER');
+ const confirmation=await f.confirm(uploaded.documentId,{number:reference,amountCents:230});
+ const posted=await f.save(confirmation);
+ assert.equal((await f.save(confirmation)).documentId,posted.documentId);
+ context=await f.context();
+ assert.equal(projectCustomerAccount(context).balances[0].debitCents,230);
+ assert.equal(projectCustomerAccount(context).balances[0].invoiceCents,0);
+ assert.equal(projectCustomerAccount(context).entries.length,1);
+ assert.equal(projectCustomerTransactionHistory(context,'C').documents[0].code,'DN');
+ for(const [number,amountCents,due] of [['RECEIPT-01',100,130],['RECEIPT-02',130,0]]){
+  const slip=await f.upload(await f.request({invoiceKind:undefined,chargeLines:undefined,code:'$',scope:'INVOICE',invoiceId:posted.documentId,reference:number,amountCents}));
+  await f.save(await f.confirm(slip.documentId,{number,amountCents,allocations:[{invoiceId:posted.documentId,amountCents}]}));
+  const projection=projectCustomerAccount(await f.context());
+  assert.equal(projection.invoicePayments.invoices[0].dueCents,due);
+  assert.equal(projection.balances[0].balanceCents,due);
+ }
+ assert.equal((await f.context()).activity.some(row=>/WAREHOUSE|DESK|CUSTOMER_SHIPMENT/.test(row.action)),false);
+ const duplicate=await f.request({...request.input,base64:Buffer.from('%PDF-1.4\nDifferent file').toString('base64')});
+ await assert.rejects(f.upload(duplicate),/already exists/);
+ await assert.rejects(f.save(await f.confirm(uploaded.documentId,{number:reference,amountCents:230,currency:'MYR'})),/keep its PDF reference and currency/);
+});
+
+test('USD customer receives an independent MYR charge after Finance confirms it',async()=>{
+ const f=fixture();
+ const usd=await f.upload(await f.request());
+ await f.save(await f.confirm(usd.documentId));
+ const myr=await f.upload(await f.request({reference:'NCT-INV-INSURANCE',chargeCurrency:'MYR',amountCents:35000,chargeLines:[{description:'Insurance',amountCents:35000}]}));
+ let context=await f.context();
+ assert.equal(readCustomerAccountEvidence(context).find(row=>row.sourceDocumentId===myr.documentId).referenceCurrency,'MYR');
+ assert.equal(projectCustomerTransactionHistory(context,'C').transactions.length,1);
+ const confirmation=await f.confirm(myr.documentId,{number:'NCT-INV-INSURANCE',currency:'MYR',amountCents:35000});
+ await f.save(confirmation);
+ await f.save(confirmation);
+ context=await f.context();
+ assert.deepEqual(Object.fromEntries(projectCustomerAccount(context).balances.map(row=>[row.currency,row.balanceCents])),{MYR:35000,USD:25000});
+ assert.equal(projectCustomerTransactionHistory(context,'C').transactions.find(row=>row.number==='NCT-INV-INSURANCE').currency,'MYR');
+});
+
+test('interrupted charge upload retains its selected currency and original file ID',async()=>{
+ const f=fixture(),request=await f.request({chargeCurrency:'MYR'});
+ const insert=f.records.set.bind(f.records);let interrupted=false;
+ f.records.set=(key,row)=>{
+  if(row.action==='SUPPORT_DOCUMENT_UPLOADED'&&!interrupted){interrupted=true;throw Error('Interrupted document save');}
+  return insert(key,row);
+ };
+ await assert.rejects(f.upload(request),/Interrupted document save/);
+ const {pendingSupportDocumentUploads}=load('supportDocuments.js');
+ const [pending]=pendingSupportDocumentUploads((await f.context()).activity,'NCT',request.staff);
+ assert.equal(pending.recoverable,true);
+ assert.equal(pending.input.chargeCurrency,'MYR');
+ const saved=await f.upload({...request,input:{...pending.input,base64:request.input.base64}});
+ assert.equal(saved.documentId,pending.documentId);
+ assert.equal(readSupportDocuments((await f.context()).activity,'NCT')[0].currency,'MYR');
+ assert.equal(f.calls.filter(row=>row.action==='ALLOCATE').length,1);
+});

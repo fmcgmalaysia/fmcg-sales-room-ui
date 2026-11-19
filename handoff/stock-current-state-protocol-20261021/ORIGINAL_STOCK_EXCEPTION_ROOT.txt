@@ -1,0 +1,91 @@
+2026-10-23 — ORIGINAL STOCK EXCEPTION ROOT, OFFLINE ONLY
+
+Recovery before patch:5d7a972 confirmed pushed PR220. Baseline/runtime unchanged:
+d447185/32b812c. Same ongoing framework/spec/Astra decision reused, actual previous
+STATUS gap determines bounded scope. Read exact original exception/workspace/
+resolution/message modules and nearby existing root/builder patterns. No new finance
+workflow, protocol, collection, permission, provider or public endpoint.
+
+Implementation
+- build-current-stock-exceptions.cjs generates stockExceptions.web.candidate.js from
+  exact original module using unique anchors, plus private stockCurrentExceptions.js.
+- Original staffContext/messageStaffContext, exception safe-error catch, four original
+  public methods and disabled saveDepartmentMessage tail preserved. Factory declaration
+  is NOT permission to re-enable message sends. Root contains no webMethod/public route.
+- Original stock auth first; stable explicit company control required. Only clean
+  LEGACY/untagged saves use old writer. ACTIVE/current metadata requires SAME current
+  root; maintenance/shadow/unknown/missing control refuse. Empty writer maps remain.
+- Report→createCurrentStockExceptionSave; resolution→existing private resolution save.
+  Original Warehouse/Purchase/Admin/Account permissions, supplier instructions, separate
+  Admin/Finance verification and movement references stay authoritative. Free-only
+  attribution guard preserved: no invented customer-reserved damage allocation policy.
+- Same current tables/scoped product projection gives original context/PO versions to
+  validators/readers. All source IDs displayed by original received-source workspace
+  are retained explicitly, including CLOSED rows. Never infer zero because an old
+  source was omitted from active query. Original receipt accepted remains historical;
+  displayed physical uses exact current onHand-isolated. Existing financial fields
+  still filtered by ORIGINAL stock-workspace permissions; no new finance authority.
+- getDepartmentMessages projects original messages/PO updates inside same stable
+  generation snapshot. Does not send/ack messages or modify original conversation rules.
+- getStockExceptions(company,{contextOnly:true}) returns ONLY original freshly approved
+  stock staff identity, even behind pending; no current metadata or actionable rows.
+  This enables next own-cache recovery; it is not permission to resume another employee.
+- Exception/resolution authenticators now return original staffId alongside memberId,
+  allowing existing immutable stockIdentity admission to detect reissued same-user staff
+  and prevent pending-plan adoption. No new role/grant or auth shortcut.
+
+Concrete generated runtime defect found by new composed root
+Generated exception plan mapTransition uses Buffer.byteLength, while bundle imported
+only alias StockRuntimeBuffer. An isolated VM with imported aliases and NO global Buffer
+failed ReferenceError. Node tests that supplied ambient Buffer masked that dependency.
+Added ONE top-level const Buffer=StockRuntimeBuffer to existing mechanical bundler.
+Original algorithms/plans/coordinator unchanged. Runtime tests no longer inject ambient
+Buffer; actual generated exception-save tests now pass for both companies. This proves
+explicit import binding offline, NOT Wix platform acceptance.
+
+Tests/evidence
+- New root suite initial6cases covers NCT/GHR/generated save/read, original Purchase
+  decision/Warehouse replacement/return, current display, coverage/role/envelope/mode
+  refusal, pending barriers, original identity recovery/reissued staff, guarded message
+  read and disabled sends, explicit LEGACY versus current form, missing control,
+  exact original auth/rejection tail/four endpoints and build reproducibility.
+- After broad run added seventh case: reserved-loss refusal and exact CLOSED-source
+  physical0with original accepted20. Focused7pass0fail1456.2643ms.
+- Affected runtime+exception+resolution+root18pass0fail1471.6402ms before last new case.
+- FULL stock-current suite1010pass0fail41271.3814ms before last added test. Do not claim
+  full1011run or add repeated counts. Runtime remains103modules/53private exports;
+  builder+runtime --check pass. git diff--check pass.
+- Original account-room/purchase-live/integration/backend/integration/wix directories
+  still matchd447185. All edits candidate/build/test/evidence only; no fresh live code
+  synchronization or production verification attempted. Actual Credits UNKNOWN.
+
+Remaining / exact next action
+Backend root pairing does NOT complete exception writer coverage or activation. Original
+master-shared/stock-exceptions.js still uses memory-only pending, sends NO stock metadata,
+treats any truthy result.ok as success and lacks bounded segmented progress/reload resume.
+Three candidate parents still relay original methods without metadata. Add smallest
+durable client/parent overlay to original shared dialog, preserving forms, DOM IDs,
+language/Account English and original request identity. Retain body before network;
+same actor/company only; bounded phases; explicit own-cache replay; strict final receipt
+and fresh same identity/build/generation read before clear. No scans/fake workspace/new
+UUID or automatic replay behind unknown outcome. All UI remains unpaired until tested.
+
+Known builder dependency targets for next work
+- build-purchase-borrow-panel.cjs generates purchase-room-page.candidate.js +index.
+- build-account-current-ui.cjs generates account-department-page.candidate.js +index.
+- Discover actual Warehouse parent/index builder paths with rg; do not invent names.
+- Common original source was output in a combined read that truncated: explicitly
+  re-read relevant save/message middle before editing. Tail from line65 onward read.
+
+Other remaining release gates unchanged: original intake→PO→Sales split composition,
+all remaining writer/read G3 classification, native schemas/indexes/permissions/Date
+roundtrip, measured production capacity/lifecycle, safe operational recovery, maintenance
+migration/shadow parity/single cutover, focused review and four release stages. No new
+human business choice needed for independent offline implementation now.
+
+Four states
+Code: broader task incomplete; backend exception root milestone offline-complete.
+GitHub Pages: unchanged; no feature resource deployment.
+Wix Studio: no feature install/sync/publish.
+Public verification: feature unavailable/unverified. Coverage EMPTY/ACTIVE OFF.
+Real Support invoicing and physical exit OFF. No main merge/native test data/lock delete.

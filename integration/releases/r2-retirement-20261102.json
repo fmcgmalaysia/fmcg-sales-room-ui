@@ -1,0 +1,1426 @@
+{
+  "scope": "R2 retirement only",
+  "branch": "maintenance/r2-retirement-20261102",
+  "baseline": "28236e9",
+  "files": [
+    {
+      "site": "MASTER",
+      "name": "r2BorrowRepaymentAcceptance.web.js",
+      "area": "backend",
+      "bytes": 17256,
+      "sha256": "3197250370cbe38b051afa59ff66d3ecee6c38d43e60d5ae42eea9663b12b4f7",
+      "repoSource": "integration/prototypes/stock-current-state/r2BorrowRepaymentAcceptance.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2CapacityAcceptance.web.js",
+      "area": "backend",
+      "bytes": 46837,
+      "sha256": "399b8cc2beba82c5ca100a3998805c6e730fb5ad9d175acc132dee9773b0051a",
+      "repoSource": "integration/prototypes/stock-current-state/r2CapacityAcceptance.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2CasAcceptance.web.js",
+      "area": "backend",
+      "bytes": 41189,
+      "sha256": "938561ed9e2de90c821eaf1340ccaad0d865f79a93b67c86bbd93a612f17f51a",
+      "repoSource": "integration/prototypes/stock-current-state/r2CasAcceptance.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2CasRuntimeAcceptance.web.js",
+      "area": "backend",
+      "bytes": 41195,
+      "sha256": "49f8931f5406f5e0dcea090883dbcd21d459154b96a09f5bab7c54379c8c641b",
+      "repoSource": "integration/prototypes/stock-current-state/r2CasRuntimeAcceptance.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2EmployeeAuthorityAcceptance.web.js",
+      "area": "backend",
+      "bytes": 7188,
+      "sha256": "cd866a24c5559835b9c70f259c3e0ba0eb9b28199a7d75337c81de8dfd7f9a25",
+      "repoSource": "integration/prototypes/stock-current-state/r2EmployeeAuthorityAcceptance.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2EmployeeTerminalAcceptance.web.js",
+      "area": "backend",
+      "bytes": 13619,
+      "sha256": "306627ef9f37e5ddd8cfa0b3b5e0e32b9981ccda580b0963fd9b44db052810d5",
+      "repoSource": "integration/prototypes/stock-current-state/r2EmployeeTerminalAcceptance.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2IntakeCapacityAcceptance.web.js",
+      "area": "backend",
+      "bytes": 11309,
+      "sha256": "52c4c710af8c648b4196e7ad348b087fca2a2114066debaac5dcb9704cfc3fa2",
+      "repoSource": "integration/prototypes/stock-current-state/r2IntakeCapacityAcceptance.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2PurchaseFlowAcceptance.web.js",
+      "area": "backend",
+      "bytes": 17819,
+      "sha256": "f23289d7e59dd763c8f8d3064583ffce82143292bfb101978881258cf7f0eaef",
+      "repoSource": "integration/prototypes/stock-current-state/r2PurchaseFlowAcceptance.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2SdkAuthorityAcceptance.web.js",
+      "area": "backend",
+      "bytes": 4624,
+      "sha256": "99570638bb952b233e3eae07da20b114cfcf0c0dcb2241e8e8ac75c73e55fe4b",
+      "repoSource": "integration/prototypes/stock-current-state/r2SdkAuthorityAcceptance.web.js",
+      "currentRepoExact": false,
+      "historicalExact": "59e78b64edc290513a95b5827aea716d6e617630"
+    },
+    {
+      "site": "MASTER",
+      "name": "r2accountPurchase.web.js",
+      "area": "backend",
+      "bytes": 11299,
+      "sha256": "6beacaf85d51e244d38e91bef538e1eeb4f1440435d8a4daf9fe32dd15b569e0",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2accountPurchase.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2accountPurchaseReview.js",
+      "area": "backend",
+      "bytes": 4836,
+      "sha256": "90672936b40e22a4caae8cb5b4acf9839fe73b66784459756fed92004bffe7d5",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2accountPurchaseReview.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2accountReadIndex.js",
+      "area": "backend",
+      "bytes": 9495,
+      "sha256": "bffdfb53dfdabf70a7040eb886cdcf0c335bb28520fde3f5e90ee5e22186da11",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2accountReadIndex.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2accountReadQuery.js",
+      "area": "backend",
+      "bytes": 5283,
+      "sha256": "5297766cb070967076b0aa9297745e0716f3d3c9f9353d7728bc88e9f234c23b",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2accountReadQuery.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2accountSettlement.js",
+      "area": "backend",
+      "bytes": 33384,
+      "sha256": "3bcdf1cb51c3a4b3a496dc7054a92d68e2ec8c12a8641965f36288aa88684fc9",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2accountSettlement.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2activationSchema.web.js",
+      "area": "backend",
+      "bytes": 4619,
+      "sha256": "c715b3578a5588f8cc5cf4db039fc6ff598e25337332d91121fbf94ea72997ec",
+      "repoSource": "integration/prototypes/stock-current-state/r2activationSchema.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2adminFxClient.js",
+      "area": "backend",
+      "bytes": 1256,
+      "sha256": "588cd1744e84b4486d332bbfad3d0dcaba86f2b0e8d2028df89977f075d61edd",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2adminFxClient.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2cohortBootstrap.web.js",
+      "area": "backend",
+      "bytes": 9466,
+      "sha256": "229aa344d1b419477d8141a2c56765b821fe0cc92becb8cd70d98238c6cda4e0",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2cohortBootstrap.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerAccountLedger.js",
+      "area": "backend",
+      "bytes": 6191,
+      "sha256": "1d08f3dfe1554da335055aae91fed6416c4fbc4672363b8cce27677fca1a7e88",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerAccountLedger.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerCompletionProjection.js",
+      "area": "backend",
+      "bytes": 1221,
+      "sha256": "85b7e5c05ef2d2edaf0634212d053ed8a5e3464f81b94de68c8f77a66571e814",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerCompletionProjection.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerDebtor.js",
+      "area": "backend",
+      "bytes": 2296,
+      "sha256": "0d5c289f24869728cdbb12f48abc7ac8306a169eba9d04fe5dcfa546a88a5dc2",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerDebtor.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerFulfilment.js",
+      "area": "backend",
+      "bytes": 9911,
+      "sha256": "9181389bb06544f965fcdd027f447bb1c1114765cb179c99c3e42665c370aaad",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerFulfilment.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerFulfilment.web.js",
+      "area": "backend",
+      "bytes": 4176,
+      "sha256": "8d659d490beb0dd9523221939c8e2bad22f189c3811a7ddd4210bfe6e1622860",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerFulfilment.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerFulfilmentGateway.js",
+      "area": "backend",
+      "bytes": 3230,
+      "sha256": "ff614d17129a02f0aad11159b0916b91b5c80ca71da7d300e0ff43471e65af63",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerFulfilmentGateway.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerFulfilmentService.js",
+      "area": "backend",
+      "bytes": 8041,
+      "sha256": "69ea69553edcf3b1f75b9016489033043c09d41bdefd330d7492fdf0f6262b00",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerFulfilmentService.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerNamesClient.js",
+      "area": "backend",
+      "bytes": 1047,
+      "sha256": "73ce83a6ff2d9d75ac50d10441759874fd88a2c384aabae3e799fc94e069db08",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerNamesClient.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerShipmentLedger.js",
+      "area": "backend",
+      "bytes": 2813,
+      "sha256": "d80b8f45dcd6f368c361a7cd38630cf16c04a090d7415698c2c77a55184c7ab0",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerShipmentLedger.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2customerShipmentPlan.js",
+      "area": "backend",
+      "bytes": 11900,
+      "sha256": "29b395ab67d2508019a0b102d1386e0babb6fdb6c1bb67b8bf6d390a20d48941",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2customerShipmentPlan.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2departmentMessages.js",
+      "area": "backend",
+      "bytes": 8644,
+      "sha256": "446098f57d502178a23cc89062b94c8c65287e919e0ffc27e4f06524ef6ddbd5",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2departmentMessages.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2grossProfitMargin.js",
+      "area": "backend",
+      "bytes": 1140,
+      "sha256": "7038557828b158380d684b658e21093bd403b4407bc0922b4e57325fe0073403",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2grossProfitMargin.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2inventoryExceptions.js",
+      "area": "backend",
+      "bytes": 6102,
+      "sha256": "68d38895b3d38819e0c225bd41c36e359cf860deb1cea620043d0f54877bdfb0",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2inventoryExceptions.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2nativeActivation.web.js",
+      "area": "backend",
+      "bytes": 17188,
+      "sha256": "777ee6c6fcf2a8cbd775876a535a677212b47048e1cf1b221d421ec0b60403f8",
+      "repoSource": "integration/prototypes/stock-current-state/r2nativeActivation.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2nctIntake.js",
+      "area": "backend",
+      "bytes": 12194,
+      "sha256": "d62117e3cb5e72d3f4da28f21840d59f7c978b232a203249d5a488d5e669993f",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2nctIntake.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2nctReceiver.js",
+      "area": "backend",
+      "bytes": 2371,
+      "sha256": "d2b467a63b53ed33770b597e63e0bf720ed19539e1ca42852bbc78d370d68260",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2nctReceiver.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2packingListContext.js",
+      "area": "backend",
+      "bytes": 3303,
+      "sha256": "6d79a51d3527596d83b4a5a1ea26db0f853c62a7d30b48b18fd12c826e655712",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2packingListContext.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2packingListGuards.js",
+      "area": "backend",
+      "bytes": 1202,
+      "sha256": "019e62d3cf11e1c86617a63df2b5940bed6744bbee5a64b7086bbe96a947f217",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2packingListGuards.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2packingListModel.js",
+      "area": "backend",
+      "bytes": 11432,
+      "sha256": "8bfe96c61488b8bdb0c702fa558baebf138601fa10449076d594f9ffbbabef46",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2packingListModel.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2packingListOperations.js",
+      "area": "backend",
+      "bytes": 9324,
+      "sha256": "dd39f3990323a4280bdfef8399ad2f3c17e9d718b1c0d41b405296fa5b620c29",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2packingListOperations.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2packingListPhotos.js",
+      "area": "backend",
+      "bytes": 1150,
+      "sha256": "0d7fb1e2ae4258719540198931bd32572903e45b74a52cbae8986e1cdcde4ddc",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2packingListPhotos.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2packingListService.js",
+      "area": "backend",
+      "bytes": 952,
+      "sha256": "90128b44598a6846667136506b7444e758f79c62ee56748aab20d0ce04b7bf26",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2packingListService.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2packingLists.web.js",
+      "area": "backend",
+      "bytes": 3307,
+      "sha256": "cbf08310ca285a92295d2c41a44d638f1ceceefcc230cc3ccb50431ef85dc760",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2packingLists.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2partialInvoiceMargin.js",
+      "area": "backend",
+      "bytes": 1228,
+      "sha256": "2f058e0af90d2b6dac1969fb2dd3556c0012dde0fc7cbb031cb653dfd45df6c4",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2partialInvoiceMargin.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2paymentHandoff.js",
+      "area": "backend",
+      "bytes": 13820,
+      "sha256": "ad17a1e25838d706bcf8f61aef176aef30787609ad5d5776a87fd8651975de45",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2paymentHandoff.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2plannerAllocation.js",
+      "area": "backend",
+      "bytes": 7549,
+      "sha256": "8e10640e7a4a064b9c0e5670463b2c67d2add9bc81f544275ee9e583eb240fb5",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2plannerAllocation.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2pointbaseBrandClient.js",
+      "area": "backend",
+      "bytes": 2993,
+      "sha256": "15c82f98459cac694d19eb0b57bac319a2aeb35ffd1b602b788da3b19c8f2d3a",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2pointbaseBrandClient.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2pointbaseCostClient.js",
+      "area": "backend",
+      "bytes": 2951,
+      "sha256": "bb77aa4ef3bf34c2ae734b21264f96bf91284c32dcd17b434f482c55b0280f16",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2pointbaseCostClient.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseAccess.js",
+      "area": "backend",
+      "bytes": 753,
+      "sha256": "59c11b53079a6879e6d31d510aa5e4dfda19241942787e2168a506123208f1d8",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseAccess.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseClaimEvidence.js",
+      "area": "backend",
+      "bytes": 4291,
+      "sha256": "6c06196923f7b4426828752cd5521c8379cdcaa5f775294e402075177d4a2865",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseClaimEvidence.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseCostRetry.js",
+      "area": "backend",
+      "bytes": 6587,
+      "sha256": "845948cbbf676d384af6c115b067f9c1c32c8ac1bc76aed9bc3c87f6cad36000",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseCostRetry.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseCostRetry.web.js",
+      "area": "backend",
+      "bytes": 1953,
+      "sha256": "e640a90deff9470edddbe195a7a15fdb5a3ae20053bceb1e29173a6f6ad0e7d4",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseCostRetry.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseDisplayOrder.js",
+      "area": "backend",
+      "bytes": 4461,
+      "sha256": "b9b2a49312629b1cfc2737b0cbb35b445d44577064837defe7002e34a5ec54d4",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseDisplayOrder.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseDocumentClient.js",
+      "area": "backend",
+      "bytes": 3356,
+      "sha256": "1bd9f074a42595dbba26f81c2a9fb81ec33d56cd834def649a5272c785638152",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseDocumentClient.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseDocumentPolicy.js",
+      "area": "backend",
+      "bytes": 1878,
+      "sha256": "fe110734c8359374f84213c5ae0ef9c8adb46aaa77f1ba233afaebbf8ad315c4",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseDocumentPolicy.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseMarginRefresh.js",
+      "area": "backend",
+      "bytes": 10093,
+      "sha256": "7e2c0d4fb34097866e0980423e6e72ecfdf9252a1fb0caa5765af9d928942edf",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseMarginRefresh.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseOperationJournal.js",
+      "area": "backend",
+      "bytes": 2598,
+      "sha256": "665ac99eb425c4dc2408e85ae0f4edcc23c5674c9dbd3865ea9437fe0fb726b2",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseOperationJournal.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseOperations.js",
+      "area": "backend",
+      "bytes": 28288,
+      "sha256": "620c42c8b2eb8d7877f624a52d792b37c7239f24fe88b72247e631436e5e1d38",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseOperations.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseOperations.web.js",
+      "area": "backend",
+      "bytes": 10972,
+      "sha256": "157249c06801a9752d957f2e48d38218ea17c28302ce3339509bf2ecf52389dd",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseOperations.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseOrderWorkflow.js",
+      "area": "backend",
+      "bytes": 24306,
+      "sha256": "e976f34036acb779cb8274555f74b56d62eaad78367cc720550a0f4b9754d054",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseOrderWorkflow.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseOrders.web.js",
+      "area": "backend",
+      "bytes": 5352,
+      "sha256": "5a4ae508d4f99f790d1da1a074196b92bf64559ebc74a711bceea76c1b166cfe",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseOrders.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchasePlan.js",
+      "area": "backend",
+      "bytes": 5794,
+      "sha256": "1203e6c804472a410eff5e355735ab7700f640aea055222d35ded4f45f4c4950",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchasePlan.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseProgress.js",
+      "area": "backend",
+      "bytes": 3524,
+      "sha256": "59e6cd9fa3ea715e7a0a2ca8e2a736a41cc4580ad68eba79bd9e2f7ffc4165c5",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseProgress.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseProjection.js",
+      "area": "backend",
+      "bytes": 23584,
+      "sha256": "1b4f3eb35f9d162b06e6c7317c9fe76420c2ceed32130cb33d71183745f0dfbf",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseProjection.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseQuantityCases.js",
+      "area": "backend",
+      "bytes": 7745,
+      "sha256": "a35947e850fdacc0bfcecc5d6a13b5f5218008b754ff9c6b8893e7fc5aabf654",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseQuantityCases.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseQuantityProjection.js",
+      "area": "backend",
+      "bytes": 6840,
+      "sha256": "51d99519d011fef44883dbc941c2283770a03a5ea9fb7cf2acf762ee61cdb238",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseQuantityProjection.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseQuantityRead.js",
+      "area": "backend",
+      "bytes": 2739,
+      "sha256": "90cba6d4b8eda37888420f731986706f5950c7cf34f7cac503b158b88cd0ade6",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseQuantityRead.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseShortage.js",
+      "area": "backend",
+      "bytes": 4432,
+      "sha256": "693cd28883662ba9e06e0a382eb7fd154b73d01f2178084352ab88402090f2fc",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseShortage.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseSources.js",
+      "area": "backend",
+      "bytes": 10218,
+      "sha256": "cc1df9d6c263b85e63dd77bcb99536aaf35c99f468a49492e3095826e6174f84",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseSources.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseTaskIdentity.js",
+      "area": "backend",
+      "bytes": 965,
+      "sha256": "84188823affead510e3e7673d76f9e075c22f1cf2cd7d8f4b45270eb89944e0e",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseTaskIdentity.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2purchaseWorkspace.web.js",
+      "area": "backend",
+      "bytes": 3759,
+      "sha256": "20dd88bd9fde1ce4e501fa79cab5990a97dff17e5c59996b0966b31b81e6f5a5",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2purchaseWorkspace.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2readPreflight.web.js",
+      "area": "backend",
+      "bytes": 14350,
+      "sha256": "1b092d16f384d8cc18cbf38107294993b6c569919ff4cc8da46f5024e1a51b90",
+      "repoSource": "integration/prototypes/stock-current-state/r2readPreflight.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2salesOrderAdjustment.js",
+      "area": "backend",
+      "bytes": 11844,
+      "sha256": "82a7778eee54561723852f62784113b6a3340b21aa00ca00629513e8160904b6",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2salesOrderAdjustment.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2sharedSupplierOperations.js",
+      "area": "backend",
+      "bytes": 5872,
+      "sha256": "7a07909665154257afda044287c2b875f9ac8a817db56e7e8be97d1592ae0ee9",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2sharedSupplierOperations.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2shipmentBatchAllocation.js",
+      "area": "backend",
+      "bytes": 5582,
+      "sha256": "62daa7b6524f2932bc0533b5ed50a641a190e1885c46aea87758420e848b2b11",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2shipmentBatchAllocation.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCardProjection.js",
+      "area": "backend",
+      "bytes": 8599,
+      "sha256": "7ee3c17ada12c6bd5d2c0f0243be654a9b5f1db747ef238a671e8f4862d0c895",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCardProjection.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockControl.web.js",
+      "area": "backend",
+      "bytes": 1714,
+      "sha256": "2aa440d926829509a4349f28f46e6e05776fbc91c5d3df67906253f2454e04ab",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockControl.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockControlService.js",
+      "area": "backend",
+      "bytes": 5113,
+      "sha256": "7ff509de6a00d45de4f30bbadec686600bc6679db22541dff6b2bd1dd3220390",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockControlService.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentAccountPurchase.js",
+      "area": "backend",
+      "bytes": 9312,
+      "sha256": "c576b01900ef10924a2f440ed11fcaaefa6415ef6e7ef6967a788c19ce3f8a43",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentAccountPurchase.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentBorrow.web.js",
+      "area": "backend",
+      "bytes": 12518,
+      "sha256": "2ed174e595a26847376ec05151f69dd5d21708ffca01081a9fee0482d334a9a1",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentBorrow.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentCommands.js",
+      "area": "backend",
+      "bytes": 719646,
+      "sha256": "f84ebbb3628f2063d690f1995834fdc12983f13224aa130a1591ad0d961477d4",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentCommands.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentCostReference.js",
+      "area": "backend",
+      "bytes": 3152,
+      "sha256": "7d2d902750f7d1b677c861f7633b3b38b44a28d95ab3dc6eddc447853b26e6ed",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentCostReference.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentExceptions.js",
+      "area": "backend",
+      "bytes": 10484,
+      "sha256": "47da1c66fa63a05060b75b08fe241b86e4080864b56640d1cdc8a5f9a3a2d93a",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentExceptions.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentFulfilment.js",
+      "area": "backend",
+      "bytes": 5837,
+      "sha256": "d6be75b37805283e7d2b8215681dc7af2026147515ebfcc3d65c271783d04e3b",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentFulfilment.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentOrderIntake.js",
+      "area": "backend",
+      "bytes": 2906,
+      "sha256": "c15e6a178993892a8f520e9a70d690292b90c70349e3ed351088df4238454cd0",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentOrderIntake.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentPacking.js",
+      "area": "backend",
+      "bytes": 5752,
+      "sha256": "431781ee339a3662a5079c0a1afd8233f29d36614f1b6815fd35b674e17cfd38",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentPacking.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentPurchaseOrders.js",
+      "area": "backend",
+      "bytes": 8914,
+      "sha256": "8aa81f5bb81ec099a14c32d76e58861e4df53e6e0ee7c19d825a474051678839",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentPurchaseOrders.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentQuantityRead.js",
+      "area": "backend",
+      "bytes": 8003,
+      "sha256": "9f3b0a4c33d861c22d1d822bee3168791355b3cb992813929324082eb0976976",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentQuantityRead.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentRead.web.js",
+      "area": "backend",
+      "bytes": 35727,
+      "sha256": "2280721e4111f1ad50bae8184c7f4751485be81bc6252afefac25a0a1906e88e",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentRead.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentSourceSales.js",
+      "area": "backend",
+      "bytes": 7995,
+      "sha256": "1fe68b0bc759903aa9379965eefa5a44c9e85a2324c8651e5da9f9f388c5945f",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentSourceSales.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockCurrentWarehouse.web.js",
+      "area": "backend",
+      "bytes": 12541,
+      "sha256": "3ea02185f384b440f2666d7eafe25b3bda06300cbeb7863990ef33f03d612fa8",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockCurrentWarehouse.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockExceptionResolution.js",
+      "area": "backend",
+      "bytes": 11189,
+      "sha256": "e3dd24dc2b048d576316dcde2f3a90b5348732c5e5987b934c831cc1f3f55dc4",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockExceptionResolution.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockExceptionState.js",
+      "area": "backend",
+      "bytes": 916,
+      "sha256": "fd9c844e86848f2054de5e2cee6491ee7cc9f9ca6bcacea7a555797c90460ef1",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockExceptionState.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockExceptionWorkspace.js",
+      "area": "backend",
+      "bytes": 2984,
+      "sha256": "e5a4d4d666fbe7921475a034639293d92111f8e5547a2f2b00e496e9545332a5",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockExceptionWorkspace.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockExceptions.web.js",
+      "area": "backend",
+      "bytes": 5338,
+      "sha256": "496a75e5cffdc65423b93b04fff4904b1f6a10dc4a3aa5d9d20f4a71f930bd90",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockExceptions.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockMaintenanceAdmin.web.js",
+      "area": "backend",
+      "bytes": 10213,
+      "sha256": "6fa6644d39dbadab623542d570074e6f6d160d96561bd4c71b21515d4563934a",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockMaintenanceAdmin.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockPhysicalProjection.js",
+      "area": "backend",
+      "bytes": 1825,
+      "sha256": "105795065a2eadd997e4418f839951e8a153e4af7e1e060fbc1d83394ec5af05",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockPhysicalProjection.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2stockRecoveryRead.web.js",
+      "area": "backend",
+      "bytes": 33102,
+      "sha256": "491d2705fee567b27203d984210d54b2d7aab29f52aea6c7bea897a3064292b7",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2stockRecoveryRead.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2supplierCredit.js",
+      "area": "backend",
+      "bytes": 3551,
+      "sha256": "a35c281da57c0bd977bf1750e670e37a1da81b482fae551dd4d36998db63da85",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2supplierCredit.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2taskChat.web.js",
+      "area": "backend",
+      "bytes": 7785,
+      "sha256": "04edfe1463ba28c12dc6f1298645a78803e8fefb60ef9abfff6409508160aef7",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2taskChat.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2taskChatClient.js",
+      "area": "backend",
+      "bytes": 2149,
+      "sha256": "4204846910eec318e348acbe2b6bf1998d4408a219b68e838cebd988d2393568",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2taskChatClient.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2taskChatService.js",
+      "area": "backend",
+      "bytes": 10770,
+      "sha256": "6e02b622b75eb6ebecebc29126d2abc285887aa85b0f9e31b935db959151d541",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2taskChatService.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2taskChatWorkspace.js",
+      "area": "backend",
+      "bytes": 4490,
+      "sha256": "ae437036280bc94114d484eb6c2b25e6ab211a5f9bbfc45574f3dd8fcb111772",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2taskChatWorkspace.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2warehouseCbm.js",
+      "area": "backend",
+      "bytes": 3159,
+      "sha256": "5b665529409ff12255e3ca2fa3c2a3084c963f5d786414900b2204cc308a1f6f",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2warehouseCbm.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2warehouseCustomerReadiness.js",
+      "area": "backend",
+      "bytes": 963,
+      "sha256": "146df327b37b072862ed0d462afd6c155bc534a71f161d5d8f292111520555af",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2warehouseCustomerReadiness.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2warehousePreparation.js",
+      "area": "backend",
+      "bytes": 16596,
+      "sha256": "d9d7a64d0dc7fa8f916cb2dbfe59acb95d4a6b014fc53a02c718e0ca5f584801",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2warehousePreparation.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2warehouseReceiving.js",
+      "area": "backend",
+      "bytes": 12784,
+      "sha256": "2a22338d24d7d447405b850124ad6c0593f3afcd9408cfa540d70bab12193202",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2warehouseReceiving.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2warehouseReceiving.web.js",
+      "area": "backend",
+      "bytes": 7189,
+      "sha256": "b4e675d2852e4ac2d4aeee26127c0b3523b815aa91af239b09e934dcdee88553",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/r2warehouseReceiving.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2packingListBridge.js",
+      "area": "public",
+      "bytes": 2011,
+      "sha256": "e7a32267dc80a1873c5e366a117abb85d352491709480131cda8da66493e0e7f",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/public/r2packingListBridge.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "MASTER",
+      "name": "r2taskChatBridge.js",
+      "area": "public",
+      "bytes": 1397,
+      "sha256": "27700ac4a6d88dcd1df5d3eda21587129ea111e0b6b51875a4c82d235062c19b",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/MASTER/public/r2taskChatBridge.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2PairedTransportAcceptance.web.js",
+      "area": "backend",
+      "bytes": 3711,
+      "sha256": "60381636d824d3ba1f107c7b3f4c751d06a628c1539a07d7bcead2b2dfe4e84b",
+      "repoSource": "integration/prototypes/stock-current-state/r2PairedTransportAcceptance.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2buyerOrderDownload.js",
+      "area": "backend",
+      "bytes": 3191,
+      "sha256": "2cee8e90afe0f36690eded3ab523434170d0e6beede75067d75b4398e1611673",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2buyerOrderDownload.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2buyerOrderExportToken.js",
+      "area": "backend",
+      "bytes": 2641,
+      "sha256": "23980260dd711c10ea8228a1265f587153203c34d720065cd74e13505c9f9e60",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2buyerOrderExportToken.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2buyerSelectionDownload.js",
+      "area": "backend",
+      "bytes": 10043,
+      "sha256": "c5d24921777dcd94bf9119bc387390cb9b2537853f7b532bec1b4eec23f3ea1e",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2buyerSelectionDownload.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2buyerSelectionExcel.js",
+      "area": "backend",
+      "bytes": 18846,
+      "sha256": "002f2ce9e34b86c035c5bf090b7cbe08b466ebf7cc351cea6134efd06d4c543e",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2buyerSelectionExcel.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2buyerSelectionExportToken.js",
+      "area": "backend",
+      "bytes": 2495,
+      "sha256": "24d134eea788903f9f89482d1a0480b49941cec28e62d8690b83a4d3a1106aab",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2buyerSelectionExportToken.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2catalogueAuth.web.js",
+      "area": "backend",
+      "bytes": 69097,
+      "sha256": "fd6c60e85749772243cbe0ad258ae314e3f218658d253658d88d78840c2669b6",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2catalogueAuth.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2cohortBootstrap.web.js",
+      "area": "backend",
+      "bytes": 9111,
+      "sha256": "3445f35eab556fa503c50d24a49c4185057522674b04da6cb79ad5bfd3d5884c",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2cohortBootstrap.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2masterFulfilmentClient.js",
+      "area": "backend",
+      "bytes": 1101,
+      "sha256": "251e377ddfad7372ab50e40f98666093c828fe9a62260869b396236148be01c3",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2masterFulfilmentClient.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2masterQuantityClient.js",
+      "area": "backend",
+      "bytes": 1482,
+      "sha256": "b43b42e518b05fe0de926c4323a52dbdd0a79ff6f65fa591f72071f1233c0e61",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2masterQuantityClient.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2masterQuantityProjection.js",
+      "area": "backend",
+      "bytes": 8022,
+      "sha256": "c9d6c34003de5a8a39b1f4b3520365bbdc3fe88dc044249a28a5a4f8114b0467",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2masterQuantityProjection.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2nctSalesIntake.js",
+      "area": "backend",
+      "bytes": 10338,
+      "sha256": "99d285614d92268344e776b6e8fd4c5109bcebe1569ffc92d6e8014d3f8467f8",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2nctSalesIntake.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2nctSubmissionDelivery.js",
+      "area": "backend",
+      "bytes": 7141,
+      "sha256": "2141dcdbc0059bdcb905944368361ea35200f3927ccc7bc78910a5a35930ac85",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2nctSubmissionDelivery.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2nctSubmissionPayload.js",
+      "area": "backend",
+      "bytes": 3236,
+      "sha256": "3ff0026cdf6561a9d1875e71f288df330ae7349ef3b6f24125278b80ec77258c",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2nctSubmissionPayload.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "name": "r2onboarding.web.js",
+      "area": "backend",
+      "bytes": 117061,
+      "sha256": "25b8d804c33b2149c71d49ceb30de4cbc2ce9b6ee09c1956163163820889e90e",
+      "repoSource": "integration/prototypes/stock-current-state/isolated-cohort/FMCGMALAYSIA/r2onboarding.web.js",
+      "currentRepoExact": true,
+      "historicalExact": null
+    }
+  ],
+  "collections": [
+    {
+      "site": "MASTER",
+      "id": "R2NCTActivity",
+      "label": "R2 NCT Activity",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2NCTActivity1",
+      "label": "R2 GHR Activity",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2AccountReadIndex",
+      "label": "R2 Account Read Index",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2DepartmentChatIndex",
+      "label": "R2 Department Chat Index",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2NCTOrders",
+      "label": "R2 NCT Orders",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2NCTOrders1",
+      "label": "R2 GHR Orders",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2NCTTasks",
+      "label": "R2 NCT Tasks",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2NCTTasks1",
+      "label": "R2 GHR Tasks",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2PurchaseOrders",
+      "label": "R2 Purchase Orders",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2StockClaims",
+      "label": "R2 StockClaims",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2StockPositions",
+      "label": "R2 StockPositions",
+      "items": 0
+    },
+    {
+      "site": "MASTER",
+      "id": "R2StockProducts",
+      "label": "R2 StockProducts",
+      "items": 0
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "id": "R2WixBuyerListItems",
+      "label": "R2 BUYER LIST ITEMS",
+      "items": 0
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "id": "R2WixBuyerOrderLines",
+      "label": "R2 BUYER ORDER LINES",
+      "items": 0
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "id": "R2WixBuyerOrders",
+      "label": "R2 BUYER ORDERS",
+      "items": 0
+    },
+    {
+      "site": "FMCGMALAYSIA",
+      "id": "R2WixOrderAudit",
+      "label": "R2 ORDER AUDIT",
+      "items": 0
+    }
+  ],
+  "http": {
+    "site": "MASTER",
+    "removeLines": 9,
+    "exports": [
+      "post_r2NctIntake",
+      "post_r2SalesFulfilment",
+      "post_r2PurchaseQuantities"
+    ],
+    "nonR2BodyExact": true,
+    "fmcgHttpUnchanged": true
+  },
+  "static": {
+    "changeCount": 0,
+    "expectedAssets": 101,
+    "baseline": "87ceb29"
+  },
+  "permissions": {
+    "deploymentExpansionRequired": false
+  },
+  "status": "FOUR_TECHNICAL_STAGES_COMPLETE_USER_PENDING",
+  "validation": {
+    "formalFilesChecked": 137,
+    "formalR2Refs": 0,
+    "staticAssetsChecked": 101,
+    "staticR2Refs": 0,
+    "sharedHttpNonR2BodyExact": true,
+    "regression": {
+      "tests": 100,
+      "passed": 100,
+      "failed": 0,
+      "skipped": 0,
+      "scope": "nct-cross-site,nct-receiver,customer-fulfilment,warehouse-receiving,account-purchase-review,customer-invoice-payments,customer-transaction-history,support-workroom,catalogue-qd-recovery"
+    }
+  },
+  "actual": {
+    "draftFilesRemoved": 122,
+    "publishedR2FilesRemoved": 122,
+    "masterHttpExtraLinesRemoved": 9,
+    "masterHttpNonR2Exact": true,
+    "r2TestPagesRemoved": 1,
+    "wixPublished": {
+      "MASTER": true,
+      "FMCGMALAYSIA": true
+    },
+    "cmsDeleted": 16,
+    "cmsR2Remaining": {
+      "MASTER": 0,
+      "FMCGMALAYSIA": 0
+    },
+    "pagesAssetsExact": 101,
+    "pagesRedeployed": false,
+    "permissionsChanged": false,
+    "postRegressionPassed": 100,
+    "postRegressionFailed": 0,
+    "retiredHttpStatuses": {
+      "r2NctIntake": 404,
+      "r2SalesFulfilment": 404,
+      "r2PurchaseQuantities": 404
+    },
+    "publicPages": [
+      "Purchase",
+      "Finance",
+      "Warehouse",
+      "Support",
+      "Sales",
+      "Buyer admin assist",
+      "Catalogue"
+    ],
+    "formalMasterCountsUnchanged": {
+      "NCTActivity": 3029,
+      "NCTOrders": 46,
+      "NCTTasks": 47,
+      "PurchaseOrders": 4,
+      "DepartmentChatIndex": 2
+    },
+    "sourceProductsUnchanged": 6780,
+    "formalBusinessWrites": 0
+  },
+  "additionalPageProposal": {
+    "site": "MASTER",
+    "name": "R2 Capacity Test",
+    "file": "R2 Capacity Test.f3l9j.js",
+    "pageId": "f3l9j",
+    "bytes": 11655,
+    "sha256": "59c745916c124cabbb94bb95deb388f772cda10062dd8ae5c7c38371df22b14a",
+    "enabled": false,
+    "reason": "Wix build deployment7e5562db-db82-43dc-8094-dc831584a5b0 cannot resolve backend/r2IntakeCapacityAcceptance.web.js from this retained page",
+    "status": "APPROVED_DELETED_PUBLISHED"
+  },
+  "acceptance": {
+    "userPending": true,
+    "ordinaryBuyerLoginRetested": false,
+    "notes": [
+      "100 backend scenarios passed before and after retirement.",
+      "7 public pages force refreshed and read-only navigation passed.",
+      "Buyer and Sales TESTING801 history preserve two invoices1008+3192 and balance4200, matching Finance.",
+      "Wix initial-render fallback logs were retained; no relevant application error found.",
+      "No order submission, receipt, Loaded, borrowing/repayment, posting, price change or production-data reset in R2 task.",
+      "A new user request to clear fake CMS business records is separate and has not executed."
+    ]
+  }
+}

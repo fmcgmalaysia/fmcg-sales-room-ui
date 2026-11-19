@@ -1,0 +1,29 @@
+{
+  "schema": "R2_EMPLOYEE_TERMINAL_NATIVE_EVIDENCE_V1",
+  "cohort": "MASTER_20261024_R2",
+  "authorityBuild": "03ca8d21023736f45e2526f0d503989ab29bcea6",
+  "probeSourceSha256": "93f04d5946b74481eff770786c958ffe53488955df15e2d3aa280bea3306ec9a",
+  "testVersionUsed": 155,
+  "evidenceSource": "Wix Logs native backend R2_EMPLOYEE_TERMINAL_RECEIPT; durable terminal inspection",
+  "observedUtc": "2026-10-25T10:19:29.860Z",
+  "profiles": [
+    { "profile": "PURCHASE", "step": "INSPECT", "ok": true, "stage": "READ_ONLY_TERMINAL_INSPECTION", "retainedRecords": 4, "terminalReceiptVerified": true, "ordinaryStaffWriteAccepted": true, "mutationAttempted": false },
+    { "profile": "WAREHOUSE", "step": "INSPECT", "ok": true, "stage": "READ_ONLY_TERMINAL_INSPECTION", "retainedRecords": 4, "terminalReceiptVerified": true, "ordinaryStaffWriteAccepted": true, "mutationAttempted": false }
+  ],
+  "oldFixturesAccessed": false,
+  "businessAuthorizationAccepted": false,
+  "writerCoverageAccepted": false,
+  "activationAllowed": false,
+  "closedBackendSha256": "845165d15da3a5bdd561f043fb9e9b5138daeb3a31bf40dcee47d7878f24f692",
+  "closedPageSha256": "58728f7ff951fc3c44b1cf658ba5d34a9a148de2cbfcb7402873b7a04cb55e67",
+  "openBackendSha256": "451c3e96906c027d01d9428ef63237b26f2decaff5d1d4ba51f4eb56233b3bcd",
+  "openPageSha256": "28f5d7d28caf24d7491b6f12ffaff60012ba4adda5c5c4cc1ebe4404f8d60c08",
+  "exactTwoSingleFlagChangesOnly": true,
+  "bothClosedSourcesRestoredExactly": true,
+  "closedTestVersion": 156,
+  "testExposurePercent": 0,
+  "liveVersion": 149,
+  "liveExposurePercent": 100,
+  "pagesDeploymentPerformed": false,
+  "realBuyerAcceptance": false
+}

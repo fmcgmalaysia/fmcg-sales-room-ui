@@ -1,11 +1,18 @@
+import { requestMasterFulfilment } from 'backend/masterFulfilmentClient.js';
+import { withMasterQuantities } from 'backend/masterQuantityClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
-import { request as httpsRequest } from 'https';
 import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
 import { createBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
+import { createBuyerSelectionMediaDownload } from 'backend/buyerSelectionDownload.js';
+import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
+import { requireStaffCustomerAccess } from 'backend/masterStaffAccessClient.js';
+import { applyWebQuotations, readMasterWebQuotationData } from 'backend/masterWebQuotationData.js';
+import { isWebQuotationReady } from 'backend/webQuotationCustomer.js';
+import { removedSelectionExpired } from 'backend/buyerSelectionRetention.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -22,8 +29,7 @@ const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
 const ACCOUNT_NOTIFICATION_COLLECTION = 'WixAccountNotifications';
 const USER_AUDIT_COLLECTION = 'CustomerUserAudit';
 const ORDER_PAGE_SIZE = 20;
-const QD_ROUTER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
-const QD_ROUTER_SECRET = 'FMCG_QD_ROUTER_TOKEN';
+const BUYER_EXCEL_SIGNING_KEY = 'FMCG_QD_ROUTER_TOKEN';
 
 function normalize(value) { return String(value ?? '').trim(); }
 function upper(value) { return normalize(value).toUpperCase(); }
@@ -151,14 +157,9 @@ async function signedInMember() {
   try { return await currentMember.getMember({ fieldsets: ['FULL'] }); } catch (_) { return null; }
 }
 async function requireStaff(member) {
-  const memberId = normalize(member?._id);
-  const email = memberEmail(member);
-  let matches = memberId ? (await wixData.query(STAFF_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items : [];
-  if (!matches.length && email) matches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items;
-  if (matches.length !== 1 || upper(matches[0].status) !== 'ACTIVE') throw new Error('Active staff authorization is required.');
-  const staff = matches[0];
-  const role = upper(staff.role);
-  return { staffId: upper(staff.staffId), staffName: normalize(staff.title || staff.staffName || staff.staffId), email, role, canViewAllCustomers: ['ADMIN', 'SUPER ADMIN'].includes(role) };
+  const staff = await getCurrentStaffContext();
+  if (!staff?.authorized || normalize(staff.memberId) !== normalize(member?._id)) throw new Error('Active staff authorization is required.');
+  return { ...staff, email: staff.loginEmail };
 }
 async function customerById(customerId) {
   const result = await wixData.query(CUSTOMER_COLLECTION).eq('customerId', normalize(customerId)).limit(2).find({ suppressAuth: true });
@@ -169,55 +170,20 @@ function ensureActive(customer) {
   const lifecycle = upper(customer.lifecycleStatus || customer.customerStatus);
   const access = upper(customer.catalogueAccessStatus || customer.accessStatus || customer.customerStatus);
   if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) throw new Error('This customer account is suspended.');
+  if (!isWebQuotationReady(customer)) throw new Error('Your web quotation workspace is not ready.');
 }
 function contextFromCustomer(customer, actor) {
-  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, actorUserId: normalize(actor.userId), primaryUser: Boolean(actor.primaryUser), currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId) };
+  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, actorUserId: normalize(actor.userId), primaryUser: Boolean(actor.primaryUser), currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', assignedStaffId: upper(customer.assignedStaffId), quotationMode: 'WEB' };
 }
 
-function httpsCall(url, options, body = '') {
-  return new Promise((resolve, reject) => {
-    const req = httpsRequest(url, options, response => {
-      let text = '';
-      response.setEncoding('utf8');
-      response.on('data', chunk => { text += chunk; });
-      response.on('end', () => resolve({ status: Number(response.statusCode || 0), headers: response.headers || {}, text }));
-    });
-    req.on('error', reject);
-    req.setTimeout(30000, () => req.destroy(new Error('Quotation Desk service timed out.')));
-    if (body) req.write(body);
-    req.end();
-  });
-}
-async function routeQdAction(action, buyer, row) {
-  if (!buyer.qdFileId) throw new Error('Quotation Desk file is not configured.');
-  const payload = JSON.stringify({
-    action,
-    sharedSecret: await getSecret(QD_ROUTER_SECRET),
-    customerId: buyer.customerId,
-    assignedStaffId: buyer.assignedStaffId,
-    qdFileId: buyer.qdFileId,
-    wixMyListId: normalize(row.record._id || row.data.id || row.data.itemId),
-    unitBarcode: normalize(row.data.unitBarcode || row.data.barcode)
-  });
-  let response = await httpsCall(QD_ROUTER_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, payload);
-  if ([301, 302, 303, 307, 308].includes(response.status)) {
-    const location = Array.isArray(response.headers.location) ? response.headers.location[0] : response.headers.location;
-    if (!location) throw new Error('Quotation Desk redirect is missing.');
-    response = await httpsCall(new URL(location, QD_ROUTER_ENDPOINT).toString(), { method: 'GET', headers: { Accept: 'application/json' } });
-  }
-  let body = {};
-  try { body = JSON.parse(response.text || '{}'); } catch (_) { /* handled below */ }
-  if (response.status < 200 || response.status >= 300 || !body.ok) throw new Error(body.error || 'Quotation Desk update failed.');
-  return body.result || {};
-}
-async function resolveBuyerContext(assistCustomerId = '') {
+async function resolveBuyerContext(assistCustomerId = '', staffAction = 'BUYER_ROOM_VIEW') {
   const member = await signedInMember();
   if (!member?._id) throw new Error('Sign in is required.');
   const requestedId = normalize(assistCustomerId);
   if (requestedId) {
     const staff = await requireStaff(member);
     const customer = await customerById(requestedId);
-    if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== staff.staffId) throw new Error('This customer is assigned to another salesperson.');
+    requireStaffCustomerAccess(staff, staffAction, requestedId);
     ensureActive(customer);
     return {
       ...contextFromCustomer(customer, { email: staff.email, name: staff.staffName, type: staff.canViewAllCustomers ? 'ADMIN' : 'STAFF' }),
@@ -239,7 +205,8 @@ async function resolveBuyerContext(assistCustomerId = '') {
   const isPrimary = normalize(customer.primaryUserId) === resolvedUserId || Boolean(user.primaryUser);
   return contextFromCustomer(customer, { email, name: user.title || email, type: 'CUSTOMER_USER', userId: resolvedUserId, primaryUser: isPrimary });
 }
-async function workspaceItems(customerId) {
+async function workspaceItems(buyer) {
+  const { customerId } = buyer;
   let result = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', normalize(customerId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
   const records = [...result.items];
   while (result.hasNext()) { result = await result.next(); records.push(...result.items); }
@@ -258,7 +225,7 @@ async function workspaceItems(customerId) {
     const barcode = normalize(product.barcode);
     if (barcode) byBarcode.set(barcode, product);
   });
-  return rows.map(({ record, data }) => {
+  const selections = rows.map(({ record, data }) => {
     const safeData = { ...data };
     delete safeData.targetGp;
     delete safeData.quoteActorEmail;
@@ -279,6 +246,8 @@ async function workspaceItems(customerId) {
       // stored value only when the product is unavailable in Catalogue CMS.
       packingSize: normalize(product.description || data.packingSize),
       brand: normalize(data.brand || product.brandName || product.principle),
+      brandName: normalize(product.brandName),
+      sortNo: normalize(product.pointBaseSortId),
       category,
       imageUrl: imageUrl(data.imageUrl || data.image || product.image || product.productImage || product.mainImage || product.wixImageUrl),
       ea,
@@ -301,16 +270,27 @@ async function workspaceItems(customerId) {
       qtyEditedAt: normalize(data.qtyEditedAt), qtyEditedBy: normalize(data.qtyEditedBy)
     };
   });
+  return applyWebQuotations(await customerById(customerId), selections);
 }
 
 async function buyerOrderHistory(customerId, cursor = '') {
-  let query = wixData.query(BUYER_ORDER_COLLECTION).eq('customerId', normalize(customerId)).eq('isComplete', true);
-  if (cursor) query = query.lt('orderSortKey', normalize(cursor));
-  const result = await query.descending('orderSortKey').limit(ORDER_PAGE_SIZE + 1).find({ suppressAuth: true, consistentRead: true });
-  const page = result.items.slice(0, ORDER_PAGE_SIZE);
+  const visible = [];
+  let scanCursor = normalize(cursor);
+  while (visible.length <= ORDER_PAGE_SIZE) {
+    let query = wixData.query(BUYER_ORDER_COLLECTION).eq('customerId', normalize(customerId)).eq('isComplete', true);
+    if (scanCursor) query = query.lt('orderSortKey', scanCursor);
+    const result = await query.descending('orderSortKey').limit(ORDER_PAGE_SIZE + 1).find({ suppressAuth: true, consistentRead: true });
+    for (const record of result.items) {
+      if (!payloadData(record).receiptOnly) visible.push(record);
+      if (visible.length > ORDER_PAGE_SIZE) break;
+    }
+    if (visible.length > ORDER_PAGE_SIZE || result.items.length <= ORDER_PAGE_SIZE) break;
+    scanCursor = normalize(result.items[result.items.length - 1].orderSortKey);
+  }
+  const page = visible.slice(0, ORDER_PAGE_SIZE);
   return {
     orders: page.map(record => payloadData(record)),
-    nextCursor: result.items.length > ORDER_PAGE_SIZE ? normalize(page[page.length - 1].orderSortKey) : ''
+    nextCursor: visible.length > ORDER_PAGE_SIZE ? normalize(page[page.length - 1].orderSortKey) : ''
   };
 }
 
@@ -381,13 +361,25 @@ async function writeBuyerUserAudit(action, customerId, userId, beforeStatus, aft
   }, { suppressAuth: true });
 }
 
+function buyerPageContext(buyer) {
+  if (buyer.actorType === 'CUSTOMER_USER') return buyer;
+  return buyer;
+}
+
 export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
-  try { return { ok: true, buyer: await resolveBuyerContext(assistCustomerId) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
+  try { return { ok: true, buyer: buyerPageContext(await resolveBuyerContext(assistCustomerId)) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
+});
+// Reuse existing member/customer authorization. This entry is read-only and cannot post payments.
+export const getBuyerTransactionHistory = webMethod(Permissions.SiteMember, async (company, assistCustomerId = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId);
+  if (!['NCT', 'GHR'].includes(company)) throw Error('Select NCT or GHR.');
+  return requestMasterFulfilment({company, customerId:buyer.customerId, customerName:buyer.companyName || buyer.customerId,
+    staff:{staffId:buyer.actorStaffId || buyer.actorUserId || buyer.customerId, staffName:buyer.actorName || 'Customer'}, action:'HISTORY'});
 });
 export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   const [items, orderPage, customer, userResult, notifications] = await Promise.all([
-    workspaceItems(buyer.customerId),
+    workspaceItems(buyer),
     buyerOrderHistory(buyer.customerId),
     customerById(buyer.customerId),
     wixData.query(CUSTOMER_USER_COLLECTION).eq('customerId', buyer.customerId).limit(100).find({ suppressAuth: true }),
@@ -399,6 +391,7 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
   const account = {
     customerId: buyer.customerId,
     companyName: normalize(customer.title),
+    customerShortName: normalize(customer.customerShortName),
     country: normalize(customer.country),
     natureOfBusiness: normalize(customer.natureOfBusiness),
     address: [customer.address1, customer.address2, customer.address3].map(normalize).filter(Boolean).join(', '),
@@ -415,13 +408,14 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
     canManageUsers: ['CUSTOMER_USER', 'ADMIN'].includes(buyer.actorType),
     userCount: users.filter(user => ['ACTIVE', 'PENDING'].includes(user.status)).length
   };
-  const removed = items.filter(item => item.removed).map(item => {
+  const now = Date.now();
+  const removed = items.filter(item => item.removed && !removedSelectionExpired(item, now)).map(item => {
     const { normalPriceEa, normalPriceCtn, vipPriceEa, vipPriceCtn, vipPrice,
       quotePerPc, quotePerCtn, pricePerPc, pricePerCtn, previousQuote,
       targetGp, ...withoutPrices } = item;
     return withoutPrices;
   });
-  return { ok: true, context: buyer, account, notifications, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
+  return { ok: true, context: buyerPageContext(buyer), account, notifications, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
 });
 
 export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async (payload = {}, requestId = '', assistCustomerId = '') => {
@@ -512,8 +506,7 @@ export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMembe
 });
 export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 3600);
-  return { ok: true, ...issued };
+  return createBuyerSelectionMediaDownload(buyer.customerId, 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room');
 });
 export const createBuyerOrderDownload = webMethod(Permissions.SiteMember, async (orderId, assistCustomerId = '', buyerRoomUrl = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
@@ -541,7 +534,7 @@ export const prepareBuyerOrderDownload = webMethod(Permissions.SiteMember, async
     throw new Error('Please refresh the order form and try again.');
   }
   const orderId = nextOrderId(buyer.customerId, submissionId);
-  const issued = createBuyerOrderExportToken(buyer.customerId, orderId, await getSecret(QD_ROUTER_SECRET), 900);
+  const issued = createBuyerOrderExportToken(buyer.customerId, orderId, await getSecret(BUYER_EXCEL_SIGNING_KEY), 900);
   return { ok: true, orderId, ...issued };
 });
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
@@ -555,7 +548,13 @@ export const getBuyerOrderDetail = webMethod(Permissions.SiteMember, async (orde
   let linesResult = await wixData.query(BUYER_LINE_COLLECTION).eq('customerId', buyer.customerId).eq('orderId', normalize(orderId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
   const lines = [...linesResult.items];
   while (linesResult.hasNext()) { linesResult = await linesResult.next(); lines.push(...linesResult.items); }
-  return { ok: true, customerId: buyer.customerId, order: { ...payloadData(result.items[0]), lines: lines.map(payloadData).filter(line => normalize(line.customerId) === buyer.customerId).sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId))) } };
+  let auditResult = await wixData.query(BUYER_ORDER_AUDIT_COLLECTION).contains('payload', '"orderId":' + JSON.stringify(normalize(orderId))).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const audits = [...auditResult.items];
+  while (auditResult.hasNext()) { auditResult = await auditResult.next(); audits.push(...auditResult.items); }
+  const editHistory = audits.map(payloadData).filter(audit => normalize(audit.customerId) === buyer.customerId && normalize(audit.orderId) === normalize(orderId) && ['SALES_QTY_UPDATED', 'BUYER_REDUCED_ORDER_LINE', 'BUYER_CANCELLED_ORDER_LINE', 'BUYER_ADDED_ORDER_LINE'].includes(audit.action));
+  const sourceOrder = { ...payloadData(result.items[0]), lines: lines.map(payloadData).filter(line => normalize(line.customerId) === buyer.customerId && !line.addedToOrderId).sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId))) };
+  const [projected] = await withMasterQuantities(buyer.customerId, [sourceOrder]);
+  return { ok: true, customerId: buyer.customerId, order: { ...projected, editHistory: [...editHistory, ...(projected.masterQuantityHistory || [])] } };
 });
 async function findOwnedItem(buyer, itemId) {
   let record = null;
@@ -579,20 +578,28 @@ function releasedOrderPrice(data) {
   return money(data.vipPriceCtn || data.quotePerCtn) || (money(data.vipPriceEa || data.quotePerPc) * money(data.ea));
 }
 export const saveBuyerQuantity = webMethod(Permissions.SiteMember, async (itemId, quantityCtn, assistCustomerId = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
+  const buyer = await resolveBuyerContext(assistCustomerId, 'ASSIST_SELECTION');
   const row = await findOwnedItem(buyer, itemId);
   if (row.data.removed) throw new Error('Recover this item before entering an order quantity.');
   const requestedQuantity = quantity(quantityCtn);
-  if (requestedQuantity > 0 && !(releasedOrderPrice(row.data) > 0)) throw new Error('Order quantity becomes available after the V.I.P price is released.');
-  if (requestedQuantity === quantity(row.data.orderQtyCtn)) return { ok: true, itemId: normalize(itemId), quantityCtn: requestedQuantity, qtyEditedAt: normalize(row.data.qtyEditedAt), qtyEditedBy: normalize(row.data.qtyEditedBy) };
+  if (requestedQuantity > 0) {
+    let item = row.data;
+    if (buyer.quotationMode === 'WEB') {
+      const { customer, selection } = await readMasterWebQuotationData({ action: 'selection', customerId: buyer.customerId, customerIds: undefined, selectionId: normalize(itemId) });
+      item = customer && selection ? (await applyWebQuotations(customer, [selection]))[0] : {};
+    }
+    if (!(releasedOrderPrice(item) > 0)) throw new Error('Order quantity becomes available after the V.I.P price is released.');
+  }
+  if (requestedQuantity === quantity(row.data.orderQtyCtn)) return { ok: true, itemId: normalize(itemId), quantityCtn: requestedQuantity, qtyEditedAt: requestedQuantity ? normalize(row.data.qtyEditedAt) : '', qtyEditedBy: requestedQuantity ? normalize(row.data.qtyEditedBy) : '' };
   const now = new Date().toISOString();
   const actor = buyer.actorName || buyer.email;
-  const next = { ...row.data, orderQtyCtn: requestedQuantity, qtyEditedAt: now, qtyEditedBy: actor, updatedAt: now, lastEditedBy: actor };
+  const next = { ...row.data, orderQtyCtn: requestedQuantity, qtyEditedAt: requestedQuantity ? now : '', qtyEditedBy: requestedQuantity ? actor : '', updatedAt: now, lastEditedBy: actor };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-  return { ok: true, itemId: normalize(itemId), quantityCtn: next.orderQtyCtn, qtyEditedAt: now, qtyEditedBy: actor };
+  return { ok: true, itemId: normalize(itemId), quantityCtn: next.orderQtyCtn, qtyEditedAt: next.qtyEditedAt, qtyEditedBy: next.qtyEditedBy };
 });
 export const reduceBuyerOrderLine = webMethod(Permissions.SiteMember, async (orderId, lineId, newQuantityCtn, requestId = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
+  throw new Error('Submitted orders are locked. Please contact your salesperson to request changes.');
   const id = normalize(orderId);
   const lineKey = normalize(lineId);
   const reductionId = normalize(requestId);
@@ -654,62 +661,51 @@ export const reduceBuyerOrderLine = webMethod(Permissions.SiteMember, async (ord
   return { ok: true, orderId: id, lineId: lineKey, quantityCtn: nextQty, reductionQtyCtn: reductionQty, message: nextQty === 0 ? 'Item cancelled before NCT / GHR submission.' : 'Reduction request recorded.' };
 });
 export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, assistCustomerId = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
+  const buyer = await resolveBuyerContext(assistCustomerId, 'ASSIST_SELECTION');
   const row = await findOwnedItem(buyer, itemId);
+  if (row.data.removed) return { ok: true, itemId: normalize(itemId), removed: true };
   const now = new Date().toISOString();
-  let next = { ...row.data, removed: true, removedTime: now, orderQtyCtn: 0, quoteStatus: 'REMOVED', quoteActive: false,
+  const next = { ...row.data, removed: true, removedTime: now, orderQtyCtn: 0, quoteStatus: 'REMOVED', quoteActive: false,
     normalPriceEa: 0, normalPriceCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, vipPrice: 0,
     quotePerPc: 0, quotePerCtn: 0, pricePerPc: 0, pricePerCtn: 0, previousQuote: null, targetGp: null,
-    qdCleanupStatus: 'PENDING', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
+    qdSyncStatus: '', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-  try {
-    await routeQdAction('REMOVE_SELECTION', buyer, row);
-    next = { ...next, qdSyncStatus: 'REMOVED', qdCleanupStatus: 'READY', qdRow: 0, qdCleanedAt: new Date().toISOString() };
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-    return { ok: true, itemId: normalize(itemId), removed: true, qdCleanupStatus: 'READY' };
-  } catch (error) {
-    next = { ...next, qdCleanupStatus: 'FAILED', qdCleanupError: normalize(error?.message || error) };
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-    return { ok: true, itemId: normalize(itemId), removed: true, qdCleanupStatus: 'FAILED', warning: 'The item was removed, but Sales Room must review QD cleanup.' };
-  }
+  return { ok: true, itemId: normalize(itemId), removed: true };
 });
 export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId, assistCustomerId = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
+  const buyer = await resolveBuyerContext(assistCustomerId, 'ASSIST_SELECTION');
   const row = await findOwnedItem(buyer, itemId);
+  if (removedSelectionExpired(row.data)) throw new Error('This removal is over 30 days old. Select the product again in Catalogue.');
   if (row.data.removed && (await activeBuyerSelectionCount(buyer.customerId, buyer.selectionLimit)) >= buyer.selectionLimit) throw new Error(`My Selection is at its ${buyer.selectionLimit}-product limit. Remove an item before restoring this one.`);
   const now = new Date().toISOString();
-  let next = { ...row.data, removed: false, recoveredAt: now, requoteRequestedAt: now, quoteStatus: 'RFQ', quoteActive: false, quotePerPc: 0, quotePerCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, orderQtyCtn: 0, qtyEditedAt: '', qtyEditedBy: '', qdSyncStatus: 'PENDING', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
+  const next = { ...row.data, removed: false, recoveredAt: now, requoteRequestedAt: now, quoteStatus: 'RFQ', quoteActive: false, quotePerPc: 0, quotePerCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, orderQtyCtn: 0, qtyEditedAt: '', qtyEditedBy: '', qdSyncStatus: '', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-  try {
-    const result = await routeQdAction('ADD_SELECTION', buyer, row);
-    next = { ...next, qdSyncStatus: 'READY', qdSyncedAt: new Date().toISOString(), qdRow: Number(result.qdRow || 0), lastError: '' };
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-    return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ' };
-  } catch (error) {
-    next = { ...next, qdSyncStatus: 'FAILED', lastError: normalize(error?.message || error) };
-    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-    return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ', warning: 'Re-quote requested, but Sales Room must review QD routing.' };
-  }
+  return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ' };
 });
 function nextOrderId(customerId, requestId) { return 'ORD-' + normalize(customerId).replace(/[^A-Z0-9-]/gi, '').toUpperCase() + '-' + requestId.replace(/-/g, '').toUpperCase(); }
-export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (requestedLines, assistCustomerId = '', requestId = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
+export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (requestedLines, assistCustomerId = '', requestId = '', customerPoNumber = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId, 'SEND_ORDER_REQUEST');
+  if (typeof customerPoNumber !== 'string' || /[\r\n\x00-\x1f]/.test(customerPoNumber) || customerPoNumber.trim().length > 100) throw new Error('Enter a P.O. number of up to 100 characters.');
+  const buyerPo = customerPoNumber.trim();
   const submissionId = normalize(requestId);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) throw new Error('Please refresh the order form and try again.');
   const requests = Array.isArray(requestedLines) ? requestedLines : [];
   if (!requests.length) throw new Error('Enter at least one order quantity.');
   if (requests.length > buyer.selectionLimit || new Set(requests.map(line => normalize(line.itemId))).size !== requests.length) throw new Error('Order lines are invalid. Please refresh the order form.');
+  return withBuyerSubmissionLock(buyer, submissionId, async () => {
   const id = nextOrderId(buyer.customerId, submissionId);
+  const requestFingerprint = JSON.stringify(requests.map(line => [normalize(line.itemId), Number(line.quantityCtn)]).sort((a, b) => a[0].localeCompare(b[0]))) + (buyerPo ? '|PO:' + JSON.stringify(buyerPo) : '');
   let orderRecord = null;
   try { orderRecord = await wixData.get(BUYER_ORDER_COLLECTION, submissionId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* New submission. */ }
   if (orderRecord) {
     const stored = payloadData(orderRecord);
     if (normalize(stored.customerId) !== buyer.customerId || normalize(stored.orderId) !== id) throw new Error('Order request conflict. Please contact Sales Room.');
-    if (stored.isComplete) return { ok: true, orderId: id, status: stored.status };
+    if (stored.requestFingerprint && stored.requestFingerprint !== requestFingerprint) throw new Error('Order request conflict. Please refresh the order form.');
+    if (stored.isComplete) { await releaseBuyerAdditionLocks(stored, buyer); return { ok: true, orderId: id, status: stored.status }; }
     if (!Array.isArray(stored.pendingLines) || stored.pendingLines.length !== stored.lineCount) throw new Error('Incomplete order requires Sales Room review.');
-    return finishBuyerOrder(stored, buyer);
+    return stored.additionVersion === 1 ? finishBuyerAddition(stored, buyer) : finishBuyerOrder(stored, buyer);
   }
-  const list = (await workspaceItems(buyer.customerId)).filter(item => !item.removed);
+  const list = (await workspaceItems(buyer)).filter(item => !item.removed);
   const byId = new Map(list.map(item => [normalize(item.id), item]));
   const lines = requests.map((request, index) => {
     const item = byId.get(normalize(request.itemId));
@@ -724,9 +720,10 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
     return { lineId: 'L' + String(index + 1).padStart(3, '0'), itemId: item.id, barcode: item.barcode, itemName: item.itemName, packingSize: item.packingSize, eaPerCtn, lockedUnitPriceEa, cbmPerCtn: money(item.cbmPerCtn), currency: upper(item.vipCurrency || buyer.currency || 'USD'), lockedUnitPrice, quantityCtn: qty, qtyEditedAt: item.qtyEditedAt, qtyEditedBy: item.qtyEditedBy, lineAmount: Number((lockedUnitPrice * qty).toFixed(2)), totalCbm: Number((money(item.cbmPerCtn) * qty).toFixed(4)) };
   });
   const confirmedAt = new Date().toISOString();
-  const order = { orderId: id, requestId: submissionId, customerId: buyer.customerId, companyName: buyer.companyName, currency: lines[0].currency, status: 'CREATING', isComplete: false, lineCount: lines.length, pendingLines: lines, source: buyer.actorType === 'STAFF' ? 'SALES ASSISTED' : 'BUYER ROOM', confirmedAt, confirmedBy: buyer.actorName || buyer.email, totalCartons: lines.reduce((sum, line) => sum + line.quantityCtn, 0), totalCbm: Number(lines.reduce((sum, line) => sum + line.totalCbm, 0).toFixed(4)), estimatedTotal: Number(lines.reduce((sum, line) => sum + line.lineAmount, 0).toFixed(2)) };
+  const order = { orderId: id, requestId: submissionId, requestFingerprint, ...(buyerPo ? { customerPoNumber: buyerPo } : {}), additionVersion: 1, customerId: buyer.customerId, companyName: buyer.companyName, currency: lines[0].currency, status: 'CREATING', isComplete: false, lineCount: lines.length, pendingLines: lines, source: buyer.actorType === 'STAFF' ? 'SALES ASSISTED' : 'BUYER ROOM', confirmedAt, confirmedBy: buyer.actorName || buyer.email, totalCartons: lines.reduce((sum, line) => sum + line.quantityCtn, 0), totalCbm: Number(lines.reduce((sum, line) => sum + line.totalCbm, 0).toFixed(4)), estimatedTotal: Number(lines.reduce((sum, line) => sum + line.lineAmount, 0).toFixed(2)) };
   const savedOrder = await putPayload(BUYER_ORDER_COLLECTION, id, order);
-  return finishBuyerOrder(payloadData(savedOrder), buyer);
+  return finishBuyerAddition(payloadData(savedOrder), buyer);
+  });
 });
 async function finishBuyerOrder(order, buyer) {
   const id = order.orderId;
@@ -735,7 +732,7 @@ async function finishBuyerOrder(order, buyer) {
   if (lineResult.items.length !== order.lineCount) throw new Error('Order is still being saved. Please retry this same submission.');
   const auditId = 'OA-' + order.requestId;
   await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, requestId: order.requestId, action: 'BUYER_CONFIRMED_ORDER', orderId: id, customerId: buyer.customerId, at: order.confirmedAt, actorEmail: buyer.email, actorType: buyer.actorType });
-  await putPayload(BUYER_ORDER_COLLECTION, id, { ...order, pendingLines: [], isComplete: true, status: 'CONFIRMED' });
+  await putPayload(BUYER_ORDER_COLLECTION, id, { ...order, pendingLines: [], ...(order.additionVersion === 1 ? { additionPlan: null } : {}), isComplete: true, status: 'CONFIRMED' });
   let resetFailures = 0;
   for (const line of order.pendingLines) {
     try {
@@ -758,3 +755,157 @@ async function finishBuyerOrder(order, buyer) {
   return { ok: true, orderId: id, status: 'CONFIRMED', warning: resetFailures ? 'Order confirmed, but some quantities could not be cleared. Please check Order Form before submitting another order.' : '' };
 }
 
+async function buyerCustomerRecords(collection, customerId) {
+  let page = await wixData.query(collection).eq('customerId', customerId).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const records = [...page.items];
+  while (page.hasNext()) { page = await page.next(); records.push(...page.items); }
+  return records;
+}
+async function withBuyerSubmissionLock(buyer, requestId, action) {
+  const lockId = 'BUYER-SUBMIT-LOCK-' + buyer.customerId;
+  try { await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: lockId, title: lockId, payload: JSON.stringify({ action: 'BUYER_SUBMISSION_LOCK', customerId: buyer.customerId, requestId }) }, { suppressAuth: true }); }
+  catch (_) { throw new Error('Another order request is being saved. Retry this same submission shortly.'); }
+  try {
+    const unfinished = (await buyerCustomerRecords(BUYER_ORDER_COLLECTION, buyer.customerId)).map(payloadData)
+      .find(order => !order.isComplete && order.additionVersion === 1 && order.requestId !== requestId);
+    if (unfinished) throw new Error('A previous order request is still being saved. Retry that request before sending another.');
+    return await action();
+  } finally { await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true }); }
+}
+function buyerAdditionEligible(order, line, incoming) {
+  if (!order?.isComplete || order.receiptOnly || order.submittedAt || normalize(order.destination) || !['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) return false;
+  if (line.addedToOrderId || line.masterSubmittedAt || line.submittedToMasterAt || line.orderConfirmedAt || ['committedQtyCtn', 'committedQty', 'customerOrderQty', 'masterQtyCtn', 'completedQtyCtn'].some(field => hasValue(line[field]))) return false;
+  if (quantity(line.effectiveRequestedQtyCtn ?? line.requestedQtyCtn ?? line.quantityCtn) < 1) return false;
+  const sameProduct = normalize(line.itemId) ? normalize(line.itemId) === normalize(incoming.itemId) : normalize(line.barcode) === normalize(incoming.barcode);
+  return sameProduct && normalize(line.barcode) === normalize(incoming.barcode) && normalize(line.packingSize) === normalize(incoming.packingSize)
+    && money(line.eaPerCtn) === money(incoming.eaPerCtn) && upper(line.currency || order.currency) === upper(incoming.currency)
+    && money(line.lockedUnitPrice ?? line.lockedPriceCtn) === money(incoming.lockedUnitPrice)
+    && money(line.lockedUnitPriceEa) === money(incoming.lockedUnitPriceEa);
+}
+async function acquireBuyerAdditionLock(orderId, order, buyer) {
+  const lockId = 'ORDER-LOCK-' + orderId;
+  let existing = null;
+  try { existing = await wixData.get(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* No lock. */ }
+  if (existing) {
+    const lock = payloadData(existing);
+    if (lock.requestId === order.requestId && lock.customerId === buyer.customerId && lock.source === 'BUYER ADDITION') return;
+    throw new Error('This order is being updated. Retry this same submission shortly.');
+  }
+  await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: lockId, title: lockId, payload: JSON.stringify({ action: 'ORDER_MUTATION_LOCK', source: 'BUYER ADDITION', orderId, customerId: buyer.customerId, requestId: order.requestId, at: order.confirmedAt }) }, { suppressAuth: true });
+}
+async function releaseBuyerAdditionLocks(order, buyer) {
+  for (const orderId of order.additionTargetOrderIds || []) {
+    const lockId = 'ORDER-LOCK-' + orderId;
+    let record = null;
+    try { record = await wixData.get(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* Already released. */ }
+    const lock = payloadData(record);
+    if (record && lock.source === 'BUYER ADDITION' && lock.requestId === order.requestId && lock.customerId === buyer.customerId) await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true });
+  }
+}
+function buyerEffectiveTotals(lines) {
+  const active = lines.filter(line => !line.addedToOrderId);
+  return {
+    effectiveTotalCartons: active.reduce((sum, line) => sum + quantity(line.effectiveRequestedQtyCtn ?? line.requestedQtyCtn ?? line.quantityCtn), 0),
+    effectiveEstimatedTotal: Number(active.reduce((sum, line) => sum + money(line.effectiveLineAmount ?? line.lineAmount), 0).toFixed(2)),
+    effectiveTotalCbm: Number(active.reduce((sum, line) => sum + money(line.effectiveLineCbm ?? line.effectiveTotalCbm ?? line.lineCbm ?? line.totalCbm), 0).toFixed(4))
+  };
+}
+async function planBuyerAddition(order, buyer) {
+  const orderRecords = await buyerCustomerRecords(BUYER_ORDER_COLLECTION, buyer.customerId);
+  const lineRecords = await buyerCustomerRecords(BUYER_LINE_COLLECTION, buyer.customerId);
+  const orders = new Map(orderRecords.map(record => [normalize(payloadData(record).orderId), record]));
+  const candidates = lineRecords.filter(record => !payloadData(record).addedToOrderId && (!normalize(order.customerPoNumber) || normalize(payloadData(orders.get(normalize(payloadData(record).orderId))).customerPoNumber) === normalize(order.customerPoNumber))).sort((a, b) => {
+    const left = payloadData(orders.get(normalize(payloadData(a).orderId))), right = payloadData(orders.get(normalize(payloadData(b).orderId)));
+    return String(left.confirmedAt || '').localeCompare(String(right.confirmedAt || '')) || normalize(a.title).localeCompare(normalize(b.title));
+  });
+  const matches = order.pendingLines.map(line => candidates.find(record => buyerAdditionEligible(payloadData(orders.get(normalize(payloadData(record).orderId))), payloadData(record), line)) || null);
+  const targetIds = [...new Set(matches.filter(Boolean).map(record => normalize(payloadData(record).orderId)))].sort();
+  const acquired = [];
+  try {
+    for (const targetId of targetIds) { await acquireBuyerAdditionLock(targetId, order, buyer); acquired.push(targetId); }
+    const freshLines = await buyerCustomerRecords(BUYER_LINE_COLLECTION, buyer.customerId);
+    const groups = new Map();
+    const pendingLines = [];
+    for (let index = 0; index < order.pendingLines.length; index++) {
+      const incoming = order.pendingLines[index], match = matches[index];
+      if (!match) { pendingLines.push(incoming); continue; }
+      const targetId = normalize(payloadData(match).orderId), record = orders.get(targetId);
+      if (!groups.has(targetId)) {
+        const fresh = await wixData.get(BUYER_ORDER_COLLECTION, record._id, { suppressAuth: true, consistentRead: true });
+        groups.set(targetId, { title: fresh.title, recordId: fresh._id, before: payloadData(fresh), lines: [] });
+      }
+      const group = groups.get(targetId), fresh = freshLines.find(entry => entry._id === match._id), line = payloadData(fresh);
+      if (!fresh || !buyerAdditionEligible(group.before, line, incoming)) { pendingLines.push(incoming); continue; }
+      const previousQty = quantity(line.effectiveRequestedQtyCtn ?? line.requestedQtyCtn ?? line.quantityCtn), nextQty = previousQty + incoming.quantityCtn;
+      const actor = buyer.actorName || buyer.email;
+      const after = { ...line, originalQuantityCtn: quantity(line.originalQuantityCtn ?? line.quantityCtn), effectiveRequestedQtyCtn: nextQty,
+        effectiveLineAmount: Number((money(line.lockedUnitPrice ?? line.lockedPriceCtn) * nextQty).toFixed(2)), effectiveLineCbm: Number((money(line.cbmPerCtn) * nextQty).toFixed(4)),
+        effectiveTotalCbm: Number((money(line.cbmPerCtn) * nextQty).toFixed(4)), lastQuantityEditAt: order.confirmedAt, lastQuantityEditBy: actor, updatedAt: order.confirmedAt };
+      const auditId = 'BUYER-ADD-' + order.requestId + '-' + incoming.lineId;
+      const audit = { auditId, requestId: order.requestId, receiptOrderId: order.orderId, action: 'BUYER_ADDED_ORDER_LINE', orderId: targetId, customerId: buyer.customerId,
+        at: order.confirmedAt, actorEmail: buyer.email, actorName: actor, actorType: buyer.actorType,
+        detail: { lineId: line.lineId, barcode: line.barcode, itemName: line.itemName, packingSize: line.packingSize, originalQuantityCtn: after.originalQuantityCtn, previousQuantityCtn: previousQty, newQuantityCtn: nextQty, addedQuantityCtn: incoming.quantityCtn } };
+      group.lines.push({ title: fresh.title, recordId: fresh._id, before: line, after, audit });
+      pendingLines.push({ ...incoming, addedToOrderId: targetId, addedToLineId: line.lineId });
+    }
+    const plannedOrders = [...groups.values()].filter(group => group.lines.length).map(group => {
+      const effectiveLines = freshLines.filter(record => normalize(payloadData(record).orderId) === normalize(group.before.orderId)).map(record => group.lines.find(line => line.recordId === record._id)?.after || payloadData(record));
+      return { ...group, after: { ...group.before, ...buyerEffectiveTotals(effectiveLines), revision: quantity(group.before.revision) + 1, updatedAt: order.confirmedAt } };
+    });
+    const planned = { ...order, pendingLines, receiptOnly: pendingLines.every(line => Boolean(line.addedToOrderId)), ...buyerEffectiveTotals(pendingLines), additionTargetOrderIds: acquired, additionPlan: { orders: plannedOrders } };
+    return payloadData(await putPayload(BUYER_ORDER_COLLECTION, order.orderId, planned));
+  } catch (error) {
+    await releaseBuyerAdditionLocks({ ...order, additionTargetOrderIds: acquired }, buyer);
+    throw error;
+  }
+}
+async function finishBuyerAddition(order, buyer) {
+  if (!order.additionPlan) order = await planBuyerAddition(order, buyer);
+  for (const targetId of order.additionTargetOrderIds || []) await acquireBuyerAdditionLock(targetId, order, buyer);
+  // Keep order locks on failure. Restore unaccepted changes and retry the saved absolute plan.
+  try {
+  for (const group of order.additionPlan.orders) {
+    for (const line of group.lines) {
+      const current = payloadData(await wixData.get(BUYER_LINE_COLLECTION, line.recordId, { suppressAuth: true, consistentRead: true }));
+      if (JSON.stringify(current) !== JSON.stringify(line.before) && JSON.stringify(current) !== JSON.stringify(line.after)) throw new Error('Order recovery needs Sales Room review. The previous task remains locked.');
+      await putPayload(BUYER_LINE_COLLECTION, line.title, line.after);
+    }
+    const current = payloadData(await wixData.get(BUYER_ORDER_COLLECTION, group.recordId, { suppressAuth: true, consistentRead: true }));
+    if (JSON.stringify(current) !== JSON.stringify(group.before) && JSON.stringify(current) !== JSON.stringify(group.after)) throw new Error('Order recovery needs Sales Room review. The previous task remains locked.');
+    await putPayload(BUYER_ORDER_COLLECTION, group.title, group.after);
+    for (const line of group.lines) {
+      let prior = null;
+      try { prior = await wixData.get(BUYER_ORDER_AUDIT_COLLECTION, line.audit.auditId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* New immutable audit. */ }
+      if (prior) { if (JSON.stringify(payloadData(prior)) !== JSON.stringify(line.audit)) throw new Error('Order addition audit conflict. Sales Room review is required.'); }
+      else await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: line.audit.auditId, title: line.audit.auditId, payload: JSON.stringify(line.audit) }, { suppressAuth: true });
+    }
+  }
+  const result = await finishBuyerOrder(order, buyer);
+  await releaseBuyerAdditionLocks(order, buyer);
+  return result;
+  } catch (error) {
+    const saved = payloadData(await wixData.get(BUYER_ORDER_COLLECTION, order.requestId, { suppressAuth: true, consistentRead: true }));
+    if (!saved.isComplete) await rollbackPendingBuyerAddition(order);
+    throw error;
+  }
+}
+async function rollbackPendingBuyerAddition(order) {
+  // Only this still-incomplete receipt's provisional writes may be reversed.
+  for (const group of order.additionPlan.orders) {
+    for (const line of group.lines) {
+      const current = payloadData(await wixData.get(BUYER_LINE_COLLECTION, line.recordId, { suppressAuth: true, consistentRead: true }));
+      if (JSON.stringify(current) !== JSON.stringify(line.before) && JSON.stringify(current) !== JSON.stringify(line.after)) throw new Error('Order recovery needs Sales Room review. The task remains locked.');
+    }
+    const current = payloadData(await wixData.get(BUYER_ORDER_COLLECTION, group.recordId, { suppressAuth: true, consistentRead: true }));
+    if (JSON.stringify(current) !== JSON.stringify(group.before) && JSON.stringify(current) !== JSON.stringify(group.after)) throw new Error('Order recovery needs Sales Room review. The task remains locked.');
+  }
+  for (const group of order.additionPlan.orders) {
+    for (const line of group.lines) await putPayload(BUYER_LINE_COLLECTION, line.title, line.before);
+    await putPayload(BUYER_ORDER_COLLECTION, group.title, group.before);
+    for (const line of group.lines) {
+      let record = null;
+      try { record = await wixData.get(BUYER_ORDER_AUDIT_COLLECTION, line.audit.auditId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* No provisional audit. */ }
+      if (record && JSON.stringify(payloadData(record)) === JSON.stringify(line.audit)) await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, line.audit.auditId, { suppressAuth: true });
+    }
+  }
+}

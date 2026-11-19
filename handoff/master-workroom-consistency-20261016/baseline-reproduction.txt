@@ -1,0 +1,74 @@
+✖ payment handoff records paper review, partial payments and per-proof acknowledgement without financial clearance (36.8885ms)
+✔ A180+B10: stopping unplaced ten never clears later short-receipt ten or publishes internal notes (64.0834ms)
+✔ NCT: prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close (57.5917ms)
+✔ GHR: prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close (54.9646ms)
+✔ 100 prepaid / 90 received: stop waiting never clears liability; CN and actual refund need Finance Checked (59.2404ms)
+✔ short first delivery and later replacement preserve the first partial invoice and clear risk only after reconciliation (62.3877ms)
+✔ credit-term supplier does not block customer dispatch but remains active until final payment (48.325ms)
+✔ CN kept for next purchase remains a supplier credit and never becomes customer Debtor credit (47.8802ms)
+✔ 500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 180 and permits planner-confirmed 170 (206.6361ms)
+✔ supplier replacement received in two batches restores usable stock without rewriting the original receipt (27.6466ms)
+✔ a supplier refund below lost stock cost stays red until Admin approves the unrecovered difference (33.3847ms)
+✔ releasing an incorrect quarantine blocks supplier replacement from creating extra usable stock (15.6956ms)
+✔ awaiting supplier response records a persistent stock issue without inventing return instructions (8.4625ms)
+✔ Sales split revisions retain audit history and do not grant Support or another customer planning rights (7.8275ms)
+✔ NCT: demand 200 stays one customer line across A180+B10, A170 received then B10, and independent source costs (64.0392ms)
+✔ GHR: demand 200 stays one customer line across A180+B10, A170 received then B10, and independent source costs (63.6487ms)
+✔ quantity projection follows the decrease chain even with equal timestamps and returns only customer-safe values (3.4107ms)
+✔ foreign customer, missing accepted receipt and partial quantity save reject rather than show stale values (0.3032ms)
+✔ same barcode on unrelated tasks cannot cross customer or source line boundaries (0.1849ms)
+✔ source projection keeps original ordered qty and quote while both views receive current committed qty and reason (0.9286ms)
+✔ warehouse reply exposes only allocated customer cartons and source displays completion without changing price (0.7215ms)
+✔ customer feedback copies only safe fields and never changes demand, receipt or completion (0.3011ms)
+✖ Sales and Buyer render escaped customer feedback without internal supplier details (8.6921ms)
+✔ partial invoice completion preserves original demand and carries only validated history quantities (0.3735ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 22
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1226.1642
+
+✖ failing tests:
+
+test at ..\..\handoff\master-workroom-consistency-20261016\baseline-check\integration\tests\master-workflow-scenarios.test.cjs:87:1
+✖ payment handoff records paper review, partial payments and per-proof acknowledgement without financial clearance (36.8885ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'INSTALLMENT_PAID'
+  - 'PAID'
+
+      at TestContext.<anonymous> (C:\FMCG-WIX-LOCAL\handoff\master-workroom-consistency-20261016\baseline-check\integration\tests\master-workflow-scenarios.test.cjs:93:63)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'INSTALLMENT_PAID',
+    expected: 'PAID',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ..\..\handoff\master-workroom-consistency-20261016\baseline-check\integration\tests\purchase-quantity-projection.test.cjs:26:1
+✖ Sales and Buyer render escaped customer feedback without internal supplier details (8.6921ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /等待补货/. Input:
+
+  '<small class="customer-fulfilment"><b>Awaiting balance</b> · 2026-10-15<br>&lt;script&gt;unsafe&lt;/script&gt;</small>'
+
+      at TestContext.<anonymous> (C:\FMCG-WIX-LOCAL\handoff\master-workroom-consistency-20261016\baseline-check\integration\tests\purchase-quantity-projection.test.cjs:27:484)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<small class="customer-fulfilment"><b>Awaiting balance</b> · 2026-10-15<br>&lt;script&gt;unsafe&lt;/script&gt;</small>',
+    expected: /等待补货/,
+    operator: 'match',
+    diff: 'simple'
+  }

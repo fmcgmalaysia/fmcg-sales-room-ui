@@ -1,0 +1,34 @@
+{
+  "baseCommit": "2f12476841bc40a0178fb2f5e91a5cb75010343b",
+  "recoveryRuntime": "6fcba4ecbdc34893fdb8c14bad5fc671949dac42",
+  "backendFiles": [
+    {
+      "file": "supportDesk.js",
+      "sha256": "e56a60af2eec737995351c433fa4930a306d89167dfd1708884e9a5665fbf6b6",
+      "exactFreshReadback": true
+    },
+    {
+      "file": "supportDocuments.js",
+      "sha256": "6e58f94398e06c46529de985ce21641bdeb369311d8ce3d5bcf97c6816742117",
+      "exactFreshReadback": true
+    },
+    {
+      "file": "supportInvoice.js",
+      "sha256": "1739d7021e8e9bb86dbd8db5cda7539160d8f0abb52ed865bb177fec281b63d8",
+      "exactFreshReadback": true
+    },
+    {
+      "file": "supportWorkroom.web.js",
+      "sha256": "dcaed7ded980943659fdbfce9c528cc784e7253a1e1004900ddf5a2b39c6830c",
+      "exactFreshReadback": true
+    }
+  ],
+  "documentService": {
+    "project": "MASTER PURCHASE DOCUMENTS",
+    "version": 9,
+    "sha256": "ed120a8da8455ad2b3f65ccee3b30102b90614fa6c5beddb7ca7e75f3ff1d0a5",
+    "exactFreshReadback": true
+  },
+  "publicBuild": "20261027-support-desks-v1",
+  "nativeWrites": 0
+}

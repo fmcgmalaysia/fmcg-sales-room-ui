@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-15",
+  "system": "MASTER",
+  "branch": "fix/master-allocation-reason-20261015",
+  "base": "4086576365b0090314d1f327df39d05e8d57f46e",
+  "recovery": "verified/purchase-lavender-plan-po-20261014",
+  "status": "Background candidate tested and ready for live comparison; not published",
+  "rules": {
+    "firstCalculatorPlan": "Reason optional before any saved revision or PO, within customer demand",
+    "newCalculatorSource": "Reason optional for a draft source filling remaining customer demand",
+    "savedPlanRevision": "Reason required",
+    "surplus": "Reason required plus existing surplus confirmation",
+    "legacyEntryPoints": "Reason requirement unchanged"
+  },
+  "files": [
+    "purchase-live/supplier-allocation.js",
+    "integration/backend/purchaseOperations.js",
+    "integration/backend/purchaseSources.js"
+  ],
+  "evidence": {
+    "retainedStudioReadbacksMatchedBeforeEditing": true,
+    "freshLiveComparisonBeforeSynchronizationRequired": true
+  },
+  "validation": {
+    "checksPassed": 106,
+    "syntax": true,
+    "diffCheck": true,
+    "realSave": false
+  },
+  "release": {
+    "githubPagesDeployed": false,
+    "wixReasonPatchApplied": false,
+    "wixPublished": false,
+    "publicVerified": false,
+    "mainMerged": false
+  }
+}

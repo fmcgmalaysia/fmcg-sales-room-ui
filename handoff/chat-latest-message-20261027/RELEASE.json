@@ -1,0 +1,42 @@
+{
+  "code": "d081bae2b07233e9d7b3a4da2e7a91cbb1695a73",
+  "branch": "feat/chat-latest-message-20261027",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/223",
+  "build": "20261027-chat-latest-v1",
+  "pages": {
+    "run": 40363174967,
+    "number": 275,
+    "status": "completed",
+    "conclusion": "success",
+    "dispatches": 1,
+    "resources": 95,
+    "overlayHashesVerified": 16,
+    "metadataCodeExact": true
+  },
+  "wix": {
+    "threeNativeEntries": "full readback exact, only version token changed",
+    "twoBackendDrafts": "full readback exact",
+    "receipt": "Congratulations This site is published and live online."
+  },
+  "temporaryPermission": {
+    "addedOnly": "feat/chat-latest-message-20261027",
+    "removed": true,
+    "restoredBranches": 7,
+    "tags": 0
+  },
+  "publicVerification": {
+    "warehouse": "user reopened tab51427755; exact new iframe build, completed-task MESSAGE Purchaser Dept: 停止等货 Stop Waiting; chat original author/time left-aligned white bubble confirmed; no centered STOP system row",
+    "finance": "user reopened tab51427751; exact new iframe build and incoming summary Purchaser Dept: Stop Waiting; English-only retained",
+    "purchase": "user reopened tab51427759; exact new iframe and actual script query20261027-chat-latest-v1; three PurchaseOrder MESSAGE cells show no own outgoing STOP preview",
+    "sales": "public root/messages JS/CSS HTTP hashes exact; incoming-only behavior verified offline, not a real Sales send/receive test",
+    "relevantPublicWarningsOrErrors": 0
+  },
+  "appsScript": {
+    "deployedVersion": 8,
+    "changed": false,
+    "draftsRestoredExact": true
+  },
+  "businessWrites": 0,
+  "overall": "Requested primary MASTER public read-only presentation verified. Four release stages complete for code d081bae; user business acceptance pending. Sales static client included; no real Sales chat transaction tested.",
+  "personalReadReceipts": "Opening the existing chat follows the existing automatic personal SYSTEM_READ behavior; no new business message/ACK was submitted."
+}

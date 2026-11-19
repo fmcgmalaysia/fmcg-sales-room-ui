@@ -1,0 +1,18 @@
+2026-10-16 Purchase Save / PO next-action colors
+
+Objective: unsaved Save orange, PO white; confirmed saved Save white, pending PO orange. Existing assigned PO stays green. Re-edit returns unsaved state. No journal, payload, validation, receipt, backend or lock handler edits.
+
+Inspected framework: root AGENTS/START_HERE, prior save-label/stock-copy handoffs and live-vs-repository code. Live allocation/style resources normalized exact to repo; fresh complete Wix 6982 chars matched repo and captured before writes. Recovery commit 2dc106fa6035336053ecd9c3390ec051c534f3c5; narrow prior verified tags remain preserved. No new whole-workflow verified tag and no main merge.
+
+Code c9de8ccacc7c7543d6e8413a7c2b3118032ffa42; Wix reference 9820b9640d85146400fa69482f4ac9c958320a33; branch style/purchase-save-po-action-colors-20261016, draft PR98.
+87 relevant checks passed (allocation/dialog/drafts/waiting/live UI plus two action-state tests). Matching workspace switches colors; failed, pending, mismatching readback do not. Green assigned PO retained; duplicate submission unchanged.
+
+GitHub Pages run38841488834 success; 31 assets verified normalized exact, build2026-10-16-purchase-save-po-colors-v1. Temporary deployment rule63224817 removed, original seven exact.
+Wix fresh before/after full code differ only version token, publish/live receipt saved. No other page or backend synchronized.
+
+Public verification: only permanent entry https://fmcg999.wixstudio.com/master. Reused candidate tab51425506 temporarily, loaded public and refreshed once: new iframe v=20261016-purchase-save-po-colors-v1 confirmed, but embedded content blank in this inspection. No captured warnings/errors; visual stage4 remains incomplete. DO NOT state fully published or accepted.
+Original user official tab51425500 untouched, still prior save-item-v1 with prior actual supplier error and potentially preserved drafts. No real Save or PO clicked.
+
+One candidate tab51425506 restored at localhost8916/handoff/purchase-save-po-colors-20261016/preview.html?layout=v3&view=active&poformat=1 and marked deliverable. Isolated sample only. Visually verified and captured dirty Save#ff8a00 / PO#fff, matching-save Save#fff / PO#ff8a00. Final view first row dirty and second saved demonstrates both states. Existing save-workspace mismatch fault is unresolved and outside color request; never treat this UI improvement as a business-save repair. No PO Account/Warehouse integration begun.
+
+Next: verify this exact build on actual formal supplier modal without submitting real procurement or losing draft. Then obtain user real-world acceptance before any production main baseline merge. Keep one preview window; official URL unchanged. Unrelated pre-existing line-ending-only dirty purchase-allocation-drafts.test.cjs left unstaged.

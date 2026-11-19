@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-03",
+  "status": "REVIEW_COMPLETE_NO_PRODUCTION_PATCH",
+  "baselineRecord": "4ab6885",
+  "scope": "Request-local lookup optimization inside projectPurchaseWorkspace only; prepare before Sol implementation",
+  "dependencies": [
+    [
+      "采购来源与修订",
+      "purchasePlan.js / purchaseSources.js",
+      "完整修订链、来源份额、前版编号",
+      "可按明确任务键整理查找；不可只保留最新条或丢掉重复项"
+    ],
+    [
+      "收货与库存",
+      "warehouseReceiving.js / physicalOutflow.js / inventoryExceptions.js",
+      "分批实收、更正、Loaded、隔离及结损",
+      "保留完整校验；PO=ALLOC不是实收；SI不再次扣库存"
+    ],
+    [
+      "借还货与跨批次",
+      "customerAllocationContext.js / shipmentBatchAllocation.js",
+      "借方、贷方、来源批次、未结责任及还货链",
+      "已开SI或归档的任务仍可能有库存或欠货责任，不能按日期排除"
+    ],
+    [
+      "财务及文件状态",
+      "purchaseOrderWorkflow.js / paymentHandoff.js",
+      "PurchaseOrders中付款、文件、审核，以及任务商业修订",
+      "第一次Pay Slip锁定、文件作废与红色状态不变；不能仅靠Activity恢复金额"
+    ],
+    [
+      "客户历史与Desk",
+      "customerShipmentLedger.js / supportDesk.js / customerTransactionHistory.js",
+      "旧SI、逐单核销、Desk批次、文件关联与发票准备快照",
+      "保留完整历史身份；Desk复用不覆盖旧批次"
+    ],
+    [
+      "保存恢复",
+      "purchaseOperationJournal.js / purchaseOperations.js",
+      "PREPARED、RESULT、锁、原请求、输入摘要",
+      "不能合成一个会被覆盖的结果；超时继续原请求"
+    ],
+    [
+      "待提交与文件回执",
+      "deskDelivery.js / shortloadResolution.js / supportWorkroom.web.js",
+      "未完成PREPARED与RESULT配对、上传请求关联",
+      "Purchase的结果过滤不能全站复用"
+    ],
+    [
+      "GP与CBM",
+      "purchaseMarginRefresh.js / purchaseProjection.js",
+      "现有成本售价汇率、SI快照、源产品规格",
+      "页面GP为纯计算；SI保存确认函数另有合法写入，不可误删；缺CBM不能当0"
+    ]
+  ],
+  "directConsumerModules": [
+    "purchaseWorkspace.web.js",
+    "purchaseOperations.web.js",
+    "purchaseOperations.js",
+    "purchaseOrders.web.js",
+    "accountPurchase.web.js",
+    "warehouseReceiving.web.js",
+    "customerFulfilmentService.js",
+    "purchaseQuantityRead.js"
+  ],
+  "firstPatch": {
+    "file": "integration/backend/purchaseProjection.js",
+    "allowed": "Function-local multi-value indexes for accepted order matching, task special/source events and task history candidate selection; retain original predicates, ordering, duplicate detection and all reader algorithms. Exact raw-key semantics must be demonstrated before replacing each scan.",
+    "excluded": [
+      "CMS query scope changes",
+      "retention or deletion",
+      "receipt/ledger compression",
+      "cross-request cache",
+      "polling interval change",
+      "GP rewrite",
+      "shared reader signature changes",
+      "R2 or stock-current candidate activation"
+    ]
+  },
+  "acceptance": [
+    "旧/新同输入完整输出一致（只归一化fetchedAt）；原输入不得变动。",
+    "重复订单行、重复任务ID、断裂修订链仍报相同错误；索引必须保留全部匹配项，禁止Map覆盖重复证据。",
+    "原始顺序、数组顺序、缺失键、空值和真实0保持；组合键不得用可碰撞的字符串拼接。",
+    "PO200、实收170及借入30：计划/实收/借货来源各自正确；还货后原责任正常结清。",
+    "分批收170＋30、收货更正、损坏/隔离、跨月借货：计算结果和拒绝边界一致。",
+    "Loaded300后隔离10：只影响尚未出货可用量；SI、历史成本及库存不得二次扣减。",
+    "同Desk22＋8两批，旧SI与文件保留，未安排余量及Sales/Buyer COMMITTED一致。",
+    "供应商50%＋50%、首次Pay Slip锁定、CN与未解决文件问题保持；客户逐单余额和付款拆分不变。",
+    "原请求超时、RESULT已有、PREPARED未完成、并发保存/锁、页面分页失败：不得误报成功或返回部分库存。",
+    "NCT/GHR相同任务标识仍隔离；员工权限/客户归属检查及客户接口敏感数据过滤保持。",
+    "GP正常/混合来源/已开SI锁定、缺CBM、财务文件颜色及历史排序保持。",
+    "每次请求独立索引，第二请求看到更新；不使用跨请求缓存，不新增查询、写入或Activity。",
+    "规模比较100/500/1000任务×2000/10000/20000历史，另测100任务×100000历史；记录扫描次数、CPU中位数和内存，重复至少5次。查询次数/返回字节单独统计，不将CPU改善说成Wix延时改善。",
+    "正式核对Purchase、Finance、Warehouse、Support及受影响Sales/Buyer数量读回；所有四阶段完成才能报发布完成。"
+  ],
+  "followup": "Full-history database growth remains unresolved. Future bounded reads require a proven dependency closure including lenders, physical sources, unpaid invoices, pending requests and retained history. No automatic 30/90-day cutoff.",
+  "evidence": "8 unmodified-reader boundary probes pass; existing400-row audit and pagination evidence reused, no production reads/writes this review.",
+  "files": {
+    "purchaseProjection.js": "c7d15c51d6ed941d32b6c3015647e148319bfed00b639d3d83d6b4a2bc49b08c",
+    "purchaseWorkspace.web.js": "30bf8e10be938bca1e34d5bc47b3de24da98d5911606771bc60b0fc6e4cfde7d",
+    "purchasePlan.js": "1203e6c804472a410eff5e355735ab7700f640aea055222d35ded4f45f4c4950",
+    "warehouseReceiving.js": "659a8745c6be256d82629786175e7b57353cf14eb5d4a08f8e9b9d5630c3b489",
+    "purchaseOperationJournal.js": "f32a447abc140e5210bcde73e6a7f94b933cd0b9c3a9d21fdd03e3ce34d72006"
+  }
+}

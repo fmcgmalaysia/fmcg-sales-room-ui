@@ -1,0 +1,81 @@
+2026-10-23 — independent background implementation while user is away
+
+Single objective
+Close the private complete native capture dependency of the existing maintenance
+migration plan, without using the stopped Wix schema/field UI paths. Recovery code
+ad96834894a32877539c522994c1313962619615; original production d447185 and runtime
+32b812c remain untouched. Same-version required framework/spec/boundaries reused.
+No agents/model switch, automation resume or external permission changes.
+
+Implementation
+- maintenance-snapshot-reader.cjs: private factory, not a webMethod. Requires
+  server Admin identity, independent legacy-drain verifier, MAINTENANCE/schema1/
+  transferIndexVersion2/nonpending control and explicit table-row/backup-byte
+  policies. Those policies are NOT proof of measured native production capacity.
+- Complete ordered/strong/total-count pages of exact company orders/tasks/activity,
+  shared suppliers/POs and all company StockPositions/Claims/Products statuses.
+  Company-specific historic rows without company remain included. Shared POs are
+  scanned fully before company selection; absent/unknown ownership refuses. No
+  foreign company business rows appear in the returned private backup.
+- Complete second pass compares actual typed native images, not just row counts;
+  changed counts/IDs/values, late Admin/drain/control changes and missing pages
+  refuse. This does NOT prove writer termination or make SDK pages a transaction.
+- Reuses original projectPurchaseWorkspace/projectPurchaseOrders and candidate
+  stockCardProjection with existing bootstrap/lifecycle preflight. No replacement
+  stock formula or invented Admin employee. Session staff/fetchedAt/readAt omitted
+  from checkpoint identity. Raw unprojected tasks cannot silently disappear.
+- Native raw before-images retained separately from normalized conditional rows.
+  All unversioned task/order/PO metadata appears in the initialization cohort and
+  blocks migration planning; no company/version inference or business-field edits.
+- maintenance-native-images.cjs explicitly tags native Dates, ordinary text,
+  numbers including zero/negative zero, null, arrays and object keys. JSON backup
+  roundtrip preserves _updatedDate and nested Dates without guessing ISO text.
+  Invalid/unsupported values refuse instead of being silently dropped/coerced.
+- capture(company/checkpointId) recomputes the full read and refuses a changed
+  checkpoint. It accepts no browser rows, budgets, drain flag or authority.
+- Existing maintenance-migration.cjs now also requires a separately confirmed
+  durable private backup before preparing domain/current writes. The new reader
+  truthfully returns durableBackupConfirmed:false; an in-memory read alone cannot
+  satisfy that gate. No storage location, native retention or recovery acceptance
+  is fabricated by this increment.
+- Mechanical command bundle now108scoped modules/54exports, with executable VM
+  capture test including cross-realm actual Date values and injected Buffer.
+  Backend install remains38targets/94dependency modules,20writer categories still
+  UNVERIFIED. Paired UI manifest updated ONLY for backend manifest hash; no static
+  UI resource/source or Wix relay changed.38Pages paths+4Wix relays unchanged.
+
+Verification and evidence
+First affected26checks passed273.6744ms after correcting missing-field test fixture
+(delete property, not an own undefined value). After second-pass completeness and
+runtime additions,24targeted checks passed361.4452ms; overlapping, not additive.
+ONE full stock-current regression1247tests:1245pass/2fail31038.7769ms. Both failures
+were exact stale paired business-ui manifest/backend hash checks; no business test
+failed. Regenerated dependent manifest mechanically, then final41affected checks
+passed1376.4452ms. Did NOT rerun the entire suite merely to obtain a new summary.
+Private full/final logs outside public repository:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/
+maintenance-snapshot-full-tests-20261023.txt
+maintenance-snapshot-final-focused-tests-20261023.txt
+git diff --check passed. Protected original paths compared against d447185 and had
+zero differences: backend, integration/backend, integration/wix, purchase-live,
+warehouse-room, support-room, sales-room, index.html and buyer-room.html.
+
+Still required; do not mark this a completed migration service
+Actual Admin web root/native SDK binding; durable private backup storage and
+readback retention; real metadata/schema/index setup; readInstalled callback;
+MAINTENANCE control operations; independently established old-request drain/fence;
+native migration/shadow/recovery/capacity acceptance and whole-business release.
+The reader closes the executable complete-capture adapter/planner seam only.
+No browser/operator assertion can substitute for any of these conditions.
+No native schema test, native300 resume, old lock removal, CMS mutation, ACL change,
+real invoice, physical exit, Pages dispatch or Wix synchronization/Publish occurred.
+Both previously stopped Wix UI paths remain stopped; user unavailable, no retry.
+Heartbeat remains PAUSED; no new request for ordinary authorization.
+
+Four release states
+Code: new private capture/runtime increment in existing feature branch/PR220.
+Pages: original rollback baseline unchanged; new increment not deployed.
+Wix: no synchronization or whole-site Publish for this increment.
+Public: original task-list restoration evidence retained; borrowing/Loaded not
+accepted, ACTIVE OFF. No claim that this increment is published or user-test ready.
+Actual Credit UNKNOWN; no time/cost saving percentage asserted.

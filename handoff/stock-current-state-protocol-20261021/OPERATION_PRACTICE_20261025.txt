@@ -1,0 +1,73 @@
+2026-10-25 — CLICKABLE LOCAL SPLIT/BORROW EXERCISE; WIX RELEASE STILL PENDING
+
+User resumed autonomous work, explicitly prioritizing a usable interface over more
+backend-only reports. Same framework/recovery checkpoint e176e11 and production
+d447185/runtime32b812c retained. No new native fixture, SDK, CMS, ACL or activation
+write occurred this turn. No model change or agents.
+
+Browser fresh observation succeeded on existing Source Studio. One ordinary Ctrl2
+attempt to switch to existing MASTER was stopped by Computer Use because it could
+not reliably determine the current URL for policy enforcement. No further live
+browser input or workaround followed. Native diagnostic backend/page remain last
+confirmed CLOSED845165d1...f692/58728f7f...5e67. MainLive149/766, Test154/767 unchanged.
+This browser problem is distinct from a Wix permission or business error.
+
+Delivered build: LOCAL-OPERATION-PRACTICE-20261025
+preview/split-borrow-practice.html under integration/prototypes/stock-current-state.
+Self-contained HTML SHA256:
+a5fb5897c432dcf5f9d0424afce3bbc040064375397e4292ea66e2f0337fe49c
+Same copy in this thread's durable visualization folder. Open requests queued in
+Codex; queued is not proof user saw the UI. Normal clickable local file is supplied.
+No localhost server, old failed preview route, live Chrome attach or site refresh.
+
+This is an INTERIM LOCAL EXERCISE, not Buyer Room/Wix order acceptance or publication.
+It uses fake A/B/C records in memory, not business CMS, and resets on page reload.
+Each restart has distinct practice staff IDs so existing request retention cannot
+adopt another run's pending saves. No actual employee authentication is proved.
+Original Purchase app/grid/ALLOC dialogs/borrowing links/unused-return modules are
+embedded. Original Source shipment split form and original shipment plan validator
+are reused. Existing approveBorrow/receive/quoteBorrowOptions/returnUnusedBorrow,
+batch projections and Support arrangement validator calculate test changes.
+No replacement stock engine, simulated Wix response, server-owned coverage flags,
+production endpoints, invoice, real dispatch, Packing or financial changes.
+26 pure model modules and68 exact input fingerprints; only packaging omits external
+font declarations. Local portable SHA256 compared with Node standard byte/UTF8
+vectors. Test host emits clearly marked local receipts, never native receipts.
+
+Fresh separate HEADLESS Chrome profile tested ONLY our generated file, not Work
+Chrome or a real site. No Windows UI control/URL-policy workaround. UI passed:
+- Original split form refuses40/59; saves40/60 with original planId receipt.
+- Borrow11 refused; borrow10 approved via original save tracker. RCV80, ALLOC90,
+  split receipts40/40, split allocations40/50; original procurement remains90.
+- Moved/archived borrower remains in outstanding relation list under stable IDs.
+- Test cumulative receipt85 then90 auto repays5 then10, ALLOC90 unchanged, debt0.
+- Fresh restart restores example80/80/no debt. Zero page errors/external requests.
+R2_OPERATION_PRACTICE_UI_20261025.json contains desensitized results only.
+Local generated screenshots remain outside Git; no private screenshots exported.
+
+Visual QA found reason input overflow in original UNRELEASED 460px ALLOC dialog.
+Minimal candidate-only CSS adds2 scoped rules: two-column pair/qty, full-width
+reason. No business JS changed. Exact candidate CSS propagated to local business
+UI manifest, isolated Pages candidate and old read-only preview. Old preview still
+REFUSES every save and must not be mistaken for this new operation exercise.
+
+Validation:42 affected tests pass0fail862.0788ms, plus17 install/isolation/readonly
+preview tests pass0fail1040.7758ms. Existing1606full result reused, not rerun or
+presented as full native coverage. Generated candidate build checks completed.
+
+Simple usage: open exercise; Split plan selects A and40/60 with a reason; close;
+in second batch ALLOC ALERT ->1 Borrow ->check eligible P.O. ->10/reason/consent ->
+approve. Test arrival button accepts cumulative85 then90. Outstanding Borrowing
+shows the remaining debt, including after Move/Archive test buttons. These toolbar
+buttons are TEST DRIVERS, not a replacement Warehouse or Buyer Room screen.
+
+Remaining real work: original-staff native terminal probe, honest all-writer
+evidence/server-owned activation verifier, paired actual installation and branch
+Pages deployment (precise temporary rule grant already given; restore original7),
+two-site live receipts and actual Buyer order->split->borrow->repay acceptance.
+Do not mark verified or ACTIVE because this exercise works. Do not repeat closed
+native borrowing, UNKNOWN300 or occupied old employee fixtures. PACKING deferred.
+
+Four stages: CODE exercise complete/local UI QA pass; Pages NOT deployed; Wix
+main NOT newly published; real public Buyer acceptance NOT performed. GitHub sync
+is separate and must be confirmed against actual task-branch remote, never main.

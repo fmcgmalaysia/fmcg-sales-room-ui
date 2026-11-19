@@ -1,0 +1,63 @@
+2026-10-22 — DURABLE ORIGINAL PURCHASE WORKSPACE REFRESH ORCHESTRATION
+
+Recovery: original production d447185/runtime32b812c untouched. This work follows
+local d12cc31 read root and pushed228604c on existing branch/PR220. No live write,
+browser, CMS/schema/permission change, mode activation, install or publication.
+
+Candidate implementation
+- Required original GP cache update is retained as a complete MARGIN_REFRESH request
+  in the EXACT original authenticated company/staff/member session key before network
+  save. Read-back equality required. Original price/sort/allocation drafts preserved.
+  Fresh original authorization precedes auto-submit and must match packet member/staff.
+- Unknown outcome or existing different request cannot be replaced by a new UUID.
+  Bounded same-request phases continue; unknown result exposes retry of original only.
+  Multiple groups replace prior pending ONLY with exact confirmed prior GP receipt,
+  same owner/build and fresh generation. Fresh group uses fresh UUID; old request is
+  never rewritten/reused for a different group. No legacy receipt checker/unlock.
+- Read-root suggestion now also includes reconciliationWorkspace, explicitly tagged
+  stockReconciliationOnly. This SUPERSEDES metadata-only packet in d12cc31 handoff.
+  It contains only ordinary public authorized Purchase fields/current relation data,
+  all gp/sourceGp null, no provisional calculated GP/rates/raw order records. Read is
+  still mutation-free and under common generation barrier. Ordinary workspace handler
+  rejects the tag; no task/workroom rendering uses this snapshot.
+- Why necessary: a resumed EDIT/borrow/save may already have committed, yet the fresh
+  workspace still needs an internal GP save. Its own pending slot must first reconcile
+  through ORIGINAL restoreDraft/finishSave using exact trusted completed receipt,
+  same owner/build/generation and exact retained request. Temporary snapshot use is
+  synchronous and restored afterward, never rendered. It clears only originally
+  submitted matching drafts and preserves unrelated ones. No second queue/schema.
+- Already-open workroom can also receive a refresh suggestion. It becomes unavailable
+  for new actions/company changes while refresh unresolved, clears stale data view,
+  and must re-run original draft restore on final fresh workspace before consuming
+  last GP receipt. This prevents lost pending-cache cleanup after initial restore.
+- No operations occur merely from a refreshed unchanged original GP cache. Margin
+  formula/audit/locked financial policy unchanged. Server auth/generation/coverage
+  gates remain authoritative; frontend flags are no security substitute.
+
+Evidence
+Focused original-request/current-UI21pass0fail263.1569ms. New actual app+resume module
+VM integration opens workroom, stages two groups, persists each before send, blocks
+intervening navigation/company change and completes via ORIGINAL last receipt cleanup.
+Other tests preserve unrelated drafts, unknown/storage failure/member change, replay,
+hidden non-GP reconciliation and non-renderable snapshot. Test harness omissions
+(canvas, realm equality, blocked manual refresh with dirty draft) corrected; no
+production business behavior changed to satisfy test. Existing sliced mutate fixture
+now provides actual new updating flag and asserts new writes refused while unresolved.
+All stock-current727pass0fail6805.5655ms. Candidate original Purchase UI119total118pass
+1903.4142ms; sole known baseline staff-suffix expectation unchanged (original returns
+ACTUAL STAFF, old test expects suffix). Not represented as fully green original suite.
+Generated runtime80modules37exports and exact current UI generator checks pass.
+Protected directories byte-exactd447185; git diff --check passed. All Node/VM/native
+mock tests, not real FX/network/storage durability beyond browser session, SDK/site-
+member/native schema/permission/capacity or public acceptance.
+
+Open limits
+Ordinary sessionStorage means same browser-tab retention only; cross-session pending
+recovery/unknown-lock termination still needs safe production implementation. No new
+auto loop cap/production capacity claim: platform bounds and recurring/changing FX
+behavior remain activation gates. Original nonstock table reads and per-group private
+GP work still need measured capacity evidence. Other departmental roots/writers/file
+durability/native schemas/CMS/init/cutover/shadow/recovery all remain open. No arbitrary
+coverage declaration; coverage empty, ACTIVE OFF. Support real invoicing OFF.
+Four states: incomplete code candidate; Pages unchanged; Wix not installed/published;
+new public inventory/borrowing unavailable/unverified. main untouched.

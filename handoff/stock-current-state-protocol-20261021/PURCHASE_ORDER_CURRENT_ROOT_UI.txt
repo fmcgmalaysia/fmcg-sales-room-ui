@@ -1,0 +1,80 @@
+2026-10-22 ORIGINAL PURCHASE ORDER CURRENT ROOT AND DURABLE UI — CANDIDATE ONLY
+
+Objective
+Connect the ORIGINAL PurchaseOrders non-file read/save endpoint, original dialog,
+parent relay and original Purchase request cache/recovery to the single company
+stock fence. No new finance policy or UI, invoice, physical exit or stock quantity
+mutation. Production runtime32b812c/baseline d447185 unchanged; prior checkpoint
+5f9b48f is the recoverable candidate before this patch. Existing PR220 only.
+
+Implementation
+- build-current-purchase-orders.cjs creates exact overlays of original web methods
+  and private stockCurrentPurchaseOrders.js; not installed on Wix. Original Purchase
+  authorization precedes control/stock access. Only explicit clean LEGACY chooses
+  old list/save; current/missing/closed control never falls back to an old writer.
+- Current list retains original PO/projector/document policies, original versions
+  and original source identity, with original paged table reads and scoped current
+  stock projection. This is NOT a claim that all historical non-stock reads ended.
+- All original stock co-writers and paired current projector are required. Empty
+  writer coverage deliberately blocks activation. Declared native DateTime fields
+  are NOT yet verified against actual Wix schemas.
+- Original non-file actions TERM, ACK_PAYMENT, REQUEST_PAYMENT, SUBMIT_FINANCE,
+  WITHDRAW_FINANCE, REQUEST_RETURN, DOCUMENT_ISSUE_RESPONSE use existing prepare/
+  audit/locks and original PurchaseOrders record; no copied PO, documents or stock.
+  DOCUMENT, DELETE_DOCUMENT and retired CHASE remain refused under current mode.
+  File co-writer connection is a remaining release gate, not a legacy bypass.
+- Shared Purchase/Account record saver returns authenticated staffId as well as
+  memberId, allowing existing strict expected-actor checks. Both company paths
+  and both original departments' shared record saves were regression-tested.
+- Original parent retains its legacy route exactly; new bounded current PO relay
+  sends metadata through optional fourth argument of original savePurchaseOrder.
+- Browser uses PO list generation/version/identity, not an older workspace snapshot.
+  Original Purchase session cache is read-confirmed BEFORE first send. Same UUID,
+  payload and phases retry; no alternative storage, request queue or fake workspace.
+  Wrong PO/company/stale generation/final-pending replies cannot clear pending.
+  Confirmed result requires matching cache cleanup readback; late pending cannot
+  auto-send and automatic continuations are bounded. Original completion and all
+  unrelated original price/sort/allocation drafts retain their existing mechanism.
+- Original auth-only recovery supports this exact non-file request type, rejects
+  foreign actor/file/supplier/extra operation, requires explicit first retry and
+  fresh same-staff/build/generation workspace before original completion cleanup.
+
+Test evidence — NODE / VM / MOCK ONLY
+- New original web/private root five tests: both companies, generated runtime,
+  original documents/flags/version/audit, no stock mutation, interrupted APPLY,
+  exact replay, revoked original auth, new record once, original pending-deletion,
+  incomplete coverage/metadata/identity/closed modes/old version/file refusal.
+- New original PO browser/parent/root seven tests including actual UI→relay→web→
+  private original-core save composition, exact cached replay, quota failure,
+  finite progress, cleanup, strict actor/final identity and reload reconciliation.
+- Final focused new root/UI:12pass0fail738.9564ms.
+- Related original policy/core/projection/current-record tests:56pass0fail982.4897ms
+  before later UI-only pairing; final complete current suite covers new pairing.
+- FINAL all stock-current tests:906pass0fail17966.4635ms. Runtime96modules49exports.
+- Additional UNCHANGED original Purchase app assertions against candidate:
+  118pass1fail939.4437ms. The failing assertion already fails against untouched
+  original purchase-live/app.js: expects 'ACTUAL STAFF / Purchase', actual is
+  'ACTUAL STAFF'. Original-only targeted repeat1fail150.6552ms confirms same issue;
+  git show5f9b48f candidate has identical staff assignment. This patch changes no
+  session label and does NOT alter that unrelated test to claim an all-green run.
+- Initial new fixture falsely required a migrated version on the reserved native
+  lock. Corrected ONLY exact lock-id/owner/attempt exception to match tested SDK
+  normalization. No production lock deletion or authorization used.
+- All code tests use synthetic in-memory rows only; no Wix CMS/business writes,
+  actual file uploads/deletions, browser/native test, provider call or publication.
+
+Remaining work before release
+Original shared Account/files and other remaining old co-writer/read roots;
+Source large-order phase UX; actual Wix schemas/indexes/permissions/Date types and
+conditional persistence; operational recovery and unknown file/lock outcomes;
+real capacity/lifecycle evidence; migration/maintenance/shadow parity and single
+authority cutover; complete order→PO→receiving→packing→Loaded plus borrowing,
+partial automatic repayment, unsettled halo and customer split regressions; review;
+then four publication stages. First user test ends Loaded; real invoice/exit OFF.
+No new business answer needed for this completed isolated connection.
+
+Release states
+Code: this isolated candidate connection tested; overall implementation incomplete.
+Pages: unchanged, this feature not deployed.
+Wix: not installed or published.
+Public: new current-state/borrowing flow unverified. Coverage EMPTY, ACTIVE OFF.

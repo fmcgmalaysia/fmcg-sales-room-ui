@@ -1,0 +1,76 @@
+2026-10-24 — MASTER patch before-images complete; NOT installation
+
+Parent8042d78; business candidate50212f4 remains unchanged. Reused same framework,
+specification, ownership and prior10native backend comparisons; after compaction
+reread current handoff/ALLOC direction and computer-use instructions. Target only
+the remaining13MASTER PATCH originals in current-install-manifest. Existing
+Chrome3/Master51427123, actual Backend & Public editor, full select-all/copy after
+visually confirming filename and loaded code. No typing, Run, Save or Publish.
+
+Full native CRLF chars / normalized LF chars and SHA256:
+customerFulfilmentService.js 7091/7045
+966780e596616e8f8352d09622121d825d74d028c6835e13f58a595bdbd6a1bd
+customerFulfilmentGateway.js 2305/2292
+8b53e6f48273fbe012d46c9e6fffa44a7f72b9c22b2d892e55307d7089cf5b1b
+customerFulfilment.web.js 2357/2351
+9ebe1022d1eb4c9d3f41e18ff058b4c627ce948189ce4b166ec054c1145cb089
+customerFulfilment.js 9601/9540
+9827bb505d7d3bc56686d86b4b5dd1420fbebb562783adefa2d304b2cb1cd22d
+nctReceiver.js 1789/1763
+a5cc0ed2ceb251fa499d9857d5fd9704ce9a84f46af9b2fd4378a04e873a39a0
+accountPurchase.web.js 9009/8940
+39c26f0b92344e702e03eab86bf86364d6e78970fc6269bb54aaf6f1ede8117c
+plannerAllocation.js 7423/7354
+b7c118918532104dcb4d7bdb856676a14ca1cae225c0799c59ac0bcd959de8fe
+purchaseCostRetry.web.js 1315/1295
+d7050c896c5d5ca849f96cd14e142cac7b96aa85777cf7802251a1d01532e948
+purchaseDisplayOrder.js 3538/3504
+30ad1401156863b4e854a37803a393bce921034b9a580481c371ddebfd89954b
+purchaseOrders.web.js 4271/4234
+a7e1e6ef74013f9070cc519b1b26fea68889c6eae0f925b3bac04b3ec605a210
+purchaseQuantityProjection.js 5924/5881
+c1244beee330860e1feba2eee2dd256b0278a7e4cc223e4ad5a9076f9387c9b1
+purchaseQuantityRead.js 2385/2364
+a77c939d3d10ccf088c8275fbf22d7e0670653110c16cb5e99f21d33a6ad6490
+stockExceptions.web.js 3792/3757
+1bca13e0478ef2ea8b9b3b58793173373b6be237e738b853116f5fb43c016334
+
+All13normalized full editor hashes match integration/backend original and the
+corresponding install beforeSha256. Private LF copies retained under root
+handoff/stock-current-state-spec-20261021/private-evidence, no export/staging:
+master-fulfilment-service-live-readback-20261024-install.txt
+master-fulfilment-gateway-live-readback-20261024-install.txt
+master-fulfilment-web-live-readback-20261024-install.txt
+master-fulfilment-operations-live-readback-20261024-install.txt
+master-intake-receiver-live-readback-20261024-install.txt
+For the remaining8, filename is master-<original filename with dots changed to
+hyphens>-live-readback-20261024-install.txt. An extra finalLF introduced while
+recording those8was detected by exact comparison and removed using apply_patch.
+Final exact comparison: all13new private copies equal originalLF bytes; all23
+MASTER PATCH before hashes have an exact private saved-editor readback match.
+
+One file-list click reported Node is detached from document. Fresh full AX showed
+changed node IDs; one retargeted click to the new observed node succeeded. No
+stale index replay, reload, new browser path or editor write. Local metadata-only
+JavaScript corrections did not interact with editor or mutate any site.
+
+Combined with prior10, all23MASTER PATCH before-images have been natively read
+and match the repository/install manifest. This is NOT23installed modules, fresh
+parity of all100shared dependency modules, Source parity, native all-writer proof,
+typed SDK/index/capacity/recovery acceptance, or published-runtime evidence.
+The2Source PATCH targets remain blocked on previously stopped editor path.
+The15newMASTER ADD modules are not installed. All20writer categories UNVERIFIED.
+
+Protected consumers remain original financial locking/cost retry, customer/source
+trusted intake and company isolation, stable row/batch identity, actual Warehouse
+receipt authority, Purchase/Buyer quantity read contracts and exception/messages.
+Recovery d447185 and live32b812c retained. No original production-directory diff.
+No business code changed; final1337pass0fail30538.2904ms result reused, not rerun.
+
+No native code/CMS/schema/index/permissions change, test/lock deletion, diagnostic
+replay, new Wix support message, GitHub export/push, Pages dispatch or Publish.
+No verified Wix engineering reply or safe old-request drain. Precise prior export
+approval still unanswered; no bypass. Stopped Source/local paths remain stopped.
+ACTIVE and this round's real invoice/dispatch remainOFF. Four release states:
+candidate50212f4local; no new Pages; Wix unsynchronized/unpublished; public new
+borrowing unavailable/unverified. Editor left on original stockExceptions.web.js.

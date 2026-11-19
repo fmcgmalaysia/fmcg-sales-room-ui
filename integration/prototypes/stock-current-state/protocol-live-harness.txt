@@ -1,0 +1,72 @@
+// Three ordered Admin probes. All records except exactly three successful lock releases stay.
+const makeProtocolProbe = () => {
+  const raw = stockAdapterFactory({ items, company: 'NCT', collections: ['StockProtocolTest'] });
+  const store = isolatedStoreFactory({ store: raw, namespace: 'PROTOCOL-70c1b2' });
+  const protocol = stockProtocolFactory({ store, company: 'NCT' });
+  return { store, protocol };
+};
+const probeRequest = (store, prepareAllowed = true) => ({
+  requestId: '70c1b200-1111-4111-8111-111111111111', memberId: 'SYNTHETIC-ADMIN-PROBE', input: { amount: 10 },
+  prepare: async () => {
+    if (!prepareAllowed) throw Error('Replay must not prepare a new plan');
+    const source = await store.read('StockPositions', 'SOURCE'), product = await store.read('StockProducts', 'PRODUCT');
+    if (product.available !== 20 || source.reserved !== 0) throw Error('Unexpected initial synthetic balance');
+    return { writes: [
+      { collection: 'NCTActivity', before: null, after: { _id: 'DOMAIN', company: 'NCT', amount: 10 } },
+      { collection: 'StockPositions', before: source, after: { ...source, reserved: 10 } },
+      { collection: 'StockClaims', before: null, after: { _id: 'CLAIM', company: 'NCT', reserved: 10 } },
+      { collection: 'StockProducts', before: product, after: { ...product, reserved: 10, available: 10 } }
+    ] };
+  },
+  validate: async () => {
+    const source = await store.read('StockPositions', 'SOURCE'), product = await store.read('StockProducts', 'PRODUCT');
+    if (source.onHand !== 20 || source.reserved !== 10 || product.reserved !== 10 || product.available !== 10) throw Error('Synthetic balance mismatch');
+  }
+});
+
+export const interruptStockProtocolProbe = webMethod(Permissions.Admin, async () => {
+  const { store, protocol } = makeProtocolProbe();
+  if (await store.read(protocol.ids.journal, protocol.ids.controlId)
+    || await store.read('StockPositions', 'SOURCE') || await store.read('StockProducts', 'PRODUCT')) throw Error('Probe already initialized; inspect instead of reset');
+  await protocol.initialize();
+  await store.insert('StockPositions', { _id: 'SOURCE', company: 'NCT', onHand: 20, reserved: 0, _version: 'S0' });
+  await store.insert('StockProducts', { _id: 'PRODUCT', company: 'NCT', onHand: 20, reserved: 0, available: 20, _version: 'P0' });
+  const interruptedStore = { ...store, insert: async (collection, row) => {
+    if (collection === 'StockClaims' && row._id === 'CLAIM') throw Error('Injected application interruption before claim');
+    return store.insert(collection, row);
+  } };
+  let interrupted = false;
+  try { await stockProtocolFactory({ store: interruptedStore, company: 'NCT' }).commit(probeRequest(store)); }
+  catch (e) { if (!String(e.message || e).includes('Injected application interruption')) throw e; interrupted = true; }
+  let blockedRead = false;
+  try { await protocol.readSnapshot(() => store.read('StockProducts', 'PRODUCT')); }
+  catch (e) { if (!String(e.message || e).includes('Inventory pending')) throw e; blockedRead = true; }
+  const control = await protocol.readControl(), source = await store.read('StockPositions', 'SOURCE');
+  const product = await store.read('StockProducts', 'PRODUCT'), lock = await store.read(protocol.ids.journal, protocol.ids.lockId);
+  return { passed: interrupted && blockedRead && Boolean(control.pending) && control.generation === 0
+    && source.reserved === 10 && product.available === 20 && lock === null,
+    stage: 'interrupted', control, source, product, blockedRead, lockAbsent: lock === null,
+    limitation: 'Application exception injected, not a real network timeout. All writes confined to StockProtocolTest.' };
+});
+
+export const resumeStockProtocolProbe = webMethod(Permissions.Admin, async () => {
+  const { store, protocol } = makeProtocolProbe(), before = await protocol.readControl();
+  if (!before.pending || before.generation !== 0) throw Error('Expected interrupted probe; inspect instead of replay');
+  const outcome = await protocol.commit(probeRequest(store, false));
+  const snapshot = await protocol.readSnapshot(async () => ({ source: await store.read('StockPositions', 'SOURCE'),
+    claim: await store.read('StockClaims', 'CLAIM'), product: await store.read('StockProducts', 'PRODUCT') }));
+  const lock = await store.read(protocol.ids.journal, protocol.ids.lockId);
+  return { passed: snapshot.generation === 1 && snapshot.rows.source.reserved === 10
+    && snapshot.rows.claim.reserved === 10 && snapshot.rows.product.available === 10 && lock === null,
+    stage: 'resumed', outcome, snapshot, lockAbsent: lock === null };
+});
+
+export const replayStockProtocolProbe = webMethod(Permissions.Admin, async () => {
+  const { store, protocol } = makeProtocolProbe(), control = await protocol.readControl();
+  if (control.pending || control.generation !== 1) throw Error('Expected completed probe');
+  const outcome = await protocol.commit(probeRequest(store, false));
+  const after = await protocol.readControl(), product = await store.read('StockProducts', 'PRODUCT');
+  const lock = await store.read(protocol.ids.journal, protocol.ids.lockId);
+  return { passed: after.generation === 1 && !after.pending && product.available === 10 && lock === null,
+    stage: 'replayed', outcome, control: after, product, lockAbsent: lock === null };
+});

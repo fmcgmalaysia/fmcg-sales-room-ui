@@ -1,0 +1,4 @@
+/* Layout only. Keep the user-approved font face, fallback stack and control type in draft.css. */
+@media(min-width:901px){header{height:49px;padding:0 24px;gap:20px}nav{height:44px;padding:0 24px}nav button{height:44px}main{padding-top:20px}.heading{margin-bottom:10px}.heading h1 small{font-size:inherit;font-weight:inherit}.priorities{margin-bottom:12px}.priority{min-height:56px}.tools{padding:9px 11px}.preview-note{margin:10px 0 12px}}
+#invoice{width:680px}#invoice .dialog-header{padding:12px 16px}#invoice .dialog-body{padding:15px 16px}#invoice footer{padding:11px 16px}#invoice .invoice-totals{gap:14px;padding:10px 0}#invoice .form-grid{grid-template-columns:135px 1fr;gap:8px;margin:10px 0 12px}
+@media(max-width:560px){#invoice .form-grid{grid-template-columns:1fr}#invoice .dialog-header,#invoice .dialog-body{padding:13px}}

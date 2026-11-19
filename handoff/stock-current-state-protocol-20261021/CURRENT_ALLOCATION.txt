@@ -1,0 +1,56 @@
+2026-10-22 — current allocation transition candidate, NOT an enabled allocation endpoint
+
+Protected production recovery d447185; prior isolated candidate cf35464. All production
+sources remain unchanged. This step does not declare all writers integrated or ACTIVE.
+
+Implementation
+original-allocation-validation.cjs runs unchanged createPlannerAllocationOperations
+against an in-memory private journal. Server-provided workspace/activity, original version,
+source PO/receipt, matching active demand, usable stock, invoice/packing/reserved shipment
+guards all stay in original prepare. Capture original PREPARED and stop before legacy
+apply; no real store passed, no real lock deletion, no duplicated business save.
+Caller must authenticate original Purchase permission before supplying snapshots. It is
+not a browser-callable validator or an approved final production interception seam.
+
+allocateCumulative in borrowing-model.cjs converts original lifetime cumulative targets
+to CURRENT ownership by subtracting actual per-source dispatched quantities. Missing or
+reduced dispatched targets refuse. Physical receipt/onHand/dispatched facts do not change;
+current usable balance splits between claims/free, isolated cannot be allocated.
+Task-total packing evidence conservatively blocks every affected claim reduction while
+task held. Unresolved borrowing source/party claims cannot be reduced through ordinary
+allocation; use dedicated approved unused-return/receipt repayment. Other source future
+promises/customer demand limits are revalidated by original model invariants.
+Explicit saved allocation sets receipt policy EXPLICIT_ONLY; later receipts repay approved
+relations but do not silently autoexpand manual customer allocation.
+
+prepareCurrentAllocation in borrowing-stock-plan.cjs binds original accepted/source/order
+and exact target order/sourceLine/customer identities, then maps original event plus current
+position/claims/product rows into same fenced plan. Original legacy allocation details
+have NO company field: preserve them unchanged, caller binds authenticated workspace
+company; normal per-row company is added only as existing current-plan metadata. No
+fake WAREHOUSE_RECEIPT_SAVED, no added accepted quantity, no per-task balance blob.
+Preview bundle rebuilt mechanically from exact changed model, no independent simulation.
+
+Evidence
+Original+new allocation tests10pass0fail265.9195ms.
+Affected allocation/model/plan/Purchaseauthority/Warehouseauthority/preview test run:
+56pass0fail417.5326ms. Includes older checks, do not add runs as unique coverage.
+Valid cumulative10 after4dispatched -> current6, not10; allocating free5 toB gives onHand11
+and dispatched4 unchanged. Outstanding3 borrowing cannot be removed via generic targets.
+Original stale/demand/product/invoice/usable guards exercised. Actual Credit UNKNOWN.
+
+Known remaining policy/integration gap — not silently solved
+Existing original generic allocation permits cross-customer redistribution. New borrowing
+approval requires both real PO shares and a bound replacement promise. This candidate
+only protects ALREADY ACTIVE relations; it does NOT prove an old generic allocation could
+not bypass creation of a new required borrowing relation. Before enabling ANY route,
+must classify free-stock allocation versus moving customer-reserved goods and route the
+latter through approved borrowing/return/release policy, preserving original financial/
+packing locks. Do not present generic adapter as completed borrowing authorization.
+No real endpoint, original private staff auth, all-current allocation version, same-lock
+fresh revalidation/replay auth, original cumulative read compatibility, exceptions/release
+and full-writer fencing remain to compose. Existing legacy writer is still production.
+No new invented permission, irreversible release or new broad redistribution deployed.
+
+Four statuses: isolated code only; Pages unchanged; Wix unchanged; public new workflow
+unavailable/unverified. Recovery/capacity/current-lifecycle/migration/UI gates remain open.

@@ -1,0 +1,106 @@
+2026-10-22 ASTRA FOCUSED PRODUCTION REVIEW — USER RETURNED TO SOL HIGH
+
+Scope approved in chat: production capacity, relationship/source lifecycle, recovery.
+Do not repeat departmental business theory or expand financial features. User manually
+selected Astra High then Sol High; no agent/model was created/switched automatically.
+
+Measured blockers (offline, using ORIGINAL Warehouse authority/validation)
+- Original warehouseReceiving accepts1..300 receipt lines.
+- Valid10-product receipt requires31current writes and candidate rejects it.
+- Valid300-product receipt requires901current write images. UTF8 plan513614bytes with
+  short descriptions;555614bytes with still-valid longer descriptions. Versions included.
+- Fifteen CLOSED/zero old sources already exceed candidate14-source global bound.
+- stock-current-production-boundary.test.cjs3pass652.1391ms CONFIRMS blockers; not a
+  production-capacity acceptance. Original business source unchanged.
+- Official single-item request limit512KB, bulk4MB; data timeout varies by plan. Actual
+  MASTER plan/time/RPM capacity not measured. Do not claim that bulk is atomic or that
+  arbitrary higher30/180k limits solve this.
+  https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/data-features
+
+DECISION1 — keep core structure and business contracts
+Keep StockPositions/StockClaims/StockProducts, company isolation, existing PO identities,
+original authority/finance locks, Purchase-only approval and binding of future receipts,
+automatic repayment, cumulative-vs-current compatibility, original Sales split and halo.
+No new stock authority, new global dispatcher, stock ledger in Drive, automatic PO or
+customer cancellation. No main merge or deployed baseline change. Prior models/adapters/
+UI/SDK condition proof stay useful; they are not all thrown away or production complete.
+
+DECISION2 — replace proof-sized PREPARED envelope with segmented operation persistence
+One business request/PO receipt, NOT separate business saves. Original request/member/
+digest and common company fence remain. Each immutable fragment stays below a measured
+safe record budget, manifest stores ordered fragment IDs/hashes/counts/base generation.
+Use attempt-specific staging IDs. Stage/read-confirm every fragment BEFORE publishing
+unique root manifest; root publication is insert-only first-winner. Incomplete orphan
+attempt fragments are never business facts and never referenced as a valid plan. Do not
+delete them automatically or reuse their IDs for a newly computed attempt.
+After root exists, retries load ONLY that exact plan, not recapture time/prices or rebuild
+different stock movement. Missing/hash-conflicting fragment stops with retained request.
+All original plan collection/company/before/after/version guards remain. Reserved root,
+result, control, lock and fragment IDs cannot be targeted as ordinary business writes.
+Set durable pending before first domain write. Budget execution/verification across
+bounded server invocations; exact before/after CAS per row remains mandatory. Same request
+continues; no new request, silent truncation, partial-success acknowledgment or retry loop
+after unknown outcome. Public progress may expose counts/phase, never private images.
+Maintain pending through all apply/verify phases. Publish RESULT and generation only after
+all images verified, then conditional attempt-specific lock release. Readers see previous
+stale display or unconfirmed, never mixed actionable stock. Original small-plan/late-write
+proof remains regression baseline. Fragment/root/apply/verify/finalize faults need tests.
+Production record/time/derived-fanout budgets still require platform evidence; supporting
+original300business lines is acceptance, not inventing a30-row user restriction.
+
+DECISION3 — scoped current working set and inductive summaries
+Do not load all historical sources/tasks/relations of an entire product for every mutation.
+Load request/PO affected stable identities, ACTIVE physical claims/sources, and outstanding
+relations involved in affected tasks/sources, using complete paged queries. Product summary
+updates by exact changed-source deltas under same fence/CAS, rather than re-summing all
+sources. Initial full parity + each exact delta preserves global sum inductively. Never sum
+partial pages and call that the full product total. Existing product-page read already uses
+current Products and separate paged detail; keep it.
+CLOSED source/claim rows are retained. Exact-ID read before touching them prevents duplicate
+stable-ID insert; don't globally scan them. Corrections may need CLOSED repaid relations,
+but query by the affected replacementSourceId with repaid>0, ordered repayment sequence,
+and load enough complete correction evidence; never blindly omit those records or reopen
+debt from an unrelated customer. Operational fanout limits must refuse before pending,
+not make all company activity fail because old unrelated records accumulated.
+Persist product nextBorrowSequence/high-water mark, updated in same commit. No max(all
+historical relation.sequence) on ordinary approval and no sequence reuse after pruning.
+Persist source borrowRepaidCumulative=sum of relation.repaid for that replacement source;
+maintain deltas on repayment/correction in same commit. Critical FOC counterexample:
+ownerShare100/planned150,20receipts already repaid a now-CLOSED relation, then130arrive.
+Correct own capacity80/free50. Dropping CLOSED relation without cumulative counter could
+allocate100/free30, silently assigning20extra customer cartons. Do NOT do that.
+Current claim dispatchedCumulative plus exact owner-claim read preserves owner capacity
+and legacy cumulative allocation. Maintain task dispatched cumulative in existing versioned
+task state (or equivalent verified current aggregate); don't reload all two-year shipment
+history for a current demand. Isolation/unknown still blocks unsafe attribution; no new
+reserved-quarantine policy is invented by this capacity review. Existing legacy financial/
+nonstock projections may still read history; don't claim the whole system stops doing so.
+
+DECISION4 — recovery and safety boundaries
+Keep tested same-request pending resume and finalization. No TTL/age-based lock theft,
+unconditional delete, inverse rollback, company-wide history reset or mark-success bypass.
+Unknown active lock remains blocked until administrator recovery can prove safety. Fenced
+domain writes help against late calls but don't automatically prove arbitrary external
+file callbacks terminated; don't introduce force-unlock endpoint by assertion. Conditional
+delete authorization for prior real test locks is exhausted. Real new destructive/admin
+permission needs exact action-time approval, consolidated when ready, not assumed here.
+Original insert-only intake already has source lock/immutable destination and accepted
+marker; concurrent source tests pass. Do not create global routing table merely because
+private arbitrary opposite-payload plans can be constructed. Whether immutable new-ID
+intake can retain its original path with version initialization is a bounded follow-up
+proof, NOT permission to remove mandatory admission coverage now. Actual300Warehouse
+receipt blocker independently requires capacity correction regardless of intake choice.
+
+Implementation order from this decision
+1. Pure segmented codec/manifest integrity + exact write identity guards.
+2. Same-fence segmented commit/resume, bounded phase progress and fault matrix; retain v1
+   regression, don't replace real endpoints until v2 passes. SDK adapter remains same.
+3. Scoped mutation reader/delta planner + source repayment counter/sequence/cumulative
+   compatibility; FOC/closed correction/large-history tests mandatory.
+4. Bind actual original writers/client current generation, private file protocols and
+   Purchase UI; finish current schema/index/migration/recovery/golden regressions.
+5. Focused implementation diff/proof review, then actual permissions/platform acceptance,
+   maintenance/shadow parity and four release phases. No half-stock deployment.
+
+No user business clarification required by these three technical corrections. Final
+publication still NOT complete. Code candidate on PR220; Pages/Wix/public unchanged.

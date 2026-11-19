@@ -1,0 +1,63 @@
+2026-10-22 — ORIGINAL PACKING DURABLE CHILD AND BOTH-DEPARTMENT RELAY
+Recovery2632f29/PR220. Protected productiond447185/runtime32b812c unchanged.
+No native/browser/business/Drive/permission/test-lock writes, activation or publication.
+
+Candidate original transport now accepts its existing child actor callback. Actual
+current read must provide original staff/member/department and CURRENT_STOCK_V2.
+Expected identity is sent in fifth metadata argument to original packing save gateway,
+then bound by private service into immutable generic digest (prior root commit).
+Complete original UUID/version/input/company/identity retained+read-confirmed BEFORE
+network in exact own-tab key fmcg-packing-save-v1/department/company/staff/member.
+No key enumeration, other-user adoption, localStorage, fetch, stock authority or grant.
+Quota/cache mismatch fails before send; cannot replace original pending request.
+
+Original current read failure (including pending barrier) requests only original own
+identity through PACKING_RESUME_CONTEXT. Existing gateway returns no stock or version.
+Only exact department/company/actor key read afterwards. Successful current read also
+restores own pending. Recovery never auto-sends or invents a task/workspace. Existing
+child retry buttons send original unchanged request. Unconfirmed/retryable-false keeps
+current request; cache cleanup failure does too. Final requires original company,
+request, newer generation and exact input list ID for non-CREATE. Success requires a
+fresh current read before next save. Only same committed stable ID returned, not later
+mutable status masquerading as old save result. Original legacy behavior retained.
+Bounded phases retain cache throughout; same request progress loop continues. Timer
+ownership check prevents old segment timeout deleting newer same-UUID response waiter.
+Older concurrent read cannot overwrite newer checkpoint. No background cache upload.
+
+New build-packing-current-ui makes candidate-only existing child app/HTML/transport,
+existing public packingListBridge and Support entry pointer. Original child app differs
+ONLY actor callback; CSS/fonts/layout/controls/photo compression and execution unchanged.
+Bridge fixes department from ORIGINAL parent, maps exact auth-only option, forwards
+current metadata/identity and retains original safe error catch. Warehouse original
+nested host narrowly permits matching recovery request/result and cache-fresh child.
+Original source/origin/company/UUID/payload/pending/navigation/chat guards unchanged.
+These are overlays, not a standalone ready-to-deploy bundle. Packing PHOTOS current
+root deliberately still closed until its original fixed-ID external protocol connected;
+do NOT install this client with incomplete file flow/allwriter activation conditions.
+
+Evidence
+- Focused current transport/child/bridge10pass0fail571.1143ms: cached bytes before
+  send, same UUID through phases, quota/delete failure, fresh read restoration, other
+  employee and department isolation, pending-barrier auth before cache, explicit retry,
+  wrong company/list/version and old timer, legacy proof, cache-fresh generated bundle.
+- Source equality proves existing app controls/layout unchanged except actor callback;
+  new nested recovery type checked by candidate source assertions, not a full native
+  nested-frame visual acceptance. Existing host independent regressions still pass.
+- Final ALL stock-current808pass0fail17550.6555ms. Independent ORIGINAL transport/
+  workbench/browser-build/bridge/Warehouse-host15pass0fail272.0606ms. Generators and
+  whitespace pass; protected production dirs exactd447185. Native/browser acceptance
+  NOT done. Actual Credit UNKNOWN.
+- First overlay generation syntax-check caught brace mismatch BEFORE writing target;
+  fixed exact replacement and generated successfully. A later patch context mismatch
+  applied nothing; smaller exact patch succeeded. No failed run claimed passed.
+
+NEXT actual original packing PHOTOS fixed-ID/journal protocol. Source Sales actual
+root/transport incl quantity/split, intake/order/other writer identity/native connections,
+native schema/index/date/SDK permissions/init, all20verified coverage, cross-session/
+admin unknown-lock safe termination, capacity/RPM/time/native300line, legacy inflight/
+quiescent switch/shadow parity, SHIPPED/history/orphan-loaded and four-stage release
+remain OPEN. Support real invoice OFF (test scope question already asked, no reply,
+no repeat needed; independent work not blocked). ACTIVE OFF/coverage EMPTY.
+Code incomplete candidate; Pages unchanged; Wix not installed/published; new public
+current inventory/borrowing unavailable/unverified. Exact branch temporary Pages
+permission still required once complete implementation is ready; not assumed granted.

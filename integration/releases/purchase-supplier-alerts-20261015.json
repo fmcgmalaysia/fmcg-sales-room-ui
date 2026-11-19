@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-15",
+  "base": "8385b6e",
+  "scope": "Dashboard Supplier Low GP column becomes Shipment Alert; customer Low GP unchanged",
+  "rules": {
+    "redBell": "Unarchived source has warehouse.issue, unresolved warehouse stock case, or unresolved quantity case whose blocks includes DISPATCH.",
+    "count": "Affected source count, not issue count. Multiple blockers on one source count once.",
+    "excluded": "Low GP, normal waiting, resolved cases, archived sources, or explicitly fully dispatched sourceRequired>0 and sourceDispatchedQty===sourceRequired.",
+    "noAlert": "Neutral dash, no inferred green or completion.",
+    "entry": "Bell opens existing formDialog with supplier/company context and list of that supplier sources. View uses original source progress stage3 for receiving/stock problems, stage6 for explicit other dispatch blockers. No new business state or permission rules."
+  },
+  "validation": {
+    "tests": 139,
+    "browser": "KOH SUP-B1alert/10CTN; HONG/THIRDdash; original Receiving progress shows KOH10CTN WAREHOUSE->DISPATCH. No submissions.",
+    "protectedFiles": {
+      "purchase-live/style.css": true,
+      "purchase-live/header.css": true,
+      "purchase-live/task-grid.js": true,
+      "purchase-live/task-grid.css": true,
+      "purchase-live/supplier-allocation.js": true,
+      "master-shared/task-signals.js": true
+    }
+  },
+  "chromeTab": "51425199",
+  "preview": "http://127.0.0.1:8916/integration/tests/fixtures/purchase-dashboard-preview.html?layout=v3&review=action-list",
+  "status": {
+    "code": "local candidate",
+    "pages": "not deployed",
+    "wix": "no edits or publish",
+    "public": "candidate not publicly verified; live70a0b59 remains"
+  },
+  "next": "Continue Dashboard review only"
+}

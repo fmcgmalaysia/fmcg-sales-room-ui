@@ -1,0 +1,15 @@
+{
+  "status": "DESIGN_ONLY_NOT_DEPLOYED",
+  "theme": "MASTER Purchase blue-gray",
+  "pages": [
+    "Dashboard",
+    "Customers",
+    "Commission"
+  ],
+  "noNetwork": true,
+  "noAuthImplementation": true,
+  "noLiveFinancialData": true,
+  "noFmcgIntegration": true,
+  "source": "User request: Sales Management layout only, data sources deferred",
+  "scope": "One salesperson per invoice; current customer service owner is not historical sales credit. Commission and transport sources blank. All displayed rows are fictional examples."
+}

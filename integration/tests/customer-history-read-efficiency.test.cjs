@@ -1,0 +1,22 @@
+const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
+function fixture(count=500){let actions=0,loadedCalls=0;const shipments=Array.from({length:count},(_,i)=>({id:'I'+i,company:'NCT',customerId:'A',lines:[],invoice:{number:'SI'+i,date:'2026-11-01',currency:'USD',amountCents:100,at:'2026-11-01'}})),invoices=shipments.map(s=>({id:s.id,customerId:'A',kind:'GOODS',number:s.invoice.number,date:s.invoice.date,payments:[],adjustments:[]})),activity=shipments.flatMap((s,i)=>[{_id:'P'+i,get action(){actions++;return 'SUPPORT_INVOICE_PREPARED';},image:'A',details:{invoice:{number:s.invoice.number},customerDetails:{transport:'SEA',departureDate:'2026-11-02'}}},{title:'OP-P'+i,description:s.id}]);
+ const project=load('customerTransactionHistory.js',{'customerShipmentLedger.js':{readCustomerShipments:()=>shipments},'customerDebtor.js':{projectCustomerAccount:()=>({entries:[],balances:[],invoicePayments:{invoices,unapplied:[]}})},'supportDocuments.js':{readSupportDocuments:()=>[],customerFileReady:()=>false},'customerLoadedRecords.js':{readLoadedInvoiceRecords:()=>{loadedCalls++;return shipments;}},'purchaseOperationJournal.js':{operationId:id=>'OP-'+id}}).projectCustomerTransactionHistory;
+ return {activity,run:()=>project({company:'NCT',activity,tasks:[]},'A'),counts:()=>({actions,loadedCalls})};}
+test('many invoice snapshots use one event index and one confirmed Loaded projection',()=>{const f=fixture(),r=f.run();assert.equal(r.transactions.length,500);assert(r.transactions.every(t=>t.transport==='SEA'&&t.departureDate==='2026-11-02'));assert.equal(f.counts().loadedCalls,1);assert(f.counts().actions<=f.activity.length*2,'event traversal must not grow once per invoice');});
+test('indexed snapshot lookup still rejects duplicate confirmed evidence and ignores unconfirmed or other-customer snapshots',()=>{const f=fixture(1);f.activity.push({_id:'BAD',action:'SUPPORT_INVOICE_PREPARED',image:'B',details:{invoice:{number:'SI0'},customerDetails:{transport:'WRONG'}}});assert.equal(f.run().transactions[0].transport,'SEA');f.activity.push({_id:'P2',action:'SUPPORT_INVOICE_PREPARED',image:'A',details:{invoice:{number:'SI0'},customerDetails:{transport:'DUPLICATE'}}});assert.equal(f.run().transactions[0].transport,'SEA');f.activity.push({title:'OP-P2',description:'I0'});assert.throws(()=>f.run(),/shipment details require review/);});
+function documentFixture(count){
+ let matches=0;
+ const company='NCT',customerId='A',date='2026-11-01',currency='USD';
+ const shipments=Array.from({length:count},(_,i)=>({id:'I'+i,company,customerId,lines:[{orderId:'O'+i,quantity:1}],invoice:{number:'SI'+i,date,currency,amountCents:100}}));
+ const documents=shipments.map((s,i)=>({id:'D'+i,company,customerId,orderId:'O'+i,scope:'ORDER',code:'DO',fileId:'customer-file-'+i,at:date}));
+ const invoices=shipments.map((s,i)=>({id:s.id,company,customerId,kind:'GOODS',number:s.invoice.number,date,currency,amountCents:100,quantity:1,dueCents:0,paidCents:100,debitCents:0,creditCents:0,payments:[{fileId:'customer-file-'+i,amountCents:100}],adjustments:[],lastPayment:{fileId:'customer-file-'+i,amountCents:100}}));
+ const overrides={'customerShipmentLedger.js':{readCustomerShipments:()=>shipments},'customerDebtor.js':{projectCustomerAccount:()=>({entries:[],balances:[],invoicePayments:{invoices,unapplied:[]}})},'supportDocuments.js':{readSupportDocuments:()=>documents,customerFileReady:()=>true,supportDocumentMatchesShipment:(doc,s)=>{matches++;return s.lines.some(l=>l.orderId===doc.orderId);}},'customerLoadedRecords.js':{readLoadedInvoiceRecords:()=>shipments},'purchaseOperationJournal.js':{operationId:id=>'OP-'+id}};
+ const context={company,activity:[],tasks:[]};
+ return {overrides,context,run:()=>load('customerTransactionHistory.js',overrides).projectCustomerTransactionHistory(context,customerId),matches:()=>matches};
+}
+test('1000 invoice and payment attachments use relevant candidates instead of rescanning every customer file',()=>{
+ const f=documentFixture(1000),before=JSON.stringify(f.context),result=f.run();
+ assert.equal(result.transactions.length,1000);assert.equal(f.matches(),2000);
+ result.transactions.forEach((row,i)=>{assert.equal(row.documents.length,1);assert.equal(row.payments[0].documents.length,1);assert.equal(row.lastPayment.documents[0].fileId,row.payments[0].documents[0].fileId);});
+ assert(result.shipments.every(s=>s.documents.length===1));assert.equal(JSON.stringify(f.context),before);
+});

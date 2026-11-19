@@ -6,7 +6,7 @@ const path = require('node:path');
 const html = fs.readFileSync(path.resolve(__dirname, '..', 'buyer-room.html'), 'utf8');
 
 test('Track Orders uses the six operational stages only', () => {
-  assert.match(html, /const trackingStages=\['Request Sent','Order Confirmed','Processing','Goods Received','Repacking','Shipped'\]/);
+  assert.match(html, /const trackingStages=\['Request Sent','Confirmed','Processing','Received','Ready to Load','Loaded'\]/);
   assert.doesNotMatch(html, /Full Payment/);
   assert.doesNotMatch(html, /fullPaymentAt/);
   assert.doesNotMatch(html, /paymentStatus/);
@@ -20,12 +20,12 @@ test('Track Orders lays six stages out responsively', () => {
 });
 
 test('Track Orders uses the lorry navigation icon', () => {
-  assert.match(html, /data-view="track"[\s\S]*?<path d="M3 6h11v11H3zM14 10h4l3 3v4h-7zM17 10v4h4"\/>[\s\S]*?<circle cx="7" cy="18" r="2"\/>[\s\S]*?<circle cx="18" cy="18" r="2"\/>[\s\S]*?Track Orders/);
+  assert.match(html, /data-view="track"[\s\S]*?<svg[\s\S]*?<path[\s\S]*?<circle cx="6" cy="17\.5" r="2\.5"\/>[\s\S]*?<circle cx="17" cy="17\.5" r="2\.5"\/>[\s\S]*?Track Orders/);
 });
 
-test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-04-selection-same-site-download-v98/);
-  assert.match(html, /Reduce \/ Cancel Requested Qty/);
+test('Track Orders keeps submitted customer quantities locked', () => {
+  assert.match(html, /function canReduceOrder\(order\)\{return false\}/);
+  assert.match(html, /Transaction History/);
 });
 
 test('Track rows and headers use readable 11px typography', () => {
@@ -43,10 +43,10 @@ test('Track header fits operational columns into a compact desktop width', () =>
 });
 
 test('Overall Progress uses percentage-filled numbered rings', () => {
-  assert.match(html, /background:conic-gradient\(#14835f calc\(var\(--progress\)\*1%\),#e7eef4 0\)/);
+  assert.match(html, /background:conic-gradient\(#12883e calc\(var\(--progress\)\*1%\),#e7eef4 0\)/);
   assert.match(html, /class="tracking-ring" style="--progress:\$\{percent\}"/);
   assert.match(html, /<span>\$\{index\+1\}<\/span>/);
-  assert.match(html, /<small><strong>\$\{done\} \/ \$\{total\}<\/strong><\/small>/);
+  assert.match(html, /aria-label="\$\{esc\(label\)\} \$\{percent\}% completed"/);
   assert.doesNotMatch(html, /<strong>\$\{percent\}%<\/strong>/);
 });
 
@@ -57,16 +57,22 @@ test('Track operational columns shift left and Updated stays aligned', () => {
 });
 
 test('Track progress pills use one consistent green status color', () => {
-  assert.match(html, /\.progress-pill\.s1,\.progress-pill\.s2,\.progress-pill\.s3,\.progress-pill\.s4,\.progress-pill\.s5,\.progress-pill\.s6\{background:#14835f;color:#fff\}/);
+  assert.match(html, /\.progress-pill\.s1,\.progress-pill\.s2,\.progress-pill\.s3,\.progress-pill\.s4,\.progress-pill\.s5,\.progress-pill\.s6\{background:#12883e;color:#fff\}/);
 });
 
-test('Track row hover clearly connects the row to its pencil action', () => {
-  assert.match(html, /#trackRows \.tracking-row:hover\{[^}]*background:#eaf6f1!important;[^}]*box-shadow:inset 4px 0 #14835f/);
-  assert.match(html, /#trackRows \.tracking-row:hover \.tracking-edit\{background:#14835f;color:#fff/);
+test('Track row hover preserves the current neutral theme and restrained motion', () => {
+  assert.match(html, /\.tracking-row:hover\{background:#f5f8fa!important;transform:none;box-shadow:none\}/);
+  assert.match(html, /#trackRows \.tracking-row:hover \.tracking-edit\{background:#12883e;color:#fff/);
 });
 
-test('Track values only count committed quantity in rows and dashboard totals', () => {
-  assert.match(html, /amount=committed===null&&!completed\?null:qty\*ctn/);
-  assert.match(html, /activeCommittedQty=row=>row\.committed===null\?0:Math\.max\(0,row\.committed-completedLineQty\(row\.line\)\)/);
-  assert.match(html, /committedValue=rows\.reduce\(\(sum,row\)=>sum\+activeCommittedQty\(row\)\*num\(row\.line\.lockedPriceCtn\|\|row\.line\.lockedUnitPrice\),0\)/);
+test('Track quantities use the confirmed Desk remainder, with unknown historical receiving left unknown', () => {
+  const get=name=>html.slice(html.indexOf('function '+name+'('),html.indexOf('\n',html.indexOf('function '+name+'(')));
+  const f=new Function('num',get('completedLineQty')+';'+get('customerReceivedQty')+';'+get('committedLineQty')+';'+get('trackingCommittedQty')+';return trackingCommittedQty;')(v=>Number(v)||0);
+  assert.equal(f({activeQty:99,line:{splitBatch:{},committedQtyCtn:190,loadedInvoicedQtyCtn:170}}),20);
+  assert.equal(f({activeQty:99,line:{splitBatch:{},committedQtyCtn:0}}),0);
+  assert.equal(f({line:{}}),null);
+  assert.equal(f({line:{committedQtyCtn:200,receivedQtyCtn:190,loadedInvoicedQtyCtn:170}}),30);
+  assert.equal(f({line:{committedQtyCtn:200,receivedQtyCtn:190,loadedInvoicedQtyCtn:200}}),0);
+  assert.match(html,/amount=!completed&&qty===null\?null:qty\*ctn/);
+  assert.match(html,/committedValue=rows\.reduce\(\(sum,row\)=>sum\+activeCommittedQty\(row\)\*num\(row\.line\.lockedPriceCtn\|\|row\.line\.lockedUnitPrice\),0\)/);
 });

@@ -1,0 +1,93 @@
+2026-10-22 ORIGINAL SHARED ORDER FILE PROTOCOL — CANDIDATE ONLY
+
+Scope and recovery
+Continue inventory co-writer safety, not new finance or a Drive redesign. Recovery
+eebbf28 Account durable UI milestone confirmed pushed to draftPR220. Original live
+business files unchanged; production runtime32b812c/baselined447185 unchanged.
+Reused unchanged framework/Astra specification. Read original PO upload/delete,
+Account DO/payment/proof-delete, document service tests, original journal, existing
+customer-file fence and current segmented protocol. New helpers remain private.
+
+Original prepare capture
+- original-order-file-plan.cjs executes ORIGINAL createPurchaseOrderOperations or
+  createAccountSettlementOperations preparation against exact company migrated PO
+  rows/current context. Scratch journal stops at PREPARED; never legacy apply or
+  actual upload/trash. Only fixed server slots answer ORIGINAL ALLOCATE requests.
+- Original PDF/3MiB/maximum6proofs, document naming, date/amount/refund/recipient-bank,
+  supplier issue, duplicate, original uploader/admin, financial/closed/version guards
+  all run. Validation uses frozen context/time and placeholder slots BEFORE any real
+  slot allocation, then captures again with fixed allocated slots. PDF stays in
+  original browser request, not CMS plan. Preexisting same-ID audit without current
+  protocol receipt requires review before allocation, never silently adopted.
+- Exact original upload result comparisons: Purchase URL added as original apply
+  would; Account DO, six-proof payment, attach-to-existing-payment and proof deletion
+  preserve original record/audit/bank/amount fields. No task, PO identity or stock
+  movement invented. Metadata cannot mutate unrelated record/finance fields.
+
+Private file save/fence
+- current-order-file-save.cjs reauthenticates original supplied gateway each replay,
+  same staff/member request identity, same company PURCHASE_ORDER_RECORD or
+  ACCOUNT_PURCHASE_RECORD fence. Persist immutable descriptors with exact PO plan;
+  no extra file-confirmation CMS row/stock ledger/PDF in journal. Runtime101modules,
+  52private exports. No public endpoint, mode switch or verified coverage added.
+- order-file-fenced-store.cjs decodes exact durable manifest before original PO
+  conditional insert/update. Requires APPLY/count/cursor/generation/build/owner,
+  before/after image, original audit and fixed PDF/association identities. Calls
+  original service only with retained slots; mismatched receipt prevents CMS link.
+- After every callback recheck exact control+owned attempt; late callback cannot
+  write or clear another owner. Unknown file result retains same request/slots;
+  lost CMS acknowledgment accepts only exact actual after-image. No automatic
+  trash/rollback/orphan cleanup/TTL theft. Exact final original audit required.
+- Currently executable PRIVATE routes: Purchase upload, Account DO/payment upload,
+  Account existing-payment attachments, Account proof trash. NOT original web/UI
+  connections yet; those roots still refuse current file actions. All writer
+  coverage EMPTY/ACTIVE OFF. Real service was never called.
+
+Important ORIGINAL Purchase deletion difference — not implemented as upload
+- Its original apply FIRST persists documentDeletion marker and linked:false, THEN
+  trashes exact file, THEN adds final audit/time and clears pending marker. Two
+  writes to the same business PO, not an ordinary one-image upload.
+- Capture preserves this original prepared contract and tests original two writes.
+  Private single-write saver explicitly refuses this action. Do not remove its
+  pending-unlink stage, pretend Account trash is equivalent, invent completion time,
+  allow duplicate plan identities without proof, or fall back to legacy under ACTIVE.
+  Need focused exact staged deletion/recovery connection before release; no business
+  policy question required. Existing segmented coordinator unchanged this milestone.
+
+Evidence actually run — NODE / VM / MOCK ONLY
+- Pure7 tests: both companies/new-existing PO, exact original result comparisons,
+  DO/6proofs/existing payment, separate Purchase delete contract, original Account
+  trash permissions, PDF/stale/duplicates/bank/refund/issue locks, migration/foreign/
+  slot/unrelated mutation refusal. No actual Drive or business CMS operations.
+- Fence8 tests: both companies/common company barrier, one original audit, replay,
+  lost file/CMS replies, renamed employee, mismatched receipts, changed request/
+  actor/coverage/stale/bank refusal before allocation, late checkpoint/owner refusal,
+  no arbitrary write/remove, retained audit/pre-migration refusal, generated runtime.
+- Related original document-service9 and runtime5: total29pass0fail630.8837ms.
+- First broad run982 had5 runtime-fixture failures: VM stripped imports but omitted
+  existing StockRuntimeBuffer alias, exposed by new eager file helper. Updated ONLY
+  fixture alias to actual existing imported Buffer and checked two new private
+  exports (52). No production shim/fallback/test weakening. Runtime targeted5 pass.
+- Test fixture initially expected thrown lost-CMS reply, but coordinator already
+  confirms exact written image. Corrected fixture to count injected loss and verify
+  single file/record/audit; coordinator unchanged.
+- FINAL full stock-current suite983pass0fail23421.9451ms. Original production source
+  directories matchd447185. Read-only guessed-path failures were corrected by scoped
+  inventory; no mutation or retry around permission failure. Actual Credit UNKNOWN.
+
+Next precise dependencies
+1. Original Purchase staged document deletion with durable pending-unlink/external/
+   final-audit recovery preserving original completion semantics, no inverse undo.
+2. Bind original Purchase/Account web/private roots and durable file browser/parent
+   requests, full original PDF limits (current non-file 200k caps are NOT file limits).
+   Keep all admission coverage OFF until every original co-writer paired/tested.
+3. Audit existing non-file PO prepare for pre-migration same-ID audit adoption;
+   discovered adjacent concern, not claimed fixed by this new file capture check.
+4. Native schema/index/permissions/Date roundtrip, operational recovery, measured
+   capacity/lifecycle, migration/shadow/cutover, Loaded+borrow/repayment/halo/split
+   regression, focused review and four release stages. No new finance feature.
+
+Release statuses
+Code: incomplete private candidate only. GitHub Pages: unchanged. Wix: not installed/
+published. Public new inventory/borrowing: unverified. First user test ends Loaded;
+real Support invoice and physical exit OFF. No new user authority needed at this stage.

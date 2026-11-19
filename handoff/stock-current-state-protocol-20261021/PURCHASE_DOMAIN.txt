@@ -1,0 +1,38 @@
+2026-10-22 — original Purchase domain intent capture and conditional mapping candidate
+
+Protected production d447185 unchanged; prior candidate1a9e4ed. No live/CMS/permissions/
+schema/migration/publish. Existing Purchase handlers still production and unmodified.
+
+original-purchase-validation.cjs receives COMPLETE authenticated company Orders/Tasks/
+Activity, SharedSuppliers and PurchaseOrders snapshots; no real store/services accepted.
+Runs unchanged createPurchaseOperations prepare, read-only domain all/read/one, private
+scratch journal LOCK, capture PREPARED before legacy apply. Unsupported domain writes/
+collections fail. Original supplier, quantity/costing, transport, invoice, handoff/version
+and existing source/batch rules execute, not duplicated business validation.
+
+purchase-domain-plan.cjs maps original task patches and exact deterministic business
+event IDs/details to same conditional plan contract. Existing task requires company+
+opaque version from approved migration, exact taskEditVersion and original order identity;
+invoice locked order refuses. Existing per-task COST_LOCK refuses. Patch cannot replace
+protocol company/version. Original event format/request/actor retained; company metadata
+added only for private protocol scope. Proof30writes/180000bytes bound checked.
+
+Important incomplete integrations
+This is DOMAIN plan mapping, NOT source/share inventory guard and not an enabled endpoint.
+Must compose affected current physical/claims/product validations/changes in SAME plan.
+Original legacy apply has 90second per-task COST_LOCK/stillOwned protections; these are NOT
+silently discarded. Every cost capture/cache/task writer must join common fenced scope or
+retain reviewed compatible exclusion before ACTIVE. Do not bypass still-running cost work.
+DisplayOrder has distinct original current record/row ordering semantics and is explicitly
+rejected here until its own adapter; no silent omission, row sorting not replaced. Original
+task insert dates/metadata encoding need exact SDK compatibility/migration verification.
+No production balance init or unconditional first-write fallback for untagged legacy rows.
+
+Tests reuse original established synthetic Purchase fixture by extracting ONLY fixture
+function, not running a second suite/read production.4new tests204.4635ms; original49+
+new4=53pass783.8772ms. Covers original PLAN capture without mutations, original transport/
+version guards, unchanged price task patch/event IDs, submitted handoff/invoice blocking,
+legacy missing version, existing cost lock/protocol injection/display-order refusal.
+An empty malformed documentation patch was rejected; changed no file, then corrected.
+Actual Credit UNKNOWN. Four statuses: isolated candidate; Pages unchanged; Wix unchanged;
+formal new public current-state/borrowing workflow unavailable/unverified. ACTIVE OFF.

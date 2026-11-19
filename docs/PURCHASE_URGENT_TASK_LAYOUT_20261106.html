@@ -1,0 +1,13 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Purchase urgent task layout</title><style>body{max-width:960px;margin:36px auto;font:15px/1.6 'Segoe UI',Arial,sans-serif;color:#203047}h1{font-size:25px}table{border-collapse:collapse;width:100%}td,th{padding:10px;border:1px solid #ccd9e6;text-align:left}th{background:#dce7f0}</style>
+<h1>Purchase：紧急任务与任务表排版</h1>
+<p>2026-11-06。单一目标：完成用户四项显示调整。恢复点为正式 deb66e03 静态包及 d8ca60a1 保存性能记录；最新 eb1b3823 后台保持不变。</p>
+<table><tr><th>部分</th><th>新显示</th><th>保护边界</th></tr>
+<tr><td>Dashboard</td><td>Urgent Tasks，只显示既有红色分类；移除四个分类筛选</td><td>原 issueGroup、处理入口、排序及客户/供应商目录保留；普通待办仍在 Active Orders</td></tr>
+<tr><td>Our P.O.</td><td>号码14px行高；日期与人员12px行高，无额外上边距</td><td>原号码、日期及执行者数据、按钮功能不变</td></tr>
+<tr><td>子行</td><td>箭头移入 Order Qty，箭头与数字间距8px，移除子行竖线</td><td>复用原箭头及数量节点，保留按钮和来源身份；母行及19px胶囊不变</td></tr>
+<tr><td>客户选择</td><td>紧邻采购任务标题，间距18px；All Customers无计数；零计数灰色</td><td>原客户切换与计数算法不变；未知计数继续显示未知</td></tr></table>
+<p>本轮8份静态原件：6份一致，Dashboard脚本/样式与仓库旧源不同，但与既有正式包一致。用户已明确批准保留正式原件；财务复核分类、重复分配提示抑制及目录滚动全部保留。Wix采购页原件与仓库一致，只改一个版本标记。</p>
+<p>85项相关检查通过（9项新检查、19项Dashboard及57项采购/收货保护）。更早六资源发布断言不用于本轮五资源包；新包逐文件校验96个资源，仅5个修改，其余91个逐字不变。所有后台业务文件、保存回执与财务锁定均不变。本轮未执行业务写入。</p>
+<p>本地Chrome候选地址连接超时；file协议被浏览器策略拒绝，未绕过。候选可视及正式可视验收尚未通过，不将自动检查视为正式验收。</p>
+<table><tr><th>发布阶段</th><th>当前状态</th></tr><tr><td>代码/GitHub</td><td>候选完成，待同步提交记录</td></tr><tr><td>Pages</td><td>尚未执行本轮发布</td></tr><tr><td>Wix</td><td>唯一版本草稿已逐字匹配，未发布</td></tr><tr><td>正式页</td><td>待本轮发布后只读核对</td></tr></table>
+<p>后续验收：确认红色任务数量/原处理入口；All Customers及具体客户切换；零数灰色/正数橙红；供应商、库存、待安排三类子行箭头；PO日期人员紧凑；窗口缩窄不遮挡客户选择框；无相关运行错误。不重做订单、保存、收货、Loaded或付款。</p>

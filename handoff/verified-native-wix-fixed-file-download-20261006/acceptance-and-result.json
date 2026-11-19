@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-06",
+  "scope": "Fixed existing simulation XLSX via prebound native Wix button",
+  "testAccount": "BERJAYA 07 / CUS-261006-2034B6",
+  "file": "fmcgmalaysia.com-buyer-room-download-test.xlsx",
+  "permissionApproval": "User confirmed test-only ACTIVE StaffMaster ADMIN/SUPER ADMIN check",
+  "functionAdminTest": {
+    "ok": true,
+    "sizeInBytes": 4132,
+    "isPrivate": false
+  },
+  "publicAdminCall": "Generic Unable to handle request; no definitive cause",
+  "publicStaffAdminCall": "Success and native button bound",
+  "download": {
+    "verified": true,
+    "path": "C:/Users/User/Downloads/fmcgmalaysia.com-buyer-room-download-test.xlsx",
+    "bytes": 4132,
+    "sha256": "538ef70ccb38de04d1c91ee706ad276585e782b6aac375bb0d619f0570ffd03c",
+    "reference": "C:/FMCG-WIX-LOCAL/buyer-room-download-test/downloads/fmcgmalaysia.com-buyer-room-download-test.xlsx",
+    "identical": true,
+    "xlsxZipIntegrityPassed": true,
+    "deliveryHost": "download-files.wixmp.com"
+  },
+  "restoration": {
+    "pageHash": "9deb99bcda851a441a563427e16dfa23be936d3d395d9b62b80530002a183817",
+    "matchesBefore": true,
+    "testModuleExportDisabled": true,
+    "wixReceipt": true,
+    "publicVerification": "Passed: force refreshed, BERJAYA07 SGD 3 items, normal native button restored; Order Form quantities 20/5/10 and total 35 CTN unchanged",
+    "sharedBackendHash": "17bf5bcdee6d26357a02d763a90e8bd579009a69f78a568ab1ed5f0f4357ac1b",
+    "sharedBackendMatchesBefore": true,
+    "disabledTestModuleHash": "837f5117c238f680355f8be9fd310d6ebccdec399eb561b4a23b664ce27f1112"
+  },
+  "pages": "Unchanged",
+  "cloudFilesCreated": 0,
+  "cloudFilesDeleted": 0,
+  "customerWrites": 0,
+  "limitations": [
+    "Real My Selection export and PUBLISH generation/replacement lifecycle remain unimplemented.",
+    "This simulation file is public (isPrivate false); private customer-file delivery was not tested.",
+    "The generic Admin-only live-call failure is not a definitive global root cause.",
+    "No full-site rollback or deployment from this archive is authorized.",
+    "Wix success/restoration receipts were captured, but the successful test deployment ID was not captured.",
+    "Temporary signed URLs are intentionally excluded and must be freshly generated."
+  ],
+  "git": {
+    "commit": "8c3fa79",
+    "branch": "fix/buyer-native-selection-download-room5",
+    "pushed": true,
+    "mainMerged": false
+  },
+  "acceptance": {
+    "level": "User acknowledged the reported successful fixed simulation-file test",
+    "userStatement": "太激动了！！！！你太棒了！！！我就知道你一定可以的",
+    "followUp": "User explicitly requested preservation of the successful evidence and closeout",
+    "independentUserHandsOnTest": "Not claimed or recorded",
+    "protectedScope": "Existing fixed simulation XLSX downloaded by native Wix button with a fresh temporary URL; not complete customer export or whole site"
+  },
+  "checkpoint": {
+    "tag": "verified/native-wix-fixed-file-download-20261006",
+    "type": "Evidence and reproducible scoped mechanism checkpoint, not a production customer-export release",
+    "pagesMarker": "2026-10-06-buyer-native-selection-download-room5-v1",
+    "pagesDeploymentPreviouslyRecorded": {
+      "run": "37457949029",
+      "deployment": "113"
+    },
+    "pagesThisTask": "Unchanged; no new Pages deployment",
+    "wixSite": "FMCG MALAYSIA",
+    "wixMetaSiteId": "5292b63a-30e5-4c0e-8762-a1b127bbc651",
+    "wixDocumentId": "a894d6e7-cece-4f3c-ade2-8d0f996ddcfb",
+    "nativeButtonId": "downloadExcelButton",
+    "testQuery": "assist=CUS-261006-2034B6&excelProbe=xlsxTest",
+    "baselineCodeCommitAtTest": "b499b043d6ca870b578cadd6f246b5842755a0cc",
+    "firstPostTestRecordCommit": "8c3fa796e1268c3bc51bc0875d6d362bb8adc124",
+    "successSnapshotProvenance": "Saved exact live readbacks; temporary success code was not a Git commit at click time"
+  }
+}

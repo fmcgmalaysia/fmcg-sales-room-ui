@@ -1,0 +1,1583 @@
+{
+  "schema": "OFFLINE_COMPOSITION_REPLAY_V1",
+  "sourceTest": "stock-current-receipt-packing-composition.test.cjs",
+  "sourceSha256": "8440a904e662b9a664b47faa8cd29082643c80ae0c7ded521ca89a685a37f4a5",
+  "nativeWixVerified": false,
+  "cmsConnected": false,
+  "readOnlyReplay": true,
+  "assertionsPassed": true,
+  "cases": [
+    {
+      "id": "NCT-same-po",
+      "company": "NCT",
+      "separatePo": false,
+      "steps": [
+        {
+          "phase": "po",
+          "generation": 0,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 0,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [],
+          "counts": {
+            "receipts": 0,
+            "splits": 0,
+            "transfers": 0,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "received-b",
+          "generation": 1,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 100,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [],
+          "counts": {
+            "receipts": 1,
+            "splits": 0,
+            "transfers": 0,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "borrowed",
+          "generation": 2,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 30,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 0,
+            "transfers": 1,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "split",
+          "generation": 4,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 30,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "loaded",
+          "generation": 9,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        },
+        {
+          "phase": "received-20",
+          "generation": 10,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 20,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 90,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 90,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 120,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 10,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 20,
+              "returned": 0,
+              "remaining": 10
+            }
+          ],
+          "counts": {
+            "receipts": 2,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        },
+        {
+          "phase": "received-100",
+          "generation": 11,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 70,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 100,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 200,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 30,
+              "returned": 0,
+              "remaining": 0
+            }
+          ],
+          "counts": {
+            "receipts": 3,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "NCT-different-po",
+      "company": "NCT",
+      "separatePo": true,
+      "steps": [
+        {
+          "phase": "po",
+          "generation": 0,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 0,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [],
+          "counts": {
+            "receipts": 0,
+            "splits": 0,
+            "transfers": 0,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "received-b",
+          "generation": 1,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 100,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [],
+          "counts": {
+            "receipts": 1,
+            "splits": 0,
+            "transfers": 0,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "borrowed",
+          "generation": 2,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 30,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 0,
+            "transfers": 1,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "split",
+          "generation": 4,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 30,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "loaded",
+          "generation": 9,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        },
+        {
+          "phase": "received-20",
+          "generation": 10,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 20,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 90,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 90,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 120,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 10,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 20,
+              "returned": 0,
+              "remaining": 10
+            }
+          ],
+          "counts": {
+            "receipts": 2,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        },
+        {
+          "phase": "received-100",
+          "generation": 11,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 70,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 100,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 200,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 30,
+              "returned": 0,
+              "remaining": 0
+            }
+          ],
+          "counts": {
+            "receipts": 3,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "GHR-same-po",
+      "company": "GHR",
+      "separatePo": false,
+      "steps": [
+        {
+          "phase": "po",
+          "generation": 0,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 0,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [],
+          "counts": {
+            "receipts": 0,
+            "splits": 0,
+            "transfers": 0,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "received-b",
+          "generation": 1,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 100,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [],
+          "counts": {
+            "receipts": 1,
+            "splits": 0,
+            "transfers": 0,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "borrowed",
+          "generation": 2,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 30,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 0,
+            "transfers": 1,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "split",
+          "generation": 4,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 30,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "loaded",
+          "generation": 9,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        },
+        {
+          "phase": "received-20",
+          "generation": 10,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 20,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 90,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 90,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 120,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 10,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 20,
+              "returned": 0,
+              "remaining": 10
+            }
+          ],
+          "counts": {
+            "receipts": 2,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        },
+        {
+          "phase": "received-100",
+          "generation": 11,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 70,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 100,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 200,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 30,
+              "returned": 0,
+              "remaining": 0
+            }
+          ],
+          "counts": {
+            "receipts": 3,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "GHR-different-po",
+      "company": "GHR",
+      "separatePo": true,
+      "steps": [
+        {
+          "phase": "po",
+          "generation": 0,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 0,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [],
+          "counts": {
+            "receipts": 0,
+            "splits": 0,
+            "transfers": 0,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "received-b",
+          "generation": 1,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 0,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 100,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [],
+          "counts": {
+            "receipts": 1,
+            "splits": 0,
+            "transfers": 0,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "borrowed",
+          "generation": 2,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 30,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                100
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 0,
+            "transfers": 1,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "split",
+          "generation": 4,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 30,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 0
+          }
+        },
+        {
+          "phase": "loaded",
+          "generation": 9,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 0,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 70,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 70,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 100,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 30,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 0,
+              "returned": 0,
+              "remaining": 30
+            }
+          ],
+          "counts": {
+            "receipts": 1,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        },
+        {
+          "phase": "received-20",
+          "generation": 10,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 30,
+              "accepted": 20,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 0,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 90,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 90,
+              "pending": true,
+              "halo": true,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\" style=\"fill:currentColor;overflow:visible\"><ellipse cx=\"10\" cy=\"-2.5\" rx=\"5.5\" ry=\"1.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 120,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 10,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 20,
+              "returned": 0,
+              "remaining": 10
+            }
+          ],
+          "counts": {
+            "receipts": 2,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        },
+        {
+          "phase": "received-100",
+          "generation": 11,
+          "tasks": [
+            {
+              "id": "A",
+              "po": "PO-001",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 30,
+              "loaded": 30,
+              "readyToArrange": 70,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            },
+            {
+              "id": "B",
+              "po": "PO-002",
+              "requested": 100,
+              "owned": 100,
+              "accepted": 100,
+              "batches": [
+                30,
+                70
+              ],
+              "held": 0,
+              "loaded": 0,
+              "readyToArrange": 100,
+              "pending": false,
+              "halo": false,
+              "svg": "<svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>"
+            }
+          ],
+          "onHand": 200,
+          "available": 0,
+          "dispatched": 0,
+          "outstanding": 0,
+          "relations": [
+            {
+              "quantity": 30,
+              "repaid": 30,
+              "returned": 0,
+              "remaining": 0
+            }
+          ],
+          "counts": {
+            "receipts": 3,
+            "splits": 2,
+            "transfers": 1,
+            "lists": 1
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "code": "7650f92",
+  "base": "8c801df",
+  "branch": "style/purchase-office-ui-20261015",
+  "build": "2026-10-15-office-ui-v1",
+  "tests": {
+    "pass": 120,
+    "fail": 0
+  },
+  "status": "candidate-not-deployed",
+  "githubPages": "not deployed",
+  "wix": "not synchronized/published",
+  "publicAcceptance": "pending",
+  "hashes": {
+    "purchase-live/app.js": "1f1f9eee64bc659710d18a28866db2d64b5847bb30dc326caf127c783269a235",
+    "purchase-live/supplier-allocation.js": "4624b36ef439d56c3d91dd8ff168fb653e0c002c3ff3a2e63eba8b9921a7bec1",
+    "purchase-live/style.css": "aa62903a9e9d4ccf46294a127e83f03afb76bb0e57d99f387e83f91a4bba37cd",
+    "purchase-live/task-grid.css": "1616e22b02df377e19c50c7bc5b3d49bbeac8fd7512eaa8176f52fdcb3064c92",
+    "purchase-live/index.html": "3894c0e32cb26c4beb288297749547f003c54b9dcdb07cc58a9e3e9d0bfa8f18"
+  }
+}

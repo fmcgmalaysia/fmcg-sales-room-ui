@@ -1,0 +1,36 @@
+2026-10-24 — Warehouse receipt versus borrowed allocation, candidate fix
+Parent235787a; scoped existing overnight authorization and same framework/spec.
+
+Found a concrete display defect BEFORE publication. Existing current compatibility
+inc and batch.metrics.received represent customer ownership coverage (including
+borrowed goods and dispatched provenance), not necessarily the owner's actual
+Warehouse PO receipts. The old candidate split grid used that metric for RCV.
+Borrowing30with zero own receipts could therefore showRCV30on first split row.
+This conflicts with user's explicit new ALLOC/RCV responsibility separation.
+
+Minimum candidate-only correction:
+- Preserve inc and existing batch metrics for protected allocation/stock consumers.
+  Do not globally change the quantity meaning again or touch original production.
+- Paired Purchase projector separately derives stockActualReceived/stockHasReceipt
+  from Warehouse accepted facts for customer's own saved procurement sources,
+  bounded by each saved customer share; borrowing donor claims are not included.
+- Original confirmed batch/source anchoring resolveBatchStock produces separate
+  stockReceiptBatches from these own PO receipts. Existing stockAllocatedBatches
+  still derive current ownership and preserve original full-coverage validation.
+- Candidate main row RCV uses separate actual receipt fields. Candidate split RCV
+  uses separate receipt batch metadata; ALLOC uses ownership batch metadata.
+  No physical receipt remains blank, explicit recorded0stays0. Supplier child
+  receipt fields/case buttons/PO/quantity calculations retain their original flow.
+
+Actual original-authority integration assertions: after A borrows30from B,
+A allocation30/own receipt0/no physical receipt, B allocation70/own receipt100.
+For original Sales50+50split, A allocated batches30/0but own receipt batches0/0.
+Actual generated grid test proves RCV0/0versusALLOC30/0, then missing original
+Warehouse receipt displays blank rather than borrowing30. Normal RCV80/ALLOC90
+and existing unchanged supplier/demand/split workflows still checked.
+
+Verification full stock-current1323pass0fail29593.9127ms. Targeted13pass439.7597ms
+overlaps. Runtime118modules exact check passed; manifest and33asset local review
+rebuilt. No live screenshot/public visual acceptance inferred from local renderer.
+Protected original dirs no diff. No native mutation/sync/Publish, Pages dispatch,
+permissions change, delete, GitHub export/push or activation. Previous gates remain.

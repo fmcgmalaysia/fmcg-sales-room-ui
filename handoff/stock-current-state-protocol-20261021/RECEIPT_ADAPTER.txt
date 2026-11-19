@@ -1,0 +1,59 @@
+Receipt/current-stock write planner candidate — 2026-10-21 — NOT PRODUCTION WIRED
+
+Single objective
+Translate an already-valid Warehouse receipt/correction into one deterministic balance
+plan, composed with its existing immutable receipt event under the conditional protocol.
+Only isolated prototype/converter/tests changed. Recovery code checkpointee49d55; existing
+business directories remain identicald447185, deployed runtime32b812c unchanged.
+
+Evidence inspected (targeted only)
+warehouseReceiving.js/readWarehouseReceipts/createWarehouseOperations: RECEIVE adds this
+delivery to cumulative accepted; CORRECT writes a corrected cumulative total. Original
+PO/version, reason, quantity cap, finance lock, allocation floor remain required.
+plannerAllocation.js and stockCardProjection.js: explicit planner allocation is different
+from implicit saved customer share; shipped cartons subtract current reservation, not
+lifetime allocation. A later receipt is not permission to overwrite a manual allocation.
+No fresh live capture in this turn, therefore NO protected business source was edited.
+
+New isolated receipt-stock-plan.cjs
+planReceiptStockLine receives exact source/current product/all source claims plus complete
+verified holds and ownership basis from trusted server preparation. It is not an employee
+permission check, PO lock validator or frontend API. Existing prepare guards MUST run.
+DeltaAccepted = new cumulative accepted - beforeAccepted; never new cumulative total.
+Position now retains receiptAccepted/replacementReceived/dispatched as separate lifetime
+bases initialized from the existing complete projection, not inferred from current onHand.
+These fields are added only to candidate conversion output; no live schema was changed.
+Implicit customer claim delta follows min(saved share, actual receipts+replacement) less
+already dispatched and explicitly attributable isolated stock. Missing/unknown attribution,
+incomplete claims, unknown product totals, stale source basis and holds not verified reject.
+Explicit planner claims stay unchanged on receipt; extra accepted goods add free stock.
+Rejected-only changes create no normal stock rows but retain the original receipt event.
+Correction cannot undercut current physical obligations/holds. Original historical
+allocation/finance safeguards are NOT removed or replaced by these additional checks.
+
+Whole-PO composition
+composeReceiptStockPlan consumes the original prepared event and exact matching contexts.
+Includes receipt event + affected positions/claims/products in ONE pending/versioned plan.
+Same-product source lines coalesce one summary using same before-version, not last-write
+wins. Distinct snapshot versions conflict. New first-receipt sources share one new product.
+Closed rows must be read by exact identity for writing; ACTIVE UI pages are not sufficient
+to establish claim absence, otherwise a reused stable ID would collide instead of resume.
+Current proof cap30writes/180000bytes remains; exceeding it rejects whole plan BEFORE any
+store write. This is not the final300line production capacity; actual bounds remain to
+verify before enabling the full entry. No partial chunk commit/fallback was introduced.
+
+Tests actually run
+Initial affected run: new receipt9 + model9 + existing warehouse7 =25/25,307.5853ms.
+After whole-PO composition: only changed receipt file13/13,199.4191ms.
+After same-product first-receipt/legacy parity/capacity checks: receipt16/16,138.0149ms.
+After explicit cumulative basis assertions: model9/9,132.7407ms.
+Latest distinct relevant evidence =16receipt +9model +7protected original =32checks.
+Not summed across reruns, not claimed as32actual Wix cases. In-memory interrupted receipt
+resumes exact PREPARED once, pending blocks reads, single receipt and generation retained.
+No actual business save or full suite rerun occurred. Platform latency/Credit UNKNOWN.
+
+Remaining before production use
+Bounded server snapshot/ownership/holds reader; existing original validator integration;
+actual mode gate and all other stock-affecting writers; legacy cumulative field compatibility;
+production index/plan limits/recovery administration; focused Astra review; fresh live/repo
+comparison, migration/shadow/cutover and four-stage publish. Do not call G2 complete.

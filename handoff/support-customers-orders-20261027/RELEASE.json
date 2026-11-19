@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-27",
+  "codeCommit": "063d994cbaf45f70d12dbbbc2b59a1384dd10514",
+  "build": "20261027-support-customers-orders-v1",
+  "pullRequest": 226,
+  "pages": {
+    "runId": 40465197934,
+    "conclusion": "success",
+    "resources": 99,
+    "exact": 99,
+    "backendFilesIncluded": false
+  },
+  "temporaryPermission": {
+    "branch": "feat/support-customers-orders-20261027",
+    "removed": true,
+    "remainingBranches": 7,
+    "remainingTags": 0
+  },
+  "wix": {
+    "source": "Published and live receipt confirmed",
+    "master": "Published and live receipt confirmed",
+    "sourceEndpointUnauthenticatedStatus": 401
+  },
+  "publicVerification": {
+    "status": "PASSED_DISPLAY_ONLY",
+    "url": "https://fmcg999.wixstudio.com/master/support-department",
+    "build": "20261027-support-customers-orders-v1",
+    "observed": [
+      "Fresh user-opened formal page loads new Support iframe and authenticated staff.",
+      "Customers full-name/country/currency/port/count/transactions/profile columns display.",
+      "Orders metadata, logistics/date and task rows display; unloaded tasks cannot be selected for invoicing.",
+      "Transactions eight-document guide and invoice columns display; selected customer has no invoice records."
+    ],
+    "consoleErrors": 0,
+    "businessMutations": 0,
+    "userBusinessAcceptance": "Pending user testing"
+  },
+  "limitations": [
+    "Amount Due and reconciled invoice balance remain unavailable and display dash.",
+    "Customer profile keeps existing Sales editable fields and update semantics; no atomic cross-department update guarantee."
+  ]
+}

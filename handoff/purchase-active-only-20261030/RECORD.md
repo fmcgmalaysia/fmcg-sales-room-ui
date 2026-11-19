@@ -1,0 +1,16 @@
+# Purchase current task layout only
+
+User screenshot 2026-10-30 explicitly rejects the old customer Room layout. Startup reused the already-read project framework and inspected the dashboard-entry handoff, actual assembled production app and current routing/draft handlers. Published app bytes equal the preserved quiet-refresh release and its reproducible staged plan. Raw app.js intentionally differs because existing receipt-feedback overlays are part of that release chain.
+
+Minimum candidate: normalize legacy `room` routes and saved origin display context to the existing customer-filtered Active Orders before rendering. Business handlers, task IDs, pending payload/request identity, source rows, financial locks and stock logic remain unchanged. The old stored route is accepted for draft compatibility but cannot render the old layout. No unrelated cleanup or backend change in this patch.
+
+Recovery: existing94-resource 0b61b6e quiet-refresh package and Wix page source. The new staged release inherits all94 resources and changes only Purchase app/index. Main untouched. Eleven targeted checks pass for unmarked/task routes, restored pending request, original retry payload, drafts, movement and source/Finance guards. The wider122-test UI run initially had17 failures: two new assertions also matched hidden legacy select options and were corrected to inspect the actual layout; remaining older legacy-layout expectations require explicit review before release. No all-green claim.
+
+Code candidate and release staging prepared; GitHub/Pages/Wix/public acceptance pending. Work temporarily returns to the separately scoped backend recovery after fresh CMS evidence proved key-order-only inequality in the saved original result. This record is not publication evidence.
+
+## Candidate review completed
+
+- Actual assembled94-resource package:122 Purchase UI checks,119 pass,3 failures also present with the published assembled app. Twelve older assertions explicitly demanded the retired Room display (progress capsules, separate GP column, clickable receipt values, old branch-marker visibility or old return target). They now verify the corresponding current Active layout while retaining exact quantities, source identities, GP thresholds, shortage isolation, history access and no-write assertions. No business assertion was removed to hide an unknown failure. The three unrelated existing failures were left intact.
+- Eleven route/draft/identity checks pass on the actual assembled app as well as raw development source. The staged candidate changes app/index only; all92 other asset bytes stay pinned. Scoped workflow option added without changing deployment permissions or defaults.
+- Chrome local preview explicitly labels itself unpublished/test-only and has no CMS connection. A pre-upgrade customer context restored to Active Orders filtered to TESTING02. Dashboard customer Entry returned to the same current layout. The existing short-receipt action still opened its original task Progress dialog on Dashboard; it did not enter the old Room and no business write occurred. Private screenshot retained.
+- GitHub draft PR240 attached. Pages/Wix/public stages remain incomplete. Original pending request is retained; the UI candidate does not claim to clear it or to fix backend recovery by hiding its warning.

@@ -1,0 +1,131 @@
+{
+  "scope": "Purchase Dashboard only; compact work queue and source context",
+  "date": "2026-10-15",
+  "base": "7b4f259c406f93e62bf75de4b433543f83e5c550",
+  "production": "70a0b59",
+  "branch": "style/purchase-dashboard-compact-20261015",
+  "typography": {
+    "title": 18,
+    "product": 13,
+    "body": 12,
+    "bilingual": "English above Chinese; menu unchanged"
+  },
+  "protected": {
+    "roomRendererExact": true,
+    "formDialogExact": true,
+    "unchangedFiles": [
+      "purchase-live/style.css",
+      "purchase-live/task-grid.css",
+      "purchase-live/task-grid.js",
+      "purchase-live/supplier-allocation.js"
+    ],
+    "activeOrdersHeaders": 13,
+    "activeOrdersProductFont": 11,
+    "backendPermissionsSaveJournalFocMath": "unchanged"
+  },
+  "verification": {
+    "targetedChecks": 127,
+    "finalDashboardAndUiChecks": 61,
+    "ui": [
+      "category filter",
+      "source selection",
+      "search empty state",
+      "existing task entry without save",
+      "Active Orders round trip",
+      "18/13/12px computed",
+      "1496px root has no outer horizontal overflow",
+      "no console errors"
+    ],
+    "publicAssetsMatchProduction": true,
+    "wixPageSha256": "1cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9"
+  },
+  "preview": "http://127.0.0.1:8916/integration/tests/fixtures/purchase-dashboard-preview.html?layout=v3",
+  "release": {
+    "code": "local candidate for user design review",
+    "githubPages": "not deployed",
+    "wixStudio": "no edits or publish",
+    "publicPage": "candidate not verified; no release"
+  },
+  "next": "Review Dashboard only. Do not proceed to another page or reintroduce the withdrawn global typography candidate. Original user sorting-draft tab remains untouched.",
+  "colorFollowup": {
+    "base": "351cbe2",
+    "scope": "Dashboard-only three-state facts and direct original action links",
+    "green": "saved PO association or confirmed/resolved receiving fact",
+    "orange": "missing PO or receipt pending; unknown values never complete",
+    "red": "explicit receiving problem overrides matching quantity/resolved flag",
+    "stateAuthority": "Existing purchaseTaskGrid.progressStates; no business state changes",
+    "targetedChecks": 130,
+    "finalDashboardAndUiChecks": 64,
+    "activeOrders": "13 headers, original 11px product font, no Dashboard root",
+    "clicks": "existing PO view, source PO entry and source Receiving progress; no submissions",
+    "wixSha256": "1cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9"
+  },
+  "salesAlignment": {
+    "date": "2026-10-15",
+    "scope": "Dashboard only; Sales list typography and English primary hierarchy",
+    "recovery": "1270843",
+    "production": "70a0b59",
+    "fonts": {
+      "body": "Inter (same official font files as Sales, isolated Dashboard family alias)",
+      "heading": [
+        14,
+        700
+      ],
+      "englishLabels": [
+        11,
+        600
+      ],
+      "tableHeaders": [
+        11,
+        700
+      ],
+      "product": [
+        11,
+        700
+      ],
+      "chinese": [
+        10,
+        400
+      ],
+      "metadata": [
+        10,
+        400
+      ]
+    },
+    "colors": {
+      "text": "#203047",
+      "product": "#173557",
+      "chinese": "#62758a",
+      "header": "#dce7f1",
+      "blue": "#3766a2",
+      "green": "#087443",
+      "orange": "#ff8a00",
+      "red": "#c42b31"
+    },
+    "layout": {
+      "firstView": "Queue only; details open on explicit selection",
+      "directories": "collapsed native disclosure",
+      "width": 1496,
+      "scrollWidth": 1496
+    },
+    "protected": {
+      "purchase-live/style.css": true,
+      "purchase-live/task-grid.css": true,
+      "purchase-live/task-grid.js": true,
+      "purchase-live/supplier-allocation.js": true
+    },
+    "preview": "http://127.0.0.1:8916/integration/tests/fixtures/purchase-dashboard-preview.html?layout=v3&review=sales-aligned",
+    "chromeTab": "51425180",
+    "preservedDraftTabs": [
+      "51425148",
+      "51425176"
+    ],
+    "validation": "131 targeted tests pass; 13 Active Orders columns retained; no fixture submissions",
+    "status": {
+      "code": "local candidate",
+      "githubPages": "not deployed",
+      "wix": "unchanged",
+      "publicVerification": "candidate not published"
+    }
+  }
+}

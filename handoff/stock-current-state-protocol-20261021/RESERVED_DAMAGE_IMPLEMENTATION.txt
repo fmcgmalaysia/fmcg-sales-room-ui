@@ -1,0 +1,77 @@
+2026-10-23 — approved reserved damage increment; CANDIDATE ONLY
+
+Scope: implement human-approved RESERVED_DAMAGE_RULE.txt inside the existing current
+stock fence, original stock case, original packing list and existing claim fields.
+Recovery stays verified baseline d447185987fecbb81bcaf6b25c170f631f767f9f,
+production runtime32b812c655e1083306037c008314c72373a15f72. No protected production
+file changes, native/business writes, CMS setup, permissions, invoice or exit enable.
+
+Implemented
+- Warehouse may isolate free physical goods or the sole unambiguous customer claim
+  on a source. Claims usable→isolatedAttributed; onHand/demand/PO unchanged. Shared
+  customer source and ambiguous mixed free/reserved attribution still REFUSE; no
+  inferred FIFO/pro-rata/customer cancellation or Warehouse allocation power.
+- Existing original case identifies exact customer. Actual supplier collection
+  removes physical stock only once; good replacement/release restores that customer
+  up to unmet demand, excess becomes free. It never reassigns to the source PO owner
+  after borrowing, and never fabricates PO receipt or future loan repayment.
+  Supplier case replacement is restoration of ALREADY accepted goods, NOT a new
+  cumulative PO delivery. Ordinary actual PO receipt still repays approved promises
+  first. Both existing same-product PO and uncommitted future capacity remain needed
+  for borrowing; a fully received damaged PO does not gain invented loan eligibility.
+- A bounded Purchase-approved borrow may repair exact held damaged shortage if the
+  original future PO remains sufficient; no full-demand top-up while held. Existing
+  Purchase-only approval, lender availability/holds, financial and identity guards
+  preserved. Borrowed goods damaged or replaced do not erase the debt/halo.
+- Same fenced case plan marks each occupied original list with durable case/task
+  identity, new revision and required physical review. Never auto-edits original
+  planned/Packed/Loaded numbers, creates a second list, or certifies Loaded merely
+  because replacement/borrow/receipt restores good stock.
+- Paired original packing model/reader candidate: factual shortage can be opened
+  for correction; actual Packed/Loaded never exceeds usable customer stock; requires
+  reason for every damaged product, records recheck, blocks COMPLETE/invoice lines
+  pending recheck. Paired metadata parser rejects corrupt flags/case identities.
+  Real invoice and physical exit remain OFF independently.
+- Case UI warns physical correction/recheck, hides premature supplier Return when
+  held>usable. Exact original form builders preserved; Account stays English.
+  Ambiguous quarantine rejected before durable browser request, so known-invalid
+  requests do not trap that dialog. Server remains authoritative.
+- Original stock reader retains exact historical received sources AND attributed
+  case customer task IDs, including closed-claim replacement handling. Strict scoped
+  readers recognize existing isolatedAttributed; source decoder preserves old zero
+  shape and rejects invalid metadata rather than guessing.
+
+Evidence actually run (Node/VM/mock only)
+- stock-current-reserved-damage10cases + existing intake/Loaded2cases:
+  12pass0fail2406.8208ms. Actual generated roots share one mock store for intake,
+  Purchase PLAN/PO, split, receipt, original same Support/Warehouse list, borrowing,
+  isolation, supplier decision/movement and recheck. Both NCT/GHR covered.
+- Exception root/shared UI17pass0fail1748.7325ms, including invalid request preflight,
+  same actor durable retry, original parents, actual generated root, English Account.
+- FINAL all stock-current-*.test.cjs:1038pass0fail22565.6427ms.
+- Protected original packing model/operations/context/guards/consumers:
+  35pass0fail337.0955ms; original protected files unchanged vs baseline.
+- Runtime generator --check:103modules/53public runtime exports unchanged; paired
+  packing model/reader and original root generators --check pass. All4UI builders
+  reproducible within full test suite. Preview bundle regenerated from tested model.
+
+Initial expanded full run had9failures:7 old test mock claims omitted explicit
+isolatedAttributed0,1 stale generated preview,1 error-text expectation. Fixed test
+inputs/output/text (not weakened strict decoder or financial guard). Related23pass
+before final1038run. An old reserved-refusal test was a false positive asserting
+ok=false on PENDING, not a terminal rejection; now finishes the original request
+and asserts exact committed attribution/physical quantities. New edge tests added
+after that initial run include full CLOSED claim reopening, independent release,
+no double-cover and malformed damage metadata. Do not add repeated counts.
+Actual Credits UNKNOWN. No Chrome visual/native acceptance claimed.
+
+Remaining release gates (NOT waived by passing tests)
+G3 complete writer/read and paired consumer audit, native Wix collections/indexes/
+permissions/Date/metadata roundtrips, measured production capacity and relation
+lifecycle, operational safe recovery/file callbacks, maintenance/migration/shadow/
+parity single-authority cutover, focused review, exact branch deployment approval
+when needed, then all4release stages and real user acceptance through Loaded.
+Case list fanout and pending case evidence are included in normal record byte/plan
+bounds; no claim this proves native production capacity. No arbitrary Warehouse
+customer-loss allocation introduced to close ambiguous cases.
+Coverage EMPTY; ACTIVE OFF. GitHub PR220 candidate sync separate from publication.

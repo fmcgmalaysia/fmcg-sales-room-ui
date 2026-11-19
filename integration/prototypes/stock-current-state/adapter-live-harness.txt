@@ -1,0 +1,45 @@
+// Admin diagnostic harness. Four new synthetic rows retained; no deletes or business writes.
+export const verifyStockSdkAdapter = webMethod(Permissions.Admin, async () => {
+  const collection = 'StockProtocolTest';
+  const ids = { source: 'ADAPTER-c61f7e82-S', claim: 'ADAPTER-c61f7e82-C', product: 'ADAPTER-c61f7e82-P', second: 'ADAPTER-c61f7e82-Q' };
+  const store = stockAdapterFactory({ items, company: 'NCT', collections: [collection] });
+  for (const id of Object.values(ids)) {
+    if (await store.read(collection, id)) throw Error('Adapter fixture already exists; inspect, do not reset/replay.');
+  }
+  const common = { company: 'NCT', title: 'Current stock adapter synthetic test', status: 'ACTIVE', stockKey: 'SYNTHETIC-12x1', barcode: 'ADAPTER-C61F7E82', name: 'Adapter synthetic', packing: '12x1', ea: 12, _version: 'V0' };
+  await store.insert(collection, { ...common, _id: ids.source, probeKind: 'StockPositions', onHand: 20, reservedUsable: 10, isolated: 0, available: 10, obsolete: 'REMOVE-ME' });
+  await store.insert(collection, { ...common, _id: ids.claim, probeKind: 'StockClaims', positionId: ids.source, taskId: 'SYNTHETIC-CUSTOMER', customerId: 'SYNTHETIC', reservedUsable: 10, isolatedAttributed: 0 });
+  await store.insert(collection, { ...common, _id: ids.product, probeKind: 'StockProducts', onHand: 20, reservedUsable: 10, isolated: 0, available: 10 });
+  await store.insert(collection, { ...common, _id: ids.second, probeKind: 'StockProducts', barcode: 'ADAPTER-C61F7E82-Z', onHand: null, reservedUsable: null, isolated: 0, available: null });
+  const trace = [];
+  for (const [id, fields] of [[ids.source, { onHand: 19, reservedUsable: 9 }], [ids.claim, { reservedUsable: 9 }], [ids.product, { onHand: 19, reservedUsable: 9 }]]) {
+    const before = await store.read(collection, id), after = { ...before, ...fields, _version: 'V1' };
+    delete after.obsolete;
+    await store.compareAndSet(collection, id, 'V0', after);
+    const actual = await store.read(collection, id);
+    if (actual._version !== 'V1' || actual.reservedUsable !== 9 || actual.obsolete !== undefined) throw Error('Adapter image mismatch.');
+    trace.push({ id, version: actual._version, reservedUsable: actual.reservedUsable, obsoleteRemoved: actual.obsolete === undefined });
+  }
+  let staleRejected = false;
+  try {
+    const before = await store.read(collection, ids.source);
+    await store.compareAndSet(collection, ids.source, 'V0', { ...before, _version: 'OLD', onHand: 999 });
+  } catch (e) { staleRejected = String(e.message || e).includes('version conflict'); }
+  if (!staleRejected) throw Error('Stale adapter request was not rejected.');
+  const mappedItems = { query: logical => {
+    if (!['StockPositions', 'StockClaims', 'StockProducts'].includes(logical)) throw Error('Unexpected probe collection');
+    return items.query(collection).eq('probeKind', logical).startsWith('_id', 'ADAPTER-c61f7e82-');
+  } };
+  const repository = stockQueryFactory({ items: mappedItems, company: 'NCT' });
+  const args = { company: 'NCT', page: 0, pageSize: 1, status: 'ACTIVE', consistentRead: true };
+  const products = await repository.queryProducts({ ...args, search: 'ADAPTER-C61F7E82', order: ['barcode', '_id'] });
+  const next = await repository.queryProducts({ ...args, page: 1, search: 'ADAPTER-C61F7E82', order: ['barcode', '_id'] });
+  const positions = await repository.queryPositions({ ...args, stockKey: common.stockKey });
+  const claims = await repository.queryClaims({ ...args, positionId: ids.source });
+  const passed = products.totalCount === 2 && products.items[0]?._id === ids.product
+    && next.items[0]?._id === ids.second && next.items[0]?.available === null
+    && positions.totalCount === 1 && claims.totalCount === 1
+    && products.items[0].onHand === 19 && !('stockCommitVersion' in products.items[0]);
+  return { passed, staleRejected, trace, pages: { products, next, positions, claims }, retainedIds: ids,
+    limitation: 'Actual adapter/query only. No protocol lock deletion, timeout injection, production data or activation.' };
+});

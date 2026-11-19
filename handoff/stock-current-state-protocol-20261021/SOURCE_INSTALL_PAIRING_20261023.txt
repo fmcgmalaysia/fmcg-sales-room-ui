@@ -1,0 +1,59 @@
+2026-10-23 — INSTALLATION PAIRING AUDIT; NO NATIVE CODE INSTALLED
+
+User authorized continued installation checks/public acceptance while Wix responds.
+Recovery8e2523d; protected original business/page files unchanged. Reused framework,
+focused task handoff, original Source date builder and ownership rules. No test data
+preservation requirement inferred: user declared prelaunch business data disposable.
+
+Concrete missing dependency fixed
+Source UI parent calls Source onboarding.web.js. Existing source-onboarding.candidate
+contains current metadata/phase receipt handling, but backend install definition
+omitted it and included only Source nctSubmissionDelivery. Added exact Source target
+onboarding.web.js. Its ORIGINAL repository snapshot is sales-room/wix/onboarding.web.js
+(backend/onboarding.web.js does not exist); fixed explicit original-file resolver,
+without moving/renaming sources or installing this module on MASTER. Backend graph
+now40targets/100modules/20unverified writer categories, activation stillfalse.
+
+UI relay named imports now checked against same-system candidate graph. New/changed
+unresolved bindings are errors. Existing unchanged Source fxRates/staffAuth/catalogue
+bindings outside the stock graph are explicitly retained with original page SHA and
+verified:false; not guessed absent, not a reason to modify auth, not native verified.
+Paired package stays38Pagesresources/5Wixrelays. Both manifests regenerated.
+
+Fresh native readback
+Existing Master editor51427123 Purchase Department page copied READ ONLY from actual
+editor textbox using select-all/copy. Full8200CRLFcharacters. LF SHA256 both live
+and repository integration/wix/purchase-room-page.js:
+c103628769b2ba0917faf15438bc9819188efaaa8855489fcd3d84cb254e381f
+Exact normalized equality true. Retained private complete source:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/master-purchase-page-live-readback-20261023-install.txt
+This is SAVED EDITOR equality, not a fresh published-runtime guarantee or other
+module parity. No typing, Run, Save, Publish or business operation performed.
+
+Source live-read obstacle
+Opened Source editor via existing verified FMCG MALAYSIA dashboard Edit Site.
+Returned newtab51427279, correct Source meta5292b63a-30e5-4c0e-8762-a1b127bbc651.
+Initial load remained at96% without code/navigation. Refreshed this new UNEDITED
+tab once; still loading after independent audit/tests. Stop that UI path, no more
+reload/open variants or lower-level bypass. Tab marked handoff. Private screenshot:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/source-editor-loading-after-refresh-20261023.png
+No Source code readback or writes, and no inference that live matches repository.
+Chrome itself works (Master readback/Support ticket succeeded); this is a Source
+editor loading problem, not a demonstrated security restriction or user permission.
+
+Verification
+Full current-stock suite after Source graph fix:1303pass0fail42924.3592ms.
+Private generated log source-onboarding-install-full-tests-20261023.txt in same
+private-evidence folder. Subsequent relay-dependency reporting change: affected
+install/UI-manifest8pass0fail1370.0736ms. Counts overlap, not1311independent tests.
+git diff --check passed. No unchanged full-suite rerun just to read summary.
+
+Next execution: resume Source native read only once editor becomes available;
+compare actual onboarding/page plus required unchanged bindings before any sync;
+finish remaining Master native installation/schema/type/capacity/recovery evidence;
+all-writer boundary, migration/shadow and same-system paired release; then real
+public Sales split/Purchase borrow/receipt repayment/Loaded. No activation shortcut.
+Wix ticket already accepted; no reply/guarantee yet; no duplicate/auto monitor.
+GitHub export-specific refusal still open; no push or alternate export route.
+Four stages: local candidate; Pages baseline; Wix new flow unpublished; public
+new borrowing unavailable. This record does not claim installation or acceptance.

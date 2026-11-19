@@ -1,0 +1,38 @@
+[
+  {
+    "file": "live-before-app.js",
+    "sha256": "063f8aed7e7cbf5a40c976e7c443043d3032ed950eeef3101db4f16952cdb7e8"
+  },
+  {
+    "file": "live-before-dashboard.js",
+    "sha256": "0ca68927065bb98564ab7f0995984b771a18f9d2e814e3cb8fd4799d764e06a6"
+  },
+  {
+    "file": "live-before-index.html",
+    "sha256": "8a53f7791be823628c52e30f8a1c2cbe235264eff1881eee37f31236467a92be"
+  },
+  {
+    "file": "wix-page-before.js",
+    "sha256": "d53c33a35ffb700a032d1ddaf13ba82f25ef253023b388ac9007aa3bd41cbf6c"
+  },
+  {
+    "file": "wix-page-after.js",
+    "sha256": "2d80bc7a4bfd49eac1adc682ef9fe60fcccb6a0cf1fc012c7ecb890f5eb4e63c"
+  },
+  {
+    "file": "preview-entry.png",
+    "sha256": "b054b4f59b43aad409bb1fd23086a3584bee80b1c4f586153f93c380b7bc3829"
+  },
+  {
+    "file": "publish-receipt.png",
+    "sha256": "3b0a4a617c36bc06d69e70cdc0b074f13da2b536ef8aa2fa579e31572859c024"
+  },
+  {
+    "file": "public-entry.png",
+    "sha256": "38ca1865eefbc092f1649c79c5f6be7d8bcb9a911cf525cc31eb886606660d14"
+  },
+  {
+    "file": "tests.txt",
+    "sha256": "964b61428e8232e55556052da10ab3ec5e3dd2e4363e6bb6de10907a49578cd7"
+  }
+]

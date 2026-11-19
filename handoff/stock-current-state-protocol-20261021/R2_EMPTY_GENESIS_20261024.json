@@ -1,0 +1,15 @@
+{
+  "cohort":"MASTER_20261024_R2",
+  "scope":"Only fresh, private, empty R2NCTActivity and R2NCTActivity1 maintenance controls; new order/stock isolation authorized by user, not reuse of old initialization/type/UNKNOWN consent",
+  "function":"r2cohortBootstrap.web.js/initializeFreshCohort",
+  "nativeModuleSha256":"a026b693aa159e04aa9d9623530deb39cefab0048ef942ac096df36edf2bb507",
+  "preconditions":"Server checks all twelve fixed R2 collections for complete private metadata and no business/unknown records before insertion; exact actual same Admin member, approved status, journal control fields and request identity; rechecks metadata/content before insert",
+  "writeLimit":"At most one new MAINTENANCE control per company; no update/remove, no old tables, no business inventory records or ACTIVE; lost response propagates without retry",
+  "requests":[
+    {"company":"NCT","requestId":"8c451d42-3518-4376-8075-4e61a262ea98","status":"CONFIRMED_NATIVE_RETURN","calls":1,"initialized":true,"created":true,"mode":"MAINTENANCE","activationAllowed":false},
+    {"company":"GHR","requestId":"c4a10377-c653-4fa3-98cc-b6325f520fa9","status":"CONFIRMED_NATIVE_RETURN","calls":1,"initialized":true,"created":true,"mode":"MAINTENANCE","activationAllowed":false}
+  ],
+  "activationAllowed":false,
+  "allWriterCoverageAccepted":false,
+  "invoiceAndPhysicalDispatchEnabled":false
+}

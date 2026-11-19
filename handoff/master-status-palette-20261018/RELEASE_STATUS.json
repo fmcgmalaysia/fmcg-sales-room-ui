@@ -1,0 +1,13 @@
+{
+  "runtime": "da5c24bc6da7692b211a49b783a318d327225216",
+  "branch": "style/master-status-palette-20261018",
+  "pullRequest": 174,
+  "palette": {"complete": "#2563EB", "pending": "#F58A00", "issue": "#E51B2B", "solidSurfaceText": "#FFFFFF"},
+  "code": {"status": "complete", "focusedChecks": 154, "fullSuite": {"passed":523,"total":526,"baselineFailures":3}},
+  "pages": {"status":"verified","runId":39086856402,"assetsMatched":30,"build":"2026-10-18-master-status-palette-v1","temporaryPolicyRemoved":true,"originalSevenRulesRestored":true},
+  "wix": {"status":"published and live","pageReadbacksExact":4,"receipt":"This site is published and live online."},
+  "public": {"purchase":"verified six views, real blue/red 16px GP and orange-white waiting state","account":"verified seven views, 28px blue/orange-white files, original Pay Slip panel and download links","warehouse":"verified four views after user reopened; real orange-white pending, vivid-red issue and neutral zero states","support":"verified both navigation views after user opened correct link; real empty list and new palette stylesheet/build; invoice action appearance checked in local sample candidate","consoleErrors":0,"complete":true},
+  "recoveryIncident": {"component":"Warehouse draft only","cause":"Paste replaced selected page instead of version token","restoredBy":"Immediate undo","originalCodeExact":true,"abnormalDraftPublished":false,"finalCodeMatchesOnlyVersionChange":true},
+  "financialWrites":false,
+  "mainMerged":false
+}

@@ -1,0 +1,64 @@
+{
+  "patches": [
+    {
+      "file": "purchase-live/app.js",
+      "hunks": [
+        {
+          "find": "  function reviewPo(id){",
+          "replace": "  function reviewPoHistory(rows){\n    const groups=new Map();\n    for(const row of rows)for(const event of row.history||[]){\n      if(event.result!=='SAVED'||!event.commercialChanged||!event.commercialBefore||!event.commercialAfter)continue;\n      const key=event.requestId||event.id;if(!groups.has(key))groups.set(key,{time:event.time,amendment:event.amendment,lines:new Map()});\n      groups.get(key).lines.set(row.id,{row,event});\n    }\n    const money=s=>Number.isSafeInteger(s?.amountCents)?'MYR '+num(s.amountCents/100):'Not recorded 未记录';\n    const cbm=s=>Number.isFinite(s?.quantity)&&Number.isFinite(s?.cbmPerCtn)?(s.quantity*s.cbmPerCtn).toFixed(3):'Not recorded 未记录';\n    const basis=s=>{const c=s?.costing;if(!c)return 'Unit price 单价';return c.mode+(c.mode==='FOC'?' · Paid '+c.paidCtn+' + FOC '+c.freeCtn:'')+(c.moneySource==='TOTAL'?' · Total amount 总额':'');};\n    return '<details class=\"po-review-changes\"><summary>Revision history 修改记录 · '+[...groups.values()].filter(g=>g.amendment).length+'</summary>'+([...groups.values()].sort((a,b)=>String(b.time).localeCompare(String(a.time))).map(g=>'<section><b>'+esc(shortTime(g.time))+' · '+(g.amendment?'Amended 已修改':'Original PO 原采购单')+'</b><table><thead><tr><th>Item</th><th>Qty CTN</th><th>Line Amount</th><th>Line CBM</th><th>Cost basis</th></tr></thead><tbody>'+[...g.lines.values()].map(({row,event:e})=>'<tr><td>'+esc(row.barcode)+'<small>'+esc(row.name)+'</small></td><td>'+esc(e.commercialBefore.quantity??'—')+' → '+esc(e.commercialAfter.quantity??'—')+'</td><td>'+esc(money(e.commercialBefore))+' → '+esc(money(e.commercialAfter))+'</td><td>'+esc(cbm(e.commercialBefore))+' → '+esc(cbm(e.commercialAfter))+'</td><td>'+esc(basis(e.commercialBefore))+' → '+esc(basis(e.commercialAfter))+'</td></tr>').join('')+'</tbody></table></section>').join('')||'<p>No recorded revisions 尚无修订记录。Older changes without snapshots are not reconstructed 历史缺失资料不作推算。</p>')+'</details>';\n  }\n  function reviewPo(id){"
+        },
+        {
+          "find": "<th>Line Amount MYR</th></tr></thead><tbody>${rows.map",
+          "replace": "<th>Line Amount MYR</th><th>Line CBM</th></tr></thead><tbody>${rows.map"
+        },
+        {
+          "find": "<td>${num(window.purchaseTaskGrid.totals([row]).amount)}</td></tr>`).join('')}</tbody></table></div></section>",
+          "replace": "<td>${num(window.purchaseTaskGrid.totals([row]).amount)}</td><td>${Number.isFinite(row.cbmPerCtn)&&Number.isFinite(row.procurement?.totalCtn)?(row.cbmPerCtn*row.procurement.totalCtn).toFixed(3):'—'}</td></tr>`).join('')}</tbody></table></div>${reviewPoHistory(rows)}</section>"
+        },
+        {
+          "find": "<col style=\"width:75px\"><col style=\"width:115px\"></colgroup>",
+          "replace": "<col style=\"width:75px\"><col style=\"width:115px\"><col style=\"width:85px\"></colgroup>"
+        },
+        {
+          "find": "||order?.finance?.payments?.some(payment=>payment.confirmed===true&&payment.direction!=='REFUND'&&payment.cents>0)",
+          "replace": ""
+        },
+        {
+          "find": "    return '<div class=\"po-doc-badges\">'+[['PO'],['PI','SO'],['DO'],['INV'],['CN']].map(types=>{const count=purchaseCurrentDocuments(row).filter(doc=>types.includes(doc.type)).length,label=types[0],cnDue=label==='CN'&&(row.cnRequirements||[]).some(item=>item.pending);return '<button class=\"po-doc-badge '+(cnDue||(row.documentIssues||[]).some(i=>i.status!=='RESOLVED'&&types.includes(i.type))?'problem':count?'available':'pending')+'\" '+(count?'data-po-docs':'data-po-upload')+'=\"'+esc(row.id)+'\" data-po-doc-type=\"'+types[0]+'\" aria-description=\"'+esc(label+(count?' · '+count+' uploaded':' · Awaiting upload'))+'\">'+esc(label)+'</button>';}).join('')+'</div>'+documentIssueNote(row)+'<div class=\"po-doc-actions\"><button data-po-history=\"'+esc(row.id)+'\">History</button></div>';",
+          "replace": "    return '<div class=\"po-doc-badges\">'+['PO','PI','DO','INV','CN'].map(type=>{const shared=row.documentStates?.[type],count=shared?.count||0,state=shared?.state;return '<button class=\"po-doc-badge '+(state==='PROBLEM'?'problem':state==='AVAILABLE'?'available':'pending')+'\" '+(count?'data-po-docs':'data-po-upload')+'=\"'+esc(row.id)+'\" data-po-doc-type=\"'+type+'\" '+(!shared?'disabled':'')+' aria-description=\"'+esc(type+(state==='PROBLEM'?' · Requires attention 需要处理':count?' · '+count+' uploaded':' · Awaiting upload'))+'\">'+type+'</button>';}).join('')+'</div>'+documentIssueNote(row)+'<div class=\"po-doc-actions\"><button data-po-history=\"'+esc(row.id)+'\">History</button></div>';"
+        }
+      ]
+    },
+    {
+      "file": "account-room/payment-layout.js",
+      "hunks": [
+        {
+          "find": " const docs=row=>'<div class=\"acc-docs\">'+['PO','PI','DO','INV','CN'].map(type=>{const present=(row.documents||[]).some(d=>d.linked&&!d.superseded&&(d.type===type||type==='PI'&&d.type==='SO')),issue=(row.documentIssues||[]).some(i=>i.status!=='RESOLVED'&&(i.type===type||type==='PI'&&i.type==='SO')),cnDue=type==='CN'&&(row.cnRequirements||[]).some(item=>item.pending);return '<button class=\"acc-doc '+(issue||cnDue?'red':present?'green':'waiting')+'\" data-account-document=\"'+esc(row.id)+'\" data-document-type=\"'+type+'\" aria-label=\"'+type+' '+(issue?'issue requires review':present?'available':'awaiting Purchase')+'\">'+type+'</button>';}).join('')+'</div>';",
+          "replace": " const docs=row=>'<div class=\"acc-docs\">'+['PO','PI','DO','INV','CN'].map(type=>{const shared=row.documentStates?.[type],present=shared?.count>0,issue=shared?.state==='PROBLEM';return '<button class=\"acc-doc '+(issue?'red':present?'green':'waiting')+'\" data-account-document=\"'+esc(row.id)+'\" data-document-type=\"'+type+'\" '+(!shared?'disabled':'')+' aria-label=\"'+type+' '+(issue?'issue requires review':present?'available':'awaiting Purchase')+'\">'+type+'</button>';}).join('')+'</div>';"
+        }
+      ]
+    },
+    {
+      "file": "purchase-live/style.css",
+      "hunks": [
+        {
+          "find": "utton{color:inherit;text-align:left;padding:0;border:0;background:none;font:inherit;cursor:pointer}\n",
+          "replace": "utton{color:inherit;text-align:left;padding:0;border:0;background:none;font:inherit;cursor:pointer}\n\n.po-review-changes{margin-top:14px;border-top:1px solid #d9e4ef;padding-top:10px}.po-review-changes summary{cursor:pointer;color:#2563eb;font-weight:600}.po-review-changes section{margin-top:12px;overflow:auto}.po-review-changes small{display:block;font-size:11px;color:#62788d}\n.po-doc-badge.pending{background:#8B98A8;border-color:#8B98A8;color:#fff}\n"
+        }
+      ]
+    },
+    {
+      "file": "account-room/settlement.js",
+      "hunks": [
+        {
+          "find": "modal(row,'Payment Review','<label",
+          "replace": "modal(row,'Payment Review',(row.documentReviewRequired?.length?'<p class=\"document-note\">Procurement has changed or the document version is unknown. Current PO: MYR '+money(Number.isFinite(row.amount)?Math.round(row.amount*100):null)+'. Check the supplier amounts, quantities and any freight or CN differences against this PO. The original documents and their amounts are preserved.</p><label class=\"account-field\"><span>I checked the supplier documents against the current PO</span><input name=\"confirmCurrentProcurement\" type=\"checkbox\" required></label>':'')+'<label"
+        },
+        {
+          "find": "paperReceived:values.get('paperReceived')==='on',requestedCents",
+          "replace": "paperReceived:values.get('paperReceived')==='on',confirmCurrentProcurement:values.get('confirmCurrentProcurement')==='on',requestedCents"
+        }
+      ]
+    }
+  ]
+}

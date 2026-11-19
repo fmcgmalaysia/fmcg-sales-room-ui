@@ -1,0 +1,34 @@
+2026-10-22 — original combined EDIT + split display save candidate
+
+Continuation of PURCHASE_DISPLAY_ORDER_CURRENT.txt. Keep protected original one-Save
+behaviour: price drafts plus row ordering are ONE business request, not two saves.
+Recoveryd447185/runtime32b812c and candidate91ddde7. No live/source edits.
+
+preparePurchaseDomain now accepts original validated displayOrder ONLY for segmented
+EDIT with explicit paired display calculator version2. Same immutable display event
+as pure REORDER joins original task/price journal images and current stock plan in
+one manifest, one company fence, one generation. Stock compatibility guards unchanged.
+Generic original preparation/projector still owns all suppliers, versions, complete
+customer sets, independent split keys and financial locks. No browser role/capability.
+
+Important no-op coverage correction: only actual changed domain task images select
+affected product identities, not every original validated update. A no-op ordering
+patch must not require unrelated product checkpoint/stock revision. Original EDIT
+with solely independent split display keys and no raw task changes commits only its
+display event, no invented task/physical/product write. Exact original response
+receipt verifies display rows and union of price-edited + sorted task IDs; original
+plan update order can legitimately differ from display order. A draft for another
+customer can coexist with sorting the selected customer, as original Save permits.
+
+14focusedpass0fail738.1214ms. Covers real original Sales SPLIT into two batches then
+display-only EDIT reordering those keys while one raw task remains; mixed price/order,
+unrelated no-op product absent, cross-customer price draft, interruption after price
+before display event and exact request recovery, unpaired calculator fails before
+business writes. Earlier pure REORDER/legacy chain/both-company checks retained.
+Full current666pass0fail6205.7053ms;72modules30exports. Offline VM/Node/mocked database,
+NOT public/native SDK/performance evidence. No original financial failure altered.
+
+Actual ordinary gateway/paired original projector installation/current workspace,
+all other writers/files/reload/native schemas/permissions/init/recovery/capacity/
+shadow and fourrelease gates remain OPEN. No Pages/Wix publication or ACTIVE switch.
+Original-disabled SPECIAL remains disabled. This is not all Purchase integration done.

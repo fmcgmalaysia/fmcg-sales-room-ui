@@ -1,0 +1,15 @@
+# PO amendment UI — backend integration pending
+
+The user authorized PO amendment/paid-lock work and then requested background-only progress while using the computer. Fresh public app.js, style.css and supplier-allocation.js were read without Chrome; all matched the preserved 4ec8112 published package. Raw app.js is not the assembled production app, so preview patches are applied narrowly to the verified assembled baseline. Confirmed readback and active-only routing stay intact.
+
+Candidate behavior: a saved PO source is readonly until its pencil is selected. Supplier identity, batch, invoice, archive and financial locks remain. The hand/Catch Cost is not available for committed sources. Duplicate clicks do not create another request; stale versions cannot enter amendment. A restored draft retains values but not edit authorization. Confirmed saves leave amendment mode. The UI displays a revision count only if supplied by the backend; it never invents or increments one locally.
+
+No human reason input is required for an explicitly opened PO amendment. The UI hides that optional field for this state and supplies the neutral system description `PO amendment` to the existing PLAN action; this is not a supplier-agreement assertion. Other unrelated reason requirements remain. No new operation or parallel persistence logic is introduced.
+
+The app's existing financial-lock adapter now also blocks when an existing PO has not been read from Finance, when the projected authoritative lock is true, when confirmed outgoing payments are present, or when final checks/closure protect the order. Existing handoff locking is retained. This is defense in the interface only: the authoritative backend permanent paid lock and stale-file invalidation are NOT implemented here and must be completed before release.
+
+48 allocation/controller tests pass, including10 new amendment/financial-adapter tests. Two old tests that directly edited a committed PO now explicitly open the pencil, retaining their original quantity, cost and saved-history assertions. Preview assembly separately validates94resources, exactly3Purchase resources changed,91unchanged, and preserves existing staged behaviors.
+
+Pending backend/live work: fresh Wix comparison; durable lock after the first confirmed payment even if proof is later deleted or refunded; one effective PO file and revision invalidation shared by Purchase/Account; full Review before/after pricing history and authoritative amendment counts; cross-department data tests, visual acceptance and publication. The standalone Support planned/loaded candidate is a separate branch/PR242, not silently folded into this branch.
+
+Recovery remains published4ec8112 / record5bd4788 plus the separately published9518417 journal correction. Do not overwrite that backend from this branch's older journal. No Pages workflow or executable deployment entry is added; preview reports deployable:false. No source/backend/API/financial writes in production, no Wix publish and no public acceptance claimed.

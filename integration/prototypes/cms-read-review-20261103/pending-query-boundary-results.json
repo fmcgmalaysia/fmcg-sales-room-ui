@@ -1,0 +1,138 @@
+{
+  "date": "2026-11-04",
+  "baseline": "3ea8672",
+  "productionChanges": 0,
+  "productionWrites": 0,
+  "checks": [
+    {
+      "name": "Existing shared scope cannot select a customer task",
+      "evidence": {
+        "sharedScopePrepared": 99,
+        "topLevelTaskPopulated": 0,
+        "planPrepared": 18,
+        "poPrepared": 8,
+        "mergedPOPrepared": 2,
+        "maxMergedTasks": 10,
+        "otherPrepared": 73
+      }
+    },
+    {
+      "name": "RESULT presence is not a deletion or recovery-discovery query",
+      "evidence": {
+        "exactResultMatches": 99,
+        "unknownRequestDiscoveryStillRequired": true,
+        "note": "Known request RESULT can be read by ID; unknown interrupted requests cannot be found from that ID without discovering their PREPARED first."
+      }
+    },
+    {
+      "name": "Handled PLAN failure leaves no lock while original evidence restores old price",
+      "evidence": {
+        "locksAfterHandledFailure": 0,
+        "rawPrice": 32,
+        "confirmedPrice": 16,
+        "priceWithoutPrepared": 32,
+        "originalRequestRecovered": true,
+        "retryExtraRows": 0
+      }
+    },
+    {
+      "name": "Missing RESULT alone must not hide already complete PLAN facts",
+      "evidence": {
+        "confirmedPrice": 32,
+        "pending": false,
+        "retryAddedOnlyResult": true
+      }
+    },
+    {
+      "name": "Merged PO handled failure is not described by a one-task lock or PLAN-only pending reader",
+      "evidence": {
+        "affectedTasks": 2,
+        "assignedBeforeRecovery": 1,
+        "locks": 0,
+        "planReaderPending": 0,
+        "originalRequestRecovered": true,
+        "limitation": "PLAN-only pending semantics cannot be advertised as complete PO-operation safety; other guards are not assessed by this single reader."
+      }
+    },
+    {
+      "name": "ADD_SOURCE membership must come from prepared plan before source acceptance exists",
+      "evidence": {
+        "newTaskExists": true,
+        "sourceAccepted": false,
+        "declaredShareMembers": 2,
+        "locks": 0,
+        "planReaderPending": 0,
+        "rootInPreparedTask": true,
+        "originalRequestRecovered": true
+      }
+    },
+    {
+      "name": "Warehouse follow-on during incomplete merged PO is exercised through original projections and save",
+      "evidence": {
+        "receiptError": null,
+        "recoveryError": null,
+        "receiptFacts": 1,
+        "beforePOId": "3c1d4adbf5ac50295b310c51fbd32d87",
+        "afterPOId": "a3747c65ebae494f0af529253a5cba6e",
+        "afterMembers": 2,
+        "receivedBeforeRecovery": 20,
+        "afterDisplayedAccepted": 0
+      }
+    },
+    {
+      "name": "PLAN-only read may omit unrelated PREPARED, but full workspace contract may not",
+      "evidence": {
+        "unrelatedPreparedExcluded": 81,
+        "confirmedTasksAndPendingEqual": true,
+        "deployable": false,
+        "note": "Only this reader ignores them. Desk resume, shortload recovery, uploads and legacy display-order consumers have separate PREPARED requirements."
+      }
+    }
+  ],
+  "observations": {
+    "mergedFollowOn": {
+      "receiptError": null,
+      "recoveryError": null,
+      "receiptFacts": 1,
+      "beforePOId": "3c1d4adbf5ac50295b310c51fbd32d87",
+      "afterPOId": "a3747c65ebae494f0af529253a5cba6e",
+      "afterMembers": 2,
+      "receivedBeforeRecovery": 20,
+      "afterDisplayedAccepted": 0
+    }
+  },
+  "limits": [
+    "Existing private export is from Nov 3; not a fresh live export.",
+    "Handled failures are simulated around the original store. No real Wix crash/concurrency/latency proof.",
+    "This is procurement evidence scope, not a replacement for the full workspace, stock or finance reader.",
+    "No lock, PREPARED, RESULT or historical business fact is deleted or migrated.",
+    "No new indexes, nested-field query acceptance, root associations or current-state records are deployed."
+  ],
+  "snapshot": {
+    "sha256": "5ce33e85e8583c0f0cb02e538ed05586410ffeba00ceea56723124e15066218b",
+    "rows": 400,
+    "prepared": 99,
+    "types": {
+      "PLAN": 18,
+      "OTHER:event,expected,expectedBasis,expectedVersion,record": 1,
+      "PO": 8,
+      "OTHER:event,expectedVersion": 31,
+      "OTHER:beforeRevision,deskReservation,expectedVersion,record,resolutionStates,uploads": 21,
+      "OTHER:authorizationInput,beforeRevision,deskReservation,expectedVersion,record,resolutionStates,uploads": 7,
+      "OTHER:event,version": 1,
+      "OTHER:event,expectedVersion,resolutionInput": 3,
+      "OTHER:audit,expected,expectedVersion,extraUploads,record,upload": 3,
+      "OTHER:event,expected,expectedBasis,expectedVersion,record,upload": 3,
+      "OTHER:event,upload,version": 3
+    }
+  },
+  "sourceHashes": {
+    "purchaseOperationJournal.js": "f32a447abc140e5210bcde73e6a7f94b933cd0b9c3a9d21fdd03e3ce34d72006",
+    "purchaseOperations.js": "ba6f7c1684fdc2560ed3a559efd7298285becf34cde7e48e119fc897311156fb",
+    "purchaseSources.js": "ad4ee2babcf25847cbdd4b7dd34be548e008755697a4dfa8e52cabfce70fc4e6",
+    "purchasePlan.js": "f1f2dbcf1656bde00cc2af5344d9ba3620a99de3ff8071482beab13743870f72",
+    "warehouseReceiving.js": "285eff17f720a11294876fe5680f2b9d5da925e25772a08a885640a08d74c2ee",
+    "warehouseReceiving.web.js": "08c9cd64958dc1ca121b8ed98b3472793978ad3e887bcc100434b0eb551cadd0",
+    "purchaseOrderWorkflow.js": "f204f79cadf2ea1897aaca8d8cb304ce3b5194ca447a0a24fa51e9e595f6fd07"
+  }
+}

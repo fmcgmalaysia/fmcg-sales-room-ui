@@ -1,0 +1,6 @@
+.purchase-borrow-relations{margin-top:10px;padding-top:8px;border-top:1px solid #c6d8e8;color:#17314f;font:inherit}
+.purchase-borrow-relations h4{margin:0 0 6px;font-size:inherit;font-weight:600}.purchase-borrow-relations h4 small{margin-left:5px;font-size:inherit;font-weight:400}
+.purchase-borrow-relations ul{list-style:none;margin:0;padding:0}.purchase-borrow-relations li{padding:7px 8px;margin:4px 0;background:#eef5fb;border-radius:4px}
+.purchase-borrow-relations .borrow-link-numbers{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;font-variant-numeric:tabular-nums}.purchase-borrow-relations .borrow-link-remaining{background:#fff3d6;color:#805b16;border-radius:3px;padding:0 4px}
+.purchase-borrow-relations .borrow-link-note,.purchase-borrow-relations .borrow-link-status{margin:6px 0;font-size:inherit;line-height:1.5}.purchase-borrow-relations .borrow-link-note{color:#607d98}.purchase-borrow-relations .borrow-link-status.error{color:#E51B2B}
+.purchase-borrow-relations .borrow-link-pages{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:6px}.purchase-borrow-relations .btn{font:inherit;min-height:28px}

@@ -1,0 +1,63 @@
+2026-10-22 Borrow eligibility + original Purchase/packing transport continuation
+
+New PRIVATE Purchase borrowing options composes original member/department/PO/context
+authority, scoped current rows and exact raw task counters inside common read barrier.
+Browser supplies borrower ID only; forged approval/PO flags ignored. Public result has
+matching source/PO/customer IDs/numbers, maxqty, revision and form metadata, no cost,
+private images or authority booleans. Quotes invoke the actual approveBorrow rules on
+copies with binary-search max1..9999, not a competing capacity formula. No own PO,
+holds/invoice locks or committed supply =>no eligible option; unknown model/index fails
+closed, not empty. Explicit pair fanout policy is not measured production capacity.
+Actual original v2 auth/PO/scoped fixture quotes B100->A pendingPO, no DB writes, then
+normal approve/return/receipt auto-repayment regression still passes. Read-only quote
+adds a context read; replay assertion changed to baseline+1, not weakened to arbitrary.
+
+Concrete Purchase ADD_SOURCE now returns the original supplier-dialog sourceTaskId and
+parentTaskId after commit/replay, not just a generic stock receipt. Deterministic original
+operationId is confirmed against actual committed raw task identity inside read barrier;
+ID prediction alone is not success. Actual source save/replay test proves one task only.
+Other original Purchase task result unchanged; stock generation additional metadata.
+
+Actual Purchase app overlay: snapshots full current request into existing sessionStorage
+draft/cache mechanism, original UUID retained across BEFORE/APPLY/VERIFY250ms continuations.
+Matching higher generation required to finish. Malformed/unknown replies/error regex or
+attemptNotStarted cannot erase current pending request. Current timeout/check path does
+NOT query old receipt journal or auto assume failure. Existing explicit same-save retry
+remains available. Segment serial prevents an earlier30s timer interrupting a later chunk.
+Legacy path unchanged. Source workspace metadata now includes build/protocol/generation;
+ACTIVE unknown build/index fails. This app candidate and actual Wix relay/backend binding
+are not installed; old getPurchaseSaveResult must not be treated as current commit proof.
+
+Packing v2 preparation now uses scoped current products/claims/counters, not proof-v1
+global CLOSED-source reads. Same full original packing context feeds original validator;
+changed list updates same durable record plus current hold checkpoint under coordinator.
+New PRIVATE createCurrentPackingService authenticates original department per call/replay.
+READ uses ORIGINAL projectPackingWorkroom: Warehouse does not see Support DRAFT/taskpool.
+Confirmed save returns stable actual list ID read-confirmed after commit, required by
+original workbench refresh; does not pretend a later mutable revision/status is old result.
+Support SEND then Warehouse START on one list tested at generations1/2, exact physical
+StockPositions bytes unchanged. PHOTOS remains rejected here, real invoice/dispatch not
+enabled. Missing checkpoint blocks. Initial v2 fixture lacked gt query; fixed mock, not
+production guards. Budgets explicit v2 segmented policy, v1 proof unchanged.
+
+Original packing-transport overlay retains official parent origin/source verification.
+Read metadata captured for selected company. Current save deep-copies input, retains
+same UUID across bounded pending replies, prevents parallel retry during continuation,
+requires matching committed generation+stable listID. Unknown result/timeout retains
+request; legacy receipts unchanged. No new browser persistence/network/auth path. Existing
+beforeunload warning remains; reload durability is STILL pending, not solved by warning.
+Actual Wix bridge metadata forwarding/controller/backend installation remains OPEN.
+
+Final full510current candidate tests pass0fail5202.3541ms. Runtime51modules17exports.
+Targeted sets retained, not summed into extra passed test count. VM/headless behavior,
+not real visual or live acceptance. Original finance baseline failure unchanged/unrelated.
+
+NO original business file edits, actual CMS writes/deletes, new SDK live probes, permission
+changes, ACTIVE switch, Pages dispatch or Wix publish. Protected d447185/runtime32b812c.
+Still unfinished: other actual writers/read consumers (special/reorder/admin demand,
+physical exceptions/shipments/plans/reference/cases/records/intake/file callbacks), complete
+gateway/relay wiring, original-person relation/approval popup, all-client reload recovery,
+admin initialization apply and missing-version capability, full actual schemas/typed SDK
+roundtrip, production preparation/staging/latency/quota, quiescent migration/shadow/final
+proof and all4release stages. Branch-specific temporary deployment permission still not
+granted; ask only once after all reviewable implementation, not now. Keep implementing.

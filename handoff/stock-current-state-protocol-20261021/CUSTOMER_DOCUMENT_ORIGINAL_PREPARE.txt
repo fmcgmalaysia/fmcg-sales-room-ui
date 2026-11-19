@@ -1,0 +1,38 @@
+2026-10-22 — PRESERVED CUSTOMER FILE PREPARE CAPTURE, OFFLINE ONLY
+Recovery1250643/PR220. Productiond447185/runtime32b812c unchanged. No real file/CMS/
+Wix/native writes, authentication/employee/Drive grants, financial feature or publication.
+First user test still ends Loaded. Real invoice and physical departure remain OFF.
+
+Existing customerAccountLedger uses same company/PURCHASE scope and original journal
+lock as inventory writers. Its existing Source DOCUMENT entry cannot be left as an
+ACTIVE legacy bypass. This work preserves it, not a new Account/invoice implementation.
+
+New UNUSED customer-document-plan pure module calls actual ORIGINAL factory on a scratch
+store. Captures its PREPARED boundary, forbids legacy apply and any upload during capture,
+supplies one private fixed placeholder/server file slot. Original role/customer/ledger-
+version/date/amount/currency/duplicate/PDF max3MiB checks remain original. Sales Invoice
+attachment still needs an already-existing exact Support invoice; cannot invent one.
+Captured event/upload descriptor retain original identity, immutable original staff/
+timestamp, file ID/name/hash/size and URL. Exact assertion rechecks original bytes/hash
+and upload fields. PDF base64 is not in journal plan. Explicit standalone upload utility
+accepts only original descriptor/bytes and matching original service receipt.
+
+Actual tests: focused new4pass0fail146.5141ms, then related originalcustomeraccount+new
+10pass0fail247.5956ms. Synthetic Node in-memory only, NOT real uploads/receipts/native
+permissions. Original invoice fixture first used nonexistent ledger action; replaced
+with original REQUESTED->INVOICED immutable event history/source lines/rate, did not
+loosen reader or original invoice matching. Production customerAccountLedger/service/
+Source document UI exact againstd447185. Credit UNKNOWN.
+
+This pure module is intentionally NOT bundled/imported by native root. Node buffer/
+hash dependencies still need explicit reviewed runtime mapping when its fenced file
+adapter is integrated. Existing848all-current evidence belongs to preceding shared
+date integration, NOT an all852 run after this new unshared module. Runtime89/45 unchanged.
+
+NEXT exact same-company fenced immutable file confirmation/late callback/replay,
+private Source DOCUMENT root+original durable document client; then remaining intake/
+order/other native writers. Native schema/index/SDK authority, all20writer verification,
+unknown-lock/cross-session recovery, production capacity/lifecycle, quiescent cutover/
+shadow parity, Loaded end-to-end and four release gates OPEN. Coverage EMPTY; ACTIVE OFF.
+Code incomplete candidate; Pages unchanged; Wix not installed/published; public current
+inventory/borrowing unavailable/unverified. No half-stock release or new invoice scope.

@@ -1,0 +1,44 @@
+{
+  "state": "LIVE_FOUR_FORMULAS_EXACT_330_ROWS_UNCHANGED",
+  "spreadsheet": "1YEw29TcD7p01gcA6PefaW5zhz00oXDXn6jMiOJ4Uoik",
+  "sheet": "OCT26",
+  "anchors": [
+    {
+      "column": 4,
+      "row": 2,
+      "before": "=LET(\n d,VSTACK(\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"FOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"NONFOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"OTHERS!F2:AA\")\n ),\n keys,ARRAYFORMULA(TO_TEXT(CHOOSECOLS(d,1))),\n MAP($C$2:$C,LAMBDA(code,\n  IF(\n   code=\"\",\n   HSTACK(\"\",\"\",\"\"),\n   IFNA(\n    XLOOKUP(\n     TO_TEXT(code),\n     keys,\n     CHOOSECOLS(d,2,3,4)\n    ),\n    HSTACK(\"\",\"\",\"\")\n   )\n  )\n ))\n)",
+      "after": "=LET(\n d,VSTACK(\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"FOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"NONFOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"OTHERS!F2:AA\")\n ),\n keys,ARRAYFORMULA(TRIM(TO_TEXT(CHOOSECOLS(d,1)))),\n MAP($C$2:$C,LAMBDA(code,\n  IF(\n   code=\"\",\n   HSTACK(\"\",\"\",\"\"),\n   IFNA(\n    XLOOKUP(\n     TRIM(TO_TEXT(code)),\n     keys,\n     CHOOSECOLS(d,2,3,4)\n    ),\n    HSTACK(\"\",\"\",\"\")\n   )\n  )\n ))\n)"
+    },
+    {
+      "column": 9,
+      "row": 2,
+      "before": "=LET(\n d,VSTACK(\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"FOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"NONFOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"OTHERS!F2:AA\")\n ),\n keys,ARRAYFORMULA(TO_TEXT(CHOOSECOLS(d,1))),\n MAP($C$2:$C,LAMBDA(code,\n  IF(code=\"\",\"\",IFNA(XLOOKUP(TO_TEXT(code),keys,CHOOSECOLS(d,15)),\"\"))\n ))\n)",
+      "after": "=LET(\n d,VSTACK(\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"FOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"NONFOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"OTHERS!F2:AA\")\n ),\n keys,ARRAYFORMULA(TRIM(TO_TEXT(CHOOSECOLS(d,1)))),\n MAP($C$2:$C,LAMBDA(code,\n  IF(code=\"\",\"\",IFNA(XLOOKUP(TRIM(TO_TEXT(code)),keys,CHOOSECOLS(d,15)),\"\"))\n ))\n)"
+    },
+    {
+      "column": 10,
+      "row": 2,
+      "before": "=LET(\n d,VSTACK(\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"FOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"NONFOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"OTHERS!F2:AA\")\n ),\n keys,ARRAYFORMULA(TO_TEXT(CHOOSECOLS(d,1))),\n MAP($C$2:$C,LAMBDA(code,\n  IF(code=\"\",\"\",IFNA(XLOOKUP(TO_TEXT(code),keys,CHOOSECOLS(d,21)),\"\"))\n ))\n)",
+      "after": "=LET(\n d,VSTACK(\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"FOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"NONFOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"OTHERS!F2:AA\")\n ),\n keys,ARRAYFORMULA(TRIM(TO_TEXT(CHOOSECOLS(d,1)))),\n MAP($C$2:$C,LAMBDA(code,\n  IF(code=\"\",\"\",IFNA(XLOOKUP(TRIM(TO_TEXT(code)),keys,CHOOSECOLS(d,21)),\"\"))\n ))\n)"
+    },
+    {
+      "column": 11,
+      "row": 2,
+      "before": "=LET(\n d,VSTACK(\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"FOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"NONFOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"OTHERS!F2:AA\")\n ),\n keys,ARRAYFORMULA(TO_TEXT(CHOOSECOLS(d,1))),\n MAP($C$2:$C,LAMBDA(code,\n  IF(code=\"\",\"\",IFNA(XLOOKUP(TO_TEXT(code),keys,CHOOSECOLS(d,22)),\"\"))\n ))\n)",
+      "after": "=LET(\n d,VSTACK(\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"FOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"NONFOOD!F2:AA\"),\n  IMPORTRANGE(\"12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg\",\"OTHERS!F2:AA\")\n ),\n keys,ARRAYFORMULA(TRIM(TO_TEXT(CHOOSECOLS(d,1)))),\n MAP($C$2:$C,LAMBDA(code,\n  IF(code=\"\",\"\",IFNA(XLOOKUP(TRIM(TO_TEXT(code)),keys,CHOOSECOLS(d,22)),\"\"))\n ))\n)"
+    }
+  ],
+  "change": "Wrap source keys and input barcode TO_TEXT calls with TRIM; keep identical XLOOKUP,source imports,returned columns andIFNA behavior. No new helper table orscript.",
+  "checks": {
+    "quotedRows": 330,
+    "missingDescriptions": 0,
+    "changedDisplayedCells": 0,
+    "formulaErrors": 0,
+    "typedBarcodesAndPriceInputsUnchanged": true,
+    "fourAnchorsExact": true,
+    "rootCauseExamples": "Source rowsNONFOOD1963-1965 had one trailing space; exact lookup missed them. Source strings corrected first; normalization prevents the same lookup failure recurring in this quotation."
+  },
+  "protected": "Google quotation input prices,line-price formulaH2,barcodes,images,source identity andsort numbers preserved. Pointbase digit identities not rewritten. No generated customer QD/template/AppsScript changes.",
+  "recovery": "Exact before formulas above; private complete before cell metadata retained in rootQUOTATION_LOOKUP_BEFORE.json,not uploaded with commercial prices.",
+  "pausedWork": "Customer history,actual file download,long-termCMS remain paused until user exact resume instruction."
+}

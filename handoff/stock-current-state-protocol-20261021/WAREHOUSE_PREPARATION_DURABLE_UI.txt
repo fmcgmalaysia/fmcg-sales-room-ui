@@ -1,0 +1,51 @@
+2026-10-22 — ORIGINAL NON-FILE PREPARATION DURABLE CLIENT CANDIDATE
+
+Recovery7dc48d6/PR220. Protected productiond447185/runtime32b812c unchanged.
+Only mechanical candidate overlays/private own-tab helper/tests; no browser, CMS,
+native schema/permission/business/test-lock mutation, installation or publication.
+
+Implemented
+- Exact original workroom PACK/LOAD/UNPACK dialogs/validation gain current workspace
+  build/generation and authenticated expected staff/member, full original UUID/input.
+  Paired original app passes current metadata/staff; paired Wix preparation relay sends
+  fourth metadata argument to server-controlled original wrapper. No client route grant.
+- fmcg-warehouse-preparation-v1/company/staffId/memberId own-session key. Authenticate
+  before cache lookup behind pending barrier. No enumeration/other-user cache, stock
+  scan, fake workspace, automatic resume on reload or new business UUID. Explicit retry.
+  Full request durable write/readback before first send; quota/identity/conflicting
+  pending/cache errors refuse network. Unknown and retryable-false retain original.
+- Bounded BEFORE/APPLY/VERIFY counts continue exact request; malformed/stale/foreign
+  replies and obsolete timers cannot clear/restart it. Final original batch/request/
+  company/time/new generation receipt alone can clear exact cache. Failed cleanup keeps
+  original for safe replay. After confirmation block another prep until fresh workspace.
+- Original loading whole cartons/partial correction reason/legacy cache/result/CBM/
+  compression/photo rendering source bytes retained. Current PHOTOS/selected files
+  deliberately refuse BEFORE pending/cache/network; no fallback to old file/apply path.
+  Original active nonstock photo protocol connection is still OPEN, not removed or done.
+- Generation guard resets on clean company transition, not arbitrary action button.
+
+Evidence
+Focused original prep/receipt/host/stock view tests28pass0fail614.8313ms. New own-tab
+preparation cases8 cover real generated workroom, auth-only reload, changed member,
+durable storage failure, bounded UUID replay, malformed/foreign/stale receipts, final
+cache cleanup failure, original LOAD rules and explicit PHOTOS block. Focused first
+fixture run failed5 because fake DOM omitted original dispatch dependency; added that
+fixture dependency only. No production patch to hide failed tests.
+Full stock-current suite759pass0fail15449.7309ms. All three touched generators --check
+pass in tests. Protected production directories exactlyd447185; git diff --check pass.
+Node/VM/in-memory only; not real browser/SDK/Drive/platform/user acceptance evidence.
+
+Next and gates
+Original Warehouse photo ALLOCATE currently happens during original prepare before
+its legacy PREPARED journal; unknown allocation callback cannot be considered stopped
+because browser/Wix timeout fired. Current adoption needs durable operation/file-slot
+identity/receipt/checkpoint and verified callbacks under same no-theft company fence,
+without allocating a different ID on replay or publishing event before uploads verified.
+No auto-trash/release of unknown files/locks and no new grants assumed.
+CBM/remaining dispatch/packing/Sales/intake/other actual roots/clients, all20writer
+coverage, native schema/index/SDK grants/CMS init, cross-session recovery/admin safe
+termination, platform capacity, quiescent cutover/in-flight legacy proof, shadow and
+SHIPPED/history/orphan-loaded public acceptance remain OPEN. ACTIVE OFF.
+Four states: candidate code incomplete; Pages unchanged; Wix not installed/published;
+new public current inventory/borrowing unavailable/unverified. No user input needed for
+remaining local implementation; exact new branch permission still needed when ready.

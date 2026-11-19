@@ -1,0 +1,17 @@
+[
+  {
+    "department": "account",
+    "rawSha256": "b33335b7dba392032a1d5aa252b85a380838f2d17f4db70a72674d97564fcd67",
+    "normalizedExact": true
+  },
+  {
+    "department": "warehouse",
+    "rawSha256": "06bf034b87a164851068b234e1815d69f5fcf031a20bc39f891fe19715718383",
+    "normalizedExact": true
+  },
+  {
+    "department": "support",
+    "rawSha256": "01d0c81f6be5f40d1aca77b2498733db4f34e3825543fdb4b3ccc7e841e453d7",
+    "normalizedExact": true
+  }
+]

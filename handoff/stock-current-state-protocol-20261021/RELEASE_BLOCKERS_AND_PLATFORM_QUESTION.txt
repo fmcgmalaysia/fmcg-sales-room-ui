@@ -1,0 +1,77 @@
+2026-10-23 — RELEASE AUDIT, NOT COMPLETION OR ACTIVATION AUTHORITY
+
+Scope stays current inventory, Purchase borrowing/automatic repayment, Sales customer
+split and original person halo. Initial human acceptance ends at Loaded. Real Support
+invoice and physical dispatch remain disabled. No finance feature work is authorized.
+
+Evidence checkpoint before this documentation increment:
+1c65bec4509ae886d8a4e03a919c8b168ca1c484, pushed existing draft PR220.
+Last actual full regression:1133pass/0fail at993c8c3. Later quota-related11test outputs
+are affected regressions, not a newer full-suite total or native acceptance.
+Protected original paths still d447185; no production/native mutation this audit.
+
+Remaining release-critical work, in dependency order
+1. Exact native INIT/TYPE test consent is PENDING. One question already sent for two
+   Admin functions, three retained StockProtocolTest rows, <=19queries/3inserts/
+   8conditional modification attempts, only new TYPE obsoleteFlag field removal.
+   Do not repeat, execute, reset or infer consent from old lock grants.
+2. Establish supported old-execution drain/termination or separately review/authorize
+   sufficient fencing of every legacy co-writer BEFORE capture/migration. Exact original
+   cost and workspace read-side writer witnesses show an already admitted LEGACY call
+   can write after MAINTENANCE. Empty lock snapshots and client timeout are insufficient.
+3. Complete native private Stock* schema/index/typed-value setup and native whole-request
+   capacity plus failure-recovery acceptance. Actual site maximum10000items is known;
+   backend execution/RPM and successful real300line protocol execution are not proved.
+   Offline record-growth arithmetic is not a capacity reservation or native acceptance.
+   New collection/ACL setup and new native fixtures require their exact authority.
+4. Complete focused G3 semantic review. No review PASS inferred from tests, this audit,
+   source inventory or a model name. All20writer categories remain UNVERIFIED.
+5. Implement and verify the actual administrative migration/apply/resume operation after
+   native initialization and quiescence prerequisites are established; current lifecycle
+   preflight explicitly returns canApply:false with ADMIN_MIGRATION_APPLY_NOT_IMPLEMENTED.
+   Execute authorized fresh backup/capture, native initialization, v2 shadow parity and
+   recovery/cutover acceptance. This is substantive unfinished implementation, not a
+   pending publish click. Browser booleans must never stand in for drain or native proof.
+6. Complete affected regression and exact live/repo comparison, then authorized resource
+   deployment, minimum Wix synchronization/publish and real public Loaded-only acceptance.
+   Finish temporary permission restoration and final four-stage audit. No main merge
+   before user's real-world verification. Current scoped frontend was not visually
+   accepted merely because offline UI tests pass.
+
+No claim all offline semantic work is finished. Further schema/migration production
+implementation and native acceptance depend on the unresolved prerequisites above.
+Do not create peripheral tests or repeat unchanged audits merely to keep heartbeat busy.
+Meaningful continuation must close a named implementation or evidence gap.
+
+Prepared Wix technical-support question — DRAFT, NOT SENT
+Purpose: establish a supported safe maintenance boundary for existing Velo Wix Data
+writers before an additive current-state migration. No customer/supplier/order contents,
+credentials, cookies, tokens, screenshots, private metrics or access grants are needed.
+
+1. When a new Wix site version is published, are already running backend executions
+   from the previous version guaranteed to terminate before the new version is live?
+   Please provide the official contract/documentation, not a typical elapsed time.
+2. Is there a supported per-site method to stop admitting backend work and positively
+   confirm that all already admitted executions can no longer write Wix Data? If so,
+   what API/UI operation and completion indication establish that boundary?
+3. If termination/drain is only time-bounded, what documented server-side bound and
+   start event apply? The public compute documentation says backend execution may
+   continue after a client timeout, so a client504 or a delay alone cannot be our proof.
+4. If no such supported facility exists, please state the platform limitation so we
+   can separately review write fencing rather than assume publishing cancels old work.
+
+Source previously read:
+https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/compute-features
+Targeted official searches did not establish a drain guarantee; this is UNKNOWN, not a
+claim that no supported facility exists. Do not repeat the same searches as new proof.
+
+Sending this question through the user's existing Wix support account requires specific
+user authorization. This document sends nothing, creates no ticket and authorizes no
+account access changes, paid upgrades, source deployment or production mutation.
+
+Four release states NOW
+Code: isolated reviewed/tested candidate in progress, migration/native gates incomplete.
+GitHub Pages: no new inventory build deployed/verified.
+Wix published-live: unchanged; new current inventory not synchronized/published.
+Public acceptance: new borrowing/halo/current inventory through Loaded not verified.
+Coverage EMPTY, ACTIVE OFF. Existing production remains authoritative.

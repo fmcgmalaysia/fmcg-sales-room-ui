@@ -1,0 +1,58 @@
+{
+  "state": "THREE_RELEASE_STAGES_COMPLETE_PUBLIC_EMBED_VERIFICATION_BLOCKED",
+  "objective": "Recover bounded Warehouse receiving reads after missing acknowledgements and distinguish a data timeout from an explicit login rejection.",
+  "evidence": {
+    "pairedPublicWindows": "WAREHOUSE_IDENTITY_PAIRED_20261103.json in root stress handoff",
+    "liveApp": "31b1c7e25f8db36170f5b397ebc210e1a0243b78d8e552ca45f0075492fa66a8 exactly matched3b6a1db asset",
+    "freshWixPage": "6305 characters exactly matched current repository before edits",
+    "confirmedDefect": "Initial read timeout leaves the identity placeholder and no periodic receiving retry. Staff label is assigned only when the complete orders read returns. Failure is not evidence of authentication rejection.",
+    "recoveryObservation": "New tab and later the previously failing reloaded tab both identified LAW and read PO30/22 without code changes.",
+    "overallIntermittentRootCause": "UNCONFIRMED; neither the blank embed nor every timeout is explained by this patch",
+    "latestNetwork": "Chrome DevTools shows the embedded document request stalled,0kB,provisional headers and no response. Same exact static document opens directly in the same Chrome session. This locates this blank case before Warehouse application authentication, but does not establish the underlying cause.",
+    "editorConnection": "Wix editor logs include documentPointer errors, disconnected realtime router, TokenRequestFailed and Failed to fetch. They are separate evidence, not proof of the public iframe cause."
+  },
+  "change": {
+    "staticBuild": "20261103-warehouse-read-recovery-v1",
+    "resources": 101,
+    "changed": [
+      "warehouse-room/app.js",
+      "warehouse-room/index.html"
+    ],
+    "unchanged": 99,
+    "wix": "warehouse-department-page.js only: latest receiving-read promise reuse, local variable, version reference",
+    "behavior": "At most two automatic rechecks after the existing30-second deadline; same read request identity; page-local promise prevents duplicate backend reads. Hidden/form/input/save/route/company guards suppress recovery. Only explicit approved-account login failure reveals Sign in. Existing successful identity is retained on later read timeout.",
+    "limits": "No automatic save, receipt, Loaded or payment retry; no staff permission edits, server store, new endpoint or ledger. Recovery cannot fix an iframe that never loads or a parent page that never runs."
+  },
+  "validation": {
+    "newChecks": "9/9 after test harness async scheduling correction",
+    "relatedRun": "41/42; sole failure is previously documented Warehouse historical builder anchor. Separate58dab85/PR314 already provides its test-only correction; not bundled here.",
+    "syntaxAndUnchangedAssets": "Passed; all99 unrelated assets exact",
+    "wixDraft": "6539 characters exact after EOL/EOF normalization against prepared source and unique version update",
+    "candidateVisual": "NOT_VERIFIED: local HTTP connection timed out; file preview rejected by browser security protocol policy. No bypass attempted.",
+    "publicCandidate": "Static direct document loads build correctly and displays bounded Reconnecting then Data unavailable with no Sign in prompt; this standalone diagnostic has no Wix bridge and is not an operational acceptance. Formal page still has about:blank embedded document."
+  },
+  "recovery": {
+    "static": "3b6a1db",
+    "wix": "Exact6305-character pre-edit original retained in root handoff",
+    "tag": "verified/support-upload-recovery-20261103 is a document-workflow checkpoint, not a whole-site acceptance tag"
+  },
+  "deployment": {
+    "branch": "fix/warehouse-read-recovery-20261103",
+    "scope": "warehouse-read-recovery-only",
+    "permission": "TEMPORARY_RULE_REMOVED_ORIGINAL7_RESTORED",
+    "wixPublished": true,
+    "runId": 41567431506,
+    "runNumber": 333,
+    "sha": "f901a4c02787f8d5e0a090456666b27da5f05a68",
+    "pages": "SUCCESS_101_OF_101_HASHES_MATCH",
+    "wixReceipt": "Congratulations / This site is published and live online."
+  },
+  "retainedBacklog": [
+    "Real Desk22+8 acceptance",
+    "Purchase4480ab6 close patch",
+    "CMS full-history read scope",
+    "Native PDF download",
+    "Mixed transport",
+    "Mixed-source parent GP"
+  ]
+}

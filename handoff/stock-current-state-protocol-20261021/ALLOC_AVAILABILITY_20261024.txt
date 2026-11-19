@@ -1,0 +1,43 @@
+2026-10-24 — current available quantity before shipment arrangement
+
+Code parent55d05c6. Continued local implementation under overnight authorization.
+Read STATUS, ALLOC_ENTRY and ALLOC_BATCH; reused same-version framework/spec.
+
+Concrete issue found: cumulative ALLOC80 is not an instruction that80cartons can
+be arranged now. They may already be dispatched or held by another packing list.
+Current Purchase product read now exposes a separate allocationFacts block from
+the same verified product state: usable claims, packing held, dispatched lifetime,
+availableToArrange=max(0,usable-held), and legacy preparation review. Legacy-blocked
+tasks expose0arrangeable with review rather than ignoring old preparation.
+Original projection validates all quantities and requires usable+dispatched to
+equal authoritative cumulative customer coverage. Absent retained old facts remain
+unknown; malformed or inconsistent facts reject projection, never fabricate stock.
+The candidate dialog displays current available, held and dispatched separately;
+second action cannot run while unknown, fully held, fully shipped, under review
+or an original save/edit is pending. The cumulative ALLOC figure remains unchanged.
+
+Actual source review of existing flow:
+- packingListOperations CREATE authorizes SUPPORT/WAREHOUSE operations according to
+  original model; Purchase cannot impersonate Support and create its list.
+- purchaseShortage WAIT/STOP is customer waiting/remaining-demand treatment, with
+  supplier resolution separately. STOP is NOT a partial-shipment instruction and
+  cannot safely implement 'send available80while retaining remainder'.
+- currentPackingContext already supplies actual current usable claims to existing
+  Support packingAvailability; its own list holds/review remain authoritative.
+Therefore second UI choice remains incomplete: do not silently map it to STOP,
+fake dispatch, or invent a direct Support packing permission. Next implementation
+needs an explicit retained Purchase arrangement instruction consumed/rechecked by
+existing Support workflow, with confirmed batch/quantity and same-request replay.
+No such write was performed or claimed here.
+
+Candidate backend runtime rebuilt116scopedmodules to include modified projection;
+manifest rebuilt40targets/100dependency modules/20unverifiedcategories and paired
+UI38Pagespaths/5Wixrelays. No category has gained activation/installation coverage.
+Local example review rebuilt33assets, now explicit80available/0held/0dispatched.
+
+Verification: first affected21pass880.1689ms. Full current1311checks executed:
+1310pass,1stale-generated-runtime check failed. Regenerated exact runtime, then
+affected runtime+projection+UI+install21pass767.5457ms. Do not call this an additional
+full1311pass run or add overlapping results. No business original directories diff.
+No native mutation/Publish/Pages dispatch/GitHub push/permission change/delete.
+Prior cutover/Source-load/export blockers retained. Quiet intermediate checkpoint.

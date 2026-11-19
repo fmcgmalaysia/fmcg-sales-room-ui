@@ -3,6 +3,7 @@ import wixWindowFrontend from 'wix-window-frontend';
 $w.onReady(function () {
   const context = wixWindowFrontend.lightbox.getContext() || {};
   const closeButton = $w('#closeButton');
+  closeButton.hide(); // The Wix built-in X closes independently of this page code.
   const downloadButton = $w('#downloadOrderExcelButton');
   const downloadReady = context.downloadReady === true;
 

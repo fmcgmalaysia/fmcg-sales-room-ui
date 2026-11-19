@@ -1,0 +1,76 @@
+{
+  "run": 39395780043,
+  "resources": [
+    {
+      "sha256": "adc334ac8460bfdc531fba4a4aa2cfbe409beed622e0ce3aacba432efefb1f0c",
+      "marker": true,
+      "path": "warehouse-room/index.html",
+      "status": 200,
+      "exact": true
+    },
+    {
+      "sha256": "7f11f8f153e78237a46fa0d69c5be6a51b7c45c9658c7cb458128e2d3cd97dd7",
+      "marker": true,
+      "path": "buyer-room.html",
+      "status": 200,
+      "exact": true
+    },
+    {
+      "sha256": "6132fa8d675f987927d0842c54e28948d6e9d5015ca35c7f68417872c4adcabc",
+      "marker": true,
+      "path": "index.html",
+      "status": 200,
+      "exact": true
+    },
+    {
+      "sha256": "a87d7b3f520c90c31fea7343b0086d8c9025f28b109ac8a3cacfe5fad670dfa8",
+      "marker": null,
+      "path": "sales-room/order-adjustment.css",
+      "status": 200,
+      "exact": true
+    },
+    {
+      "sha256": "6c01581ade1a8f19e299473c6c61b534539835f00df42bfe0a1aef349eb93daf",
+      "marker": null,
+      "path": "master-shared/shipment-batches.js",
+      "status": 200,
+      "exact": true
+    },
+    {
+      "sha256": "b5ecbb8a43d87cda8e1a9d9bcadcff728df8a69e53f18b4b12e0d1d99d1c7f5d",
+      "marker": null,
+      "path": "sales-room/order-adjustment.js",
+      "status": 200,
+      "exact": true
+    },
+    {
+      "sha256": "da0b43f4a33df076c9f9e4b66889cc84114e11101b567619ff169805aa2b1638",
+      "marker": null,
+      "path": "purchase-live/task-grid.js",
+      "status": 200,
+      "exact": true
+    },
+    {
+      "sha256": "51bcd652928e0775d56ef34d05c157739801fb82509e0e7a7db8de2b4a8a8806",
+      "marker": null,
+      "path": "purchase-live/supplier-allocation.js",
+      "status": 200,
+      "exact": true
+    },
+    {
+      "sha256": "5ea5c3e6b0fd6c43ec8e6046ae929131fe29e16ff69d77ca59fdb3a538681d20",
+      "marker": null,
+      "path": "purchase-live/app.js",
+      "status": 200,
+      "exact": true
+    },
+    {
+      "sha256": "8721185efe0800c142464f70823af5509ed1db32ad494e145e83647f67b3bddb",
+      "marker": true,
+      "path": "purchase-live/index.html",
+      "status": 200,
+      "exact": true
+    }
+  ],
+  "commit": "9bdd9757a1e18b6da91302beb7a7498dfbac7e6b"
+}

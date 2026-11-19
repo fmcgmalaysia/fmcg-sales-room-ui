@@ -1,0 +1,116 @@
+2026-10-24 — REAL300INTAKE PARTIAL RECOVERY CONFIRMED; NATIVE RPM QUOTA STOP
+
+LATEST CONFIRMED STATE (supersedes earlier disconnected/UNKNOWN gate entry)
+Fresh user MASTER tab51427471 restored control; old51427447 remains unusable.
+Native diagnostic recovered whole ARMED source then read-only BEFORE20/1202.
+New unpublished R2 Capacity Test page f3l9j.js invokes only this fixed Admin test
+serially, stops on every unconfirmed result, never seeds/resets/deletes/retries.
+69 confirmed receipts:252715ms total,938queries/140inserts/67patches/0deletes.
+BEFORE phase completed. Deliberate KNOWN_INTAKE_INTERRUPTION confirmed APPLY0
+after exactly3business inserts, read barrier confirmed, same immutable request
+recovered to APPLY140/1202. Last key5a7eb83b6d6e7a1cb390c9f258b8b219,
+digest8c8260ce8b951aa7e8704361bb4911b5,planHash4b841011c2e29deab7ec45a1771253ad.
+Next ADVANCE terminal diagnostic returned okfalse with WDE0014: Requests per
+minute quota exceeded;5373ms,attempted15queries/20inserts/1patch/0deletes.
+Do NOT infer no writes or cursor140 from that failure; strong INSPECT required
+before any scoped same-request continuation. No automatic retry was performed.
+Both native whole source gates subsequently CLOSED and exact:
+diagnostic1eb06f56a643a87a030e786cfca83bb1c379d553636e62db982182668b179aba
+pagec95074daa45d082c5f5d99a497725f46c445195a3c2ec491be02d49eb7b0b6b6.
+Native core remains4a29871d...6aa3b. Test page never published; ACTIVE OFF.
+Original business collection shape and staff authorization remain unaccepted.
+Private screenshot outside checkout tmp-r2-quota-stopped-closed-20261024.png.
+Rendered DOM console is current; AX console cache was stale near BEFORE1100.
+Use fresh domSnapshot for growing logs, not AX no-change as execution evidence.
+
+Fresh Source frontend copies: Sales Room c3cdc210...08559 exact generated;
+Buyer Room14dc1620...ccfca4 and Catalogue747cad83...48d5 equal business body,
+only terminal-newline difference versus generated files. No Source edits.
+Active Buyer download uses existing createBuyerOrderDownload/base64 mechanism;
+do not redesign HTTP routes based on unreachable prepareBuyerOrderDownload.
+
+Current next scoped fault: native request quota, not a permission/security stop.
+Official Wix Data quota documentation confirms individual and bulk inserts each
+count one write request, site traffic shares quotas; site-specific limit UNKNOWN.
+Investigate bounded insert-only R2 batching; existing-row writes must retain CAS,
+all strong image/barrier checks/default/file adapters remain protected. No fix yet.
+
+Read R2_REAL_INTAKE_CAPACITY_20261024.json for exact hashes and confirmed receipts.
+Parent recovery32b62b9, protected production d447185/runtime32b812c unchanged.
+User continues scoped R2 install/acceptance/release, model SOL, no agents.
+Reused framework/current handoffs. Read actual intake/SDK/coordinator dependencies.
+
+NEW FIXED DIAGNOSTIC
+New Admin-only r2IntakeCapacityAcceptance.web.js imports real generated R2 core and
+original R2 intake; fixed300distinct lines,1202images. All storage physically fixed
+StockProtocolTest/SPT-R2INTAKE300-20261024-4f8c:. No remove/lock-delete capability.
+Test-only fixed admission never contributes real business coverage. In-memory
+known interruption, strong final300order/task/product checks and zero-write replay
+pass;182local calls. Finalfullstock1547pass0fail44455.0168ms. Detailed local outputs
+tmp-r2-real-intake-local-20261024.txt and tmp-r2-intake-complete-stock-tests-20261024.txt
+outside checkout, not export. Exact native template preserved by hash in record;
+new file installed CLOSED then temporarily armed for ordinary scoped test.
+
+NATIVE FINDING
+SEED exact receipt884ms/queries3/inserts1. FirstADVANCE client504 then exact terminal
+receipt appeared:14483ms,queries70/inserts21/patches2/deletes0,captures1,BEFORE20/1202.
+Diagnostic wrapper awaits complete operation, logs fullJSON and directly returns;
+there is no subsequent write after this terminal receipt. It confirms THIS save,
+not other old executions/site-wide drain. Last pending key/digest/planHash retained.
+No repeat seed, no new identity, no reset/unlock. Final capacity NOT accepted.
+
+SMALL PERFORMANCE PATCH SAVED
+current-order-intake.cjs only: independent3marker reads and independent3table batch
+reads now Promise.all within same original readSnapshot. Exact same complete
+strong IDs, failed queries still reject, no partial plan/fallback. Original product
+read and final barrier remain. Focused6pass; fullstock1547pass0fail. New generated
+core patched only current-order-intake factory; fresh entire before and after copies
+exact. after4a29871d429f2f134822f9895953225ec6745de2de1c32aeb92f689d6616aa3b.
+Initial query count remains70; actual cold-preparation improvement NOT measured.
+Shared generic candidates rebuilt mechanically; no original production file changed.
+
+CURRENT BROWSER BLOCKER — DO NOT ASSUME GATE CLOSED
+After504, diagnostic exact CLOSED source confirmed1eb06...79aba. Then attempted
+reopen for confirmed same-request continuation following terminal receipt. CUA
+timed out at30s during this UI-only sequence and reset JS state. Fresh getTab for
+MASTER51427447/browser3 failed Debugger unattached. No next backend function call
+was sent; latest armed/closed state UNKNOWN. User asked once through async to click
+ChatGPT Chrome extension/reconnect, retain MASTER, no refresh/reinstall. Do not
+repeat request or browser failure path while waiting. No screenshot of gate update
+after timeout exists. Earlier private504screenshot exists, not public export.
+On reconnect: fresh read native new diagnostic whole source FIRST, confirm exact
+closed/armed candidate. Close unless actively doing scoped test. Rebuild CUA fs/hash
+helpers because kernel reset. Do NOT seed again. Existing terminal receipt permits
+only same immutable request at BEFORE20; do not infer progress from elapsed time.
+Do not resume other two UNKNOWN prefixes or completed CAS20/cas probes.
+
+UI NOTES
+File Run toolbar starts page preview, not native function test. Dedicated function
+tester opens blue gutter triangle at exported function, then parameter editor.
+Always Ctrl+A before paste JSON {input:{step}}; paste alone appends invalid JSON.
+Result JSON can be read from terminal log line text R2INTAKE_RECEIPT. For initial
+object-only SEED, AX/DOM virtual text expansion did not resolve; screenshot-grounded
+arrow then visible CopyJSON succeeded. Do not repeat those failed selectors.
+Native source helpers require LF normalization of before/after replacement lines;
+literal trailingCR made a Find setValue fail once, corrected before any code write.
+
+RELEASE STATES
+Code: new diagnostic and minimum preparation parallel patch locally complete/tests.
+Core + new checker saved drafts exact before disconnect. This continuation not yet
+committed/pushed at time of record. Update after actual sync, not inferred.
+Pages not deployed/verified. Wix not published, ACTIVEOFF, writerCoverageEMPTY.
+Public Buyer/split/borrow/repay not accepted. Native staff SDK authority, full capacity,
+allwriter/read/recovery proof, activation verifier/schema, release still outstanding.
+Original Quote/QD/identity/finance/dispatch flows untouched. Automation stays PAUSED.
+Current permission/export scope applies; stage exact authorized files only. No
+private screenshots, CSV, credentials, client business data or main merge.
+
+SUBSEQUENT CONFIRMED SYNC AND STATIC PACKAGING
+e3d83178b8a3e01e7a80981474a6bfabb9d64b38 committed and push succeeded32b62b9..e3d8317
+to existing PR220 branch. No main merge. Dedicated local static artifact prepared
+by existing stage-isolated-cohort.cjs,112resources exact against committed blobs:
+C:/FMCG-WIX-LOCAL/release-staging/r2-e3d8317-20261024/isolated-stock-release.json.
+Allowlist excludes backend, handoff, CSV, native/private evidence and credentials.
+This is packaging only, NOT Pages deployment or a live build verification.
+Native final gate remains UNKNOWN after connection loss; no additional backend
+invocations and no browser retry while awaiting the user's one reconnect action.

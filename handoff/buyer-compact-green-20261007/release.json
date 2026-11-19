@@ -1,0 +1,102 @@
+{
+  "task": "Buyer Room compact green presentation",
+  "commit": "703123f01eca2b1aaca44fa0c325c6ef1491f5d8",
+  "branch": "style/buyer-compact-green-room5",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/22",
+  "code": {
+    "status": "Complete, local layout and invariant checks passed",
+    "htmlSha256": "d2907012a849f5a05d9e00ad420203699e5a5acf4de92a8f09bf092c5b285d9e",
+    "wixExactReadbackSha256": "19982440ff5f35713a56002401eaf42e65281203b5f74c162cb02e8b74727d0b",
+    "wixReadbackMatchesCandidate": true
+  },
+  "pages": {
+    "status": "Success; public styles and script matched candidate",
+    "run": "37563345416",
+    "duration": "23s",
+    "marker": "2026-10-07-buyer-compact-grayblue-room5-v2",
+    "temporaryPermissionRemoved": true,
+    "allowedBranches": [
+      "main"
+    ]
+  },
+  "wix": {
+    "status": "Published/live receipt captured; exact v2 candidate readback matched",
+    "pageChange": "One iframe version reference",
+    "nativeLayout": {
+      "id": "downloadExcelButton",
+      "oldTopMargin": "250px*",
+      "newTopMargin": "156px",
+      "widthUnchanged": "150px",
+      "heightUnchanged": "51px*",
+      "rightMarginUnchanged": "24px*"
+    },
+    "globalCssUnchanged": true,
+    "v1Build": {
+      "deploymentId": "96a23399-39cc-48cc-bf31-1228b1147a1d",
+      "time": "2026-10-07 10:25:21",
+      "status": "Success"
+    },
+    "v2DeploymentId": "Not separately captured; View build.log still showed v1 build, not claimed as v2"
+  },
+  "public": {
+    "status": "Passed assistant public visual and DOM verification on v2",
+    "products": 9,
+    "rowHeightMySelection": 43,
+    "rowHeightOrderForm": 43,
+    "imageBox": [
+      40,
+      40
+    ],
+    "headerBackground": "#DCE7F1",
+    "headerText": "#173557",
+    "hoverBackground": "#EDF2F7",
+    "sidebarNoteParent": "side",
+    "titleProductCountHidden": true,
+    "nativeExcelTopMargin": "156px",
+    "nativeExcelActualTop": 186,
+    "nativeExcelWidth": 150,
+    "nativeExcelTarget": "_self",
+    "nativeExcelHost": "download-files.wixmp.com",
+    "priorQuantitiesUnchanged": true,
+    "totalCartonsUnchanged": true,
+    "customerWrites": 0,
+    "ordersSubmitted": 0,
+    "excelDownloadClicked": false,
+    "consoleLogsReturned": []
+  },
+  "protection": {
+    "onlyInlineJsFunctionChanged": "placeAdminBanner",
+    "adminAccessGateUnchanged": true,
+    "myCountNodeAndUpdateRetained": true,
+    "trackTranslationAndEditScaleRetained": true,
+    "excelBackendAndBindingUnchanged": true,
+    "excelIssueStillPaused": true,
+    "mainMerged": false,
+    "userVerified": false
+  },
+  "localChecks": {
+    "widths": [
+      1280,
+      1024
+    ],
+    "productRowHeight": 43,
+    "imageBox": [
+      40,
+      40
+    ],
+    "customerNoteVisible": false,
+    "trackHoverShadow": "none",
+    "trackHoverTranslateY": -1,
+    "trackEditScale": 1.05,
+    "trackHoverColor": "Initial v1 #EDF5F0; final v2 #EDF2F7",
+    "v2HoverMeasured": "rgb(237,242,247)"
+  },
+  "limits": [
+    "Initial public loads stalled; subsequent refresh/new retained tab loaded correct data. No login/backend change made; existing loading issue is not claimed repaired.",
+    "No active Track rows in acceptance account; Track transformation/scale checked in source and local fixture, not a live active-order hover.",
+    "Independent ordinary customer login was not tested; existing adminAccess visibility gate retained and customer fixture checked.",
+    "Excel Entry download remains paused; only native button top distance changed.",
+    "No main merge or new verified tag until user acceptance.",
+    "Wix v2 publish/live receipt captured; separate v2 deployment ID not captured."
+  ]
+}

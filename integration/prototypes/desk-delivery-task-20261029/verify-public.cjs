@@ -1,0 +1,9 @@
+'use strict';
+const fs=require('node:fs'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+const root='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/';
+(async()=>{const expected=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));assert.equal(expected.build,'20261029-desk-delivery-v1');assert.equal(expected.resources.length,92);
+ const response=await fetch(root+'desk-delivery-release.json?verify='+Date.now(),{cache:'no-store'});assert.equal(response.status,200);const actual=await response.json();assert.equal(actual.codeCommit,expected.codeCommit);assert.equal(actual.build,expected.build);assert.deepEqual(actual.resources,expected.resources);assert.equal(actual.backendFilesIncluded,false);
+ const queue=[...expected.resources],resources=[];await Promise.all(Array.from({length:6},async()=>{while(queue.length){const row=queue.shift(),response=await fetch(root+row.path+'?verify='+Date.now(),{cache:'no-store'}),bytes=Buffer.from(await response.arrayBuffer());resources.push({path:row.path,status:response.status,exact:response.ok&&crypto.createHash('sha256').update(bytes).digest('hex')===row.sha256});}}));
+ const retired=[];for(const file of expected.retired){const response=await fetch(root+file+'?verify='+Date.now(),{cache:'no-store'});retired.push({path:file,status:response.status});}
+ const report={at:new Date().toISOString(),build:actual.build,codeCommit:actual.codeCommit,resources:resources.length,exact:resources.filter(row=>row.exact).length,mismatches:resources.filter(row=>!row.exact),retired,productionBusinessWrites:0};const out=process.argv.find(arg=>arg.startsWith('--out='));if(out)fs.writeFileSync(out.slice(6),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));assert.equal(report.exact,92);assert(retired.every(row=>row.status===404));
+})().catch(error=>{console.error(error.message);process.exitCode=1;});

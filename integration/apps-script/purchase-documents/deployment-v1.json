@@ -1,0 +1,17 @@
+{
+  "projectName": "MASTER PURCHASE DOCUMENTS",
+  "projectId": "1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO",
+  "codeGsSha256": "66472b54ec352845e04173022002a0775cbb757a5e854374121bfd4ebbf7b2d0",
+  "codeState": "saved; exact editor readback previously matched local Code.gs",
+  "manifestState": "Drive v3 enabled through Google UI; full live manifest not yet captured",
+  "version": 1,
+  "deploymentId": "AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU",
+  "url": "https://script.google.com/macros/s/AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU/exec",
+  "executeAs": "admin@fmcgmalaysia.com",
+  "access": "Anyone; every POST requires application secret",
+  "googleConsent": "User explicitly approved actual full Drive scope before Continue",
+  "deploymentReceipt": "Deployment successfully updated. Version 1 on Oct 11, 2026, 10:37 AM",
+  "wixConnected": false,
+  "actualUploadVerified": false,
+  "sitePublishedThisTurn": false
+}

@@ -1,0 +1,53 @@
+2026-10-22 — ACTUAL ORIGINAL NON-FILE WAREHOUSE PREPARATION ROOT CANDIDATE
+
+Recovery17cf5f5/PR220; protected productiond447185/runtime32b812c unchanged.
+No browser, CMS/native field/permission/data/real lock mutation, install or publish.
+
+Implemented
+- Existing stockCurrentWarehouse root now imports actual paired original preparation
+  factory, current workspace/context/scoped products and authenticated Warehouse actor.
+  Exact same private current context builder supplies read/prepare, complete native
+  listed tables + original field codec, and original current ownership/Ready counters.
+  Products remain PRIVATE; only original public Warehouse projector output is returned.
+- saveWarehousePreparationCurrent SiteMember supports original non-photo PACK/LOAD/
+  UNPACK only, retains UUID/input/version/current build+generation+expected identity.
+  Original Warehouse auth/expected staff equality before SDK, again original auth on
+  every save/replay; current paired calculators and ALL20writer coverage mandatory.
+  Root cannot be switched to read/current/legacy through arbitrary browser flags.
+- Old original saveWarehousePreparation signature gains server metadata argument;
+  original original staffContext runs first, then same exact company control mode
+  router as receipt. Confirmed LEGACY alone old path (including existing photo
+  protocol); ACTIVE always current root. Unsupported file/PHOTOS current request
+  fails rather than silently using legacy apply/files. Maintenance/missing control
+  fail safely. This is intentional incomplete-candidate blocking, NOT ready deploy.
+- Generated combined Warehouse wrapper strips back to exact original source after
+  removing ONLY read/receipt/preparation wrappers. CBM, original read/render/validator,
+  document code bodies not rewritten. Runtime now84scoped modules41private exports,
+  Warehouse root4SiteMember methods (receipt/read/auth-only recovery/preparation).
+  Existing legacy preparation module is loaded only for its validated scratch prepare
+  capture, NOT a second live/global stock-read or apply route. No v1 business fallback.
+
+Evidence
+Actual-import composition tests:3pass0fail558.8737ms (root dependency wiring/guarded
+  scope, native original server wrappers after auth, stripping exact original body).
+  The positive new root factory boundary is spied; it is NOT represented as a complete
+  native positive PACK through all actual SDK tables. Real-core factory positive3cases
+  use actual original validators/current snapshots/segmented saves separately.
+Runtime+real-core8pass0fail883.8724ms. Full stock-current751pass0fail15342.2904ms,
+includes actual receipt root300line bounded witness, previous current readers/clients,
+legacy original authority and all other current consumers. All relevant generators
+--check pass. Protected production dirs exactd447185; whitespace check passed.
+Node/VM/in-memory native mocks only; no live SDK/permission/actual document/public proof.
+
+Next scope
+Original workroom client currently does NOT carry new preparation metadata or bounded
+progress/durable recovery; connect before installation. Original PHOTOS/photoStage/
+Drive allocation+upload/final verify must be protocol-durable without replaying file
+allocation or releasing unknown live callback. CBM and remaining dispatch/packing/
+Sales/intake/other co-writer entries still need actual mode routing. No real invoice.
+All20writer/native schema/index/SDK grants/CMS init/quiescent cutover/in-flight legacy
+proof/unknown-lock and cross-session recovery/platform capacity/shadow/public review
+remain OPEN. Original SHIPPED/history/orphan-loaded cases remain public acceptance gate.
+Do not publish only this subset or mark verified coverage. ACTIVE OFF, main unchanged.
+Four states: incomplete candidate code; Pages unchanged; Wix not installed/published;
+new public inventory/borrowing unavailable/unverified. No new user input needed locally.

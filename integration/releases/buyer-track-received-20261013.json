@@ -1,0 +1,15 @@
+{
+  "status": "candidate; not deployed",
+  "branch": "style/buyer-track-received-progress",
+  "base": "fix/buyer-zero-quantity-display",
+  "recoveryCommit": "f2fafdd",
+  "build": "2026-10-13-buyer-order-track-compact-v1",
+  "objective": "Customer Track shows a single assigned warehouse received quantity with consistent amounts, numbered progress and existing image enlargement",
+  "sourceEvidence": "purchaseQuantityProjection emits warehouse.customerReceived per customer task; authorized masterQuantityProjection validates and maps receivedQtyCtn. Existing backend unchanged for this scope.",
+  "quantity": "receivedQtyCtn minus completed history quantities for remaining active items; unknown remains dash, never fallback to internal supplier planned quantity",
+  "visual": "11px compact three-line product identity; numeric headers/values right aligned; six18px numbered circles; My Selection bindImagePreview and sizing reused unchanged",
+  "validation": {"targetedPassed":57,"isolatedPreview":"Requested200/received90, amount10789.20/CBM1.5660; six numbered dots; partial receipt; image enlargement visible286x286 using existing styles; zero draft Qty/time/amount/CBM empty","realBusinessWrites":false},
+  "publication": {"githubPages":false,"wixPublished":false,"publicVerified":false},
+  "releaseContents": ["PR66 Buyer compact layout and optional PO", "PR67 zero draft quantity", "Current customer-received presentation"],
+  "preserved": "No main merge, no permissions or Drive changes, no actual customer saves. Prior entry-specific My Selection Excel limitation remains unresolved and outside this layout scope."
+}

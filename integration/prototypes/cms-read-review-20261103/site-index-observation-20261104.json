@@ -1,0 +1,29 @@
+{
+  "observedLocalDate": "2026-11-04",
+  "recordedUtc": "2026-11-03T16:14:55Z",
+  "source": "Read-only Chrome Wix CMS UI, Master > NCT Activity > More Actions > Indexes",
+  "collection": "NCTActivity",
+  "uiItemCount": 400,
+  "systemIndexes": [
+    { "name": "System index 1", "displayedFields": ["Created date Descending"], "type": "Regular" },
+    { "name": "System index 2", "displayedFields": ["ID Ascending"], "type": "Regular" }
+  ],
+  "userIndexes": [
+    { "name": "SC_ACTIVE_PRODUCT", "fields": ["company", "stockKey", "status"], "order": "Ascending", "type": "Regular" },
+    { "name": "SC_REPAID_SOURCE", "fields": ["company", "replacementSourceId", "repaidQuantity"], "order": "Ascending", "type": "Regular" },
+    { "name": "SC_TASK_REL", "fields": ["company", "participantTaskIds", "status"], "order": "Ascending", "type": "Regular" }
+  ],
+  "addDialog": {
+    "displayedLimit": "You can add up to 3 regular and 1 unique index.",
+    "regularDisabled": true,
+    "displayedReason": "This collection contains 3 regular user indexes which is the maximum allowed.",
+    "uniqueDefaultSelected": true,
+    "cancelledAndVerifiedExistingListUnchanged": true,
+    "saveClicked": false
+  },
+  "productionIndexChanges": 0,
+  "productionBusinessWrites": 0,
+  "unknown": ["GHR actual index list", "current plan name and total item allowance", "query planner selection and hasSome latency", "concurrent pagination guarantees"],
+  "exportAttempt": "Entire collection export dialog showed 400 rows. Download wait timed out and browser connection detached. No fresh export path or completion was obtained. Do not retry blindly or represent the old snapshot as new.",
+  "snapshotReused": "Existing private ACTIVITY_PRIVATE_SNAPSHOT_20261103.json; only aggregate evidence is committed."
+}

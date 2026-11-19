@@ -1,0 +1,61 @@
+2026-10-23 — bounded installation review and fresh Master editor comparison
+
+Structural packet (not an installer or production coverage claim)
+integration/prototypes/stock-current-state/current-install-manifest.json generated
+from explicit targets:23Master original backend patches,14new Master modules and
+1Source nctSubmissionDelivery patch. Source and Master have separate backend roots;
+no automatic copying between systems. No experimental StockProtocol* probes included.
+Normalized SHA256_UTF8_LF captures candidate and exact original-before images.
+94transitive backend modules and named imports resolve; unchanged Master HTTP roots
+resolve actual patched intake/customer-quantity/Sales modules. All original Master
+web entry points classified: current wrappers or separate unchanged task chat.
+New paired packing model/reader markers verified through actual named imports.
+
+Manifest test4cases plus old stock reader4cases:8pass0fail815.2049ms. FINAL combined
+stock-current suite1046pass0fail23885.4203ms, no active exec session. Omitting original
+stock reader or quantity endpoint/paired model fails the review packet; duplicate,
+wrong-system/arbitrary paths, missing exports or prematurely nonempty coverage fail.
+No API calls, write credentials, schema install, permission/mode changes or deployment
+occur. All20writer review categories explicitly verified:false; activationAllowed:false
+and verifiedCoverage:false. This is structural closure, NOT semantic G3 sign-off.
+
+Fresh UI readback (existing Chrome Master editor51426657)
+After computer-use skill/guidance/confirmation read, used existing Backend & Public
+file list, selected only the intended file, editor Select All/Copy and clipboard read.
+No code typing, Run, Publish, form submission, CMS mutation or test lock deletion.
+Compared SHA256 of exact whole editor text normalized CRLF→LF against manifest BEFORE
+hash for EVERY23Master PATCH target. ALL23MATCHED; names and exact hashes are the
+manifest install entries system=MASTER,kind=PATCH. No differing code side was chosen
+or overwritten. Original worksheet/UI test forms untouched. No new browser tabs.
+
+Files freshly read in this order (all matching):
+packingListModel.js; packingListOperations.js; purchaseQuantityRead.js;
+customerFulfilment.js; customerFulfilment.web.js; customerFulfilmentGateway.js;
+customerFulfilmentService.js; nctReceiver.js; packingLists.web.js;
+plannerAllocation.js; purchaseCostRetry.web.js; purchaseDisplayOrder.js;
+purchaseOperations.web.js; purchaseOrders.web.js; purchaseProjection.js;
+purchaseQuantityProjection.js; purchaseWorkspace.web.js; stockCardProjection.js;
+stockExceptions.web.js; warehousePreparation.js; warehouseReceiving.web.js;
+accountPurchase.web.js; stockControl.web.js.
+
+Additionally original warehouseReceiving.js whole editorLF12664characters,
+SHA25627183e41c7c7525e0eb2c8cc5bdd375d3e8a6ddc273074f27e759ec94c31dee4
+matches exact repository source. stockControl.web.js LF617characters,
+SHA256bc6805fd2328f8988b1cdfb0419f901bc3e75629250decfd03e4c032341904f7.
+First automated model selection returned while editor unmounted; stopped that action,
+observed the actual loaded editor and corrected timing. Never retried a click blindly,
+never used lower-level hidden editor models, cookies/tokens or network endpoints.
+
+Important boundary: this proves CURRENT SAVED EDITOR text agrees with repository.
+It is NOT a new Wix published-runtime capture/receipt, proof that all94dependencies
+match live, Source editor comparison, public-page acceptance, or authorization to
+publish. New14modules not installed. Master original code comparison permits later
+minimum patch planning; actual synchronization still needs renewed state/conflict
+checks if user/editor changes, as required by project stability law.
+
+Release remains incomplete. Code candidate synchronized separately to PR220; Pages,
+Wix publish, public workflow and user Loaded acceptance NOT completed. Coverage EMPTY,
+ACTIVE OFF, real invoicing/physical exit OFF. No new business policy question asked;
+ambiguous shared-source physical damage remains safely blocked pending exact Purchase
+attribution instead of Warehouse guessing. Native setup/capacity/recovery/maintenance/
+shadow and focused G3 semantic review still require actual evidence.

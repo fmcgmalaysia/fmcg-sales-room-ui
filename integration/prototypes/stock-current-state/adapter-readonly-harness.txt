@@ -1,0 +1,29 @@
+// Read-only continuation after the one-shot mutation fixture. Never resets or creates rows.
+export const inspectStockSdkAdapter = webMethod(Permissions.Admin, async () => {
+  const collection = 'StockProtocolTest';
+  const mappedItems = { query: logical => {
+    if (!['StockPositions', 'StockClaims', 'StockProducts'].includes(logical)) throw Error('Unexpected probe collection');
+    return items.query(collection).eq('probeKind', logical).startsWith('_id', 'ADAPTER-c61f7e82-');
+  } };
+  const query = () => mappedItems.query('StockProducts').eq('company', 'NCT').eq('status', 'ACTIVE').limit(1);
+  const withoutCount = await query().find({ consistentRead: true });
+  const withCount = await query().find({ consistentRead: true, returnTotalCount: true });
+  const store = stockAdapterFactory({ items, company: 'NCT', collections: [collection] });
+  const source = await store.read(collection, 'ADAPTER-c61f7e82-S');
+  const claim = await store.read(collection, 'ADAPTER-c61f7e82-C');
+  const product = await store.read(collection, 'ADAPTER-c61f7e82-P');
+  const repository = stockQueryFactory({ items: mappedItems, company: 'NCT' });
+  const args = { company: 'NCT', page: 0, pageSize: 1, status: 'ACTIVE', consistentRead: true };
+  const products = await repository.queryProducts({ ...args, search: 'ADAPTER-C61F7E82', order: ['barcode', '_id'] });
+  const next = await repository.queryProducts({ ...args, page: 1, search: 'ADAPTER-C61F7E82', order: ['barcode', '_id'] });
+  const positions = await repository.queryPositions({ ...args, stockKey: 'SYNTHETIC-12x1' });
+  const claims = await repository.queryClaims({ ...args, positionId: 'ADAPTER-c61f7e82-S' });
+  const passed = [source, claim, product].every(row => row?._version === 'V1' && row.reservedUsable === 9)
+    && source.onHand === 19 && source.obsolete === undefined && product.onHand === 19 && product.available === 10
+    && products.totalCount === 2 && products.items[0]?._id === 'ADAPTER-c61f7e82-P'
+    && next.items[0]?._id === 'ADAPTER-c61f7e82-Q' && next.items[0]?.available === null
+    && positions.totalCount === 1 && claims.totalCount === 1 && !('stockCommitVersion' in products.items[0]);
+  return { passed, readOnly: true, countContract: { defaultType: typeof withoutCount.totalCount, explicitCount: withCount.totalCount },
+    actual: { source, claim, product }, pages: { products, next, positions, claims },
+    limitation: 'No actual timeout injection/full protocol recovery/production migration or activation.' };
+});

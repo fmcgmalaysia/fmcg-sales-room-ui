@@ -1,0 +1,167 @@
+{
+  "schema": 1,
+  "scope": "CURRENT_CODE_OFFLINE_READ_AND_WRITE_DIAGNOSTIC",
+  "productionWrites": 0,
+  "baseline": "30a3544 / runtime 6c3cfb2",
+  "limits": [
+    "No new live Wix inspection",
+    "No measured Wix latency or index execution plan",
+    "Neutral history is not a realistic million-row business dataset",
+    "Findings are observations, not acceptance of a replacement reader"
+  ],
+  "checks": [
+    {
+      "id": "W01",
+      "observed": "D01 no-op fix remains effective; a real price/transport revision still creates an identical shares payload. Recovery necessity not yet disproved."
+    },
+    {
+      "id": "R01",
+      "observed": "Fixed 2-task output remains identical while 100,000 unrelated rows add 100,000 rows to both page read and PLAN preparation."
+    },
+    {
+      "id": "M01",
+      "observed": "Month cutoff breaks revision continuity or removes an unchanged prior-month plan."
+    },
+    {
+      "id": "R02",
+      "inputRows": 10000,
+      "returnedPageRows": 50,
+      "observed": "Existing Account query helper paginates supplied full rows; UI pagination alone is not database pagination."
+    }
+  ],
+  "growth": [
+    {
+      "history": 0,
+      "activeFixtureTasks": 2,
+      "pageQueries": 5,
+      "pageRows": 10,
+      "pageReadJsonBytes": 8530,
+      "responseJsonBytes": 8821,
+      "stableHash": "82d7c0ba8a589f19475b7d1b8921159290e90bb16c19093c0faa5905e90c61c8",
+      "saveRows": 14
+    },
+    {
+      "history": 1000,
+      "activeFixtureTasks": 2,
+      "pageQueries": 6,
+      "pageRows": 1010,
+      "pageReadJsonBytes": 172311,
+      "responseJsonBytes": 8821,
+      "stableHash": "82d7c0ba8a589f19475b7d1b8921159290e90bb16c19093c0faa5905e90c61c8",
+      "saveRows": 1014
+    },
+    {
+      "history": 10000,
+      "activeFixtureTasks": 2,
+      "pageQueries": 15,
+      "pageRows": 10010,
+      "pageReadJsonBytes": 1666320,
+      "responseJsonBytes": 8821,
+      "stableHash": "82d7c0ba8a589f19475b7d1b8921159290e90bb16c19093c0faa5905e90c61c8",
+      "saveRows": 10014
+    },
+    {
+      "history": 100000,
+      "activeFixtureTasks": 2,
+      "pageQueries": 105,
+      "pageRows": 100010,
+      "pageReadJsonBytes": 16786410,
+      "responseJsonBytes": 8821,
+      "stableHash": "82d7c0ba8a589f19475b7d1b8921159290e90bb16c19093c0faa5905e90c61c8",
+      "saveRows": 100014
+    }
+  ],
+  "writes": [
+    {
+      "label": "First costing plan",
+      "error": null,
+      "addedRows": 5,
+      "updatedRows": 1,
+      "addedByAction": {
+        "PURCHASE_OPERATION_PREPARED": 1,
+        "PURCHASE_PRICE_SAVED": 1,
+        "PURCHASE_SOURCE_SHARES_SAVED": 1,
+        "PURCHASE_PLAN_SAVED": 1,
+        "PURCHASE_OPERATION_RESULT": 1
+      },
+      "writeCalls": 10,
+      "rowsReturned": 7,
+      "sharesUnchanged": false
+    },
+    {
+      "label": "Original request replay",
+      "error": null,
+      "addedRows": 0,
+      "updatedRows": 0,
+      "addedByAction": {},
+      "writeCalls": 0,
+      "rowsReturned": 0,
+      "sharesUnchanged": true
+    },
+    {
+      "label": "Same values with new request",
+      "error": "Procurement quantity and supplier cost have not changed.",
+      "addedRows": 0,
+      "updatedRows": 0,
+      "addedByAction": {},
+      "writeCalls": 2,
+      "rowsReturned": 12,
+      "sharesUnchanged": true
+    },
+    {
+      "label": "Price-only change",
+      "error": null,
+      "addedRows": 5,
+      "updatedRows": 1,
+      "addedByAction": {
+        "PURCHASE_OPERATION_PREPARED": 1,
+        "PURCHASE_PRICE_SAVED": 1,
+        "PURCHASE_SOURCE_SHARES_SAVED": 1,
+        "PURCHASE_PLAN_SAVED": 1,
+        "PURCHASE_OPERATION_RESULT": 1
+      },
+      "writeCalls": 10,
+      "rowsReturned": 14,
+      "sharesUnchanged": true
+    },
+    {
+      "label": "Transport-only change",
+      "error": null,
+      "addedRows": 4,
+      "updatedRows": 0,
+      "addedByAction": {
+        "PURCHASE_OPERATION_PREPARED": 1,
+        "PURCHASE_SOURCE_SHARES_SAVED": 1,
+        "PURCHASE_PLAN_SAVED": 1,
+        "PURCHASE_OPERATION_RESULT": 1
+      },
+      "writeCalls": 8,
+      "rowsReturned": 21,
+      "sharesUnchanged": true
+    },
+    {
+      "label": "Quantity change",
+      "error": null,
+      "addedRows": 4,
+      "updatedRows": 0,
+      "addedByAction": {
+        "PURCHASE_OPERATION_PREPARED": 1,
+        "PURCHASE_SOURCE_SHARES_SAVED": 1,
+        "PURCHASE_PLAN_SAVED": 1,
+        "PURCHASE_OPERATION_RESULT": 1
+      },
+      "writeCalls": 8,
+      "rowsReturned": 27,
+      "sharesUnchanged": false
+    }
+  ],
+  "sourceHashes": {
+    "purchaseWorkspace.web.js": "30bf8e10be938bca1e34d5bc47b3de24da98d5911606771bc60b0fc6e4cfde7d",
+    "purchaseOperations.js": "ba6f7c1684fdc2560ed3a559efd7298285becf34cde7e48e119fc897311156fb",
+    "purchaseOperations.web.js": "55a8f34bf66ea225ed74d7a06d921bef674939838daebb9583a0d5808fea6fdf",
+    "purchasePlan.js": "f1f2dbcf1656bde00cc2af5344d9ba3620a99de3ff8071482beab13743870f72",
+    "purchaseOperationJournal.js": "f32a447abc140e5210bcde73e6a7f94b933cd0b9c3a9d21fdd03e3ce34d72006",
+    "accountReadQuery.js": "5297766cb070967076b0aa9297745e0716f3d3c9f9353d7728bc88e9f234c23b",
+    "accountPurchase.web.js": "75c241cc17da56944e617f5c8de14a33c5426a11a19ea2302fb37dfad962e10b"
+  }
+}

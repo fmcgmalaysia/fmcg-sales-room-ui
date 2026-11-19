@@ -1,0 +1,28 @@
+{
+  "runtime": "9485d0bc1b54724cbccab74b2218e81df5dfdcfd",
+  "branch": "style/purchase-selection-orange-20261016",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/154",
+  "recovery": "6394291038b0a8bce56bdc8d2c0ec5d93b4a3e28",
+  "change": "One scoped selected-task-row CSS rule: full row pale orange #FFF0D6, including source checkbox cells and hover. Business scripts unchanged.",
+  "verification": {
+    "chromeSelectedAllCells": "rgb(255, 240, 214)",
+    "chromeSelectedHover": true,
+    "chromeUncheckedRestoresOriginal": true,
+    "businessScriptsChanged": false
+  },
+  "pages": {
+    "run": 38928158682,
+    "conclusion": "success",
+    "marker": "2026-10-16-purchase-selection-orange-v1",
+    "cssAndIndexExact": true,
+    "originalSevenPoliciesRestored": true
+  },
+  "wix": {
+    "fullReadbackOnlyPointerChanged": true,
+    "publishedLiveReceipt": true,
+    "beforeSHA256": "bd3dfd9617b584766e721901962d344b65e49ef7994ce18a22ac59d159a0e8fd",
+    "afterSHA256": "133f9091f27d8b496be38853387f0ad8fbade7be9d8753bd1f0b61b34b54e026"
+  },
+  "public": "Fresh public tab51425692 iframe blank, actual new selected-row public interaction not verified. Existing user tab51425676 was viewing a read-only Supplier Files dialog and was not refreshed.",
+  "mainMerged": false
+}

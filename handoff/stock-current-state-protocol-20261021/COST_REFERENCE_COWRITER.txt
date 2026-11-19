@@ -1,0 +1,46 @@
+2026-10-22 continuation after c69f73c — shared reference-price co-writer
+
+Evidence-based dependency
+- Spec section6 already requires all shared task/order writers to join the control.
+- Targeted original purchaseCostRetry.js lines59/62 perform whole-row task and order
+  updates. Its web wrapper exposes authenticated retryPurchaseTaskCost; cost refresh
+  is not a quantity action but is a real concurrent writer of the same records.
+- Original old lock also permits TTL removal; do NOT run that removal under the new
+  authority or assume passing old tests fences an older execution.
+- Targeted nctIntake.js read confirms insertOnce semantics, original accepted receipt
+  marker and cross-company prepared check; actual intake gateway/admission still open.
+  Did not redesign intake or relax its protected business identity.
+
+Candidate change
+- Added COST_REFERENCE to mandatory writer coverage (now14 categories); omitting it
+  blocks SHADOW/ACTIVE even when all previous13 are marked verified. Nothing marked
+  verified by this change, no actual endpoint or mode switch installed.
+- cost-reference-plan.cjs runs ORIGINAL createPurchaseCostRetry against private overlay
+  of exact company Orders/Tasks/Activity, returning exact original events/final domain
+  images. No real legacy apply, update, lock deletion or storage mutation occurs.
+- Domain changes require migrated company/version rows and allow ONLY the original
+  reference/initial missing price fields plus order cbmCtn. Fixed remainder comparison
+  prevents PO/quantity/receipt/customer/identity/metadata edits.
+- New simulated private cost lock is not a persisted plan write. Any preexisting old
+  same-task cost lock, even expired, refuses for recovery; no TTL takeover.
+- Plan runs under existing optional domainWrites company fence. Does not create stock
+  movements/checkpoints since no quantities/ownership/holds changed; shared generation
+  advances. Trusted server captureCosts preserves ORIGINAL response validation.
+- Original failed-execution error/audit orchestration is NOT yet integrated. This is
+  a successful/reference/replay plan candidate, not the finished production gateway.
+
+Tests
+- New cost reference + admission + original cost retry:15pass,0fail,323.092ms.
+- NCT and GHR scopes, original failure snapshot/manual/existing prices, missing initial
+  fields/CBM, invoice lock/intake completeness, duplicate/unmigrated row refusal,
+  stock-field tamper rejection and old expired lock refusal tested.
+- Common fence commit/replay captures reference once, preserves procurement/received
+  quantities and emits one original result. No business CMS or external live operation.
+- Protected production directories remain byte-identical to d447185 by Git diff.
+
+Status
+Code: isolated candidate only. GitHub existing PR220 synchronization; no main merge.
+Pages NOT deployed. Wix NOT synchronized/published. Public page NOT verified.
+ACTIVE OFF. All actual gateways/co-writers/apply-only guards/photo protocol/production
+capacity/lifecycle/operational recovery/migration/shadow/UI/focused review remain open.
+No claim that all writers are integrated; test coverage flags are not release evidence.

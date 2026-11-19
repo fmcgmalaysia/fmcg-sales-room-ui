@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-15",
+  "system": "MASTER",
+  "branch": "feat/purchase-source-save-20261015",
+  "base": "4704f2a0f6adf08e6c64a53d2bdb74b526976341",
+  "code": "43daee0492ff0ab167b10278f718c9a9cd735a1d",
+  "build": "2026-10-15-source-save-v1",
+  "recovery": "verified/purchase-lavender-plan-po-20261014",
+  "validation": {
+    "checksPassed": 116,
+    "syntax": true,
+    "diffCheck": true,
+    "isolatedVisual": true,
+    "realCmsSave": false,
+    "backendUnchanged": true,
+    "sourceSharedUnchanged": true,
+    "liveWixCompared": true,
+    "publicAssetsMatch70a0b59": true
+  },
+  "release": {
+    "pagesDeployed": false,
+    "wixChanged": false,
+    "publicVerified": false,
+    "mainMerged": false
+  },
+  "files": [
+    {
+      "name": "browser-smoke.html",
+      "bytes": 264,
+      "sha256": "dbb493d3d424d1343f2a6ab08ff6fbe900deb2fef97dedbdb976be0ce6fa5dc9"
+    },
+    {
+      "name": "dialog-final.png",
+      "bytes": 73691,
+      "sha256": "452fd09f40c8f12264d50d24c464f3658a1ea540a2fea4bb7a43cae4be2223f5"
+    },
+    {
+      "name": "mother-child-final.png",
+      "bytes": 82572,
+      "sha256": "db352ad99e9e564a3298d143115553a76cf4b711cad568854349f346f64027a0"
+    },
+    {
+      "name": "RECORD.txt",
+      "bytes": 4186,
+      "sha256": "c2148c87f3680626030020c56dab30d18134222699e796548277279884ab0f01"
+    },
+    {
+      "name": "source-b-saved-a-draft.png",
+      "bytes": 80013,
+      "sha256": "2f9eec19db23df6542152cd098e4814e80bd072f79424630b17fb5bef221d986"
+    },
+    {
+      "name": "test-results.txt",
+      "bytes": 12998,
+      "sha256": "2518930ed1f3869799d6f658ee6dbaa1f49b864aa116778f884f278d8d572c4c"
+    },
+    {
+      "name": "wix-operations-before.js",
+      "bytes": 26764,
+      "sha256": "804f4bcbb39bf9572fc6e66e853277d3648637168270220796381e5c8a1fb23f"
+    },
+    {
+      "name": "wix-page-before.js",
+      "bytes": 6980,
+      "sha256": "1cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9"
+    },
+    {
+      "name": "wix-plan-before.js",
+      "bytes": 5572,
+      "sha256": "300c605101c2b652932473b2d10fb139ce243da1ed4f895ab7e9848e6385813b"
+    },
+    {
+      "name": "wix-sources-before.js",
+      "bytes": 9328,
+      "sha256": "139156a4962f36525bf5c82314187c61e03861eac60a3c7e08be094805fc7357"
+    }
+  ]
+}

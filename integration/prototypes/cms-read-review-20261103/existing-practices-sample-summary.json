@@ -1,0 +1,26 @@
+{
+  "scope": "PRIVATE400_ROW_SNAPSHOT_20261103_NOT_CURRENT_LIVE",
+  "rows": 400,
+  "preparedKinds": {
+    "PLAN": 18,
+    "PROCUREMENT_REQUEST_PAYMENT": 1,
+    "PO": 8,
+    "CUSTOMER_SHIPMENT_CHANGED": 14,
+    "WAREHOUSE_RECEIPT_SAVED": 12,
+    "expectedVersion,beforeRevision,uploads,deskReservation,resolutionStates,record": 21,
+    "expectedVersion,beforeRevision,uploads,deskReservation,authorizationInput,resolutionStates,record": 7,
+    "PLANNER_ALLOCATION_SAVED": 3,
+    "STOCK_EXCEPTION_REPORTED": 1,
+    "DESK_SHORTLOAD_RESOLVED": 3,
+    "extraUploads,expectedVersion,expected,upload,audit,record": 3,
+    "CUSTOMER_ACCOUNT_DOCUMENT_SAVED": 2,
+    "SUPPLIER_DOCUMENT_UPLOADED": 3,
+    "SUPPORT_DOCUMENT_UPLOADED": 3
+  },
+  "eventsRepeatedInPreparedAndBusinessRecord": {
+    "matched": 72,
+    "characters": 65701
+  },
+  "note": "Repeated payloads are confirmed; not all removable because preparation/recovery and business projections consume them. Characters are not storage billing bytes.",
+  "productionWrites": 0
+}

@@ -1,0 +1,76 @@
+2026-10-23 NATIVE CMS SETUP — supersedes prior NO CMS action only for this step
+
+MASTER metaSite f80870fd-a3d8-47c0-9917-1bfd9c16ea44, actual CMS dashboard.
+Created exact new multiple-item collections StockPositions, StockClaims,
+StockProducts from scratch. Each remains empty, default Title only at capture.
+No original collection ACL, employee, business row, lock, Pages resource or Wix
+whole-site Publish changed. This is not inventory initialization or activation.
+
+StockPositions Admin-only saved. StockClaims ACL operation was initially rejected
+by automatic review; no bypass/retry performed until precise human action-time
+authorization for StockClaims+StockProducts received:
+  允许本次两张新空表设为仅管理员访问
+Then only these two table ACLs saved. Specific grant completed/consumed.
+All three REOPENED and persisted matrix verified: Everyone, Members, Item's
+creator, Collaborators View/Add/Update/Delete all false; Admin all true.
+
+Private evidence (root handoff, not shipped as public assets):
+stockpositions-admin-only-20261023.png
+SHA256 222e9cd479dc01ad7cd19043c6c650aea62d15ae34f211b1e2b89da809cb112e
+stockclaims-admin-only-20261023.png
+SHA256 fdfb8d6008e2af106d081570172a01d1166161dffc723db6ebbbf047b269b78a
+stockproducts-admin-only-20261023.png
+SHA256 079bce15e413bd4e8493e660f40fe400689dcd0da43955a7d43d0a05adbaa967
+
+Fresh CMS directory before new tables showed NCTTasks17/NCTOrders16/
+NCTActivity30/StockProtocolTest341/PurchaseOrders0. These UI counts are NOT
+complete migration captures, old-request termination or drain evidence.
+
+New fixed-scope schema Admin installer implemented and22affected tests pass
+167.542ms. First run21/22 failed overly-broad static regex matching Map.delete;
+changed test to SDK deletion methods only; no deletion capability exists.
+Native SDK wire mappings verified against Wix-authored public package typings:
+semantic DATE -> DATETIME, TEXT_ARRAY -> ARRAY_STRING, OBJECT_OR_NULL -> OBJECT.
+Uses getDataCollection consistentRead + listIndexes, single-field
+updateDataCollectionField (never full UpdateDataCollection), createIndex only.
+No ACL mutation, data-item API, elevate, delete/drop, retry, mode/ACTIVE grant.
+Original metadata/fields/indexes preserved and fresh revisions required.
+One request adds at most1field or1regular index. Unknown result propagates;
+inspect before any further decision. Existing conflicts/quota missing refuse.
+
+New independent stockSchemaAdmin.web.js created in saved MASTER editor only;
+no existing module changed. New-file default template was observed first.
+Full editor clipboard readback exactly13853characters, SHA256LF
+5d3e3d6c249e34e731e16cb0f212e9963dfab2b0cb5ab80f455f3a8b31555cf9.
+Generic editor Run opened ordinary page Preview, exited via Edit Site without
+Publish. Actual function gutter then opened inspectStockSchema tester. EXACTLY
+ONE read-only invocation with {input:{collection:"StockPositions"}}. UI shows
+called with({...}) only, no output/error through later observation; no re-run.
+No SDK field/index mutation invoked. Cause UNKNOWN, no elevation or ACL workaround.
+Exact installed @wix/data1.0.528 package manifest subsequently checked: collections
+dependency1.0.103, indexes1.0.59. Their published typings confirm used signatures.
+Schema inspector no-result screenshot retained privately.
+
+With background read still unconfirmed, native CMS field UI added and saved ONLY
+StockPositions fields: company, stockCommitVersion, status, stockKey, schemaVersion,
+revision, checkpointGeneration, barcode, name, packing, ea, sourceKind. First4
+version/identity fields are TEXT except schemaVersion/revision/checkpointGeneration/
+ea NUMBER; barcode/name/packing/sourceKind TEXT. Original Title preserved, zero rows.
+Add Field table button became virtualized horizontally: switched to existing Manage
+Fields Add Field. After saving name/packing, next click opened no chooser; observed
+unchanged panel, then explicit ready wait allowed ea/sourceKind. Next Add Field again
+opened no chooser (wait timed out). SAME chooser fault now twice: field-add UI path
+STOPPED. No duplicate Save or SDK write/retry, no remaining fields claimed installed.
+Private stockpositions-12-fields-20261023.png and in-memory action list retained.
+sourceId and all later fields NOT attempted. Claims/Products still default Title.
+Independent CMS Indexes path completed: created ONLY StockPositions regular
+SC_ACTIVE_PRODUCT index, exact ordered fields company ASC, stockKey ASC, status
+ASC, no unique index. Save navigated to list; actual resulting table lists the
+new User index alongside System index1(Created date DESC) and2(ID ASC). Screenshot
+stockpositions-active-index-20261023.png retained privately. UI does not expose an
+explicit SDK ACTIVE status, so readiness remains UNCONFIRMED, not silently assumed.
+Claims/Products and original business collection indexes not changed. No deletion.
+
+Release remains incomplete: schema fields/indexes, actual Admin migration root,
+legacy drain/fence, all writer native acceptance, capacity/recovery, full sync
+and formal public borrowing/Loaded acceptance still required. No real invoice.

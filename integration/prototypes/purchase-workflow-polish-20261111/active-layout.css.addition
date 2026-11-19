@@ -1,0 +1,2 @@
+
+#app .active-order-table.draft-column-layout #taskRows .received-age :is(.task-received-date,.task-received-actor){display:block;margin:0;color:#71849a;font:400 10px/12px var(--master-font);letter-spacing:normal;white-space:nowrap}

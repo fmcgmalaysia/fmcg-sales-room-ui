@@ -1,0 +1,103 @@
+ASTRA HIGH RELEASE REVIEW — 2026-10-24
+Scope: authorized new R2 coordination/release review; no original production redesign.
+Starting checkpoint bb0b9aa. Protected recovery d447185987fecbb81bcaf6b25c170f631f767f9f,
+runtime32b812c655e1083306037c008314c72373a15f72. No main merge, activation or Publish.
+
+CONFIRMED FINDINGS AND MINIMUM PATCHES
+1. Actual order-intake preparation was not bounded like the generic commit fixture.
+   For300distinct products it performed1203 sequential exact reads before commit:
+   three preparation/receipt checks plus three records and one product per line.
+   Native readMany already supports strong complete exact-ID batches of50. Use that
+   existing capability with unchanged snapshot/generation barrier; reject incomplete,
+   wrong-ID, foreign-company or failed batches. Local plans match former preparation
+   byte-for-byte for both companies. Preparation query count1203->27; this is measured
+   fixture/query work, NOT a claim of native response-time improvement or504elimination.
+   Actual300distinct intake contains1202 planned images; old901synthetic fixture was
+   not equivalent. Cost capture and native total preparation latency still need proof.
+
+2. Source UI had an arbitrary64continuation cap, too short for the real1202-image plan.
+   Replace it with immutable total<=10000, monotonic phase/cursor and three identical
+   progress replies before pausing. Regressing/changed totals use existing read-only
+   receipt check; no new order identity or blind retry after transport uncertainty.
+   Local183-progress/1202-image fixture completes; stale replies and timeouts remain
+   guarded. UI asset rebuilt locally only, NOT deployed to Pages.
+
+3. Actual generated R2 Source adapter had unconditional final payload update and
+   unconditional release of a reused lock ID. A controlled delayed-write witness
+   reproduced erasure of a later shipment date/revision after another retry completed.
+   This is a synthetic actual-adapter reproduction, not evidence of production loss.
+   Patch only the R2 compiler output: conditional exact-payload patch/remove and
+   server-generated operation owner passed from withSalesOrderMutation. A late old
+   finally cannot release a new ordinary edit's lock. Same receipt remains replayable.
+   Preserve ALL original putPayload projection fields in the same conditional patch:
+   title,payload,customerId,orderId,orderSortKey,status,isComplete. Original modules,
+   quotation/QD/FX/auth/customer mapping and data schemas are not replaced or relaxed.
+   Native SDK permission/condition behavior under the real staff caller NOT accepted
+   by local mocks. Exact installation does not prove that runtime gate.
+
+MIXED FILE/DATABASE POLICY — SAFETY IS NOT AVAILABILITY
+The actual mixed-coordination fixture confirms only one control-CAS plan wins.
+While a file callback is pending, different database requests/readers are blocked;
+the late callback does not overwrite a different committed plan. This test DOES NOT
+prove a 504-stalled file/photo request can resume: its retained strict lock can still
+strand progress if the old execution never reaches finally.
+The old lost-reply tests throw and finish finally, which is not equivalent to an old
+execution still running. Do not cite them as live504 recovery, delete UNKNOWN locks,
+or silently flip all external callbacks to CAS.
+Local Apps Script upload uses preallocated immutable file ID plus content/metadata
+verification; trash is monotonic. This may support safe R2-only recovery, but the live
+Apps Script contract must be freshly compared and late-callback interleavings proved
+before changing that policy. No external callback policy was changed in this review.
+
+ACTIVATION/RELEASE ORDER (NO CIRCULAR SUCCESS FLAGS)
+1. Finish exact paired installation; final Source schema projections and real staff
+   authorization/SDK conditional mutation must pass without broadening permissions.
+2. Native isolated real-intake preparation/capacity + all writer/read and delayed
+   file/photo recovery evidence; use new dedicated fixtures, never resume old UNKNOWNs.
+3. Complete native server-owned activation verifier, required control audit schema
+   and exact-build coverage. fresh-cohort-activation.cjs is currently only a pure
+   module; all20writer entries are EMPTY. Do not hard-code verified=true from test counts.
+   CMS index definitions are visibly correct. Native query acceptance is still needed;
+   the denied SDK status path remains stopped, not a reason to retry another endpoint.
+4. Verify paired Pages resources, publish the appropriate Wix drafts and obtain live
+   receipts; conduct controlled fresh-cohort activation only after prerequisite native
+   evidence. Keep real invoices/physical dispatch disabled.
+5. Real public Buyer order -> Sales transfer -> Purchase split/ALLOC -> Warehouse
+   partial receipt -> borrow -> partial/full repay -> reload/moved/archive relations.
+   Do not require post-ACTIVE public business success as pre-ACTIVE evidence, nor mark
+   public acceptance complete from preactivation synthetic tests.
+
+TEST EVIDENCE
+Before projection-field follow-up: complete stock suite exit0, session7109/dot reporter.
+After final projection-field preservation: source+isolation13/13 pass420.1433ms.
+Final full stock suite1511pass0fail0skip35588.3949ms, session81446.
+Local full output: C:/FMCG-WIX-LOCAL/tmp-astra-stock-tests-20261024.txt (not staged).
+Affected tests include intake batch parity/malformed reads/generation change, healthy
+long progress, mixed coordination, actual R2 Source delayed finalization/lock ownership,
+both company normal submission/replay and original projection field preservation.
+
+NATIVE DRAFT INSTALLATION THIS REVIEW — SHA256 UTF8 LF
+Each entire before-image matched the committed/recorded baseline. Only listed text
+patches applied; each complete after-image independently copied back and exactly matched.
+MASTER r2stockCurrentCommands.js: one intake factory section patch (not whole bundle).
+ before2ff974630461fe4a183db8fa89b2411f10eb8eb4d3b86d6f81eb8fba59a39c76
+ after 76e0b8d47800e0cbd59c879577536656822ff370c8846372e77f398c1a4109ea
+SOURCE r2nctSalesIntake.js: seven isolated patches.
+ beforef2cefe5acb9d60ed97bae6921ac12703597f65886cdd8fffae10058a8ef62c9f
+ after a8f9c6c91d86deebaa1323cc1ba923d3eb3cfdb5dcd7c63ca5b6cd372a34d52b
+SOURCE r2onboarding.web.js: five isolated patches.
+ before4e91ee3ac6c7edba3d0e778ff01cf4ce5a50c389ec2983288d1646c133fb1c61
+ after 31f03a7d7b3f61ae7f92c77907d981d3a3b15085d91db9612e30d4c770c58b2c
+Autosave on. Private screenshot C:/FMCG-WIX-LOCAL/tmp-astra-r2-source-saved-20261024.png.
+One UI helper initially expected zero search results even when replacement retained
+the original comment; full readback proved the first patch succeeded. It was NOT
+repeated. No failed native writes or unexplained live/repository differences observed.
+
+FOUR RELEASE STATES
+Code: local fixes/tests complete; three new draft files exact installed as above.
+Pages: rebuilt only, not deployed or fresh version marker verified.
+Wix: saved drafts, NOT published/live; controls remain MAINTENANCE, coverage EMPTY.
+Public: new Buyer/split/borrow/repay workflow NOT accepted; do not ask user to order yet.
+Existing CLOSED diagnostic gates unchanged. Both prior UNKNOWN test prefixes untouched.
+Automation remains PAUSED. No model switch, subagent, privilege expansion or cleanup.
+Actual credits/token attribution UNKNOWN; no claims of measured model cost savings.

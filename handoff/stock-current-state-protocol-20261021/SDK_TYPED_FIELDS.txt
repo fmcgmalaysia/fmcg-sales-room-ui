@@ -1,0 +1,31 @@
+2026-10-22 SDK DateTime boundary candidate
+
+Fresh read-only Chrome MASTER CMS (tab51426755) collection NCTActivity:
+Manage Fields > Activity Time > Edit displayed Field type Date and Time,
+Field ID activityTime. Cancel pressed; no field saved, business record written,
+permission edited or test rerun. Collection0items. Collection list had13collections,
+StockProtocolTest13items, no StockPositions/Claims/Products installed. Other date
+fields/company schemas NOT inferred from this single verified field.
+
+Official primary SDK example explicitly calls @wix/data items.insert with new Date:
+https://dev.wix.com/docs/develop-websites-sdk/code-your-site/build-a-custom-backend/backend-events/define-backend-event-handlers
+Velo datatype warning: DateTime ISO string remains a string, not typed DateTime:
+https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/data-api/working-with-the-data-api
+
+New private sdk-field-codec exact per-collection top-level allowlist. Canonical plan
+ISO -> SDK Date only at actual insert/patch boundary. SDK Date -> canonical ISO before
+image equality/recovery. Null retained. Ordinary text/nested details/other collection
+same field name unchanged. Invalid dates/timezone guesses/type-corrupt reads fail
+closed; no automatic data repair or inverse rollback. Schema configuration immutable
+copy, cross-realm safe. Default{} preserves existing isolated numeric proof; actual
+composition MUST supply fresh verified schema, not assume this is wired/deployed.
+
+Generated current runtime38modules/13exports. Two historical offline diagnostic
+copies refreshed mechanically with exact codec/adapter; no live rerun, renewed lock
+deletion authorization, endpoint/permission widening or publication.
+Initial full run486pass2failed only stale embedded adapter assertions; refreshed exact
+copies and added exact codec-body checks. Final488candidate tests pass0fail4911.6773ms.
+Numeric proof and mock Date transport are NOT actual Wix business-field roundtrip.
+Actual schema inventory/typed SDK roundtrip remains a production gate; ACTIVE OFF.
+Original files untouched, recovery d447185/runtime32b812c unchanged. All remaining
+writer/read/client/migration/capacity/UI/shadow/four release gates still unfinished.

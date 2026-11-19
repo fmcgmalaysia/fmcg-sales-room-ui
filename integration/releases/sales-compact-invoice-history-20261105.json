@@ -1,0 +1,36 @@
+{
+  "runtime": "54ac3cd28793f5944a39d3c5d4a9d3c48e8f9bd1",
+  "pullRequest": 348,
+  "build": "20261105-sales-compact-invoice-history-v1",
+  "pages": {
+    "run": 41963077744,
+    "status": "success",
+    "publicHashes": "96/96",
+    "changed": 3,
+    "identical": 93,
+    "originalBranchRulesRestored": 7
+  },
+  "wix": "Exact Sales baseline compared, only build reference changed; editor reported published and live online",
+  "public": {
+    "access": "Existing Chrome bookmark opened a fresh Sales page after an empty embedded frame on reload",
+    "monthlyFilter": "verified",
+    "invoiceColumns": 10,
+    "documentSlots": 11,
+    "reconciliation": "Confirmed listed balances and payment details against existing records, without recording customer financial data here",
+    "currencyIsolation": "confirmed across two authorized customer views",
+    "progressHeaderAlignment": "end",
+    "departureDate": "missing actual dates remain blank"
+  },
+  "acceptance": {
+    "current": 86,
+    "pinnedSupportRecovery": 16,
+    "legacyTestAdjustments": "Buyer-only payment tabs are now tested in Buyer; retired Sales upload resource is tested for absence; Sales authorized file checks use actual invoice shape.",
+    "financialWrites": 0
+  },
+  "remaining": [
+    "Buyer actual Drive download/return not accepted. Correct original preview alone does not confirm download.",
+    "Buyer Track Orders has six legacy steps and its own stage projection. Compare evidence supplied by the Buyer backend before aligning.",
+    "Merged receiving row identification; local supplier document date; Support stale cross-customer toast; Warehouse root demand versus Desk batch quantity; CMS bounded reads remain open.",
+    "Live user confirmation; no main merge and no verified tag."
+  ]
+}

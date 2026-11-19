@@ -1,0 +1,1 @@
+Removing exactly the new display helpers/hooks restores all original inline scripts byte-for-byte. Backend request bodies/idempotency/quantity/sort/downloads unchanged. 16 relevant tests pass.

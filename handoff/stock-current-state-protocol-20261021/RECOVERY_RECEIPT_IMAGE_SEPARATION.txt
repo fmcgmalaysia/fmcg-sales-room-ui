@@ -1,0 +1,70 @@
+2026-10-23 — READ-ONLY RECOVERY: RECEIPT IS NOT WHOLE-IMAGE ACCEPTANCE
+
+Single objective / recovery point
+Tighten the existing unused Admin diagnostic so it cannot mistake a valid stored
+RESULT for verification of every current inventory image. Starting candidate805334b
+is confirmed pushed to existing PR220. Verified original production d447185/runtime
+32b812c remain untouched. Same task framework/spec/Astra decision reused unchanged.
+No business save coordinator, schema, identity, permission, file callback or lock
+mutation changed. No new recovery authority or endpoint; no native install/execution.
+
+Evidence obtained before correction
+The two existing inspectors accepted exact BEFORE as a resumable image regardless of
+whether RESULT already existed. V2 also classified a completed RESULT on a partial
+page CONFIRMED_RESULT although other images were uninspected; its pending RESULT
+path could recommend original result recheck on a partial page. V1 accepted RESULT
+without the retained prepared plan. These were diagnostic misclassifications under
+deliberate offline corruption, NOT observed production corruption.
+Retained initial15tests11pass4fail459.8713ms. Three new cases expose incorrect existing
+status; the fourth requires new explicit receipt/current-image flags. A PowerShell
+output filter used -Last25 incorrectly after the test summary; that formatting error
+was corrected to -Last 65 on the next affected run, not treated as a test result.
+
+Minimum candidate correction
+- Add separate receiptVerified and currentImagesVerified flags, defaultfalse. Both
+  diagnostic versions explicitly report recoveryPerformedfalse.
+- A valid receipt with any inspected exact BEFORE at its current generation or while
+  its publication is pending is REVIEW_RESULT_IMAGES, not confirmed/resumable.
+- V2 latest-generation partial image pages, including pending RESULT publication,
+  report PAGED_RESULT_INSPECTION_ONLY. A later page never claims aggregation of pages.
+- Only a complete single inspection of all AFTER/finalized file-delete images can
+  mark currentImagesVerifiedtrue. Pending unlink, changed guards, surviving lock,
+  conflicts, invalid plan/result/progress remain blocking reviews.
+- An older valid RESULT after a later generation remains a confirmed historical
+  receipt, with currentImagesVerifiedfalse and LATER_GENERATION_NOT_RECHECKED images.
+  It is NOT falsely compared against obsolete before/after values.
+- V1 requires its retained valid prepared plan to validate RESULT; missing plan is
+  REVIEW_INVALID_RESULT. No plan reconstruction or record deletion is introduced.
+
+Tests and consumers
+Final affected five-file run38pass0fail908.8182ms: v1/v2 inspector, actual generated
+Admin bundle under VM, original file-deletion protocol, install manifest. Added six
+cases cover before-image/missing-plan corruption, current/pending paged result, exact
+whole images, later-generation receipt-only evidence and generated Admin privacy.
+Every diagnostic scenario asserts no store mutation. Standalone endpoint retains
+Permissions.Admin and query-only SDK capability; private image/input payload remains
+absent. Original file protocol and common commit runtime are unchanged.
+Bounded candidate consumer search found these statuses only in the two inspectors;
+there is no automatic repair/UI consumer being silently changed. Recovery bundle
+contains exact current source bodies (existing mechanical equality test). Install
+manifest --check passes,38targets94dependency modules/all20writers unverified.
+Protected production path diff vsd447185 empty; diff --check clean.
+Previous FULL1123pass24073.6842ms belongs to805334b, retained, NOT an updated full total
+for this standalone diagnostic increment. No needless full shared-runtime rerun.
+
+What this does NOT finish
+No force-unlock, elapsed-time termination inference, conditional lock deletion, mode
+change, rollback, retry button, production recovery rehearsal or authority grant.
+The legacy pre-lock admission race and actual old-execution drain proof remain OPEN.
+Native unversioned initialization, domain Date/type/capacity, private Stock* setup,
+maintenance/bootstrap/shadow/cutover and final semantic review remain OPEN.
+Exact2INIT+1TYPE isolated native-test question still PENDING; no reply inferred from
+heartbeat, no repeat question or test run. All previous lock-delete grants exhausted.
+Actual CreditsUNKNOWN. No automatic model/agent/browser action this increment.
+
+Four release states
+Code: isolated read-only diagnostic corrected/tested; overall release incomplete.
+Pages: unchanged, no inventory deployment/version acceptance.
+Wix published-live: unchanged, no current-stock activation/business publish.
+Public: new inventory/borrowing Loaded workflow not accepted. CoverageEMPTY/ACTIVEOFF;
+real Support invoice/physical exitOFF. This diagnostic must not authorize release.

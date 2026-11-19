@@ -1,0 +1,80 @@
+2026-10-23 — ASTRA REQUESTED REVIEW: CURRENT CUTOVER IS NOT SAFE
+
+Scope: user explicitly switched to ASTRA High and requested resolution of old
+requests writing after inventory cutover. Read focused packet and original cost
+retry/company journal/GP writer. Reused unchanged specification and prior evidence.
+No production source, Wix code, CMS, deployment permission or runtime was changed.
+
+DECISION
+Do not implement a control reread, an elapsed-time wait, or a held legacy lock as
+the complete migration barrier. Keep verifyLegacyDrain hard refusal. A new code
+version cannot retroactively fence an already executing old unconditional writer.
+This review has NOT solved the production cutover or approved G3/release.
+
+NEW EXECUTABLE EVIDENCE
+integration/tests/stock-current-legacy-lock-barrier-witness.test.cjs imports the
+actual original factories (not copies). Local synthetic store only, no Wix writes.
+node --test integration/tests/stock-current-legacy-lock-barrier-witness.test.cjs
+Result: 2 tests, 2 pass, 0 fail, duration182.5796ms.
+These are two different findings; the unsafe witness passing is NOT safety proof.
+
+1. Company journal writer paused immediately before fixed-ID insert is rejected
+   when maintenance first wins the same unique insert. Its apply never executes.
+   This is a narrow valid property, not coverage of all writers or every release.
+2. Original cost retry reads expired COST_LOCK, then pauses before its remove.
+   Earlier owner finishes; maintenance legitimately inserts a fresh barrier at
+   that ID. Paused retry resumes, unconditionally deletes the newer barrier,
+   inserts its own lock, changes the original task and removes its own lock.
+   A fresh maintenance timestamp does not prevent this already-decided deletion.
+   purchaseCostRetry.js:31-33,38,59,73 are relevant original statements.
+
+Existing retained candidate-root witness remains applicable: a LEGACY control
+read returning after MAINTENANCE can enter this unchanged original writer. GP
+workspace reads are also writers, so disabling visible Save buttons is not a drain.
+No additional all-suite rerun; retained1299pass is unchanged and not native proof.
+
+PROVIDER FACT AND UNKNOWN
+Read primary documentation on this date:
+https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/compute-features
+Backend request timeouts may close the client connection while code still runs.
+The reviewed documentation supplies no old-execution termination receipt or bound
+that also establishes the final outcome of already accepted Wix Data writes.
+This is an UNKNOWN guarantee, not evidence that no such Wix facility exists.
+No Wix support ticket or other external message has been sent.
+
+SELECTED NEXT DEPENDENCY (NOT ANOTHER OPEN-ENDED MODEL REVIEW)
+Obtain a Wix-supported one-time stop/drain/storage boundary for the old deployment.
+Exact provider question, without business records or credentials:
+For a Wix Studio Velo site migrating the same Wix Data collections, what supported
+procedure can prevent new calls to the old backend, terminate or account for all
+executions already using that version (web methods, HTTP endpoints, read-cache
+writers, scheduled/event invocations), and confirm that every previously accepted
+insert/update/remove is complete or permanently rejected before a migration
+snapshot is captured? Is there an observable completion receipt or documented
+hard upper bound including datastore settlement? Does Publish or Unpublish supply
+this guarantee? A client504/empty lock scan is not sufficient for this use case.
+
+If Wix establishes a supported procedure: capture fresh live/repo sources and
+verified recovery material; install the complete reviewed writer set under the
+supported maintenance boundary; close old runtime admission and establish the
+provider drain; retain/capture original records; native type/index/capacity and
+recovery checks; migration/shadow parity; paired resource/Wix release; real public
+split/borrow/receipt-repayment/Loaded acceptance. All20writers still need coverage.
+If Wix cannot establish it: do not migrate by assumption. A separate architecture
+or authority/namespace change would require explicit user approval, review and
+new regression scope. Do not silently create a second inventory authority.
+
+ALREADY ACCEPTED WRITES / FAILURE RULE
+Do not equate stopped JS with settled database requests. Capture is permitted only
+after the provider boundary accounts for both. Unknown responses preserve IDs,
+records and locks; no automatic release, replay under new IDs or cleanup. ACTIVE
+stays OFF. If a validated cutover later fails, retain maintenance/pending and the
+original backup; code rollback alone cannot undo newly recorded business facts.
+
+CURRENT FOUR STATES
+Code: candidate11a7d89 business version; this review adds a local counterexample,
+not a production fix. Pages: original baseline. Wix: new inventory not released.
+Public: new borrowing not accepted/not ready for user test. Support invoice and
+physical departure remain disabled; test objective still ends at Loaded.
+GitHub export-specific safety refusal remains unresolved; no push/alternate route.
+No new agent/model change, browser action, native tester retry or heartbeat change.

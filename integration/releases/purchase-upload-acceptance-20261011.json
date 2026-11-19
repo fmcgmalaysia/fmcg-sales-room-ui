@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-11",
+  "timezone": "Asia/Kuala_Lumpur",
+  "publicBuild": "2026-10-11-purchase-save-v16",
+  "company": "NCT",
+  "purchaseOrder": "TEST-PO-20261010-ECLIPSE",
+  "pdfBytes": 38768,
+  "pi": {"number":"UPLOAD-TEST-PI-20261011","savedAt":"13:34:40","actor":"LAW","fileId":"17pHwntdOycP85jTEONPtfCxWAV-Gypb_","state":"PROVISIONAL/orange"},
+  "invoice": {"number":"UPLOAD-TEST-INV-20261011","savedAt":"13:47:45","actor":"LAW","fileId":"1m4mC3Ry5NvuiFQg_raZTOG8p9VoK-rUv","state":"COMPLETE/green"},
+  "verified": ["Single submission for each upload","Each PDF opens in Drive","Two files in fixed NCT root, one per type","Full page refresh retains documents and green status","One employee/time audit per upload","Drive sharing remains private","Active 2 / History 0; no payment or archive transition","PO amounts and chase flags unchanged"],
+  "automatedDocumentChecks": {"passed":16,"failed":0,"includes":"Lost receipt retries the preallocated file without duplicate audit or file"},
+  "limitations": ["GHR public upload not exercised","Ambiguous network acknowledgement not induced publicly","Test PDF is not a real supplier invoice or financial approval","Account v1 and Purchase v17 remain unpublished drafts"],
+  "userAcceptance": "Pending; no main merge or verified tag"
+}

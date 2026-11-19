@@ -1,0 +1,46 @@
+{
+  "objective": "Confirm quantity on blur and wait before order review",
+  "marker": "2026-10-06-buyer-quantity-blur-room5-v1",
+  "testsPassed": 29,
+  "publicBeforeAndWixMatch": true,
+  "cssAndBackendUnchanged": true,
+  "userAcceptance": {
+    "quote": "测试完美！",
+    "date": "2026-10-06",
+    "account": "BERJAYA 06",
+    "scope": "QTY blur autosave acceptance; screenshot preserved"
+  },
+  "publication": "four stages complete",
+  "recoveryTag": "verified/my-selection-sort-20261006",
+  "commit": "31241f27d718f88c48efc66c3384ca56d0497255",
+  "pages": {
+    "run": 37421452809,
+    "status": "success",
+    "sourceMatches": true
+  },
+  "wix": {
+    "codeUnchanged": true,
+    "readbackMatches": true,
+    "publishedLive": true
+  },
+  "public": {
+    "marker": "2026-10-06-buyer-quantity-blur-room5-v1",
+    "account": "BERJAYA 06",
+    "originalQty100BlurLocks": true,
+    "externalPencilVisible": true,
+    "originalQty100DirectClickOpensReview": true,
+    "errors": [],
+    "orderSubmitted": false,
+    "quantityChanged": false,
+    "slowSaveAndFailure": "mock browser and unit tests; no live mutation"
+  },
+  "temporaryPermissionRevoked": true,
+  "verifiedTag": "verified/buyer-quantity-blur-20261006",
+  "snapshotProvenance": "HTML and Wix page preserved from release readback; backend inherited unchanged from verified/my-selection-sort-20261006. No backend changes in intervening UI-only tasks.",
+  "exactFileHashes": {
+    "user-acceptance.png": "1063A91455DB6DD152B13AA4490F23803B23C80D595F735AE606F0513DEFEBEB",
+    "buyer-room.html": "BBC1B96F9F8E8657E9C7E109063674360DD095811DBF9BA1C40C8777CEFBA8BA",
+    "wix-buyer-room-page.js": "AD1109F5A69D7B055F6B38110141F372FC1240C204B74BA2935AB4E9F1292C51",
+    "wix-catalogueAuth.web.js": "2A3193FE0E7978B27C04652F2B7128C349A1C73973E9DE23FD12A3165D91ECEC"
+  }
+}

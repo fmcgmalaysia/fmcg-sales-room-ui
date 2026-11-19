@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stock Control · Local candidate</title>
+<style>
+:root{font-family:Inter,"Segoe UI",sans-serif;color:#173651;background:#f3f6f9;font-size:13px}*{box-sizing:border-box}body{margin:0}header{background:#153b58;color:white;padding:18px 28px;display:flex;align-items:center;gap:24px}header strong{font-size:25px}header span{flex:1}nav{background:white;padding:16px 28px;border-bottom:1px solid #bed0df}nav b{color:#2563eb;border-bottom:3px solid #2563eb;padding-bottom:15px}main{padding:26px;max-width:1600px;margin:auto}h1{font-size:22px;margin:0 0 6px}small,.muted{font-size:11px;color:#627990}.preview{background:#fff2d7;color:#714300;padding:10px 14px;margin:16px 0;border-radius:5px}.tools{display:flex;align-items:center;gap:12px;margin:20px 0}input,select,button{font:inherit;border:1px solid #b8cede;border-radius:5px;padding:9px 12px;background:white;color:inherit}input[type=search]{width:min(430px,50vw)}button{cursor:pointer}button.primary{background:#2563eb;color:white;border-color:#2563eb}button:disabled{background:#e7edf3;color:#72869b;cursor:not-allowed;border-color:#d3dee8}.tools span{margin-left:auto}table{width:100%;border-collapse:collapse;background:white}th{background:#d5e2ec;text-align:left;padding:13px 14px;font-size:12px}td{padding:16px 14px;border-bottom:1px solid #d8e3ed}th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}tbody tr:hover{background:#f4f8fc}.product{border:0;padding:0;background:none;color:#2563eb;font-weight:600;text-align:left}.product small{display:block;font-weight:400;margin-top:4px}.number{font-weight:600}.pill{background:#fff0d6;color:#734900;padding:4px 9px;border-radius:14px}.review{color:#bb2939;font-size:11px}.help{margin-top:14px;font-size:12px;color:#627990}.frame{overflow:auto;border:1px solid #bed0df;border-radius:7px}.zero{color:#627990}dialog{border:1px solid #b7ccdd;border-radius:9px;padding:0;width:min(740px,94vw);color:inherit}dialog::backdrop{background:#17365177}.dialog-head{padding:18px 22px;background:#deE8f1;display:flex;align-items:center;gap:16px}.dialog-head h2{font-size:19px;margin:0;flex:1}.dialog-head button{border:0;background:none;font-size:23px;padding:0 4px}.dialog-body{padding:22px;max-height:65vh;overflow:auto}.dialog-body table{font-size:12px}.dialog-foot{padding:14px 22px;background:#f3f7fa;text-align:right}.count-fields{display:grid;grid-template-columns:1fr 140px;align-items:center;gap:16px;margin:20px 0}.count-fields strong{text-align:right}.sources-note{margin-top:16px;line-height:1.7}#error{color:#b42334} @media(max-width:700px){main{padding:16px}header{padding:14px 16px;gap:12px}header strong{font-size:20px}.tools{flex-wrap:wrap}.tools span{margin-left:0}table{min-width:690px}}
+</style></head><body>
+<header><strong>MASTER</strong><span>Warehouse Department 货仓部</span><b>NCT · Preview</b></header>
+<nav>Incoming Tasks　 Delivery Tasks　 <b>Stock Control 库存管理</b>　 History</nav>
+<main><h1>Stock Control 库存管理</h1><small>All goods physically held · 仓库在手货物</small>
+<div class="preview">Local candidate 本地候选 · Example data 示例数据 · No connection to live CMS 未连接正式数据</div>
+<div class="tools"><input id="search" type="search" placeholder="Product or barcode 产品或条码" aria-label="Search products"><select id="filter" aria-label="Stock filter"><option value="ALL">All Stock 全部在手</option><option value="FREE">Available Stock 自由库存</option><option value="ISOLATED">Isolated 隔离货物</option><option value="REVIEW">Review Required 待核对</option></select><span id="records"></span><button id="count" class="primary">Stock Count 盘点</button></div>
+<div class="frame"><table><thead><tr><th>Product 产品</th><th class="num">On Hand<br><small>在手数量</small></th><th class="num">Reserved<br><small>客户预留可用货</small></th><th class="num">Available<br><small>自由库存</small></th><th class="num">Isolated<br><small>隔离数量</small></th></tr></thead><tbody id="rows"></tbody></table></div>
+<p class="help">Select a product to see its sources and customer allocations. 点击产品查看货物来源与客户分配。</p><p class="help">Incoming purchase orders are excluded. 在途采购不计入在手数量。待核对项目不会被计作0。</p><p id="error" role="alert"></p>
+</main>
+<dialog id="detail"><div class="dialog-head"><h2 id="detail-title"></h2><button data-close="detail" aria-label="Close">×</button></div><div class="dialog-body" id="detail-body"></div><div class="dialog-foot"><button data-close="detail">Close 关闭</button></div></dialog>
+<dialog id="count-dialog"><div class="dialog-head"><h2>Stock Count 盘点</h2><button data-close="count-dialog" aria-label="Close">×</button></div><div class="dialog-body"><label>Product 产品 <select id="count-product"></select></label><div class="count-fields"><span>Book Qty 账面数量</span><strong id="book"></strong><label for="actual">Counted Qty 实盘数量</label><input id="actual" type="number" min="0" step="1" inputmode="numeric"><span>Difference 差异</span><strong id="difference"></strong></div><p class="muted">Preview only. A submitted difference will require review. 此处仅预览；正式盘点差异需审核，不能直接覆盖账面。</p><p class="muted">The product must be held from physical movements during counting. Changes to its stock version require a recount. 盘点该产品时需暂停搬货；库存版本变化则重新核对。</p></div><div class="dialog-foot"><button disabled>Submit for Review 提交审核 · Preview only</button></div></dialog>
+<script id="example-data" type="application/json">{"items":[{"name":"Example product 0001","barcode":"0001","packing":"12 × 1","onHand":220,"reservedUsable":200,"available":20,"isolated":0,"reviewRequired":false,"sources":[{"po":"FOC-OLD","onHand":20,"available":20,"reservations":[],"issues":[]},{"po":"B-PO","onHand":200,"available":0,"reservations":[{"taskId":"B-PO","remaining":200}],"issues":[]}]},{"name":"Example product 0002","barcode":"0002","packing":"12 × 1","onHand":220,"reservedUsable":195,"available":20,"isolated":5,"reviewRequired":false,"sources":[{"po":"C-PO","onHand":220,"available":20,"reservations":[{"taskId":"C-PO","remaining":195}],"issues":[]}]},{"name":"Example product 0003","barcode":"0003","packing":"12 × 1","onHand":null,"reservedUsable":null,"available":null,"isolated":null,"reviewRequired":true,"sources":[{"po":"D-PO","onHand":null,"available":null,"reservations":[{"taskId":"D-PO","remaining":35}],"issues":["SETTLED_GOODS_LOCATION_REQUIRES_REVIEW"]}]}]}</script>
+<script>
+'use strict';
+let items=[];
+const el=id=>document.getElementById(id);
+const cell=(tag,text,cls='')=>{const n=document.createElement(tag);n.textContent=text;n.className=cls;return n;};
+const number=value=>value===null?'Review Required 待核对':String(value);
+function render(){
+ const term=el('search').value.trim().toLowerCase(),filter=el('filter').value;
+ const rows=items.filter(row=>(row.name+' '+row.barcode).toLowerCase().includes(term)&&
+  (filter==='ALL'||filter==='FREE'&&row.available>0||filter==='ISOLATED'&&(row.isolated>0||row.isolated===null)||filter==='REVIEW'&&row.reviewRequired));
+ el('rows').replaceChildren();
+ for(const row of rows){const tr=document.createElement('tr'),td=document.createElement('td'),button=cell('button',row.name,'product');button.append(cell('small',row.barcode+' · '+row.packing));button.onclick=()=>details(row);td.append(button);tr.append(td);
+  for(const value of [row.onHand,row.reservedUsable,row.available,row.isolated])tr.append(cell('td',number(value),'num '+(value===null?'review':'number')));
+  el('rows').append(tr);
+ }
+ if(!rows.length){const tr=document.createElement('tr'),td=cell('td','No matching products 没有符合条件的产品','muted');td.colSpan=5;tr.append(td);el('rows').append(tr);}
+ el('records').textContent=rows.length+' products 项产品';
+}
+function details(row){
+ el('detail-title').textContent=row.name;
+ const body=el('detail-body');body.replaceChildren(cell('p',row.barcode+' · '+row.packing,'muted'));
+ const table=document.createElement('table'),head=document.createElement('tr');
+ for(const label of ['Source 来源','On Hand 在手','Customer 客户','Available 自由'])head.append(cell('th',label));table.append(head);
+ for(const source of row.sources){const tr=document.createElement('tr');for(const value of [source.po||source.sourceTaskId,number(source.onHand),source.reservations.map(r=>r.taskId+': '+r.remaining).join(', '),number(source.available)])tr.append(cell('td',String(value)));table.append(tr);}
+ body.append(table);
+ if(row.reviewRequired)body.append(cell('p','Review required: '+[...new Set(row.sources.flatMap(s=>s.issues))].join(', '),'review sources-note'));
+ body.append(cell('p','Sources and customer allocations are two views of the same stock. 来源与客户分配是同一批货的不同视角，不重复增加库存。','muted sources-note'));
+ el('detail').showModal();
+}
+function difference(){const row=items[Number(el('count-product').value)];el('book').textContent=number(row?.onHand??null);const raw=el('actual').value,actual=Number(raw);el('difference').textContent=row?.onHand===null||raw===''||!Number.isSafeInteger(actual)||actual<0?'':String(actual-row.onHand);}
+el('search').oninput=render;el('filter').onchange=render;
+el('count').onclick=()=>{el('actual').value='';difference();el('count-dialog').showModal();};
+el('actual').oninput=difference;el('count-product').onchange=()=>{el('actual').value='';difference();};
+for(const button of document.querySelectorAll('[data-close]'))button.onclick=()=>el(button.dataset.close).close();
+try{items=JSON.parse(el('example-data').textContent).items;items.forEach((row,index)=>{const option=cell('option',row.name);option.value=String(index);el('count-product').append(option);});render();}catch(error){el('error').textContent=error.message;el('count').disabled=true;}
+</script></body></html>

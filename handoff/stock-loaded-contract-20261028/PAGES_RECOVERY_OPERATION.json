@@ -1,0 +1,46 @@
+{
+  "branch": "fix/stock-loaded-single-authority-20261028",
+  "before": [
+    {
+      "id": 59773235,
+      "name": "main",
+      "type": "branch"
+    },
+    {
+      "id": 62530810,
+      "name": "feat/nct-order-submit-room6",
+      "type": "branch"
+    },
+    {
+      "id": 62584139,
+      "name": "fix/purchase-approved-ux-layout",
+      "type": "branch"
+    },
+    {
+      "id": 62596223,
+      "name": "feat/purchase-adjustment-cost",
+      "type": "branch"
+    },
+    {
+      "id": 62603322,
+      "name": "feat/master-gp-margin",
+      "type": "branch"
+    },
+    {
+      "id": 62611670,
+      "name": "style/purchase-table-track",
+      "type": "branch"
+    },
+    {
+      "id": 62639211,
+      "name": "style/purchase-icons-spacing-feedback",
+      "type": "branch"
+    }
+  ],
+  "at": "2026-10-29T00:53:30.853Z",
+  "head": "e47218ca7c92764e289d869faa3739bf7d741737",
+  "dispatchedAt": "2026-10-29T00:53:46.628Z",
+  "runId": 40797000500,
+  "restoredAt": "2026-10-29T00:54:43.830Z",
+  "removedPolicyId": 64730410
+}

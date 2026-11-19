@@ -1,0 +1,84 @@
+{
+  "runtime": "e5b2c9bd9765584ab4a48a582e206db436658a04",
+  "branch": "feat/account-live-layout-20261017",
+  "pullRequest": 173,
+  "code": {
+    "status": "complete",
+    "focusedChecks": 152,
+    "fullSuite": {
+      "passed": 523,
+      "total": 526,
+      "baselineFailures": 3
+    }
+  },
+  "pages": {
+    "status": "verified",
+    "runId": 39003174566,
+    "assetsMatched": 25,
+    "builds": [
+      {
+        "path": "purchase-live/index.html",
+        "build": "2026-10-17-purchase-closeout-v1"
+      },
+      {
+        "path": "account-room/index.html",
+        "build": "2026-10-17-account-payment-plan-v1"
+      }
+    ],
+    "permissionRestored": true,
+    "remainingPolicyCount": 7
+  },
+  "wix": {
+    "status": "published and live",
+    "freshReadbackDate": "2026-10-18 MYT",
+    "candidateComponents": 6,
+    "allReadbacksMatch": true,
+    "receipt": "This site is published and live online.",
+    "receiptEvidence": "root private handoff/purchase-account-closeout-20261017/wix-published-20261018.png"
+  },
+  "public": {
+    "status": "verified",
+    "date": "2026-10-18 MYT",
+    "accountPointer": "20261017-account-payment-plan-v1",
+    "purchasePointer": "20261017-purchase-closeout-v1",
+    "accountViews": 7,
+    "purchaseViews": 6,
+    "checks": [
+      "Authenticated real Account data and unset funding labels",
+      "Real green document View and Download entries",
+      "Mandatory payment amount, date, source, recipient choice and multiple-file input; optional reference and purchaser note",
+      "Enter blurs decimal amount field",
+      "Supplier bank fields present in real Add Supplier dialog",
+      "Purchase headings 20px 800; Requested 8%, Note 16%",
+      "Activity Details bilingual, 10px cells and approximately 34px rows",
+      "Search no-match 0 requests and explicit empty state",
+      "One existing payment notification acknowledged; red dot absent after fresh server reread; request and balance unchanged"
+    ],
+    "consoleErrors": 0,
+    "realPaymentUploadAndTrashPerformed": false
+  },
+  "documentService": {
+    "project": "1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO",
+    "savedCode": "document-service-candidate.gs",
+    "sha256": "7b6f6220f7134394d40e184aab7cb91996796cbbc8a1cd424bfa75e6533285fb",
+    "version": 5,
+    "deployment": "AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU",
+    "previousVersion": 4,
+    "receipt": "Deployment successfully updated. Version 5 on Oct 17, 2026, 12:26 PM",
+    "businessVerification": "pending"
+  },
+  "supplierSchema": {
+    "collection": "SharedSuppliers",
+    "addedTextFields": [
+      "bankName",
+      "bankAccountNo"
+    ],
+    "exampleBankDataWritten": false
+  },
+  "mainMerged": false,
+  "businessWritesPerformed": [
+    "One existing payment notification acknowledgement only"
+  ],
+  "financialWritesPerformed": false,
+  "userFinancialAcceptance": false
+}

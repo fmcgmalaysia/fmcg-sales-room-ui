@@ -1,0 +1,30 @@
+2026-10-22 Candidate lifecycle checkpoints (not production schema/migration)
+
+Explicit lifecycleVersion2 requires source.borrowRepaidCumulative and product
+nextBorrowSequence. Receiving/correction update cumulative repayment in same model
+transition; approvals consume persisted sequence, not max(all historical relations).
+Mapper validates exact old checkpoints and saves new source/product counters plus
+claim.dispatchedCumulative in same plan. v1 baseline remains unchanged; no partial
+history inference or fallback initialization for missing v2 fields.
+
+Tests stock-current-lifecycle:5pass with original model/mapper regressions40pass
+258.599ms before additional mapper test. Added exact v2 mapper checkpoint test.
+FOC fixture owner100/planned150:20already repaid CLOSED omitted, later130receipt
+keeps owner80/free50. Correction without needed CLOSED evidence rejects unchanged;
+with exact evidence reverses/reopens only affected repayment. Fully shipped borrower
+does not erase debt. High-water501 is not reset when closed relation list omitted.
+
+Warehouse combined mapper now accepts explicit server protocol.planFormat SEGMENTED_V2;
+v1 cap stays as regression. Actual original300line valid receipt,555614byte plan,
+901images commits in memory via v2, one original receipt event, generation once,
+30000cartons, once-only replay. Test1762.4931ms. NOT real Wix300line capacity acceptance:
+old global product reader/product subplan caps, prepare/staging/time limits remain.
+
+Affected full candidate tests442pass0fail3133.3893ms before last2capacity/runtime tests.
+Previous full run correctly caught stale generated preview after model change; rebuilt
+preview/business.js from exact tested source, no original production UI modification.
+Generated backend23modules, both v1/v2 VM runtime coordinators pass3tests262.5024ms.
+
+Remaining: scoped operational reads, exact delta summary, persistent task/current
+counter initialization with parity, correction source-index queries, all actual routes,
+recovery/migration, live/repo comparison and actual platform verification. ACTIVE OFF.

@@ -1,0 +1,21 @@
+{
+  "code": "6c397b9",
+  "base": "20bd0a8",
+  "branch": "feat/purchase-progress-hierarchy-20261015",
+  "build": "2026-10-15-progress-hierarchy-v1",
+  "tests": {
+    "pass": 122,
+    "fail": 0
+  },
+  "status": "candidate-not-deployed",
+  "githubPages": "not deployed",
+  "wix": "not synchronized/published",
+  "publicAcceptance": "pending",
+  "hashes": {
+    "purchase-live/app.js": "ac0f3ca598155a69cbcfb3946da93182b5b8b6fa6b20d9954d7e7319c9385610",
+    "purchase-live/task-grid.js": "54450d6dcf8c423869513b000cb28719d5dcee91a3676191c19e0e91e81367d1",
+    "purchase-live/task-grid.css": "56c6e1d6a6b7905df9dbaa65b1daf96f55a8f45dbf38230dbeebacfdccaec6a3",
+    "purchase-live/style.css": "a9ea52c68a96f3ba8b17e8db2695d72dfba9fdf57bc808b16742ff109c4122f1",
+    "purchase-live/index.html": "9a60bbfa8df0b56fc4b87442d8d0371f8675360a80c6926bee6a502c8a065de1"
+  }
+}

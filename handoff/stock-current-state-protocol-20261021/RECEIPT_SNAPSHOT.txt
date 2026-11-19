@@ -1,0 +1,45 @@
+Receipt writer snapshot candidate — 2026-10-21 — NOT WIRED
+
+Scope/recovery
+New receipt-stock-reader.cjs only plus tests; code recovery8222628, business runtime32b812c
+unchanged. Same source identities and original operations, no new physical workflow, no
+stock schema/CMS edits, new permissions, publishing or production mode changes.
+
+Read behavior
+Existing conditional protocol readSnapshot surrounds trusted server receipt preparation
+and current-row reads. Original employee/PO version/reason/finance/allocation validators
+must execute in readReceiptAuthority before returning its event/sources; this injectable
+callback is NOT implemented as production validation and must never consume browser-
+supplied approval flags/ownership/holds directly. No alternate authorization introduced.
+Exact deterministic position/product reads; shared products cached once per snapshot.
+Claims query company+positionId without ACTIVE filter, stable _id sort, limit31 sentinel,
+consistentRead and returnTotalCount. Require full result/count<=30, cumulative claims<=30.
+Each listed claim is reread through existing exact store to reuse its verified metadata
+normalization and version mapping. This adds bounded reads but avoids a second decoder.
+Missing claim, scope mismatch, unknown count or errors reject. No Activity/all API used.
+Current proof reader max14sources,30claims; not final300line Warehouse capacity. Actual
+production limits and closed-claim retention policy still require review before activation.
+
+Important actual integration boundary (NOT a new adopted architecture)
+packingListGuards.js packingTaskHeld is a TASK-wide hold total derived from existing lists.
+PackingContext currently joins prepared/legacy source rows but does not provide a generally
+confirmed per-source packing split. Therefore TASK_TOTAL cannot be relabeled as a source
+quantity. Reader requires SOURCE_CONFIRMED evidence from a future trusted resolver; this
+is a safety precondition, NOT evidence that such a resolver already exists, and NOT an
+authorization to add source locks/storage or redesign packing. Uncertain correction remains
+blocked. Standard receiving/new safeguards must be reconciled with the existing hold
+granularity before production wiring; do not claim this reader alone completes G2.
+No related public feature or verified workflow has been changed by this local contract.
+
+Tests
+node --test integration/tests/stock-current-receipt-reader.test.cjs
+6/6pass,0fail,duration146.5305ms. CLOSED claim updates same ID, shared summary read cache,
+overflow/incomplete count rejection, pending barrier/generation conflict, global-hold
+mislabel rejection, permission failures and disappeared claim. Memory SDK only; no actual
+Wix query/receipt saving this turn. Other unchanged test results reused, not rerun.
+
+Next
+Resolve source ownership/hold evidence using existing server data and verify before
+integrating original prepare function. Do not add client assertions or pretend a function
+parameter proves authorization. Continue other pure writer candidates, then focused G3
+review; fresh live-versus-repo capture remains mandatory before any business source edit.

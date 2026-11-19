@@ -1,0 +1,32 @@
+{
+  "saved": true,
+  "published": true,
+  "build": "20261027-support-order-progress-v2",
+  "files": [
+    {
+      "file": "integration/backend/supportInvoice.js",
+      "exact": true,
+      "sha256": "e9c2187a25d542d4861c0cf331ea320b147d6549ccadc45165fd71bc38b1de0a"
+    },
+    {
+      "file": "integration/backend/customerFulfilmentService.js",
+      "exact": true,
+      "sha256": "67499a6203184f1e998037994e37ae9a66648a93082a92d6f65e464d2f29f800"
+    },
+    {
+      "file": "integration/backend/warehousePreparation.js",
+      "exact": true,
+      "sha256": "23568b3bb53143489e9552c1cd763ad512dc840603c9baabd8432b711998651a"
+    },
+    {
+      "file": "integration/wix/support-department-page.js",
+      "exact": true,
+      "sha256": "e751c990e6967aa7f72de26461496d6da7b6218ea39c8f72c905387ac8f330ca"
+    },
+    {
+      "file": "integration/wix/warehouse-department-page.js",
+      "exact": true,
+      "sha256": "bbafa459f85265bc9ee12b3de2408f277223cb4d91b056ff80b754a146e8f134"
+    }
+  ]
+}

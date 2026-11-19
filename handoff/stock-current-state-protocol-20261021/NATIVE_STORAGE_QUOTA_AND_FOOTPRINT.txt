@@ -1,0 +1,72 @@
+2026-10-23 — ACTUAL CMS QUOTA + OFFLINE RECORD-GROWTH REVIEW
+
+Single scope / recovery
+Starting993c8c3 Loaded-only gate confirmed PUSHED existingPR220. Only existing offline
+300line instrumentation, new tests and records changed. Core runtime/stock authority/
+business modules/gates unchanged; originals stilld447185/runtime32b812c. Current
+framework/spec/Astra decision reused. No model switch, agent or whole project scan.
+
+New actual native evidence, not guessed tier
+Used computer-use skill after reading skill/guidance/confirmation policy; browser API
+only (native apps disabled). Existing Chrome4 CMS user tab51426755 -> DeveloperTools
+Monitoring -> CMS collection storage. Visible maximum1000collections/10000totalitems/
+10GB storage. These are observed UI limits, not an inferred plan tier or API throughput.
+Screenshot and actual used counts retained PRIVATELY OUTSIDE public Git checkout:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/
+master-cms-storage-20261023.png, SHA256
+b717ff0c39bec3ed0755d4fabad99acf5e112cb069ae23b76df94edef30a72d4.
+Native metrics traffic/operation counts and business usage were not exported to public
+Git. No secret/log detail extraction, Upgrade/Buy/settings/ACL/test/Publish action.
+CMS dashboard used counts/empty-looking tables are NOT complete authenticated capture
+or execution drain evidence. Plan tier/backend timeout/RPM/index quota still UNKNOWN.
+One post-navigation read per loading page was necessary because initial AX had only
+loading placeholders. Master editor51426657 and user business forms untouched.
+
+Concrete improvement from this evidence
+Existing offline actual-root invocation diagnostic now also decodes the ACTUAL stored
+segmented manifest/fragments after its two bounded invocations, using unchanged codec.
+It counts new domain records versus existing-row updates and immutable evidence, not
+901write images as901new rows and not one extra record per BEFORE image. BEFORE/AFTER
+payloads already live inside fragments; no extra ledger/retention system introduced.
+
+Actual300product fixture evidence
+901write images =601new business records +300updates of existing product checkpoints.
+Fixture baseline601records (not a complete site snapshot). LetF be its actual decoded
+fragment count: retained protocol evidenceF+2 (manifest/RESULT); projected healthy
+retained growth601+F+2, projected peak601+F+3 including transient company lock.
+Tests check F>1 andF<32, not a fabricated fixed production fragment size.
+Measured execution still stops BEFORE20/901 thenBEFORE40/901; no claimed full native
+commit. The count projection describes healthy first-attempt completion only.
+Failed staging orphans, concurrent other-company/legacy/admin writes, future business
+growth and actual native quota accounting are NOT included as safe assumptions.
+
+Optional exact itemLimit/usedItems inputs produce UNKNOWN, KNOWN_INSUFFICIENT or
+LOWER_BOUND_FITS_NOT_ACCEPTED arithmetic. Invalid/partial/null/overflow counts refuse
+before fixture work. Exact fit or ample displayed headroom NEVER returns capacity
+accepted, verified site snapshot, activation or deployment permission. Both flags
+remainfalse. Existing diagnostic two-argument callers and budgets unchanged.
+No hardcoded production10000row limit, smaller business-line cap, automatic archive,
+deletion, quota reservation/upgrade or extra request dispatch added.
+
+Acceptance
+Changed instrumentation + existing receipt-batch test:11pass0fail4068.7258ms, including
+new3tests, actual300root fixture and prior query/progress/memory guards. No production
+bundle/manifest import of instrumentation, so prior FULL1133pass24420.8746ms is reused,
+NOT a new1136full-run claim. No needless full repeat/native query. Diff --check clean;
+protected original path diff vsd447185 empty. Actual CreditsUNKNOWN.
+An exploratory test filename was mistyped; corrected using the already returned exact
+inventory, not a new module/alternate implementation or retry of denied UI.
+
+Implication / open gates
+CMS item count is now a KNOWN additional capacity dimension. It does NOT establish
+that an upgrade is needed or the current plan is adequate for sustained use. Need
+actual fresh whole-site usage, native300line timing/write/recovery acceptance and
+explicit reviewed retention/lifecycle headroom before rollout. No silent historical
+deletion/cleanup permitted. Existing indexed/native typed/permission/drain/bootstrap/
+shadow/final-review requirements remain. Exact2INIT+1TYPE consent stillPENDING, not
+repeated or executed. No business-policy change or new human question this round.
+
+Four states
+Code: offline quota/record-footprint evidence implemented/tested, overall release
+incomplete. Pages unchanged. Wix published-live unchanged. Public inventory/borrowing
+Loaded workflow not accepted. CoverageEMPTY/ACTIVEOFF; realinvoice/physicalexitOFF.

@@ -1,0 +1,50 @@
+[
+  {
+    "file": "purchaseSources-before.js",
+    "sha256": "139156a4962f36525bf5c82314187c61e03861eac60a3c7e08be094805fc7357"
+  },
+  {
+    "file": "purchaseSources-after.js",
+    "sha256": "b3dcc1bec541cd829032874dd73ef8cb3f0a436ff0da79f699aad19d2c4fe493"
+  },
+  {
+    "file": "koh-status-before.png",
+    "sha256": "9c69dd576dc7f0111d45a145fcaaf433604f06f13d4b1044ff9ebe235f439a02"
+  },
+  {
+    "file": "reproduce-before.txt",
+    "sha256": "ccf576b172c73645962978db182a7d49c065a82528715ddfb045624d3a6b18c1"
+  },
+  {
+    "file": "affected-tests.txt",
+    "sha256": "95e58f6b4653c918bd5b656d59246d40f02f1573e4bd20ac8af2dd333980962c"
+  },
+  {
+    "file": "baseline-payment.txt",
+    "sha256": "c5c7fdb1075129b7526bde5521e31915472839a376560643ce0ab85ecf386d65"
+  },
+  {
+    "file": "publish-receipt.png",
+    "sha256": "9a18d5c291fe51307799a31e449a5f59ef552d4e532d0ecf1dfd7bb8d1631689"
+  },
+  {
+    "file": "public-pending.txt",
+    "sha256": "cdf49de61bd78ddaae9e2ba9e3bcc3b06af3f3db71cad0fc8d192433d132e040"
+  },
+  {
+    "file": "public-pending.png",
+    "sha256": "49874e5a00912690431287f9fcec078bb2494a627f51d2e1b5a2b8c92fcfd89d"
+  },
+  {
+    "file": "pages-assets-verification.json",
+    "sha256": "2c6e73e68d204d5c9d3b1de65d5aef1d8058c8afbd865e2cc2aa6716a8385cf9"
+  },
+  {
+    "file": "policies-before.json",
+    "sha256": "c4b6a80a0f9041cd0bdce8b0063f934259b85a6be60ec8f40ff41fc5bcd816a3"
+  },
+  {
+    "file": "policies-after.json",
+    "sha256": "c4b6a80a0f9041cd0bdce8b0063f934259b85a6be60ec8f40ff41fc5bcd816a3"
+  }
+]

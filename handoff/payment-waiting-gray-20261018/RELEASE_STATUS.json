@@ -1,0 +1,10 @@
+{
+  "runtime":"140797cd212b356685eb200109e3c34916bec58e",
+  "pullRequest":175,
+  "code":{"status":"complete","checksPassed":116,"businessLogicUnchanged":true},
+  "pages":{"status":"verified","runId":39087853590,"assetsMatched":30,"purchaseAccountBuild":"2026-10-18-payment-waiting-gray-v1","temporaryPolicyRemoved":true,"originalSevenRulesRestored":true},
+  "wix":{"status":"published and live","exactReadbacks":2,"receipt":"This site is published and live online."},
+  "public":{"status":"verified","accountPills":3,"accountPillHeight":16,"purchaseWaitingPill":true,"background":"rgb(184, 196, 208)","text":"rgb(255, 255, 255)","consoleErrors":0},
+  "businessWrites":false,
+  "mainMerged":false
+}

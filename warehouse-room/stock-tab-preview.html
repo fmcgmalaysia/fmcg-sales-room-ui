@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>LOCAL UX PREVIEW · Warehouse Stock Tab</title>
+<style>html,body{height:100%;margin:0;font:11px 'Segoe UI',Arial}body{display:flex;flex-direction:column}.preview-label{padding:7px 15px;background:#fff0d4;color:#694b13}iframe{border:0;width:100%;flex:1}</style>
+<div class="preview-label">LOCAL UX PREVIEW 本地排版候选 · Example data only 示例数据 · No CMS writes 不连接真实业务保存</div><iframe id="room" title="Warehouse candidate"></iframe>
+<script>
+if(location.protocol==='file:'||location.protocol==='http:'&&['127.0.0.1','localhost'].includes(location.hostname)){
+ const targetOrigin=location.origin==='null'?'*':location.origin;
+ const room=document.getElementById('room');room.src='index.html';
+ window.addEventListener('message',event=>{
+  if(event.source!==room.contentWindow||event.origin!==location.origin)return;
+  const m=event.data||{},company=m.company;
+  if(!['NCT','GHR'].includes(company))return;
+  if(m.type==='WAREHOUSE_ORDERS_REQUEST')room.contentWindow.postMessage({type:'WAREHOUSE_ORDERS_RESULT',company,requestId:m.requestId,ok:true,result:{company,orders:[],deliveryTasks:[],customerLines:[],staff:{staffName:'LOCAL PREVIEW'},readAt:new Date().toISOString()}},targetOrigin);
+  if(m.type==='STOCK_CONTROL_READ_REQUEST'){
+   const item={key:'LOCAL-EXAMPLE',company,barcode:'00000000000001',name:'EXAMPLE PRODUCT 示例产品',packing:'500ML × 12',onHand:120,reservedUsable:100,available:20,isolated:0,reviewRequired:false,sources:[{sourceTaskId:'EXAMPLE-SOURCE',po:'EXAMPLE-PO',onHand:120,reservedUsable:100,available:20,isolated:0,issues:[],reservations:[{taskId:'EXAMPLE-CUSTOMER',customerName:'Example Customer 示例客户',outstandingQuantity:100}]}]};
+   const items=company==='NCT'?[item]:[];
+   room.contentWindow.postMessage({type:'STOCK_CONTROL_READ_RESULT',company,requestId:m.requestId,ok:true,result:{company,version:'LOCAL-PREVIEW',readAt:new Date().toISOString(),items,offset:0,total:items.length,nextCursor:null,counts:{onHandProducts:items.length,availableProducts:items.length,isolatedProducts:0,reviewProducts:0},permissions:{read:true},staff:{staffName:'LOCAL PREVIEW'}}},targetOrigin);
+  }
+ });
+}
+</script></html>

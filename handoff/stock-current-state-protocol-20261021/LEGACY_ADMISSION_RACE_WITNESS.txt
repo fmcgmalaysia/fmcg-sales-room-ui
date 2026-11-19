@@ -1,0 +1,71 @@
+2026-10-23 — actual candidate/original-writer race, NOT a production-safety pass
+
+Narrow semantic G3 question: does maintenance mode plus absence of old cost locks
+prove old original task writers stopped? NO. This concerns inventory cutover, not a
+new finance feature or a reported fault in currently deployed production.
+
+Exact evidence:
+ stockCurrentCostReference.js:17 reads control once;:21 returns LEGACY snapshot.
+ purchaseCostRetry.web.candidate.js:22 calls ORIGINAL retry after this response.
+ integration/backend/purchaseCostRetry.js:38 creates its legacy cost lock only
+ later;:59 writes task with the original unconditional update mechanism.
+ bootstrap-preflight.cjs:24/28 refuses PRESENT company/task cost locks, but cannot
+ detect an admitted legacy request which has no lock yet.
+
+Retained executable witness:
+ integration/tests/stock-current-legacy-admission-witness.test.cjs
+ - EXACT candidate web/root and ORIGINAL cost-retry factory, not an edited writer.
+ - Control read captures LEGACY; response delivery is held at its await.
+ - No synthetic mutation/cost lock exists; original task is unchanged.
+ - Mock control switches to MAINTENANCE, then held response is delivered.
+ - Original retry still creates legacy journal records and updates task. Every
+   mock write happens while control already says MAINTENANCE; control reads=1.
+ - Independent request actually observing MAINTENANCE refuses with zero writes.
+
+2tests2pass0fail276.9956ms. First passing assertion PROVES an unsafe interleaving,
+not production safety. Mock/VM ONLY; no real Wix scheduling/termination guarantee,
+provider call, data/permission/schema mutation, live sync or Publish. Original
+business code untouched. Payload entirely synthetic, no private production data.
+
+Decision:
+ - Empty-lock scan, elapsed waiting, native missing-version/date conjunction and
+   initial shadow parity do not establish all-writer quiescence. Do not initialize
+   business tasks, enable ACTIVE or mark writer coverage verified on that basis.
+ - This strengthens the existing explicit drain/recovery release prerequisite;
+   inventory ownership/borrowing policy and original finance workflow stay intact.
+ - A second control read before legacy invocation is NOT atomic: it moves the
+   await gap. Do not add repeated checks and call that a safe cutover.
+ - Need supported old-request drain/termination proof for actual Wix deployment,
+   OR separately reviewed admission/fencing covering EVERY legacy writer, safely
+   introduced before capture. Neither is implemented/proven. Do not invent a
+   broad dispatcher/legacy refactor without evidence and required approval.
+ - Existing preflights are dry-run-only; no inverse writes, TTL/forced unlock,
+   old-lock deletion or new stock authority is introduced.
+
+Native initialization diagnostic3140723 confirmed PUSHED existing branch/PR220.
+It still needs a fresh exact mutation grant before native installation/run and
+cannot prove this old-writer termination requirement. No new business-policy
+question for user. All remaining native/schema/capacity/recovery/cutover gates OPEN.
+
+Efficiency: bounded review had mistaken Windows glob/absent-path reads and one
+overbroad JSON module output; corrected using inventory and explicit -g patterns.
+Initial evidence patch had wrong checkout date and failed atomically; verified no
+file created, then corrected exact path. No bypass/full scan/full-suite rerun.
+Protected production paths still equald447185. Actual Credit usage UNKNOWN.
+
+Bounded official-source check (2026-10-23, no live operation):
+ https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/compute-features
+ Official backend-timeout guidance explicitly allows server code to keep executing
+ after the client connection closes. Therefore a504/client failure or waiting a
+ published request-timeout number does NOT prove old execution termination.
+ https://dev.wix.com/docs/velo/articles/getting-started/testing-and-debugging
+ Functional tests run in preview context; a release candidate uses the same live
+ data as the main site. Neither is evidence of a separate isolated business DB.
+ Two targeted official-document searches did not establish a per-site drain API
+ or a guaranteed publish-to-old-execution termination interval. This is UNKNOWN,
+ not proof no platform mechanism exists. Old engineering implementation stories
+ and third-party hard-timeout claims were not adopted as a supported guarantee.
+ fd2cba9 witness confirmed PUSHED PR220. No further feature patch/activation based
+ on this discovery; keep candidate gates shut. Continue independent schema/index/
+ typed-domain/recovery acceptance preparation, consolidate exact remaining grants
+ after reviewable scope, not repeated business-policy questions or blind UI checks.

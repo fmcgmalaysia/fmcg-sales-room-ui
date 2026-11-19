@@ -1,0 +1,10 @@
+Buyer Room viewer-local timestamps, 2026-10-07.
+Single objective: all Buyer Room event-time displays use the browser/device's local IANA timezone; Today/Yesterday uses local calendar days (including DST).
+Parent candidate: 5f5c185, Track layout PR25 not yet deployed. Installed public baseline remains sort-v1 / f27b3cc, archive0404d09. Protected verified tags and exact Wix/HTML recovery snapshots are recorded in prior Track handoff. This new branch depends on the unverified Track candidate and must not be merged into main before user acceptance.
+Live Buyer iframe script matches captured sort-v1 baseline before edit. No live Wix code writes made. Repository contains deliberately unpublished Track candidate; this is not an unexplained live/repo conflict.
+Changed helpers only: compactTime, formatTime, trackTime24, reviewDate; shared helper handles all selection/add/quote/remove/qty-edit/request/progress/history/completed times. Existing renderers, order calculations, chronological ordering, handlers and download paths remain unchanged. Small sidebar timezone label shows browser IANA timezone. No customer timezone field, authentication, storage or backend change.
+All date/time event values remain unchanged. Existing backend archived source uses ISO timestamps for edits/removal/order submission; unparseable historical strings remain unchanged rather than guessing a timezone. Date-only Goods Exp must retain its calendar date; no MASTER data mapping is implemented.
+Tests: KL/London/NewYork/Auckland same instant differs correctly; local midnight, Yesterday, DST fall-back, empty/invalid inputs, review date, JS syntax; all other declared functions and all existing CSS exact unchanged from parent.
+Code prepared and tested only. Pages pending; Wix pending; public verification pending. No production release/verified tag/main merge.
+Recovery: reverse only this timezone diff to parent5f5c185, not a whole-site rollback. Unrelated dirty historical release.json excluded.
+Previous MYT-only tests in Track handoff are historical; this timezone test replaces their fixed-timezone assertions.

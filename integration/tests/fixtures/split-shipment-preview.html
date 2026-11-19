@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8"><title>Split shipment test fixture</title>
+<link rel="stylesheet" href="/sales-room/shipment-ui.css">
+<style>body{font-family:Arial,sans-serif;font-size:11px}</style>
+<button id="open">Open split shipment test</button><p>LOCAL TEST ONLY — no production connection</p>
+<output id="receipt"></output><script src="/sales-room/shipment-ui.js"></script>
+<script>
+const fixture={version:'stock-test',planVersion:'plan-test',plans:[],shipments:[],lines:[{taskId:'TEST-LINE',orderId:'TEST-ORDER',barcode:'9550000000001',name:'CHOCOLATE BISCUITS',packing:'100 G x 12',requested:500,allocated:0,available:0}]};
+document.getElementById('open').onclick=()=>window.masterShipments.open('TEST-CUSTOMER');
+window.addEventListener('message',event=>{const m=event.data;if(m.type!=='SALES_ROOM_SHIPMENT_REQUEST')return;
+ if(m.action==='PLAN'){fixture.plans=[{...m.input,by:'TEST SALES',at:'12-10-26 15:00'}];document.getElementById('receipt').textContent=JSON.stringify(m.input);}
+ window.postMessage({type:'SALES_ROOM_SHIPMENT_RESULT',requestId:m.requestId,company:m.company,ok:true,result:m.action==='READ'?fixture:{ok:true}},'*');
+});
+</script>

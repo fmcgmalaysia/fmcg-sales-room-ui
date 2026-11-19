@@ -1,0 +1,64 @@
+Borrowing/receipt conditional plan bridge — 2026-10-22 — candidate only
+
+Recovery07f374e. New borrowing-stock-plan.cjs maps the pure business result into existing
+fenced-proof writes; borrowing-stock-reader.cjs reads bounded exact current-row snapshots.
+No real collections/fields/indexes, endpoint imports, Wix/CMS writes or deployment.
+
+Record mapping
+Actual source balances remain StockPositions, customer claims StockClaims and product
+totals StockProducts. Pure product/task/source snapshot is never stored as one blob.
+New current transfer candidate is one stable company/relation-hashed row in the existing
+company journal, actionSTOCK_TRANSFER_CURRENT. Each partial repayment updates that row;
+completion marksCLOSED, not delete. Normal original receipt remains the sole receipt event.
+Approval has its original approved business event. Both event and affected balances plus
+current transfer changes are ONE plan, not independent saves or increment calls.
+New action/fields/indexes/employee-history filtering are CANDIDATE compatibility work;
+placement is not a production schema decision or proven UI privacy contract.
+
+Preparation and scope
+Mapper requires complete trusted known source/claim/summary/relationship before-images,
+matching company/strict product/source/PO/current receipt basis and global customer model.
+Existing CLOSED rows update their exact IDs; missing/nonzero/duplicate/unrelated/conflicting
+rows stop. Original receipt line PO/order/sourceLine/planned/beforeAccepted must match;
+original financial/receipt/permission validators still run in the future authority callback.
+Corrections, returns, replacement receipts and cancellation/reassignment are NOT implemented
+by this mapper. Source replacementReceived!=0 is explicitly refused, not silently ignored.
+Models now explicitly require OWNER_DEMAND or EXPLICIT_ONLY receipt policy from trusted
+existing allocation context. Bound repayment executes under either policy; EXPLICIT_ONLY
+leaves other accepted cartons free instead of silently expanding manual owner allocation.
+Policies are not frontend permission flags and their actual authoritative resolver is pending.
+
+Bounded reader
+Existing protocol pending/generation barrier wraps server readAuthority plus current queries.
+Queries company+stockKey; position max14, claims max60, transfers max30; sentinel/count/
+strong reads/explicitreturnTotalCount; no ACTIVE filter, so stable CLOSED IDs retained.
+Journal query additionally restricts actionSTOCK_TRANSFER_CURRENT; no allActivity query here.
+Exact store rereads each result for existing SDK normalization/version mapping. Product
+exact-ID read; errors/vanished/incomplete/unknown-count stop, never become zero inventory.
+These are proof bounds, not final production scale. Retaining closed relations in this
+query eventually reaches its cap; bounded active+exact-ID archival access and stable sequence
+allocation must be designed before production. No claim this can handle all large products
+yet. Actual Wix composite index/query cost remains unmeasured. readAuthority is injectable
+and NOT wired; existing workflows may still read history. Pure callback scope is not proof
+of real authorization or complete writer fencing.
+
+Verification
+New stock-current-borrow-plan.test.cjs latest9/9pass0fail135.6447ms. Existing changed
+borrowing model18/18 passed in previous focused25check run202.208ms (7then-plan+18model).
+Reuse model result since unchanged; do not add repeated tests as new independent cases.
+Tests exercise existing conditional protocol with individual mapped rows: approval then
+receipt20/100; original event preserved; source/claims written before injected interruption
+at relationship update; pending blocks reads/new requests; same prepared request resumes
+without reprepare; same request replays original outcome; quantities/generation advance
+once; one relation row reachesCLOSED. Fully shipped borrower receives no resurrected claim.
+Includes stale/incomplete snapshots, source identity mismatch, unsupported correction,
+closed-ID update, proof-limit refusal, current-reader scope/count/failure and pending guard.
+All memory-only; no actual Wix transfer/receipt, real network fault or production activation.
+
+Remaining
+Build actual authority snapshot from existing PO/demand/dispatch/allocation and packing
+context; reconcile global borrowed coverage with legacy cumulative interfaces. Capture
+fresh live source before editing protected business modules. Integrate original receipt
+and journal hooks, all existing stock writers/readers and independent recovery tooling.
+Implement transfer exceptions/correction/cancellation, bounded relation lifecycle/indexes,
+focused Astra review and original G0-G6 gates. ACTIVE remainsOFF.

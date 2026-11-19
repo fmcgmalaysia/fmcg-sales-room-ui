@@ -1,0 +1,43 @@
+Objective: restore orange unuploaded Purchase documents and synchronize Finance
+using the existing canonical per-PO, per-document-type state, including issues
+created by Finance. Finance's default remains neutral before shared state arrives.
+
+Scope: one Purchase CSS override, one Finance class mapping, two Wix version
+tokens, four scoped static resources and the existing limited deployment workflow.
+No backend change, new status storage, business write, file operation, financial
+lock change, stock change, or row-order change. Other frozen resources retained.
+
+Authority: fresh six public resources exactly match frozen 94-resource build
+20261030-po-document-states-v2. Fresh Purchase Wix page matches preserved published
+purchase-after-v2.js; Finance Wix page exactly matches repository source.
+Recovery: 3ec06032a3780ed4c45b1b8c830b978dbb648b3f static package and preserved
+Wix page copies; existing annotated verified/stop-waiting-cn-20261026 retained.
+Branch is based on 4a415c6 to retain the documented published baseline ancestry.
+Previous in-progress Selected-product task is preserved in its original checkout.
+
+Packaging: fresh Windows worktree materialized two stage inputs as CRLF while
+the verified stage expects LF. Only local working-copy newlines were normalized;
+their normalized contents match the prior checkout and no semantic Git diff or
+commit change exists for either source. Existing staging logic is unchanged.
+
+Validation: five new shared-projection/rendering scenarios pass, plus 52 existing
+document/financial-lock/handoff/settlement checks. The first scenario harness run
+lacked a document event-registration stub; corrected only the test harness and
+reran those five checks. Earlier 52 passing checks were retained without rerun.
+Scenarios include all five missing types, Finance OPEN/AWAITING_REVIEW/RESOLVED,
+Purchase PO invalidation, pending CN, SO/PI alias and Finance unknown gray default.
+
+Candidate: 20261030-docs-synced-colors-v1, 94 resources, exactly four changed:
+purchase-live/style.css and index.html; account-room/payment-layout.js and index.html.
+All other 90 resources remain byte-identical. No private evidence/backend files
+are added to the scoped Pages artifact.
+
+Local file preview was blocked by browser URL security policy; no alternate
+browser entry, file server or indirect execution was used to bypass the block.
+Formal visual verification must use the authorized public department pages after
+publication. Current Purchase tab has an unsaved row-move draft: never refresh,
+cancel or save it for this task; use a clean new formal tab for acceptance.
+
+Release pending: GitHub sync, temporary scoped deployment authorization, Pages
+hash readback, Wix token sync/publication and public visual verification.
+Do not claim publication complete or merge main before actual acceptance.

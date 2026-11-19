@@ -1,0 +1,128 @@
+{
+  "scope": "OFFLINE_CPU_ONLY_NOT_WIX_LATENCY_OR_CAPACITY",
+  "source": "Synthetic in-memory fixture, actual production projection functions",
+  "results": [
+    {
+      "tasks": 50,
+      "unrelatedHistory": 5000,
+      "responseEqual": true,
+      "runs": [
+        {
+          "old": true,
+          "ms": 85.7,
+          "preparationCalls": 1,
+          "cbmCalls": 50,
+          "queries": 11,
+          "returnedRows": 5108,
+          "writes": 0
+        },
+        {
+          "old": false,
+          "ms": 115.6,
+          "preparationCalls": 0,
+          "cbmCalls": 0,
+          "queries": 11,
+          "returnedRows": 5108,
+          "writes": 0
+        },
+        {
+          "old": false,
+          "ms": 90.5,
+          "preparationCalls": 0,
+          "cbmCalls": 0,
+          "queries": 11,
+          "returnedRows": 5108,
+          "writes": 0
+        },
+        {
+          "old": true,
+          "ms": 101.5,
+          "preparationCalls": 1,
+          "cbmCalls": 50,
+          "queries": 11,
+          "returnedRows": 5108,
+          "writes": 0
+        },
+        {
+          "old": true,
+          "ms": 114.6,
+          "preparationCalls": 1,
+          "cbmCalls": 50,
+          "queries": 11,
+          "returnedRows": 5108,
+          "writes": 0
+        },
+        {
+          "old": false,
+          "ms": 89.5,
+          "preparationCalls": 0,
+          "cbmCalls": 0,
+          "queries": 11,
+          "returnedRows": 5108,
+          "writes": 0
+        }
+      ]
+    },
+    {
+      "tasks": 200,
+      "unrelatedHistory": 5000,
+      "responseEqual": true,
+      "runs": [
+        {
+          "old": true,
+          "ms": 276.8,
+          "preparationCalls": 1,
+          "cbmCalls": 200,
+          "queries": 11,
+          "returnedRows": 5408,
+          "writes": 0
+        },
+        {
+          "old": false,
+          "ms": 174.1,
+          "preparationCalls": 0,
+          "cbmCalls": 0,
+          "queries": 11,
+          "returnedRows": 5408,
+          "writes": 0
+        },
+        {
+          "old": false,
+          "ms": 175.5,
+          "preparationCalls": 0,
+          "cbmCalls": 0,
+          "queries": 11,
+          "returnedRows": 5408,
+          "writes": 0
+        },
+        {
+          "old": true,
+          "ms": 244.7,
+          "preparationCalls": 1,
+          "cbmCalls": 200,
+          "queries": 11,
+          "returnedRows": 5408,
+          "writes": 0
+        },
+        {
+          "old": true,
+          "ms": 222.3,
+          "preparationCalls": 1,
+          "cbmCalls": 200,
+          "queries": 11,
+          "returnedRows": 5408,
+          "writes": 0
+        },
+        {
+          "old": false,
+          "ms": 197.7,
+          "preparationCalls": 0,
+          "cbmCalls": 0,
+          "queries": 11,
+          "returnedRows": 5408,
+          "writes": 0
+        }
+      ]
+    }
+  ]
+}

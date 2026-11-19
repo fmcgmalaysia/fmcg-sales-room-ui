@@ -1,0 +1,90 @@
+2026-10-22 — ORIGINAL REFERENCE COST DURABLE CLIENT AND FAILURE AUDIT
+
+Recovery: pushedfd75b32, existing draftPR220. Productiond447185/runtime32b812c exact.
+Same continuous inventory work; mandatory framework/spec/Astra decision reused at same
+versions. Reread selected current cost plan/save/UI builders, original Purchase app,
+parent and existing cache/resume contracts. No broad source scan, model/agent, browser,
+live POINTBASE/CMS/schema/permission/file or expired test-lock mutation.
+
+Known provider failure preservation
+- Original cost retry still runs its original validators/reference-only rules over
+  private images. Optional server-only recordProviderFailure defaults FALSE for
+  existing direct proof callers; the current save enables it explicitly.
+- Only a known read-only provider throw or original invalid provider-result error
+  may produce a failure plan. Must contain exactly original ATTEMPT and FAILED RESULT,
+  exact original IDs/staff/company/request/task/code, no task/order writes/capture and
+  no remaining simulated lock. Other private validation/storage faults still throw;
+  partial simulated successful changes can NEVER be promoted to a failed receipt.
+- Commit/recovery persists those two original audits under the common fence. Protocol
+  completion is not business success: outward result remains ok:false, sanitized code,
+  stockFinal:true and confirmed generation. Same UUID replays one failed attempt with
+  no provider retry. Interrupted audit APPLY resumes its saved plan, not recapture.
+- No cost/PO/qty/stock/borrow state changes on provider failure; unknown provider text
+  is not exposed. Original known failure history no longer silently disappears.
+
+Original client/parent connection, no new popup/font/layout/cache system
+- purchase-cost-ui-overlay uses existing Purchase mutate/savePending/draft/tracker and
+  original cache key, not a second request store or another task. Current button saves
+  COST_REFERENCE full request plus original staff identity before first network call;
+  read-confirms exact original cache. Initial unavailable storage sends nothing. An
+  already read-confirmed identical saved request is still safely retryable if a later
+  cache rewrite fails; it is not replaced with a new UUID.
+- Parent passes exact task/UUID/current metadata through the SAME original
+  retryPurchaseTaskCost webMethod (optional fourth argument). Ordinary legacy cost
+  handler stays unchanged. Cost route precedes general current task route; no raw
+  legacy write on ACTIVE, error or unknown result.
+- Valid bounded phases continue same immutable request, single in-flight/serial timer
+  ownership. Cost automatic continuation has finite64progress budget; malformed,
+  timed-out/unknown or late pending reply does not restart it. Explicit retry retains
+  original UUID; server saved plan still decides outcome. Success needs matching task/
+  company/request/advanced generation and read-confirmed cache cleanup.
+- Known failed final uses original tracker but NOT success completion/copy/colour.
+  Exact pending cache is cleared with readback while preserving unrelated price/sort/
+  allocation drafts. Failed cleanup or changed cache preserves request for explicit
+  reconciliation. No automatic reset based on an error-message regex.
+- Existing Purchase resume accepts only bounded COST_REFERENCE with exact original
+  staff identity. Auth-only original Purchase context must match before own-key read;
+  no scanning/other staff cache, fake workspace, auto-send on reload or legacy receipt
+  lookup. First retry explicit. Success/known failure clears only after fresh same-
+  staff/build/generation workspace (or original hidden reconciliation snapshot), then
+  preserves unrelated actual business drafts. Original non-cost resume behavior kept.
+
+Evidence and failures actually investigated
+- New provider audit3tests (both companies, read-only failure, invalid map, interrupted
+  audit, reauthorization, private fault not promoted). Original4retry tests pass0fail
+ 111.529ms. Affected39current tests pass0fail713.0669ms before last added UI assertion.
+- New UI7tests include actual original app/parent/web/private root/generated runtime
+  composition for success AND known failed provider, cache quota/cleanup/change,
+  wrong/unknown finals, own reload, explicit retry, late timer and64progress bound.
+  Focused7pass0fail567.2221ms after final test correction.
+- Initial extracted current-handler tests lacked new helper for unrelated operations:
+  cost-only short circuit restores isolated old non-cost seam; all original21current
+  UI/resume tests pass. New fixture needed setImmediate binding and JSON normalization
+  across VM realms. Recovery test now asserts real unrelated price draft, not an
+  unknown cache property that original cacheDraft intentionally does not retain.
+- Initial full893run892pass1failure: old mechanical original-parent strip assertion
+  needed the newly authorized COST_REFERENCE branch excluded, preserving exact equality
+  for all other original parent code. Focused panel+cost11pass680.8151ms.
+- Initial last new quota assertion incorrectly forbade retry of an ALREADY durable
+  identical request when cache rewrite failed. Corrected assertion, not product guard;
+  original stored bytes are still read-confirmed. Last full894pass0fail19253.6354ms.
+- Runtime96modules49private exports and generated builders --check pass. Protected
+  production-directory diff againstd447185 empty. All tests Node/VM/mock ONLY; not
+  actual Wix SDK/capacity/CMS/browser/real provider/public acceptance. Credit UNKNOWN.
+
+Continuation and release audit — feature still NOT ready to activate
+- Current cost root/client/provider-failure pairing is now implemented OFFLINE. Keep
+  all20 writer coverage EMPTY/ACTIVE OFF until actual complete-root review/platform QA.
+- Next bounded actual-entrypoint work: original PurchaseOrders/Account shared record
+  writers and associated files need their real roots/parent/client integration while
+  preserving original auth/finance/document locks. This is co-writer safety, NOT new
+  finance functionality and NOT part of user's first invoice test (invoice remains OFF).
+- Original Source large-order bounded-progress presentation/transport still open;
+  original one-line current intake was proved offline, not large native order UX.
+- Real schema/index/type/permission and conditional adapter acceptance, operational
+  recovery/unknown lock/callback proof, actual capacity/relation lifecycle, initial
+  parity/maintenance/shadow/cutover, complete simple-to-Loaded end-to-end, focused review
+  and four-stage publication remain OPEN. No missing new business-theory decision.
+- Four states: candidate code/Git sync only; Pages unchanged; Wix not installed or
+  published; public new inventory/borrowing unverified. Real invoice/physical exit OFF.
+  No main merge, temporary deployment rule, Drive/staff grant or real business data.

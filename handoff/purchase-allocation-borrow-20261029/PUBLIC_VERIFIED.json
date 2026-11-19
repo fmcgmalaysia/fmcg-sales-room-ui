@@ -1,0 +1,72 @@
+{
+  "at": "2026-10-29T15:22:38.533Z",
+  "codeCommit": "39503390606d8e4840be83e036c1448cce3d008d",
+  "build": "20261029-customer-allocation-v1",
+  "purchase": {
+    "url": "https://fmcg999.wixstudio.com/master",
+    "hardRefresh": true,
+    "iframe": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261029-customer-allocation-v1",
+    "splitMain200": {
+      "supplier": "HONG LEA",
+      "netCost": "82.47",
+      "totalCost": "16,493.76",
+      "poControl": "P.O.",
+      "duplicateSourceChild": false
+    },
+    "pending100": {
+      "inheritedSource": false,
+      "inheritedPO": false
+    },
+    "allocationDialogs": {
+      "batch200": {
+        "demand": 200,
+        "reserved": 0,
+        "free": 0,
+        "shortage": 200
+      },
+      "batch100": {
+        "demand": 100,
+        "reserved": 0,
+        "free": 0,
+        "shortage": 100
+      },
+      "borrowNoReceivedStock": "No eligible donor; no confirmation submit control"
+    },
+    "errors": []
+  },
+  "support": {
+    "refresh": true,
+    "deskNavigation": [
+      {
+        "desk": 1,
+        "tasks": 1
+      },
+      {
+        "desk": 2,
+        "tasks": 0
+      },
+      {
+        "desk": 1,
+        "tasks": 1
+      }
+    ],
+    "compactHeader": true,
+    "errors": []
+  },
+  "warehouse": {
+    "refresh": true,
+    "deliveryTask": "No authorized tasks",
+    "supportAuthorizationNotice": true,
+    "financialColumnsVisible": false,
+    "errors": []
+  },
+  "finance": {
+    "refresh": true,
+    "records": 3,
+    "readSuccessful": true,
+    "errors": []
+  },
+  "productionBusinessWrites": 0,
+  "userBusinessAcceptance": "PENDING",
+  "knownObservation": "Automation reload initially produced blank Wix embed. Original Chrome shortcut navigation and native Ctrl+Shift+R loaded the new build successfully."
+}

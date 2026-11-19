@@ -1,0 +1,51 @@
+2026-10-07 上午工作收尾报告
+
+范围：完成已授权的发布核查和记录归档。没有解冻暂停故障，没有业务清理、迁移、批量合并或删除生产历史。
+
+一、已完成
+
+1. EXPORT EXCEL接续档案
+GitHub commit e4cf05bf15db29ba0028c28468a360d0b10d56ac
+分支 maintenance/excel-export-redacted-handoff-20261007
+归档标签 archive/excel-export-redacted-evidence-20261007
+PR https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/21
+报告 handoff/excel-export-resume-20261007/REPORT.txt
+保存固定模拟文件成功机制、精确历史代码、恢复补丁、生成器、hash与失败证据。客户真实XLSX、截图和短期签名凭证不随此报告公开。
+固定模拟成功基准257f9239ff27dc2563a9268e885b1e57b66b96c1，仅证明模拟下载；真实独立Buyer页面成功b70ece52fff02dac7669a0c856972b02aea95982不证明Entry路径成功。归档完成不等于下载修复完成。
+
+2. Buyer Room界面优化
+代码703123f01eca2b1aaca44fa0c325c6ef1491f5d8；记录c4cfbcddbc7eb27cfe297fe6a8fa3b75ef68c764
+PR https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/22
+左菜单框内身份说明、标题产品计数隐藏、40px图片、43px行、统一表头、浅灰蓝hover、去阴影，保留Track位移和编辑按钮放大。Excel原生按钮仅调整顶部距离。
+四阶段：代码完成；Pages run37563345416成功，marker2026-10-07-buyer-compact-grayblue-room5-v2核实；Wix published/live回执及精确回读；正式页面测量核实。独立Wix部署ID未捕获，不虚构。
+精确代码、hash、回执与恢复说明 handoff/buyer-compact-green-20261007/。
+未取得用户完整实测验收，PR保持draft，不合并main、不新增verified标签。
+
+3. My Selection与Order Form统一排序
+代码f27b3cc80f97e6104c9e846dccb6fa685f83fcaf；记录0404d09052f5a172d98ff09489b4e9d62b3bfd8c
+PR https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/23
+Order Form直接调用My Selection现有bySelectionOrder函数：FOOD优先、NONFOOD其次，然后brandName、sortNo。只改一处排序调用；CSS及QTY保存/Enter/失焦/上下键/编辑、报价、客户身份、下载、后端均不改。
+四阶段：代码完成；Pages run37565622376成功，marker2026-10-07-buyer-order-selection-sort-room5-v1及实际脚本核实；Wix published/live回执与精确回读；真实Sales Room→Entry→Buyer Room两页9项ID顺序一致，搜索2项相对顺序一致。
+线上With Qty当时0项，非空子集相对顺序通过本地fixture；不将本地检查称为线上非空测试。
+数量核查时Track出现新的3行35箱请求（20/5/10），当前Order Form草稿0，符合原有交单后草稿重置。助手未编辑数量或提交订单，不声称仍有35箱草稿。
+临时部署权限已撤销，环境恢复main-only。独立Wix部署ID未捕获。
+精确前后副本、hash、公开核查及恢复记录 handoff/buyer-order-selection-sort-20261007/。
+用户亲测验收尚待确认，PR保持draft，不合并main、不新增verified标签。
+
+二、明确暂停/未实施
+
+- Entry路径Excel下载仍失败；独立页面成功不能替代Entry验收。Custom Element最小测试未实施，需套餐/域名就绪及用户恢复授权。
+- 当前Excel准备发生于Buyer页面内容版本准备，不是PUBLISH钩子；PUBLISH生成文件与旧文件30天清理未实施。
+- Sales Room蓝色PUBLISH超时调查暂停，没有在界面或排序任务顺便修改。
+- 既有页面加载/客户身份出现迟缓仅记录，本次没有修复认证或加载机制。
+- MASTER内部架构、套餐、CMS容量和优惠是讨论，没有采购、迁移或软件实现。
+- 历史交单锁定、销售改量、Edit History整条流程未有用户独立验收，不能因收尾要求成为main基准。
+
+三、保护与恢复
+
+已确认的Catalogue排序、My Selection排序、QTY失焦保存/上下键、QD发布排序继续受保护。最新界面也必须保留。故障恢复应先读对应精确档案，不整页覆盖，不用main旧版本替代最新线上。
+没有删除旧分支/tag，没有合并main，没有修改Apps Script、CMS、权限架构或下载机制。
+工作区既有handoff/buyer-native-selection-download-20261006/release.json未提交修改保持原状，不纳入本次文档提交。
+此maintenance分支仅新增本报告与manifest；网站代码和Wix均无进一步改动，不需要发布文档分支。
+
+下一步：用户可实测两页排序与界面；确认后另行冻结精确用户验收基准。Excel继续时先读PR21报告，从真实Entry路径测试，不复述已证伪的成功结论。

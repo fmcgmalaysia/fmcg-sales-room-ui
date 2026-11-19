@@ -1,0 +1,51 @@
+2026-10-22 PURCHASE BORROW APPROVAL — IMPLEMENTED CANDIDATE, NOT LIVE
+
+Original supplier-dialog optional approval section, not a new workroom or person
+shape. Existing blue/orange status/halo untouched. Inherit original font, compact
+fields, no additional popup. Only full demand dialog, not ambiguous batch dialog.
+Protected recovery stilld447185/runtime32b812c; previous candidate7ffe52b pushed.
+
+Client
+- Explicit Check eligible P.O.s; never automatically approve or hold on read.
+- Valid CURRENT_BORROW_OPTIONS_V2 exact company/task/build/generation/revision,
+  unique donor/replacement pairs and positive checked maximum required. No unknown
+  converted to0. Actual server quote uses same approveBorrow rules, not UI invention.
+- Select lender+replacement PO, integer carton quantity, reason and explicit consent
+  to automatic future repayment. Display labels escaped; real row label where known.
+- Existing source drafts, parked drafts, ordinary price/order drafts, cost retry,
+  in-flight/unknown save or selected-batch context block action. Check AGAIN on click.
+- Submit original api.mutate PURCHASE_SAVE_REQUEST operation BORROW_APPROVE; original
+  tracker owns UUID, current metadata, cached input, bounded progress and retry.
+  No direct postMessage/second save loop/actor privilege/optimistic halo paint.
+- Stale dialog async result cannot overwrite fresh dialog; no double approval click.
+  Legacy contexts have no new section. Client is candidate only, not visual QA.
+
+Private server composition
+current-purchase-borrow-gateway.cjs maps bounded original Purchase dialog contract
+to EXISTING createPurchaseBorrowOptions +createCurrentBorrowingSave, with exact
+company/action. Underlying original Purchase auth and actual matching PO/ownership/
+packing/finance/version checks remain. Browser kind/approvedBy are not authority.
+Actual v2 test quotes100, transfers30 with one relation, same-request replay once,
+no change to physical100 or PO-A/PO-B. Warehouse denied before context read; own PO
+missing => known empty quote, actual save denied. No public webMethod/SDK privilege.
+Runtime70scoped modules29exports; earlier non-file PO protection in7ffe52b retained.
+
+Evidence
+UI-targeted77pass0fail803.1312ms, including63 unchanged original assertions against
+candidate. Gateway/runtime6pass0fail291.4783ms. Full current suite628pass0fail
+5773.5748ms. Protected production diffd447185 exact. All offline VM/mock checks.
+No real stock mutation, schema creation, new lock deletion, Pages/Wix sync or publish.
+
+EXPLICIT OPEN CONNECTION
+Current Wix relay candidate still has ONLY the earlier read-only relation route.
+PURCHASE_BORROW_OPTIONS_REQUEST and BORROW_APPROVE are NOT installed or connected to
+actual original public web gateways. Do not call this usable live approval, do not
+ask user to test real borrowing, and do not publish this half system. Root backend
+runtime/real server dependency composition +all writers/read redactions and transport
+connections still required. This private/client contract is reviewable implementation,
+not a substitute for root integration. Original LIVE has no new controls.
+
+All remaining gates (reserved-loss/disposal, intake/task/order/margin/file writers,
+legacy Warehouse v2/photos, schemas/indexes/SDK roundtrip/init/recovery/capacity,
+migration/shadow, public visual/function QA, exact branch permission and4release
+stages) still OPEN. ACTIVE staysOFF, Support real invoiceOFF, no main merge.

@@ -1,0 +1,34 @@
+CURRENT after7efe607 — legacy Warehouse ownership guard hole closed in candidate
+
+Evidence review found originalProductState accounted for new packing lists and legacy
+REQUESTED/INVOICED shipments but omitted old WAREHOUSE_PREPARATION_SAVED. That could let
+new borrowing take already prepared/loaded customer goods. Added ORIGINAL readPreparation
+guard, propagated through server authority/preparation factories. Missing parser when old
+records exist now refuses; malformed/foreign facts refuse. Latest authorized reversal
+clears it, stale signature/loaded evidence does not. No production incident is claimed.
+
+Guard is task boolean legacyBlockedByTask, not invented physical/quantity ledger. Old
+preparation and old invoice have no stable overlap reference; do NOT sum them into double
+held quantities. Original actual invoice dispatch and ordinary receipts still allowed.
+Borrow/unused return/unreserved dispatch/correction ownership removal and protected source
+plan/share reduction cannot bypass old preparation. Sales original loaded guard retained.
+Actual formal invoice dispatch consumes its existing quantitative reservation once.
+
+Retirement avoids permanent old-row flags ONLY using ORIGINAL projectPreparation exact
+batch ID, same signature/quantity, non-stale/non-orphaned row and full dispatched range.
+Never task-total shipped guess, timestamp or automatic legacy record deletion. Optional
+original projector missing -> conservative guard retained. Normal old preparation writer/
+photo path and original parsing/projection code untouched. Preview rebuilt mechanically
+from exact tested pure model, no second logic or new UI attempt.
+
+Evidence: original parsers/authority tests show prep holds even without new lists/invoice,
+UNPACK/reversal clears, loaded/stale facts remain; invoice100+prep100 -> hold100 (not200),
+official dispatch100 works. Original exact batch/full dispatched proof retires, wrong
+signature/missing projector does not. Final all candidate+original Warehouse/packing-context
+326pass0fail1638.3688ms. Prior325 and focused14 are overlapping development evidence.
+
+OPEN: these dependencies still must be supplied by actual live gateways; no writer coverage
+certified by optional callback presence. Authenticated actual read/write/photo pipelines,
+scoped/production-capacity relation lifecycle, recovery operation/real multi-table rehearsal,
+migration/shadow/ACTIVE, Purchase halo UI and four-stage release remain unfinished.
+Production directories remain exactd447185; no Wix/data/permissions/Pages change.

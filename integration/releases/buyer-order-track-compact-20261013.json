@@ -1,0 +1,13 @@
+{
+  "status": "candidate; not deployed",
+  "branch": "style/buyer-order-track-compact",
+  "base": "feat/purchase-active-planning",
+  "build": "2026-10-13-buyer-order-track-compact-v1",
+  "recoveryCommit": "4e4af28",
+  "protectedWorkflowTag": "verified/send-order-addition-user-tests-20261009",
+  "liveComparison": "Public HTML exact; Buyer bridge and catalogueAuth normalized LF/trimEnd exact. Copies in C:/FMCG-WIX-LOCAL/handoff/buyer-order-track-compact-20261013",
+  "scope": ["Order Form instructions and search placement", "Optional customer P.O. persisted in existing customerPoNumber field with immutable retry identity", "Explicit different customer P.O.s never merge", "Track image/three-line descriptions/six progress dots", "Remove current Qty Updated, Barcode column and rail fraction counts", "Est. Shipment Date placeholder only"],
+  "validation": {"targetedPassed":51,"isolatedPreview":"Order Review input and retained failed request; Track 3 rows, partial receipt90/200 half green; screenshots saved locally","realBusinessWrites":false,"allLegacyTestsPass":false,"legacyFailures":"Initial expanded run found native download mock missing expiry, Buyer data mock missing remove, and stale reduction header/version assertions; not claimed as full suite green"},
+  "publication": {"githubPages":false,"wixPublished":false,"publicVerified":false},
+  "preserved": "Original quantity drafts, saved timestamps for positive quantities, submission locks/addition retries, history, download and quote mechanisms. No production writes or customer data mutation."
+}

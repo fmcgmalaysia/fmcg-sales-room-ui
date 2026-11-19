@@ -1,0 +1,73 @@
+{
+  "at": "2026-10-29T04:32:06.856Z",
+  "originalMatches": [
+    {
+      "name": "stockCardProjection.js",
+      "sha256": "1358a6681adf462bc6e60b935e7d51060af3e68e1ee580d012e07c99b7072300",
+      "at": "2026-10-29T01:28:07.754Z",
+      "exact": true
+    },
+    {
+      "name": "packingListContext.js",
+      "at": "2026-10-29T01:34:01.193Z",
+      "exact": true
+    },
+    {
+      "name": "packingListModel.js",
+      "at": "2026-10-29T01:36:53.951Z",
+      "exact": true
+    },
+    {
+      "name": "packingListOperations.js",
+      "at": "2026-10-29T01:39:24.174Z",
+      "exact": true
+    },
+    {
+      "name": "plannerAllocation.js",
+      "at": "2026-10-29T01:41:30.385Z",
+      "exact": true
+    },
+    {
+      "name": "purchaseProgress.js",
+      "at": "2026-10-29T01:43:47.815Z",
+      "exact": true
+    },
+    {
+      "name": "customerCompletionProjection.js",
+      "at": "2026-10-29T01:46:18.233Z",
+      "exact": true
+    },
+    {
+      "name": "customerFulfilment.js",
+      "at": "2026-10-29T04:12:05.541Z",
+      "exact": true
+    },
+    {
+      "name": "customerShipmentLedger.js",
+      "at": "2026-10-29T04:15:13.045Z",
+      "exact": true
+    },
+    {
+      "name": "customerShipmentPlan.js",
+      "at": "2026-10-29T04:16:45.709Z",
+      "exact": true
+    },
+    {
+      "name": "inventoryExceptions.js",
+      "at": "2026-10-29T04:19:06.119Z",
+      "exact": true
+    },
+    {
+      "name": "supportInvoice.js",
+      "at": "2026-10-29T04:22:18.082Z",
+      "exact": true
+    },
+    {
+      "name": "warehousePreparation.js",
+      "at": "2026-10-29T04:24:43.668Z",
+      "exact": true
+    }
+  ],
+  "candidateMatches": 14,
+  "hashesMatch": true
+}

@@ -1,0 +1,94 @@
+2026-10-24 — provider reply preserved; fresh-cohort scope NOW AUTHORIZED
+
+SUPERSEDING RESPONSE: user explicitly requested completion of new/old write
+isolation, native install and publish through real Buyer/split/borrow tests without
+routine confirmation pauses. Agent proceeded with fresh same-site business cohort,
+preserving original modules/tables and reference/auth identities. Actual16-table
+setup in ISOLATED_COHORT_20261024.txt. Approval-pending statements below are history,
+not a current stop. No provider drain claimed and no same-cohort migration enabled.
+
+New evidence
+User pasted Wix Customer Care response titled Backend executions and Wix Data
+migration, Ref031000264, from support4@wix.com, signed Andrian. Treat as a
+user-supplied provider response, not independently authenticated email/inbox read.
+No email tracking-image URL requested/opened or email reproduced into public files.
+Provider response says no supported site-wide stop/drain of already-running Velo
+or completion receipt for all pending data operations. Publish affects later calls,
+not old executions. Unpublish/504/data timeout/empty locks/fixed wait not a boundary.
+Future blocking/tracking cannot retroactively control earlier executions.
+This closes the previous 'no verified reply supplied' dependency, NOT the unsafe
+same-collection cutover. Existing hard verifyLegacyDrain refusal remains correct.
+
+Primary documentation actually fetched this turn
+https://dev.wix.com/docs/develop-websites-sdk/maintain-your-site/scale-your-site/about-compute-feature-limitations
+Official page explicitly says execution may continue after client connection closes.
+User's eventual-consistency link failed fetch because content exceeded tool limit;
+do not claim it was read or retry unchanged merely to collect another citation.
+
+Exact export consent fulfilled
+User answered '2.明确允许' immediately after the exact two-file question. Fresh
+remote read: branch feat/stock-current-state-protocol-20261021 at e331024064bf7091ab0ba8aba50a629e39afc3b5.
+Commit66bb853944154a46d14824470e32aa12f39bd009 is its DIRECT child and changes ONLY
+CMS_FIELDS_INDEXES_NATIVE_20261023.txt and STATUS.txt in this handoff directory.
+Normal exact-ref push66bb853 to existing PR220 branch succeeded e331024..66bb853.
+No force/main/deploy/other local commits or private evidence exported. Initial
+sandbox read-only ls-remote DNS/thread failure resolved through approved network
+execution; previous safety denial retried only AFTER this new exact user consent.
+Later local commits remain unpushed; no blanket permission inferred for them.
+
+Decision requiring explicit scope approval
+Existing architecture planned conversion of the SAME legacy business collections.
+That plan cannot now rely on a provider drain, and a new check cannot fence old code.
+Do NOT patch a Boolean, wait longer, clear old data/locks or claim solved.
+
+Recommended direction to evaluate/implement AFTER approval: fresh empty business
+collection cohort in the SAME MASTER site, preserving old test collections without
+deletion or migration. Reuse current ALLOC/borrow/repay/split/Support candidates and
+original department/member authorization. No new employee accounts/Drive grants.
+New code would use ONLY the new cohort; no reads/merges/dual-write/legacy fallback.
+Old executions can continue to affect the old cohort but must never name or obtain
+new cohort records. This is a proposed authority/namespace change, not a proven fix.
+New table names/mapping, references and affected writers/readers are NOT selected,
+edited, created, synchronized or enabled in this turn.
+
+Reasons isolation must be complete, not Stock* only
+Actual nctIntake COMPANY_COLLECTIONS names original order/task/activity tables;
+stockCurrentBorrow imports original readFulfilmentContext plus shared PO readers.
+Thus creating only fresh Stock* tables while reading mutable old tasks/journal/PO
+would not establish isolation. Must inventory the actual business cohort and shared
+references without changing staff identity or approved protected behavior.
+Fresh Source-to-MASTER contract must distinguish new acceptance from old cached or
+already-running Source submissions; old requests must not import old garbage as
+new live orders. All original auth/customer/company/idempotency rules remain.
+External/file side effects require explicit dependency checks; do not assume a
+collection rename isolates Drive or every old HTTP/cron/event route.
+
+Required proof before enabling such a new authority
+-Exact native before-images/recovery, explicit table schema/index/permissions scope.
+-Every current writer/reader targets the new cohort only, original protected auth.
+-Delayed old writers/old cached clients/old cross-site requests cannot alter or
+ populate new current business rows; no old-data projection fallback.
+-Fresh new order intake -> Sales split -> PO -> RCV -> borrow max10 in100/90/80,
+ reject20 in100/80/80 -> partial/full receipt repayment -> correct halos/ROWs ->
+ Support draft/send/Loaded, quantities conserved/no double ALLOC.
+-Native capacity/recovery and paired four-stage release; existing20coverage flags
+ stayUNVERIFIED until actual evidence. Invoice/physical dispatch remainOFF.
+No estimate of required line count/time or statement that all119modules must be
+rewritten. First bounded dependency analysis determines minimal alias/binding edits.
+
+Approval question
+Allow changing this task from same-table old-data migration to fresh empty MASTER
+business collections, retaining old test tables untouched and reusing existing new
+UI/business candidate, with no old-data import or parallel active authority?
+This exceeds ordinary continue/publish consent under the explicit architecture/
+authority-change law. Stop architecture edits/sync/native writes pending the answer.
+User says editor now open: changed state permits later fresh Source readback, but
+this turn has NOT inspected it and does not claim Source parity or live availability.
+
+Four release states
+Code local business/UI fdf4bea, audit4815d1a; new direction not implemented.
+GitHub PR220 advanced ONLY to66bb853 for two approved documentation files.
+Pages unchanged; Wix new flow unsynchronized/unpublished; public borrowing not
+available/accepted. Heartbeat remainsPAUSED; no duplicate ticket or automation.
+Original d447185/runtime32b812c recovery retained. No business code/CMS/ACL/data/
+lock/file deletion or native runtime probe occurred; existing UNKNOWNs retained.

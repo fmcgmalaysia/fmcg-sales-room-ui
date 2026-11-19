@@ -1,0 +1,14 @@
+{
+  "date":"2026-10-11",
+  "timezone":"Asia/Kuala_Lumpur",
+  "branch":"style/purchase-po-dialog-polish",
+  "codeCommit":"d7e99af",
+  "build":"2026-10-11-purchase-po-polish-v18",
+  "recovery":"3226ed1782dee11b4f0d505b9b5651a46324f6f6 / published Purchase v17; existing verified Send Order checkpoint remains scoped to that workflow",
+  "baselineComparison":{"liveAppExact":true,"liveStyleExact":true,"liveIndexExact":true,"wixHomeExact":true,"copies":"Private handoff/purchase-po-polish-20261011"},
+  "changes":["Purchase Department title and explicit company selector","Open-folder SVG with existing document colours","56x12px chase switch","Balanced PO columns and equal Amount heading/value alignment","Created On DD-MM-YY HH:MM followed closely by staff","Supplier full name in Files and Upload headers","434px upload form, labels left and controls right","Combined PI/SO display; separate INV and CN audit titles","Committed Qty Reduced; Increased versus Updated PO quantity titles from existing before/after"],
+  "preservation":{"backendChanged":false,"uploadAndEventHandlersExact":true,"inputIdsUnchanged":true,"existingPISODocumentsRetained":true,"documentCategory":"New combined PI/SO selector retains the existing PI provisional-type value; legacy SO records remain readable, no data migration or new enum","wixCandidate":"One version reference only; live Home still v17"},
+  "checks":{"existingIntegrationChecksPassed":170,"syntaxPassed":true,"localBrowserVisual":true,"uploadWidthPixels":434,"amountHeadingAndCells":"right aligned; paddingRight8px; same measured right edge","previewData":"Local fixtures only; no production writes"},
+  "publication":{"code":"Complete candidate","pages":"Not deployed","wix":"Not synchronized or published","public":"Candidate not publicly verified"},
+  "userAcceptance":"Pending; no main merge or verified tag"
+}

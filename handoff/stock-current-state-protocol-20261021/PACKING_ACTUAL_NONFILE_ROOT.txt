@@ -1,0 +1,44 @@
+2026-10-22 — ORIGINAL PACKING ACTUAL PRIVATE NON-FILE ROOT
+Recovery34d14fe/PR220. Protected productiond447185/runtime32b812c unchanged.
+No browser/native/CMS/Drive/POINTBASE/real-lock writes, grants, activation or publication.
+
+Private stockCurrentPacking.js now composes ACTUAL original requirePackingStaff,
+projectPackingContext/projectPackingWorkroom/createPackingListOperations, original
+PO/claims/preparation/shipment scope and conditional segmented store. Original two
+SiteMember packingLists methods mode-route only AFTER exact original staffContext.
+LEGACY only original read/save, ACTIVE only private current service; unknown, maintenance
+or shadow refuses. Original validation catch remains byte-exact. No new public method.
+Existing getPackingLists optional exact {resume:'PACKING_V1'} returns only own original
+staff/member/department behind pending, no company control/stock/storage read or grant.
+Original shared Support vs Warehouse/TOP MANAGEMENT entitlement unchanged.
+
+Current packing private read now returns actual staff/department, guards all20 writer
+coverage, exposes paired current metadata. Save binds optional expected staff/member
+into generic immutable envelope, compares fresh preparation employee to authenticated
+actor too. Same member reissued different staff cannot adopt completed/prepared plan.
+Actual root always requires expected staff/member; source/proof-only no-identity test
+contracts remain. Actual root rejects PHOTOS before side effects until dedicated file
+protocol connected. Original model rejects INVOICE; no real invoice feature enabled.
+
+Actual-import root positive test runs full ORIGINAL context/validator + scoped current
+reader/planner + segmented coordinator over in-memory store, not a save-factory spy:
+Support sends50, Warehouse sees SAME LIST and STARTs, physical positions unchanged,
+current hold advances once/replay stable. Native SDK replaced only by fixture store.
+Gateway routing/recovery test uses private-root spy and separately verifies two original
+public boundaries/auth/catch. Do not confuse either with native or real UI acceptance.
+Final ALL stock-current802pass0fail16950.2013ms,87modules43exports. Focused16pass0fail
+517.5498ms. Independent ORIGINAL model/operations/context/guards/sharedconsumers/bridge
+37pass0fail312.2843ms. Generator/whitespace pass, production paths exactd447185.
+First negative root test incorrectly handed synchronous throw to assert.rejects;
+changed only test callback to async, kept original no-file gate unchanged. Credit UNKNOWN.
+
+NEXT: actual child transport own identity/session durable retention/auth-only reload,
+both department parent relays/cache markers, then original packing PHOTOS fixed-ID
+protocol. Existing packing-transport.current.js still lacks persistent cache/identity;
+do not install new root without paired UI. Other Sales/intake/writers, native schemas/
+permissions/init, all20coverage, cross-session unknown-lock recovery, capacity, inflight
+legacy/quiescent switch/shadow parity, SHIPPED/history/orphan-loaded and four-stage
+release gates OPEN. ACTIVE OFF/coverage EMPTY. Support real invoice OFF.
+Code incomplete candidate; Pages unchanged; Wix not installed/published; public new
+current inventory/borrowing unavailable/unverified. No user business answer needed
+for independent child implementation. Exact branch deployment grant later when ready.

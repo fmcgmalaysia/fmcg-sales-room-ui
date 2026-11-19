@@ -1,12 +1,17 @@
+import { requestMasterFulfilment } from 'backend/masterFulfilmentClient.js';
+import { withMasterQuantities } from 'backend/masterQuantityClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { fetch } from 'wix-fetch';
-import { request as httpsRequest } from 'https';
-import { getSecret } from 'wix-secrets-backend';
+import wixRealtimeBackend from 'wix-realtime-backend';
+import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
+import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
+import { requireStaffCustomerAccess, staffMayAccessCustomer, getMasterSalesCreationAssignees, resolveMasterSalesCreationAssignee } from 'backend/masterStaffAccessClient.js';
+import { reserveWebQuotationCustomer, reserveWebQuotationPrimaryUser, activateWebQuotationCustomer } from 'backend/webQuotationRegistration.js';
+import { isWebQuotationCustomer, isWebQuotationReady } from 'backend/webQuotationCustomer.js';
+import { applyWebQuotations } from 'backend/masterWebQuotationData.js';
 
-const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
-const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
 
 const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
@@ -30,31 +35,14 @@ const BUSINESS_TYPES = Object.freeze([
 ]);
 const CURRENCIES = Object.freeze(['USD', 'MYR', 'SGD', 'RMB', 'JPY']);
 
-export const getAssignableSalesStaff = webMethod(
-  Permissions.SiteMember,
-  async () => {
-    const context = await requireAuthorizedStaffContext();
-    let query = wixData
-      .query(STAFF_COLLECTION)
-      .eq('status', 'ACTIVE')
-      .limit(1000);
-
-    if (!context.canViewAllCustomers) {
-      query = query.eq('staffId', upper(context.staffId));
-    }
-
-    const result = await query.find({ suppressAuth: true });
-    const staff = result.items
-      .map((item) => ({
-        staffId: upper(item.staffId),
-        staffName: upper(item.title)
-      }))
-      .filter((item) => item.staffId && item.staffName)
-      .sort((a, b) => a.staffName.localeCompare(b.staffName));
-
-    return Object.freeze({ ok: true, staff });
-  }
-);
+export const getAssignableSalesStaff = webMethod(Permissions.SiteMember, async () => {
+  const context = await requireAuthorizedStaffContext();
+  const routing = await getMasterSalesCreationAssignees(context.loginEmail);
+  const staff = routing?.assignees ?? [];
+  const mayAssignOthers = routing?.mayAssignOthers === true;
+  return Object.freeze({ ok: true, staff, canCreate: mayAssignOthers || staff.length > 0,
+    mayAssignOthers, quotationMode: 'WEB' });
+});
 
 export const createSalesRoomCustomer = webMethod(
   Permissions.SiteMember,
@@ -70,10 +58,14 @@ export const createSalesRoomCustomer = webMethod(
     const duplicateCompany = await wixData
       .query(CUSTOMER_COLLECTION)
       .eq('title', customer.companyName)
-      .limit(1)
-      .find({ suppressAuth: true });
-
-    if (duplicateCompany.items.length) {
+      .limit(2)
+      .find({ suppressAuth: true, consistentRead: true });
+    const prior = duplicateCompany.items.length === 1 && duplicateCompany.items[0];
+    const resume = prior && isWebQuotationCustomer(prior) && /^[a-f0-9]{64}$/.test(prior.salesInitialGrantRevision || '') &&
+      ['REGISTERING', 'ACCESS RECORD ERROR'].includes(upper(prior.customerStatus)) &&
+      prior.assignedStaffId === staff.staffId && prior.primaryEmail === customer.picEmail &&
+      prior.customerShortName === customer.customerShortName;
+    if (duplicateCompany.items.length && !resume) {
       throw new Error('This company is already registered.');
     }
 
@@ -83,20 +75,16 @@ export const createSalesRoomCustomer = webMethod(
       .limit(1)
       .find({ suppressAuth: true });
 
-    if (duplicateShortName.items.length) {
+    if (duplicateShortName.items.some(item => !resume || item._id !== prior._id)) {
       throw new Error('This CUSTOMER SHORT NAME is already in use.');
     }
 
-    const customerId = await generateUniqueCustomerId();
-    const userId = 'USR-' + customerId + '-01';
+    const proposedCustomerId = resume ? prior.customerId : await generateUniqueCustomerId();
     const now = new Date();
-
-    let customerRecord = await wixData.insert(
-      CUSTOMER_COLLECTION,
-      {
+    const customerFields = {
         title: customer.companyName,
         customerShortName: customer.customerShortName,
-        customerId,
+        customerId: proposedCustomerId,
         country: customer.country,
         natureOfBusiness: customer.natureOfBusiness,
         picTitle: customer.picTitle,
@@ -107,46 +95,33 @@ export const createSalesRoomCustomer = webMethod(
         selectionLimit: 100,
         destinationPortName: customer.destinationPort,
         assignedStaffId: staff.staffId,
-        qdOwnerStaffId: staff.staffId,
-        qdFileId: '',
-        qdFileLabel: '',
-        qdSheetName: 'WIX QUOTATION',
-        qdSheetId: '',
-        qdTemplateVersion: '',
-        qdStatus: 'PENDING',
+        salesInitialGrantRevision: staff.grantRevision,
         customerStatus: 'REGISTERING',
         lifecycleStatus: 'ACTIVE',
         accessStatus: 'PENDING',
         reactivationStatus: 'NONE',
         primaryEmail: customer.picEmail
-      },
-      { suppressAuth: true }
-    );
+    };
+    const customerRecord = resume ? prior
+      : await reserveWebQuotationCustomer({ ...customerFields, quotationMode: 'WEB', webQuotationStatus: 'PENDING' });
+    const customerId = normalize(customerRecord.customerId);
+    const userId = 'USR-' + customerId + '-01';
 
     let userRecord;
     try {
-      userRecord = await wixData.insert(
-        CUSTOMER_USER_COLLECTION,
-        {
-          title: customer.picName,
-          userId,
-          customerId,
-          mobileNo: customer.picMobile,
-          status: 'PENDING',
-          authorizedTime: now,
-          email: customer.picEmail,
-          primaryUser: true,
-          failedLoginCount: 0
-        },
-        { suppressAuth: true }
-      );
-    } catch (error) {
-      customerRecord = await updateCustomerState(
-        customerRecord,
-        'ERROR',
-        'ACCESS RECORD ERROR'
-      );
-      throw new Error('Customer was reserved, but the access record could not be created: ' + safeMessage(error));
+      userRecord = await reserveWebQuotationPrimaryUser({
+        title: customer.picName,
+        userId,
+        customerId,
+        mobileNo: customer.picMobile,
+        status: 'PENDING',
+        authorizedTime: now,
+        email: customer.picEmail,
+        primaryUser: true,
+        failedLoginCount: 0
+      });
+    } catch {
+      throw Error('Customer reserved. Retry this registration to confirm buyer access.');
     }
 
     const auditActor = await requireAuthorizedStaffContext();
@@ -176,98 +151,18 @@ export const createSalesRoomCustomer = webMethod(
       auditActor
     );
 
-    return provisionQuotationDesk({
-      customerRecord,
-      userRecord,
-      staff
-    });
+    return activateWebQuotationCustomer({ customerRecord, userRecord, staff });
   }
 );
-
-export const verifySalesRoomCustomerQd = webMethod(
-  Permissions.SiteMember,
-  async (customerId) => {
-    const staff = await requireAuthorizedStaffContext();
-    let customerRecord = await findAuthorizedCustomer(customerId, staff);
-    const qdFileId = normalize(customerRecord.qdFileId);
-    if (!qdFileId) throw new Error('This customer has no Quotation Desk file.');
-
-    const sharedSecret = await getSecret(SECRET_NAME);
-    const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'VERIFY_QD',
-        sharedSecret,
-        customerId: normalize(customerRecord.customerId),
-        assignedStaffId: upper(customerRecord.assignedStaffId),
-        qdFileId
-      })
-    });
-    const body = parseAppsScriptResponse(await response.text());
-    if (!response.ok || !body.ok) {
-      throw new Error(body.error || 'Quotation Desk activation verification failed.');
-    }
-
-    const qdStatus = upper(body.result?.qdStatus || 'ACTIVATION_REQUIRED');
-    customerRecord = await updateCustomerState(
-      customerRecord,
-      qdStatus,
-      qdStatus === 'READY' ? 'REGISTERED' : 'ACTIVATION REQUIRED',
-      {
-        qdFileId: normalize(body.result?.qdFileId || qdFileId),
-        qdFileLabel: normalize(body.result?.qdFileName || customerRecord.qdFileLabel),
-        qdSheetId: normalize(body.result?.qdSheetId || customerRecord.qdSheetId),
-        qdSheetName: normalize(body.result?.qdSheetName || 'WIX QUOTATION'),
-        qdTemplateVersion: normalize(body.result?.qdTemplateVersion || customerRecord.qdTemplateVersion),
-        qdLastVerifiedAt: new Date()
-      }
-    );
-
-    if (qdStatus === 'READY') {
-      const lifecycleStatus = upper(customerRecord.lifecycleStatus || 'ACTIVE');
-      const accessStatus = upper(customerRecord.accessStatus || 'PENDING');
-      const mayActivate = lifecycleStatus !== 'ARCHIVED' && accessStatus !== 'SUSPENDED' && accessStatus !== 'BLOCKED';
-      if (mayActivate) {
-        customerRecord = await wixData.update(
-          CUSTOMER_COLLECTION,
-          { ...customerRecord, lifecycleStatus: 'ACTIVE', accessStatus: 'ACTIVE' },
-          { suppressAuth: true }
-        );
-      }
-      const users = await wixData.query(CUSTOMER_USER_COLLECTION)
-        .eq('customerId', normalize(customerRecord.customerId))
-        .limit(5)
-        .find({ suppressAuth: true });
-      for (const user of users.items) {
-        if (mayActivate && upper(user.status) === 'PENDING') {
-          await wixData.update(
-            CUSTOMER_USER_COLLECTION,
-            { ...user, status: 'ACTIVE', authorizedTime: user.authorizedTime || new Date() },
-            { suppressAuth: true }
-          );
-        }
-      }
-    }
-
-    return Object.freeze({
-      ok: true,
-      customerId: normalize(customerRecord.customerId),
-      qdStatus,
-      customerStatus: upper(customerRecord.customerStatus),
-      qdFileId: normalize(customerRecord.qdFileId),
-      qdFileLabel: normalize(customerRecord.qdFileLabel)
-    });
-  }
-);
-
 
 async function loadSalesRoomCustomers() {
     const staff = await requireAuthorizedStaffContext();
     let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
 
-    if (!staff.canViewAllCustomers) {
-      query = query.eq('assignedStaffId', upper(staff.staffId));
+    if (!staff.canBrowseAllCustomers) {
+      const ids = staff.customerScope.customerActions.VIEW;
+      if (!ids.length) return Object.freeze({ ok: true, summary: { customerCount: 0, qdReadyCount: 0 }, customers: [] });
+      query = query.hasSome('customerId', ids);
     }
 
     const [customerResult, userResult, memberResult] = await Promise.all([
@@ -319,14 +214,13 @@ async function loadSalesRoomCustomers() {
       }
     }
 
-    const customers = customerResult.items
+    const customers = customerResult.items.filter(item => staffMayAccessCustomer(staff, 'VIEW', item.customerId))
       .map((item) => ({
         customerId: normalize(item.customerId),
         companyName: normalize(item.title),
         customerShortName: upper(item.customerShortName),
         country: normalize(item.country),
-        qdStatus: upper(item.qdStatus),
-        qdFileId: normalize(item.qdFileId),
+        ...(isWebQuotationCustomer(item) ? { quotationMode: 'WEB', webQuotationStatus: upper(item.webQuotationStatus) } : {}),
         customerStatus: upper(item.customerStatus),
         lifecycleStatus: upper(item.lifecycleStatus || 'ACTIVE'),
         accessStatus: upper(item.accessStatus || (upper(item.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
@@ -354,7 +248,7 @@ async function loadSalesRoomCustomers() {
       summary: {
         customerCount: customers.length,
         qdReadyCount: customers.filter(
-          (item) => item.qdStatus === 'READY'
+          (item) => item.quotationMode === 'WEB' && item.webQuotationStatus === 'READY'
         ).length
       },
       customers
@@ -366,68 +260,51 @@ export const getSalesRoomCustomers = webMethod(
   loadSalesRoomCustomers
 );
 
-async function loadQuoteRiskCounts(customers) {
-  const requested = (customers || [])
-    .map((customer) => ({
-      customerId: normalize(customer.customerId),
-      qdFileId: normalize(customer.qdFileId)
-    }))
-    .filter((customer) => customer.customerId && /^[A-Za-z0-9_-]{20,}$/.test(customer.qdFileId));
-  if (!requested.length) return new Map();
+async function readWebQuoteCounters(customers, listRows) {
+  const webRows = new Map(customers.filter(isWebQuotationCustomer).map(customer => [customer.customerId, []]));
+  for (const { record, data } of listRows) {
+    const selections = webRows.get(normalize(data.customerId));
+    if (selections && !record.removed && !data.removed) selections.push({ record, data });
+  }
+  const result = new Map();
+  const activeCustomers = customers.filter(customer => isWebQuotationReady(customer) && webRows.get(customer.customerId).length);
+  if (!activeCustomers.length) return { counts: result, selections: webRows };
+  const activeRows = activeCustomers.flatMap(customer => webRows.get(customer.customerId));
+  const productIds = [...new Set(activeRows.map(row => normalize(row.data.productId)).filter(Boolean))];
+  const products = new Map();
   try {
-    const sharedSecret = await getSecret(SECRET_NAME);
-    const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'GET_QUOTE_RISK_COUNTS', sharedSecret, customers: requested })
-    });
-    const body = parseAppsScriptResponse(await response.text());
-    if (!response.ok || !body.ok) throw new Error(body.error || 'Quote risk scan failed.');
-    return new Map((body.result?.counts || []).map((item) => [
-      normalize(item.customerId),
-      {
-        available: !item.error,
-        quoteRiskCount: Math.max(0, Number(item.quoteRiskCount) || 0),
-        pendingQuoteCount: Math.max(0, Number(item.pendingQuoteCount) || 0),
-        redSignalCount: Math.max(0, Number(item.redSignalCount) || 0),
-        lowGpCount: Math.max(0, Number(item.lowGpCount) || 0)
-      }
-    ]));
-  } catch (error) {
-    console.warn('Sales Room quote risk scan unavailable:', error?.message || error);
-    return new Map();
-  }
-}
-
-export const publishSalesRoomQuotations = webMethod(
-  Permissions.SiteMember,
-  async (customerId) => {
-    try {
-      const staff = await requireAuthorizedStaffContext();
-      const customer = await findAuthorizedCustomer(customerId, staff);
-      const qdFileId = normalize(customer.qdFileId);
-      if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('This customer does not have a valid Quotation Desk.');
-      const sharedSecret = await getSecret(SECRET_NAME);
-      const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
-        method: 'post',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'PUBLISH_QUOTATIONS',
-          sharedSecret,
-          customerId: normalize(customer.customerId),
-          qdFileId,
-          actorEmail: normalizeEmail(staff.loginEmail || staff.staffEmail)
-        })
-      });
-      const body = parseAppsScriptResponse(await response.text());
-      if (!response.ok || !body.ok) return { ok: false, error: body.error || 'Quotation publish failed.' };
-      return { ok: true, ...(body.result || {}) };
-    } catch (error) {
-      console.error('Sales Room quotation publish failed', error);
-      return { ok: false, error: safeMessage(error) || 'Quotation publish failed.' };
+    for (let index = 0; index < productIds.length; index += 100) {
+      const batch = productIds.slice(index, index + 100);
+      const page = await wixData.query('FMCGMALAYSIA').hasSome('_id', batch).limit(100).find({ suppressAuth:true, consistentRead:true });
+      for (const item of page.items) products.set(item._id, item);
     }
+  } catch (error) {
+    console.warn('Sales Room web quotation counters could not read product packing', error);
+    for (const customer of activeCustomers) result.set(customer.customerId, null);
+    return { counts: result, selections: webRows };
   }
-);
+  await Promise.all(activeCustomers.map(async (customer) => {
+    const rows = webRows.get(customer.customerId);
+    try {
+      const selections = rows.map(({ record, data }) => {
+        const product = products.get(normalize(data.productId));
+        const barcode = normalize(data.barcode || data.unitBarcode);
+        if (!product || normalize(product.barcode) !== barcode) throw Error('Product packing requires reconciliation.');
+        return { ...data, id:record._id, catalogueEa:Number(product.ea), barcode };
+      });
+      const projected = await applyWebQuotations(customer, selections);
+      const quoted = projected.filter(row => row.quoteActive === true).length;
+      const pending = projected.filter(row => row.quoteStatus === 'RFQ');
+      const received = pending.map(row => row.selectedAt).filter(value => Number.isFinite(Date.parse(value)));
+      received.sort((a,b) => new Date(a) - new Date(b));
+      result.set(customer.customerId, { quoted, awaiting:pending.length, rfq:pending.length, pendingQuoteReceivedAt:received[0] || '', lastQuoteSyncedAt:'' });
+    } catch (error) {
+      console.warn('Sales Room web quotation counters could not be confirmed', error);
+      result.set(customer.customerId, null);
+    }
+  }));
+  return { counts: result, selections: webRows };
+}
 
 export const getSalesRoomCustomersOperational = webMethod(
   Permissions.SiteMember,
@@ -439,46 +316,10 @@ export const getSalesRoomCustomersOperational = webMethod(
       readAllPayloadRows(BUYER_LINE_COLLECTION)
     ]);
 
-    const quoteByCustomer = new Map();
-    for (const row of listRows) {
-      const item = row.data;
-      if (item.removed) continue;
-      const customerId = normalize(item.customerId);
-      if (!customerId) continue;
-      // Quote counts represent formally released QD rows, never merely a
-      // non-zero price left in storage.
-      const status = upper(item.quoteStatus || 'RFQ');
-      const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
-      if (status === 'VIEW QUOTE' || status === 'WARNING') current.quoted += 1;
-      const syncedAt = item.quoteEffectiveAt || item.quoteSyncedAt || '';
-      if (syncedAt && (!current.lastQuoteSyncedAt || new Date(syncedAt).getTime() > new Date(current.lastQuoteSyncedAt).getTime())) current.lastQuoteSyncedAt = syncedAt;
-      if (status === 'RFQ' || status === 'FAILED') {
-        current.awaiting += 1;
-        const receivedAt = item.selectedAt || row.record?._createdDate || '';
-        if (receivedAt && (!current.pendingQuoteReceivedAt || new Date(receivedAt).getTime() < new Date(current.pendingQuoteReceivedAt).getTime())) {
-          current.pendingQuoteReceivedAt = receivedAt;
-        }
-      }
-      quoteByCustomer.set(customerId, current);
-    }
-
-    // Only customers with quotation rows can carry quotation risk. Opening
-    // every customer's Google Sheet made the whole customer list wait for
-    // unrelated QDs and could exceed Wix's request deadline on a cold start.
-    const riskCustomers = (base.customers || []).filter((customer) => {
-      const quote = quoteByCustomer.get(customer.customerId);
-      return Boolean(quote && (quote.quoted > 0 || quote.awaiting > 0));
-    });
-    const quoteRiskCounts = await Promise.race([
-      loadQuoteRiskCounts(riskCustomers),
-      // A cold Apps Script + Google Sheets read commonly needs more than
-      // 3.5 seconds. Returning unavailable too early made the dashboard and
-      // customer risk bubbles alternate between a number and a dash.
-      new Promise((resolve) => setTimeout(() => resolve(new Map()), 8000))
-    ]);
-
+    const visibleCustomers = base.customers || [];
+    const { counts: webCounts, selections } = await readWebQuoteCounters(visibleCustomers, listRows);
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
-    const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)));
+    const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)) && !row.data.receiptOnly);
     const incomingByCustomer = new Map();
     for (const row of incomingOrders) {
       const customerId = normalize(row.data.customerId);
@@ -495,26 +336,22 @@ export const getSalesRoomCustomersOperational = webMethod(
     for (const row of lineRows) {
       const line = row.data;
       const customerId = normalize(line.customerId);
-      if (!customerId || isCompletedProgressLine(line)) continue;
+      if (!customerId || line.addedToOrderId || isCompletedProgressLine(line)) continue;
       activeLineByCustomer.set(customerId, Number(activeLineByCustomer.get(customerId) || 0) + 1);
     }
-    const customers = (base.customers || []).map((customer) => {
-      const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
+    const customers = visibleCustomers.map((customer) => {
+      const quote = webCounts.has(customer.customerId) ? webCounts.get(customer.customerId) : { quoted: 0, awaiting: 0, rfq: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
       const incoming = incomingByCustomer.get(customer.customerId) || { count: 0, incomingOrderReceivedAt: '' };
-      const qdWork = quoteRiskCounts.get(customer.customerId) || null;
-      const hasQuoteRows = quote.quoted > 0 || quote.awaiting > 0;
-      const quoteWorkStatusAvailable = !hasQuoteRows || Boolean(qdWork && qdWork.available);
       return {
         ...customer,
-        quotedItemCount: quote.quoted,
-        awaitingQuoteItemCount: quote.awaiting,
-        quoteWorkStatusAvailable,
-        quoteRiskCount: quoteWorkStatusAvailable ? Number(qdWork?.quoteRiskCount || 0) : null,
-        pendingQuoteCount: quoteWorkStatusAvailable ? Number(qdWork?.pendingQuoteCount || 0) : null,
-        redSignalCount: quoteWorkStatusAvailable ? Number(qdWork?.redSignalCount || 0) : null,
-        lowGpCount: quoteWorkStatusAvailable ? Number(qdWork?.lowGpCount || 0) : null,
-        pendingQuoteReceivedAt: quote.pendingQuoteReceivedAt,
-        lastQuoteSyncedAt: quote.lastQuoteSyncedAt,
+        quotedItemCount: quote?.quoted ?? null,
+        awaitingQuoteItemCount: quote?.awaiting ?? null,
+        rfqItemCount: quote?.rfq ?? null,
+        quoteWorkStatusAvailable: Boolean(quote),
+        pendingQuoteCount: quote?.awaiting ?? null,
+        selectedItemCount: selections.get(customer.customerId)?.length ?? 0,
+        pendingQuoteReceivedAt: quote?.pendingQuoteReceivedAt || '',
+        lastQuoteSyncedAt: quote?.lastQuoteSyncedAt || '',
         confirmedOrderCount: incoming.count,
         activeOrderLineCount: Number(activeLineByCustomer.get(customer.customerId) || 0),
         incomingOrderReceivedAt: incoming.incomingOrderReceivedAt
@@ -527,9 +364,9 @@ export const getSalesRoomCustomersOperational = webMethod(
       summary: {
         ...(base.summary || {}),
         customerCount: customers.length,
-        quoteCustomerCount: customers.filter((item) => item.awaitingQuoteItemCount > 0).length,
-        quotedItemCount: customers.reduce((sum, item) => sum + item.quotedItemCount, 0),
-        unquotedItemCount: customers.reduce((sum, item) => sum + item.awaitingQuoteItemCount, 0),
+        quoteCustomerCount: customers.every(item => item.awaitingQuoteItemCount !== null) ? customers.filter(item => item.awaitingQuoteItemCount > 0).length : null,
+        quotedItemCount: customers.every(item => item.quotedItemCount !== null) ? customers.reduce((sum, item) => sum + item.quotedItemCount, 0) : null,
+        unquotedItemCount: customers.every(item => item.awaitingQuoteItemCount !== null) ? customers.reduce((sum, item) => sum + item.awaitingQuoteItemCount, 0) : null,
         pendingQuoteItemCount: customers.every((item) => item.quoteWorkStatusAvailable) ? customers.reduce((sum, item) => sum + item.pendingQuoteCount, 0) : null,
         confirmedOrderCount: incomingOrders.length
       }
@@ -549,16 +386,27 @@ export const getSalesRoomConfirmedOrders = webMethod(
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
     const rows = orders
       .map((entry) => entry.data)
-      .filter((order) => customerIds.has(normalize(order.customerId)) && incomingStatuses.has(upper(order.status)))
+      .filter((order) => customerIds.has(normalize(order.customerId)) && !order.receiptOnly && incomingStatuses.has(upper(order.status)))
       .map((order) => ({
         ...order,
         status: upper(order.status || 'CONFIRMED'),
         totalCartons: order.effectiveTotalCartons ?? order.totalCartons,
         estimatedTotal: order.effectiveEstimatedTotal ?? order.estimatedTotal,
-        productCount: lines.filter((line) => normalize(line.data.orderId) === normalize(order.orderId)).length
+        productCount: lines.filter((line) => normalize(line.data.orderId) === normalize(order.orderId) && !line.data.addedToOrderId).length
       }))
       .sort((a, b) => String(b.confirmedAt || '').localeCompare(String(a.confirmedAt || '')));
     return Object.freeze({ ok: true, orders: rows });
+  }
+);
+
+export const checkSalesRoomOrderReceipt = webMethod(
+  Permissions.SiteMember,
+  async (orderId) => {
+    const staff = await requireAuthorizedStaffContext();
+    const receipt = await submitNctSalesOrder({ orderId: normalize(orderId), staff, reconcileOnly: true,
+      authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff),
+      readPayloadRows: readAllPayloadRows, putPayload });
+    return Object.freeze({ ok: true, receipt });
   }
 );
 
@@ -566,15 +414,28 @@ export const getSalesRoomOrderDetail = webMethod(
   Permissions.SiteMember,
   async (orderId) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
+    let orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
       .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
     if (!orderEntry) throw new Error('Order was not found.');
     await findAuthorizedCustomer(orderEntry.data.customerId, staff);
+    if (!orderEntry.data.masterReceipt) {
+      const receipt = await submitNctSalesOrder({ orderId: normalize(orderId), staff, reconcileOnly: true,
+        authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff),
+        readPayloadRows: readAllPayloadRows, putPayload });
+      if (receipt) orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
+        .find(entry => normalize(entry.data.orderId) === normalize(orderId));
+      if (!orderEntry) throw new Error('Order was not found after receipt recovery.');
+    }
     const lines = (await readPayloadRows(BUYER_LINE_COLLECTION))
       .map((entry) => entry.data)
-      .filter((line) => normalize(line.orderId) === normalize(orderId))
+      .filter((line) => normalize(line.orderId) === normalize(orderId) && !line.addedToOrderId)
       .sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId)));
-    return Object.freeze({ ok: true, order: { ...orderEntry.data, totalCartons: orderEntry.data.effectiveTotalCartons ?? orderEntry.data.totalCartons, estimatedTotal: orderEntry.data.effectiveEstimatedTotal ?? orderEntry.data.estimatedTotal, lines } });
+    const [displayOrder] = orderEntry.data.masterReceipt?.submissionId ? await withMasterQuantities(normalize(orderEntry.data.customerId), [{...orderEntry.data, lines}]) : [{...orderEntry.data, lines}];
+    const sortRows=lines.map(line=>({record:{_id:line.itemId||line.productId||line.lineId},data:{productId:line.itemId||line.productId,barcode:line.barcode}}));
+    const barcodes=[...new Set(lines.map(line=>normalize(line.barcode)).filter(Boolean))],sortProducts=[];
+    for(let i=0;i<barcodes.length;i+=100){const batch=barcodes.slice(i,i+100),keys=[...batch,...batch.filter(value=>Number.isFinite(Number(value))).map(Number)];const result=await wixData.query('FMCGMALAYSIA').hasSome('barcode',keys).limit(1000).find({suppressAuth:true,consistentRead:true});sortProducts.push(...result.items);}
+    const selectionOrder=await salesSelectionSortProjection(sortRows,sortProducts);
+    return Object.freeze({ ok: true, order: { ...displayOrder, selectionOrder, totalCartons: orderEntry.data.effectiveTotalCartons ?? orderEntry.data.totalCartons, estimatedTotal: orderEntry.data.effectiveEstimatedTotal ?? orderEntry.data.estimatedTotal } });
   }
 );
 
@@ -609,7 +470,7 @@ export const confirmSalesRoomOrderForm = webMethod(
   Permissions.SiteMember,
   async (customerId, requestedLines) => {
     const staff = await requireAuthorizedStaffContext();
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'SEND_ORDER_REQUEST');
     const requests = Array.isArray(requestedLines) ? requestedLines : [];
     if (!requests.length) throw new Error('Enter at least one order quantity.');
     const listRows = (await readPayloadRows(BUYER_LIST_COLLECTION))
@@ -622,26 +483,180 @@ export const confirmSalesRoomOrderForm = webMethod(
 
 export const saveSalesRoomOrderQty = webMethod(
   Permissions.SiteMember,
-  async () => {
-    await requireAuthorizedStaffContext();
-    throw new Error('Sales Room quantities are read-only. Additions require a new Buyer Room request; reductions must be made in Track Orders before NCT / GHR submission.');
+  async (orderId, lineId, newQuantityCtn, expectedRevision, requestId) => {
+    const staff = await requireAuthorizedStaffContext();
+    const nextQty = Number(newQuantityCtn);
+    if (!Number.isSafeInteger(nextQty) || nextQty < 0) throw new Error('Enter a whole carton quantity of zero or more.');
+    const key = normalize(requestId);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) throw new Error('Refresh the order and try again.');
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
+      const order = orderEntry.data;
+      const auditId = 'SALES-QTY-' + key;
+      const prior = (await readAllPayloadRows(BUYER_ORDER_AUDIT_COLLECTION)).find(entry => normalize(entry.data.auditId) === auditId);
+      if (prior) {
+        if (normalize(prior.data.orderId) !== normalize(orderId) || normalize(prior.data.detail?.lineId) !== normalize(lineId) || Number(prior.data.detail?.newQuantityCtn) !== nextQty || upper(prior.data.actorStaffId) !== upper(staff.staffId)) throw new Error('Order edit request conflict.');
+        return { ok: true, orderId: normalize(orderId), message: 'Quantity change already saved.' };
+      }
+      if (order.submittedAt || normalize(order.destination) || !['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) throw new Error('Quantities are locked after transfer to NCT / GHR.');
+      if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision)) throw new Error('This order has changed. Refresh it before editing.');
+      const entries = (await readAllPayloadRows(BUYER_LINE_COLLECTION)).filter(entry => normalize(entry.data.orderId) === normalize(orderId) && normalize(entry.data.customerId) === normalize(order.customerId) && !entry.data.addedToOrderId);
+      const entry = entries.find(item => normalize(item.data.lineId) === normalize(lineId));
+      if (!entry) throw new Error('Order line was not found.');
+      const line = entry.data;
+      if (line.masterSubmittedAt || line.submittedToMasterAt || line.orderConfirmedAt || ['committedQtyCtn', 'committedQty', 'customerOrderQty', 'masterQtyCtn', 'completedQtyCtn'].some(field => line[field] !== undefined && line[field] !== null && line[field] !== '')) throw new Error('This line is already committed and cannot be changed.');
+      const previousQty = quantity(line.effectiveRequestedQtyCtn ?? line.requestedQtyCtn ?? line.quantityCtn);
+      if (nextQty === previousQty) return { ok: true, orderId: normalize(orderId), message: 'Quantity is unchanged.' };
+      const at = new Date().toISOString();
+      const actorName = normalize(staff.staffName || staff.title || staff.loginEmail);
+      const nextLine = { ...line, originalQuantityCtn: quantity(line.originalQuantityCtn ?? line.quantityCtn), effectiveRequestedQtyCtn: nextQty, effectiveLineAmount: money(nextQty * money(line.lockedPriceCtn || line.lockedUnitPrice)), effectiveLineCbm: nextQty * Number(line.cbmPerCtn || 0), lastQuantityEditAt: at, lastQuantityEditBy: actorName, updatedAt: at };
+      const effectiveLines = entries.map(item => item === entry ? nextLine : item.data);
+      const nextOrder = { ...order, originalTotalCartons: quantity(order.originalTotalCartons ?? order.totalCartons), effectiveTotalCartons: effectiveLines.reduce((sum, item) => sum + quantity(item.effectiveRequestedQtyCtn ?? item.requestedQtyCtn ?? item.quantityCtn), 0), effectiveEstimatedTotal: money(effectiveLines.reduce((sum, item) => sum + money(item.effectiveLineAmount ?? item.lineAmount), 0)), effectiveTotalCbm: effectiveLines.reduce((sum, item) => sum + Number(item.effectiveLineCbm ?? item.lineCbm ?? 0), 0), revision: quantity(order.revision) + 1, updatedAt: at };
+      try {
+        await putPayload(BUYER_LINE_COLLECTION, entry.record.title, nextLine);
+        await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, nextOrder);
+        await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, action: 'SALES_QTY_UPDATED', orderId: normalize(orderId), customerId: normalize(order.customerId), at, actorStaffId: upper(staff.staffId), actorEmail: normalizeEmail(staff.loginEmail), actorName, detail: { lineId: normalize(lineId), barcode: normalize(line.barcode), itemName: normalize(line.itemName), originalQuantityCtn: nextLine.originalQuantityCtn, previousQuantityCtn: previousQty, newQuantityCtn: nextQty, revision: nextOrder.revision } });
+      } catch (error) {
+        try {
+          await putPayload(BUYER_LINE_COLLECTION, entry.record.title, line);
+          await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, order);
+        } catch (recoveryError) {
+          error.keepOrderMutationLock = true;
+          console.error('Order quantity recovery failed', recoveryError);
+          throw Object.assign(new Error('Order update needs Admin review. Further changes are locked.'), { keepOrderMutationLock: true });
+        }
+        throw error;
+      }
+      try { await wixRealtimeBackend.publish({ name: 'sales-room-signals' }, { type: 'ORDER_QUANTITY_CHANGED', at }); }
+      catch (error) { console.warn('Order realtime refresh failed', error); }
+      return { ok: true, orderId: normalize(orderId), order: { ...nextOrder, totalCartons: nextOrder.effectiveTotalCartons, estimatedTotal: nextOrder.effectiveEstimatedTotal, lines: effectiveLines }, message: 'Quantity updated. Buyer Room will refresh automatically.' };
+    });
   }
 );
+
+export const saveSalesRoomOrderPo = webMethod(
+  Permissions.SiteMember,
+  async (orderId, customerPoNumber, expectedRevision, requestId) => {
+    const staff = await requireAuthorizedStaffContext();
+    if (typeof customerPoNumber !== 'string' || /[\r\n\x00-\x1f]/.test(customerPoNumber) || customerPoNumber.trim().length > 100) throw new Error('Enter a P.O. number of up to 100 characters.');
+    const value = customerPoNumber.trim(), key = normalize(requestId);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) throw new Error('Refresh the order and try again.');
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
+      const order = orderEntry.data, auditId = 'SALES-PO-' + key;
+      const prior = (await readAllPayloadRows(BUYER_ORDER_AUDIT_COLLECTION)).find(entry => normalize(entry.data.auditId) === auditId);
+      if (prior) {
+        if (normalize(prior.data.orderId) !== normalize(orderId) || prior.data.detail?.customerPoNumber !== value || upper(prior.data.actorStaffId) !== upper(staff.staffId)) throw new Error('Order edit request conflict.');
+        return { ok: true, orderId: normalize(orderId), message: 'P.O. number already saved.' };
+      }
+      if (order.submittedAt || normalize(order.destination) || !['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) throw new Error('P.O. number is locked after transfer to NCT / GHR.');
+      if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision)) throw new Error('This order has changed. Refresh it before editing.');
+      if (normalize(order.customerPoNumber) === value) return { ok: true, orderId: normalize(orderId), message: 'P.O. number is unchanged.' };
+      const at = new Date().toISOString(), next = { ...order, customerPoNumber: value, revision: quantity(order.revision) + 1 };
+      try {
+        await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
+        await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, action: 'CUSTOMER_PO_UPDATED', orderId: normalize(orderId), customerId: normalize(order.customerId), at, actorStaffId: upper(staff.staffId), actorEmail: normalizeEmail(staff.loginEmail), detail: { previousCustomerPoNumber: normalize(order.customerPoNumber), customerPoNumber: value, revision: next.revision } });
+      } catch (error) {
+        try { await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, order); }
+        catch (recoveryError) { console.error('Order P.O. recovery failed', recoveryError); throw Object.assign(new Error('Order update needs Admin review. Further changes are locked.'), { keepOrderMutationLock: true }); }
+        throw error;
+      }
+      return { ok: true, orderId: normalize(orderId), message: 'P.O. number saved.' };
+    });
+  }
+);
+
+export const saveSalesRoomOrderPlanning = webMethod(
+  Permissions.SiteMember,
+  async (orderId, customerPoNumber, estimatedShipmentDate, expectedRevision, requestId, expectedShipmentRevision) => {
+    const staff = await requireAuthorizedStaffContext();
+    if (typeof customerPoNumber !== 'string' || /[\r\n\x00-\x1f]/.test(customerPoNumber) || customerPoNumber.trim().length > 100) throw new Error('Enter a P.O. number of up to 100 characters.');
+    if (typeof estimatedShipmentDate !== 'string') throw new Error('Select a valid shipment date.');
+    const value = customerPoNumber.trim(), date = estimatedShipmentDate.trim(), key = normalize(requestId);
+    if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number(date.slice(0, 4)) < 1000 || !Number.isFinite(Date.parse(date + 'T00:00:00Z')) || new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) !== date)) throw new Error('Select a valid shipment date.');
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) throw new Error('Refresh the order and try again.');
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
+      const order = orderEntry.data, auditId = 'SALES-PLAN-' + key;
+      const prior = (await readAllPayloadRows(BUYER_ORDER_AUDIT_COLLECTION)).find(entry => normalize(entry.data.auditId) === auditId);
+      if (prior) {
+        if (normalize(prior.data.orderId) !== normalize(orderId) || prior.data.detail?.customerPoNumber !== value || prior.data.detail?.estimatedShipmentDate !== date || upper(prior.data.actorStaffId) !== upper(staff.staffId)) throw new Error('Order edit request conflict.');
+        return { ok: true, orderId: normalize(orderId), message: 'Order details already saved.' };
+      }
+      if (order.submittedAt || normalize(order.destination)) {
+        if (!['NCT','GHR'].includes(order.destination) || !normalize(order.masterReceipt?.submissionId) || value !== normalize(order.customerPoNumber)) throw new Error('Customer P.O. is locked after transfer to NCT / GHR.');
+        if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision) || typeof expectedShipmentRevision !== 'string') throw new Error('Refresh the order before changing its shipment date.');
+        const customer = await findAuthorizedCustomer(order.customerId, staff);
+        const receipt = await requestMasterFulfilment({company:order.destination,customerId:normalize(order.customerId),customerName:normalize(customer.companyName||customer.title)||normalize(order.customerId),staff,action:'ORDER_DATE',requestId:key,input:{orderId:normalize(orderId),submissionId:normalize(order.masterReceipt.submissionId),date,version:expectedShipmentRevision}});
+        if (receipt?.ok !== true || receipt.orderId !== normalize(orderId) || receipt.customerId !== normalize(order.customerId) || receipt.company !== order.destination || receipt.requestId !== key || receipt.date !== date || !normalize(receipt.revision)) throw new Error('Shipment date receipt is not confirmed. Retry the same save.');
+        return {ok:true,orderId:normalize(orderId),message:'Shipment date saved.',shipmentDateRevision:receipt.revision};
+      }
+      if (!['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) throw new Error('Order details are locked.');
+      if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision)) throw new Error('This order has changed. Refresh it before editing.');
+      if (normalize(order.customerPoNumber) === value && normalize(order.estimatedShipmentDate) === date) return { ok: true, orderId: normalize(orderId), message: 'Order details are unchanged.' };
+      const at = new Date().toISOString(), actorName = normalize(staff.staffName || staff.title || staff.loginEmail);
+      const next = { ...order, customerPoNumber: value, estimatedShipmentDate: date, revision: quantity(order.revision) + 1 };
+      if (normalize(order.estimatedShipmentDate) !== date) { next.shipmentDateUpdatedAt = at; next.shipmentDateUpdatedBy = actorName; }
+      try {
+        await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
+        await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, action: 'ORDER_PLANNING_UPDATED', orderId: normalize(orderId), customerId: normalize(order.customerId), at, actorStaffId: upper(staff.staffId), actorEmail: normalizeEmail(staff.loginEmail), actorName, detail: { previousCustomerPoNumber: normalize(order.customerPoNumber), customerPoNumber: value, previousEstimatedShipmentDate: normalize(order.estimatedShipmentDate), estimatedShipmentDate: date, revision: next.revision } });
+      } catch (error) {
+        try { await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, order); }
+        catch (recoveryError) { console.error('Order planning recovery failed', recoveryError); throw Object.assign(new Error('Order update needs Admin review. Further changes are locked.'), { keepOrderMutationLock: true }); }
+        throw error;
+      }
+      return { ok: true, orderId: normalize(orderId), message: 'Order details saved.' };
+    });
+  }
+);
+
+async function withSalesOrderMutation(orderId, staff, action) {
+  const id = normalize(orderId);
+  const initial = (await readAllPayloadRows(BUYER_ORDER_COLLECTION)).find(entry => normalize(entry.data.orderId) === id);
+  if (!initial) throw new Error('Order was not found.');
+  await findAuthorizedCustomer(initial.data.customerId, staff, 'EDIT_REVIEW_QTY');
+  if (initial.data.receiptOnly) throw new Error('This submission is a receipt. Open its active order task instead.');
+  const lockId = 'ORDER-LOCK-' + id;
+  try { await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: lockId, title: lockId, payload: JSON.stringify({ action: 'ORDER_MUTATION_LOCK', orderId: id, customerId: initial.data.customerId, at: new Date().toISOString() }) }, { suppressAuth: true }); }
+  catch (error) {
+    let lock = null;
+    try { lock = await wixData.get(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* Preserve the actual insert error when no lock exists. */ }
+    if (lock) throw new Error('This order is being updated. Refresh it and try again.');
+    throw error;
+  }
+  let release = true;
+  try {
+    const record = await wixData.get(BUYER_ORDER_COLLECTION, initial.record._id, { suppressAuth: true, consistentRead: true });
+    return await action({ record, data: payloadData(record) });
+  } catch (error) { release = !error.keepOrderMutationLock; throw error; }
+  finally {
+    if (release) await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true });
+  }
+}
 
 export const submitSalesRoomOrder = webMethod(
   Permissions.SiteMember,
   async (orderId, destination) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
-    if (!orderEntry) throw new Error('Order was not found.');
-    await findAuthorizedCustomer(orderEntry.data.customerId, staff);
     const target = upper(destination);
     if (!['NCT', 'GHR'].includes(target)) throw new Error('Select a valid receiving company.');
+    if (['NCT', 'GHR'].includes(target)) {
+      const input = { orderId: normalize(orderId), staff, destination: target,
+        authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff, 'SUBMIT_ORDER'),
+        readPayloadRows: readAllPayloadRows, putPayload };
+      let receipt, entered = false;
+      try {
+        receipt = await withSalesOrderMutation(orderId, staff,
+          orderEntry => { entered = true; return submitNctSalesOrder({ ...input, lockedOrderEntry: orderEntry }); });
+      } catch (error) {
+        if (entered) throw error;
+        receipt = await submitNctSalesOrder({ ...input, initialError: error });
+      }
+      return Object.freeze({ ...receipt, status: 'SUBMITTED TO ' + target });
+    }
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
     const next = { ...orderEntry.data, status: 'SUBMITTED TO ' + target, destination: target, submittedAt: new Date().toISOString(), submittedBy: normalizeEmail(staff.loginEmail) };
     await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
     await writeOrderAudit('ORDER_SUBMITTED', orderId, next.customerId, staff, { destination: target });
     return Object.freeze({ ok: true, orderId: normalize(orderId), status: next.status, destination: target });
+    });
   }
 );
 
@@ -649,14 +664,12 @@ export const createSalesRoomProforma = webMethod(
   Permissions.SiteMember,
   async (orderId) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
-    if (!orderEntry) throw new Error('Order was not found.');
-    await findAuthorizedCustomer(orderEntry.data.customerId, staff);
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
     const next = { ...orderEntry.data, status: 'PROFORMA REQUESTED', proformaRequestedAt: new Date().toISOString(), proformaRequestedBy: normalizeEmail(staff.loginEmail) };
     await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
     await writeOrderAudit('PROFORMA_REQUESTED', orderId, next.customerId, staff, {});
     return Object.freeze({ ok: true, orderId: normalize(orderId), status: next.status });
+    });
   }
 );
 
@@ -700,14 +713,7 @@ export const getSalesRoomCustomerDetail = webMethod(
         primaryUserId: normalize(customer.primaryUserId),
         companyWebsite: normalize(customer.companyWebsite),
         assignedStaffId: upper(customer.assignedStaffId),
-        qdOwnerStaffId: upper(customer.qdOwnerStaffId),
-        qdFileId: normalize(customer.qdFileId),
-        qdFileLabel: normalize(customer.qdFileLabel),
-        qdSheetId: normalize(customer.qdSheetId),
-        qdSheetName: normalize(customer.qdSheetName),
-        qdTemplateVersion: normalize(customer.qdTemplateVersion),
-        qdLastVerifiedAt: customer.qdLastVerifiedAt || null,
-        qdStatus: upper(customer.qdStatus),
+        ...(isWebQuotationCustomer(customer) ? { quotationMode: 'WEB', webQuotationStatus: upper(customer.webQuotationStatus) } : {}),
         customerStatus: upper(customer.customerStatus),
         lifecycleStatus: upper(customer.lifecycleStatus || 'ACTIVE'),
         accessStatus: upper(customer.accessStatus || (upper(customer.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
@@ -740,7 +746,7 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
     if (normalizedAction !== 'REQUEST_REACTIVATION' && !staff.canViewAllCustomers) {
       throw new Error('Admin access is required for this customer account action.');
     }
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
     const reason = normalize(payload?.reason);
     if (!reason) throw new Error('A reason is required for every customer account action.');
     const beforeLifecycle = upper(customer.lifecycleStatus || 'ACTIVE');
@@ -768,7 +774,7 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
       patch.reactivationStatus = 'NONE';
     } else if (normalizedAction === 'ACTIVATE' || normalizedAction === 'RESTORE' || normalizedAction === 'APPROVE_REACTIVATION') {
       patch.lifecycleStatus = 'ACTIVE';
-      patch.accessStatus = upper(customer.qdStatus) === 'READY' ? 'ACTIVE' : 'PENDING';
+      patch.accessStatus = (isWebQuotationCustomer(customer) && upper(customer.webQuotationStatus) === 'READY') ? 'ACTIVE' : 'PENDING';
       patch.reactivationStatus = normalizedAction === 'APPROVE_REACTIVATION' || (normalizedAction === 'ACTIVATE' && beforeReactivation === 'REQUESTED') ? 'APPROVED' : 'NONE';
     } else if (normalizedAction === 'REJECT_REACTIVATION') {
       patch.lifecycleStatus = beforeLifecycle;
@@ -884,7 +890,7 @@ export const updateSalesRoomSelectionLimit = webMethod(
     if (![100, 300, 500, 700].includes(limit) || String(requestedLimit).trim() !== String(limit)) {
       throw new Error('Choose an allowance of 100, 300, 500 or 700 products.');
     }
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
     const before = [100, 300, 500, 700].includes(Number(customer.selectionLimit)) ? Number(customer.selectionLimit) : 100;
     if (before === limit) return Object.freeze({ ok: true, customerId: normalize(customer.customerId), selectionLimit: limit, changed: false });
     await wixData.update(CUSTOMER_COLLECTION, { ...customer, selectionLimit: limit }, { suppressAuth: true });
@@ -899,7 +905,7 @@ export const updateSalesRoomCustomerProfile = webMethod(
   Permissions.SiteMember,
   async (customerId, payload) => {
     const staff = await requireAuthorizedStaffContext();
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
     const input = payload && typeof payload === 'object' ? payload : {};
 
     for (const key of LOCKED_CUSTOMER_FIELDS) {
@@ -916,7 +922,7 @@ export const updateSalesRoomCustomerProfile = webMethod(
     }
 
     const changes = Object.keys(patch)
-      .filter((key) => auditValue(customer[key]) !== auditValue(patch[key]))
+      .filter((key) => comparableCustomerProfileValue(key, customer[key]) !== patch[key])
       .map((key) => ({
         fieldId: key,
         fieldLabel: EDITABLE_CUSTOMER_FIELDS[key],
@@ -924,13 +930,24 @@ export const updateSalesRoomCustomerProfile = webMethod(
         afterValue: patch[key]
       }));
 
+    if (Object.prototype.hasOwnProperty.call(patch, 'customerShortName') && upper(customer.customerShortName) !== patch.customerShortName) {
+      const duplicate = await wixData
+        .query(CUSTOMER_COLLECTION)
+        .eq('customerShortName', patch.customerShortName)
+        .limit(2)
+        .find({ suppressAuth: true });
+      if (duplicate.items.some((item) => normalize(item.customerId) !== normalize(customer.customerId))) {
+        throw new Error('This CUSTOMER SHORT NAME is already in use.');
+      }
+    }
+
     if (!changes.length) {
       return Object.freeze({ ok: true, customerId: normalize(customer.customerId), changedFields: [] });
     }
 
     await wixData.update(
       CUSTOMER_COLLECTION,
-      { ...customer, ...patch },
+      { ...customer, ...Object.fromEntries(changes.map(({ fieldId, afterValue }) => [fieldId, afterValue])) },
       { suppressAuth: true }
     );
 
@@ -951,11 +968,17 @@ export const updateSalesRoomCustomerProfile = webMethod(
   }
 );
 
+function comparableCustomerProfileValue(key, value) {
+  if (key === 'primaryEmail') return normalizeEmail(value);
+  if (['customerShortName', 'natureOfBusiness', 'preferredCurrency', 'whatsapp', 'picTitle'].includes(key)) return upper(value);
+  return normalize(value);
+}
+
 export const saveSalesRoomCustomerUser = webMethod(
   Permissions.SiteMember,
   async (customerId, slotNumber, payload) => {
     const staff = await requireAuthorizedStaffContext();
-    const customer = await findAuthorizedCustomer(customerId, staff);
+    const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
     const slot = Number(slotNumber);
 
     if (!Number.isInteger(slot) || slot < 1 || slot > 5) {
@@ -1084,7 +1107,7 @@ function primaryUserFrom(customer, users) {
 
 export const addSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async (customerId, payload = {}, requestId = '') => {
   const staff = await requireAuthorizedStaffContext();
-  const customer = await findAuthorizedCustomer(customerId, staff);
+  const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
   const lifecycle = upper(customer.lifecycleStatus || 'ACTIVE');
   const access = upper(customer.accessStatus || customer.customerStatus);
   if (lifecycle === 'ARCHIVED' || access !== 'ACTIVE') throw new Error('Users can only be added to an active customer account.');
@@ -1123,7 +1146,7 @@ export const addSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async 
 
 export const reviewSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async (customerId, userId, action, payload = {}) => {
   const staff = await requireAuthorizedStaffContext();
-  const customer = await findAuthorizedCustomer(customerId, staff);
+  const customer = await findAuthorizedCustomer(customerId, staff, 'MANAGE_CUSTOMER');
   const normalizedAction = upper(action);
   const users = await allCustomerUsers(customer.customerId);
   const target = users.find(user => normalize(user.userId || user._id) === normalize(userId));
@@ -1254,20 +1277,58 @@ async function readAllPayloadRows(collectionId) {
   return items.map((record) => ({ record, data: payloadData(record) }));
 }
 
+// Read the same Catalogue classification/brand/sort fields used by Buyer workspaceItems.
+// Only the authorized customer's selection rows are passed in; no operational writes.
+async function salesSelectionSortProjection(rows,prefetched=null) {
+  const ids = [...new Set(rows.map(row => normalize(row.data.productId)).filter(Boolean))], products = Array.isArray(prefetched)?[...prefetched]:[];
+  for (let i = 0; !prefetched && i < ids.length; i += 100) {
+    const result = await wixData.query('FMCGMALAYSIA').hasSome('_id', ids.slice(i, i + 100)).limit(100).find({ suppressAuth: true });
+    products.push(...result.items);
+  }
+  const resolved = new Set(products.map(product => normalize(product.barcode)).filter(Boolean));
+  const barcodes = [...new Set(rows.map(row => normalize(row.data.barcode || row.data.unitBarcode)).filter(Boolean))].filter(barcode => !resolved.has(barcode));
+  for (const barcode of prefetched?[]:barcodes) {
+    let product = null;
+    try { product = (await wixData.query('FMCGMALAYSIA').eq('barcode', barcode).limit(1).find({ suppressAuth: true, consistentRead: true })).items[0]; } catch (_) { /* Match Buyer's numeric barcode retry. */ }
+    if (!product && Number.isFinite(Number(barcode))) {
+      try { product = (await wixData.query('FMCGMALAYSIA').eq('barcode', Number(barcode)).limit(1).find({ suppressAuth: true, consistentRead: true })).items[0]; } catch (_) { /* Product is unavailable. */ }
+    }
+    if (product) products.push(product);
+  }
+  const refs = value => (Array.isArray(value) ? value : value ? [value] : []).map(entry => normalize(entry?._id || entry)).filter(Boolean);
+  const categoryMap = new Map(), referencedIds = [...new Set(products.flatMap(product => refs(product.subCategories)))];
+  for (let i = 0; i < referencedIds.length; i += 100) {
+    const result = await wixData.query('subCategories').hasSome('_id', referencedIds.slice(i, i + 100)).limit(100).find({ suppressAuth: true });
+    result.items.forEach(item => categoryMap.set(normalize(item._id), upper(item.mainCategory)));
+  }
+  const foodIds = (await wixData.query('subCategories').startsWith('mainCategory', 'FOOD').limit(1000).find({ suppressAuth: true })).items.map(item => normalize(item._id)).filter(Boolean);
+  const productIds = [...new Set(products.map(product => normalize(product._id)).filter(Boolean))], foodProducts = new Set();
+  if (foodIds.length) for (let i = 0; i < productIds.length; i += 100) {
+    const result = await wixData.query('FMCGMALAYSIA').hasSome('_id', productIds.slice(i, i + 100)).hasSome('subCategories', foodIds).limit(100).find({ suppressAuth: true });
+    result.items.forEach(item => foodProducts.add(normalize(item._id)));
+  }
+  const byId = new Map(products.map(product => [normalize(product._id), product])), byBarcode = new Map(products.map(product => [normalize(product.barcode), product]));
+  return rows.map(({ record, data }) => {
+    const product = byId.get(normalize(data.productId)) || byBarcode.get(normalize(data.barcode || data.unitBarcode)) || {};
+    return { id: normalize(record._id || data.id || data.itemId), barcode: normalize(data.barcode || data.unitBarcode || product.barcode), category: normalize(data.category || data.mainCategory || (foodProducts.has(normalize(product._id)) ? 'FOOD' : '') || product.mainCategory || refs(product.subCategories).map(id => categoryMap.get(id)).find(Boolean)), brandName: normalize(product.brandName), sortNo: normalize(product.pointBaseSortId) };
+  });
+}
+
 export const getSalesRoomOrderProgress = webMethod(
   Permissions.SiteMember,
   async (customerId) => {
     const staff = await requireAuthorizedStaffContext();
     const customer = await findAuthorizedCustomer(customerId, staff);
     const normalizedCustomerId = normalize(customer.customerId);
-    const [orderRows, lineRows] = await Promise.all([
+    const [orderRows, lineRows, selectionRows] = await Promise.all([
       readAllPayloadRows(BUYER_ORDER_COLLECTION),
-      readAllPayloadRows(BUYER_LINE_COLLECTION)
+      readAllPayloadRows(BUYER_LINE_COLLECTION),
+      readAllPayloadRows(BUYER_LIST_COLLECTION)
     ]);
     const linesByOrder = new Map();
     for (const row of lineRows) {
       const line = row.data;
-      if (normalize(line.customerId) !== normalizedCustomerId) continue;
+      if (normalize(line.customerId) !== normalizedCustomerId || line.addedToOrderId) continue;
       const orderId = normalize(line.orderId);
       if (!orderId) continue;
       if (!linesByOrder.has(orderId)) linesByOrder.set(orderId, []);
@@ -1275,23 +1336,27 @@ export const getSalesRoomOrderProgress = webMethod(
     }
     const orders = orderRows
       .map((row) => row.data)
-      .filter((order) => normalize(order.customerId) === normalizedCustomerId)
+      .filter((order) => normalize(order.customerId) === normalizedCustomerId && !order.receiptOnly)
       .map((order) => {
         const orderId = normalize(order.orderId);
         const storedLines = linesByOrder.get(orderId) || [];
         const embeddedLines = Array.isArray(order.lines) ? order.lines : Array.isArray(order.pendingLines) ? order.pendingLines : [];
-        const lines = (storedLines.length ? storedLines : embeddedLines).filter((line) => !isCompletedProgressLine(line));
+        const lines = storedLines.length ? storedLines : embeddedLines;
         return { ...order, orderId, lines };
       })
       .filter((order) => order.lines.length)
       .sort((a, b) => new Date(b.confirmedAt || 0).getTime() - new Date(a.confirmedAt || 0).getTime());
+    const currentOrders = (await withMasterQuantities(normalizedCustomerId, orders))
+      .map(order => ({ ...order, lines: order.lines.filter(line => !isCompletedProgressLine(line)) }))
+      .filter(order => order.lines.length);
     return Object.freeze({
       ok: true,
       customerId: normalizedCustomerId,
       companyName: normalize(customer.title),
       customerShortName: upper(customer.customerShortName),
-      activeLineCount: orders.reduce((sum, order) => sum + order.lines.length, 0),
-      orders
+      activeLineCount: currentOrders.reduce((sum, order) => sum + order.lines.length, 0),
+      selectionOrder: await salesSelectionSortProjection(selectionRows.filter(row => normalize(row.data.customerId) === normalizedCustomerId)),
+      orders: currentOrders
     });
   }
 );
@@ -1339,9 +1404,13 @@ async function putAccountNotification({ eventId, customerId, recipientUserId = '
 
 async function authorizedCustomerIdSet(staff) {
   let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
-  if (!staff.canViewAllCustomers) query = query.eq('assignedStaffId', upper(staff.staffId));
+  if (!staff.canBrowseAllCustomers) {
+    const ids = staff.customerScope.customerActions.VIEW;
+    if (!ids.length) return new Set();
+    query = query.hasSome('customerId', ids);
+  }
   const result = await query.find({ suppressAuth: true });
-  return new Set(result.items.map((item) => normalize(item.customerId)));
+  return new Set(result.items.filter(item => staffMayAccessCustomer(staff, 'VIEW', item.customerId)).map((item) => normalize(item.customerId)));
 }
 
 function quantity(value) {
@@ -1526,108 +1595,7 @@ function deniedStaffContext(reason) {
 }
 
 async function resolveCurrentStaffContext() {
-  let member;
-
-  try {
-    member = await currentMember.getMember({ fieldsets: ['FULL'] });
-  } catch (error) {
-    return deniedStaffContext('MEMBER_LOOKUP_ERROR');
-  }
-
-  if (!member) {
-    return deniedStaffContext('NOT_LOGGED_IN');
-  }
-
-  const memberId = normalize(member._id);
-  const email = memberEmail(member);
-
-  if (!memberId) {
-    return deniedStaffContext('MEMBER_ID_MISSING');
-  }
-
-  let items;
-  try {
-    const result = await wixData
-      .query(STAFF_COLLECTION)
-      .limit(1000)
-      .find({ suppressAuth: true });
-    items = result.items;
-  } catch (error) {
-    return deniedStaffContext('STAFF_CMS_QUERY_ERROR');
-  }
-
-  const memberIdMatches = items.filter(
-    (item) => normalize(item.wixMemberId) === memberId
-  );
-  if (memberIdMatches.length > 1) {
-    return deniedStaffContext('DUPLICATE_WIX_MEMBER_ID');
-  }
-
-  let staff = memberIdMatches[0];
-  let identitySource = 'WIX_MEMBER_ID';
-
-  if (!staff) {
-    if (!email) {
-      return deniedStaffContext('MEMBER_EMAIL_MISSING');
-    }
-
-    const emailMatches = items.filter(
-      (item) => normalizeEmail(item.staffEmail) === email
-    );
-    if (emailMatches.length !== 1) {
-      return deniedStaffContext(
-        emailMatches.length > 1
-          ? 'DUPLICATE_STAFF_EMAIL'
-          : 'STAFF_NOT_REGISTERED'
-      );
-    }
-
-    staff = emailMatches[0];
-    identitySource = 'EMAIL_FALLBACK';
-
-    const linkedMemberId = normalize(staff.wixMemberId);
-    if (linkedMemberId && linkedMemberId !== memberId) {
-      return deniedStaffContext('STAFF_MEMBER_MISMATCH');
-    }
-
-    if (!linkedMemberId) {
-      try {
-        staff = await wixData.update(
-          STAFF_COLLECTION,
-          { ...staff, wixMemberId: memberId },
-          { suppressAuth: true }
-        );
-        identitySource = 'WIX_MEMBER_ID_LINKED';
-      } catch (error) {
-        return deniedStaffContext('MEMBER_LINK_FAILED');
-      }
-    }
-  }
-
-  const status = upper(staff.status);
-  if (status !== 'ACTIVE') {
-    return deniedStaffContext('STAFF_INACTIVE');
-  }
-
-  const role = upper(staff.role);
-  const staffId = normalize(staff.staffId);
-  const staffName = normalize(staff.title);
-  const quotationDeskFileId = normalize(staff.quotationDeskFileId);
-
-  if (!staffId || !staffName || !role) {
-    return deniedStaffContext('STAFF_RECORD_INCOMPLETE');
-  }
-
-  return Object.freeze({
-    authorized: true,
-    staffId,
-    staffName,
-    loginEmail: email,
-    role,
-    quotationDeskFileId,
-    identitySource,
-    canViewAllCustomers: role === 'SUPER ADMIN' || role === 'ADMIN'
-  });
+  return getCurrentStaffContext();
 }
 
 async function requireAuthorizedStaffContext() {
@@ -1646,7 +1614,7 @@ async function requireAdminStaffContext() {
   return context;
 }
 
-async function findAuthorizedCustomer(customerId, staff) {
+async function findAuthorizedCustomer(customerId, staff, action = 'VIEW') {
   const normalizedCustomerId = normalize(customerId);
   if (!normalizedCustomerId) {
     throw new Error('CUSTOMER ID is required.');
@@ -1658,10 +1626,8 @@ async function findAuthorizedCustomer(customerId, staff) {
   // assisted Catalogue together.  Filtering the bounded customer directory
   // in code keeps authorization deterministic and removes that shared point
   // of failure.
-  let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
-  if (!staff.canViewAllCustomers) {
-    query = query.eq('assignedStaffId', upper(staff.staffId));
-  }
+  requireStaffCustomerAccess(staff, action, normalizedCustomerId);
+  const query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
   const result = await query.find({ suppressAuth: true });
   const matches = result.items.filter(
     (item) => normalize(item.customerId) === normalizedCustomerId
@@ -1676,67 +1642,17 @@ async function findAuthorizedCustomer(customerId, staff) {
   }
 
   const customer = matches[0];
-  if (
-    !staff.canViewAllCustomers &&
-    upper(customer.assignedStaffId) !== upper(staff.staffId)
-  ) {
-    throw new Error('This customer is assigned to another salesperson.');
-  }
 
   return customer;
 }
 
 async function resolveCustomerRouting(requestedAssignedStaffId) {
-  const context = await resolveCurrentStaffContext();
-  if (!context?.authorized) {
-    throw new Error('This member is not authorized in STAFF MASTER.');
+  const context = await requireAuthorizedStaffContext();
+  const owner = await resolveMasterSalesCreationAssignee(context.loginEmail, normalize(requestedAssignedStaffId));
+  if (!owner) {
+    throw Error('Select an active salesperson with customer creation access in LTPOS.');
   }
-
-  const currentStaffId = upper(context.staffId);
-  const requestedStaffId = upper(requestedAssignedStaffId);
-  const canAssignCustomers = Boolean(context.canViewAllCustomers);
-  const targetStaffId = canAssignCustomers
-    ? requestedStaffId
-    : currentStaffId;
-
-  if (!targetStaffId) {
-    throw new Error('Select an ACTIVE salesperson with a configured QD.');
-  }
-  if (
-    !canAssignCustomers &&
-    requestedStaffId &&
-    requestedStaffId !== currentStaffId
-  ) {
-    throw new Error('Sales staff cannot assign a customer to another employee.');
-  }
-
-  const result = await wixData
-    .query(STAFF_COLLECTION)
-    .eq('staffId', targetStaffId)
-    .eq('status', 'ACTIVE')
-    .limit(2)
-    .find({ suppressAuth: true });
-
-  if (result.items.length !== 1) {
-    throw new Error(
-      result.items.length > 1
-        ? 'Duplicate ACTIVE STAFF ID. Admin review is required.'
-        : 'The assigned employee is not ACTIVE in STAFF MASTER.'
-    );
-  }
-
-  const target = result.items[0];
-  const staffName = upper(target.title);
-
-  if (!staffName) {
-    throw new Error('The assigned employee has no valid staff name.');
-  }
-
-  return Object.freeze({
-    staffId: targetStaffId,
-    staffName,
-    assignedByStaffId: currentStaffId
-  });
+  return { ...owner, loginEmail: context.loginEmail };
 }
 
 async function resumeExistingRegistration(existingAccess, customer, staff) {
@@ -1750,160 +1666,17 @@ async function resumeExistingRegistration(existingAccess, customer, staff) {
     throw new Error('This email already has an access record without a customer record. Admin review is required.');
   }
 
-  let customerRecord = customerResult.items[0];
+  const customerRecord = customerResult.items[0];
   if (upper(customerRecord.title) !== customer.companyName) {
     throw new Error('This email is already authorized for another company.');
   }
-  if (upper(customerRecord.assignedStaffId) !== staff.staffId) {
+  if (normalize(customerRecord.assignedStaffId) !== staff.staffId) {
     throw new Error('This customer belongs to another salesperson.');
   }
-
-  if (
-    upper(customerRecord.qdStatus) === 'READY' &&
-    upper(existingAccess.status) === 'ACTIVE'
-  ) {
-    return successResult(customerRecord, existingAccess, staff);
+  if (!isWebQuotationCustomer(customerRecord)) {
+    throw new Error('This customer registration requires admin review.');
   }
-
-  return provisionQuotationDesk({
-    customerRecord,
-    userRecord: existingAccess,
-    staff
-  });
-}
-
-function httpsFetchLike(url, options) { const send = (target, method, body) => new Promise((resolve, reject) => { const req = httpsRequest(target, { method, headers: options.headers || {} }, (res) => { let text = ''; res.setEncoding('utf8'); res.on('data', (chunk) => { text += chunk; }); res.on('end', () => resolve({ status: res.statusCode || 0, headers: res.headers || {}, text })); }); req.on('error', reject); if (body) req.write(body); req.end(); }); return send(url, options.method || 'GET', options.body || '').then(async (first) => { let current = first; if ([301, 302, 303, 307, 308].includes(current.status)) { const location = normalize(current.headers.location); if (!location) throw new Error('QD redirect location is missing.'); current = await send(location, 'GET', ''); } return { status: current.status, ok: current.status >= 200 && current.status < 300, url: '', headers: { get: (name) => normalize(current.headers[String(name).toLowerCase()]) }, text: async () => current.text }; }); }
-  async function provisionQuotationDesk({ customerRecord, userRecord, staff }) { const routingPayload = {
-    customerId: normalize(customerRecord.customerId),
-    assignedStaffId: upper(customerRecord.assignedStaffId),
-    companyName: upper(customerRecord.title),
-    currency: upper(customerRecord.preferredCurrency)
-  };
-
-  if (!routingPayload.companyName || !routingPayload.currency) {
-    throw new Error('Customer QD creation data is incomplete.');
-  }
-
-  try {
-    const sharedSecret = await getSecret(SECRET_NAME);
-    let response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },      // @ts-ignore Wix runtime passes this option to backend fetch.
-      body: JSON.stringify({
-        ...routingPayload,
-        sharedSecret
-      })
-    });
-
-    if ([301, 302, 303, 307, 308].includes(response.status)) { const redirectUrl = normalize(response.headers?.get?.('location')); if (!redirectUrl) throw new Error('QD redirect location is missing.'); response = await fetch(redirectUrl, { method: 'get' }); } const responseText = await response.text(); let body; try { body  = parseAppsScriptResponse(responseText); } catch (_) { throw new Error('QD response ' + response.status + ' · ' + normalize(response.headers?.get?.('content-type')) + ' · ' + normalize(responseText).slice(0, 180)); }
-    if (!response.ok || !body.ok) {
-      throw new Error(body.error || 'Quotation Desk creation failed.');
-    }
-
-    const returnedStatus = upper(body.result?.qdStatus || 'ACTIVATION_REQUIRED');
-    customerRecord = await updateCustomerState(
-      customerRecord,
-      returnedStatus,
-      returnedStatus === 'READY' ? 'REGISTERED' : 'ACTIVATION REQUIRED',
-      {
-        qdOwnerStaffId: upper(customerRecord.qdOwnerStaffId || staff.staffId),
-        qdFileId: normalize(body.result?.qdFileId || customerRecord.qdFileId),
-        qdFileLabel: normalize(
-          body.result?.qdFileName || customerRecord.qdFileLabel
-        ),
-        qdSheetId: normalize(body.result?.qdSheetId || customerRecord.qdSheetId),
-        qdSheetName: normalize(
-          body.result?.qdSheetName || customerRecord.qdSheetName
-        ),
-        qdTemplateVersion: normalize(body.result?.qdTemplateVersion || customerRecord.qdTemplateVersion),
-        qdLastVerifiedAt: new Date()
-      }
-    );
-    if (returnedStatus === 'READY') {
-      userRecord = await wixData.update(
-        CUSTOMER_USER_COLLECTION,
-        {
-          ...userRecord,
-          status: 'ACTIVE',
-          authorizedTime: userRecord.authorizedTime || new Date(),
-          failedLoginCount: Number(userRecord.failedLoginCount || 0)
-        },
-        { suppressAuth: true }
-      );
-    }
-
-    return successResult(customerRecord, userRecord, staff, body.result);
-  } catch (error) {
-    customerRecord = await updateCustomerState(
-      customerRecord,
-      'ERROR',
-      'REGISTRATION ERROR'
-    );
-
-    if (upper(userRecord.status) !== 'PENDING') {
-      userRecord = await wixData.update(
-        CUSTOMER_USER_COLLECTION,
-        {
-          ...userRecord,
-          status: 'PENDING'
-        },
-        { suppressAuth: true }
-      );
-    }
-
-    return {
-      ok: false,
-      retryable: true,
-      error: safeMessage(error),
-      result: {
-        customerId: customerRecord.customerId,
-        qdFileId: customerRecord.qdFileId,
-        qdStatus: customerRecord.qdStatus,
-        customerStatus: customerRecord.customerStatus,
-        assignedStaffId: staff.staffId,
-        wixCustomerRecordId: customerRecord._id,
-        wixCustomerUserRecordId: userRecord._id,
-        accessCreated: false
-      }
-    };
-  }
-}
-
-async function updateCustomerState(
-  record,
-  qdStatus,
-  customerStatus,
-  routingPatch = {}
-) {
-  return wixData.update(
-    CUSTOMER_COLLECTION,
-    {
-      ...record,
-      ...routingPatch,
-      qdStatus,
-      customerStatus
-    },
-    { suppressAuth: true }
-  );
-}
-
-function successResult(customerRecord, userRecord, staff, qdResult = {}) {
-  return {
-    ok: true,
-    result: {
-      ...qdResult,
-      customerId: customerRecord.customerId,
-      companyName: normalize(customerRecord.title),
-      customerShortName: upper(customerRecord.customerShortName),
-      qdSheetName: customerRecord.qdSheetName,
-      qdStatus: customerRecord.qdStatus,
-      customerStatus: customerRecord.customerStatus,
-      assignedStaffId: staff.staffId,
-      wixCustomerRecordId: customerRecord._id,
-      wixCustomerUserRecordId: userRecord._id,
-      accessCreated: upper(userRecord.status) === 'ACTIVE'
-    }
-  };
+  return activateWebQuotationCustomer({ customerRecord, userRecord: existingAccess, staff });
 }
 
 async function findCustomerUserByEmail(email) {
@@ -1949,19 +1722,6 @@ async function generateUniqueCustomerId() {
   throw new Error('Unable to generate a unique CUSTOMER ID. Please retry.');
 }
 
-function parseAppsScriptResponse(text) {
-  const cleaned = String(text || '').replace(/^\uFEFF/, '').trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch (_) {
-    const withoutHtml = cleaned.replace(/<[^>]*>/g, '').trim();
-    try {
-      return JSON.parse(withoutHtml);
-    } catch (error) {
-      throw new Error('Quotation Desk service returned an invalid response.');
-    }
-  }
-}
 
 function normalizeAndValidate(raw) {
   const p = {
@@ -2078,9 +1838,7 @@ async function resolveActivityCustomer(customerId, staff) {
     .find({ suppressAuth: true });
   const customer = result.items[0];
   if (!customer) throw new Error('Customer record was not found.');
-  if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== upper(staff.staffId)) {
-    throw new Error('This customer is not assigned to the current staff member.');
-  }
+  requireStaffCustomerAccess(staff, 'VIEW', normalizedCustomerId);
   return customer;
 }
 
@@ -2105,6 +1863,7 @@ export const recordSalesRoomActivity = webMethod(
 
     const customer = await resolveActivityCustomer(payload?.customerId, staff);
     if (action !== 'SALES_ROOM_ENTER' && !customer) throw new Error('Customer is required for this activity.');
+    if (action === 'QD_OPENED') requireStaffCustomerAccess(staff, 'EDIT_QUOTATION', customer.customerId);
 
     const customerId = customer ? normalize(customer.customerId) : '';
     const dedupeSeconds = action === 'SALES_ROOM_ENTER' ? 1800 : (action === 'QD_OPENED' ? 60 : 10);
@@ -2129,7 +1888,7 @@ export const recordSalesRoomActivity = webMethod(
         title: detail,
         auditId,
         customerId,
-        entityId: customer ? normalize(customer.qdFileId || customer.customerId) : upper(staff.staffId),
+        entityId: customer ? normalize(customer.customerId) : upper(staff.staffId),
         action,
         fieldId: '',
         fieldLabel: normalize(payload?.fieldLabel || detail),
@@ -2199,3 +1958,5 @@ export const getSalesRoomActivityForAdmin = webMethod(
     return Object.freeze({ ok: true, window, summaries, events });
   }
 );
+
+export const salesRoomShipment = webMethod(Permissions.SiteMember,async(customerId,company,action,requestId,input)=>{if(['CHAT_LIST','CHAT_PAGE','CHAT_SAVE','DOCUMENT'].includes(action))throw Error('Use Support for customer documents and department communication.');const staff=await requireAuthorizedStaffContext();const customer=await findAuthorizedCustomer(customerId,staff,['HISTORY','READ'].includes(action)?'VIEW':'EDIT_REVIEW_QTY');return requestMasterFulfilment({customerId:normalize(customer.customerId),customerName:normalize(customer.companyName)||normalize(customer.customerId),company,staff,action,requestId,input});});

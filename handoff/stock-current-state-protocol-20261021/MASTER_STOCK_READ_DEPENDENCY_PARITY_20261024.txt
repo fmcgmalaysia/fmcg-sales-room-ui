@@ -1,0 +1,91 @@
+2026-10-24 — Inventory, Warehouse and quantity-read unchanged dependencies
+
+Parent6a76a84; business candidate50212f4 and copy-only review0f0573c unchanged.
+Same framework/spec/ownership/computer-use skill reused. Current STATUS and exact
+manifest dependency list reread. Bounded scope16unchangedMASTER originals serving
+stock exceptions, Warehouse readiness/CBM, trusted order intake, customer quantity/
+account summaries, progress and margin calculation. No business code changes.
+Recovery d447185/runtime32b812c retained; production-directory diff remains empty.
+
+Same existing Chrome3/Master51427123. Selected actual Backend & Public files,
+confirmed loaded editor/imports, then complete select-all/copy. NativeCRLF / LF
+lengths and SHA256:
+inventoryExceptions.js 6096/6043
+7ed7b821301d0b378a1f6ffc0f1b770a024f8830df8d91228223f5175ac0723c
+stockExceptionResolution.js 11185/11097
+6e9f349d30c8a8e2399943a592fe1806ed830f7ee379047ab35872910c41889b
+stockExceptionState.js 916/904
+605bc979f97775eb90b423694c57724747f9a3c94adce73d48b999872a4f23f2
+stockExceptionWorkspace.js 2980/2957
+f4f94dd396dfe49d7ed3441aad51c0a780b5f80b954c86d25c2f96338ff539e6
+stockPhysicalProjection.js 1825/1788
+64d3d88593ee030a1fcfb75195683a1a4e8dc7a227f5b3fa21c441a782c48344
+stockControlService.js 5107/5039
+c6e146aa74677b8b44589c116ea5209b62dd5551cbee74e3bcc712bd3105449d
+warehouseCbm.js 3137/3106
+328aa445f13450c84ccb8af98575d906c32bc5a48cadbb4ea58e91388f7b0595
+warehouseCustomerReadiness.js 963/958
+a8489aa5d39060436fe3729a415b1892e3d7ff24359c10a7a73d09f1225c77dd
+nctIntake.js 12182/12004
+69530c4c130d3aeaf4a3526dc0c90ce8b41bfe0cd4df2dc69b611a482984ed3f
+customerCompletionProjection.js 1219/1212
+4f21cd9a7bff1cc4b5a8c77f67187102d1f1e86b952fc6b4f13dd785262e227b
+customerAccountLedger.js 6187/6140
+395c55bb9aa655929f9b77138c00fc741b1d2d368718c0548866ee2dc282834c
+customerDebtor.js 2292/2277
+7e9cf414c3a39a61d1cb7d2e7fa83616ae054b92dfd9c9b7da36895cb703ca99
+purchaseProgress.js 3520/3478
+3e39171f2b56b4d1bfd2c49dee0ac0a3704af6bc2894cbebea4a59fd4a4ed641
+purchaseMarginRefresh.js 10083/9977
+75053444ee6d46296754026ef88a50b540a76e2c17b695eba9039e7d82a0f2ea
+grossProfitMargin.js 1140/1120
+0cddb05a1f36f27e63217736d7e2e0dc135da9f05bb18c65026cb7f072ce2ac4
+partialInvoiceMargin.js 1228/1221
+e7aca78ed7980848f0587e42db244ed3de79e4ced40f4207caba2c820a38dbe0
+
+All16full native LF hashes equal integration/backend originals and current-install-
+manifest module hashes. Exact LF copies via apply_patch in root private-evidence,
+named master-<original filename dots replaced by hyphens>-dependency-readback-
+20261024.txt. Final exact-byte equality and SHA checked for all16. No export or
+Git staging of private copies. No secret values/cookies/passwords accessed.
+
+One customerAccountLedger selection had no effect: loaded editor remained prior
+customerCompletionProjection. Fresh screenshot showed target above visible list.
+Scrolled existing file pane upward, observed target visible, retargeted once with
+fresh AX; actual file loaded and full hash matched. No blind second stale click,
+coordinate fallback, reload or false success recorded. Other paths unchanged.
+
+Coverage of overnight readbacks:23MASTERpatch originals +39of55unchangedMASTER
+dependencies =62existingMASTER backend files, not62installed/live-tested modules.
+Remaining16unchangedMASTER:
+accountReadIndex.js
+accountReadQuery.js
+adminFxClient.js
+customerNamesClient.js
+departmentMessages.js
+packingListPhotos.js
+pointbaseBrandClient.js
+pointbaseCostClient.js
+purchaseAccess.js
+purchaseDocumentClient.js
+sharedSupplierOperations.js
+supplierCredit.js
+taskChat.web.js
+taskChatClient.js
+taskChatService.js
+taskChatWorkspace.js
+Source5unchanged+2patch originals remain blocked on prior stopped Source path.
+15MASTERnewmodules not installed; all20writer categories UNVERIFIED; ACTIVE OFF.
+
+Protected original exception authority, Warehouse actual receipt/CBM/readiness,
+trusted source identity, shipment/account quantity semantics and finance/margins
+unchanged. No test rerun because application code unchanged; existing1337business
+checks and4copy-only review checks retained with original scope, not native proof.
+No CMS/schema/index/permissions/diagnostic Run/lock deletion/publish/native install.
+No support re-submission/static receipt polling, GitHub export/push, Pages dispatch
+or main merge. No verified engineering reply or safe old-execution drain. Precise
+export approval still unanswered, no bypass; stopped Source/local paths untouched.
+Four release stages remain candidate local only / Pages unchanged / new Wix flow
+unsynchronized and unpublished / public new borrowing unavailable and unverified.
+Actual invoice/dispatch OFF. Editor left on partialInvoiceMargin for continuation.
+No user action needed from this group; remaining independent comparisons continue.

@@ -1,0 +1,6 @@
+2026-10-07 authoritative end-of-day status: REPORT.txt and manifest.json in this directory.
+Functional code: a1f2b4973b813974c2ca2c1304401f680ae6a453, PR34; release/source record862ad6b.
+Pages UI:7053ebda270f183e3dd1fd7227093f8c86a492a9; native X:9a76054.
+Current accepted test data: original30 +1000 +1 +2 ->1033,3Historyevents,15active lines. User independent acceptance pending; generic Wix request/500 unresolved; Excel explicitly paused.
+Exact raw live sources in live/; source/recovery hashes in manifest. This maintenance branch is NOT deployed and NOT a verified production baseline. Never deploy the whole old main/tag over the current site.
+Before addition code/data recovery, preserve receipt/task compatibility. Do not revert to readers that count linked receipt lines as new tasks.

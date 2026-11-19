@@ -1,0 +1,78 @@
+{
+  "verifiedDate": "2026-10-20",
+  "timezone": "Asia/Kuala_Lumpur",
+  "workflow": "Sales Requested Qty shipment split",
+  "runtimeCommit": "e93006cede80484ef0d4ffb787d0a47c12b428ba",
+  "annotatedTag": "verified/sales-requested-split-20261020",
+  "buildMarker": "2026-10-19-split-rows-v1",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/207",
+  "acceptance": {
+    "source": "Direct user confirmation in this chat",
+    "quote": "已经帮你测试了，完美",
+    "account": "Not specified in confirmation",
+    "steps": "User reports personal test; exact quantities and step-by-step observations not specified",
+    "agentSourceVisualCheck": "Previously login-blocked; not represented as agent-completed testing"
+  },
+  "pages": {
+    "runId": 39281200633,
+    "status": "success",
+    "changedFrontendAssetsExact": 11,
+    "markersVerified": 4
+  },
+  "wix": {
+    "master": "published-live receipt captured",
+    "source": "published-live receipt captured",
+    "hashNormalization": "UTF-8 LF trimEnd",
+    "files": [
+      {
+        "file": "integration/backend/customerShipmentPlan.js",
+        "normalizedSha256": "10c96d5dc10baf70ed0b463522c37d31ba923978f1b826511974055e9e29d115"
+      },
+      {
+        "file": "integration/backend/purchaseProjection.js",
+        "normalizedSha256": "73385749c7c5b89ddcec6333a5a700a093a86d8f3d4317f5485f05813cb7e5a7"
+      },
+      {
+        "file": "integration/backend/purchaseQuantityProjection.js",
+        "normalizedSha256": "5ad27b5690860ed61aa9dc67ab18f0745464443935eaaf45181d5012bfdcc5da"
+      },
+      {
+        "file": "integration/backend/warehousePreparation.js",
+        "normalizedSha256": "7472b1f402c351e006fcc2939ba395ddefd5865a84b17400bf7c4cfa61aaf777"
+      },
+      {
+        "file": "integration/backend/customerFulfilmentService.js",
+        "normalizedSha256": "b87063a2bada51c90fd366b4e1ef917383e24916ffefd89e90658417e8f2651f"
+      },
+      {
+        "file": "backend/masterQuantityProjection.js",
+        "normalizedSha256": "3004abede5f264215285e09e0028a238d5c1b2fc8c085715bc34d30a30227392"
+      },
+      {
+        "file": "sales-room/wix/sales-room-page.js",
+        "normalizedSha256": "88a4448953d3d6ec977e2803d4089d7dd82ad4c44362c1f07a4baf8a37c20d4c"
+      },
+      {
+        "file": "buyer-room/wix/buyer-room-page.js",
+        "normalizedSha256": "3ea051e60b924bf797bca4b984d419431850b279d6e6ab2450501c2a0b4c7488"
+      },
+      {
+        "file": "integration/wix/purchase-room-page.js",
+        "normalizedSha256": "0d3358fb4816ff77e78b39c78c15564a20e3f04952c7666649166b2794d37a26"
+      },
+      {
+        "file": "integration/wix/warehouse-department-page.js",
+        "normalizedSha256": "40371f99eb9ec3a77010405079e74bc1511c68e88047416efb7bb0e671307475"
+      }
+    ]
+  },
+  "permissions": {
+    "temporaryPolicyRemoved": 63597512,
+    "originalSevenRestored": true
+  },
+  "automation": {
+    "id": "requested-qty-pr207",
+    "status": "PAUSED"
+  },
+  "mainMerged": false
+}

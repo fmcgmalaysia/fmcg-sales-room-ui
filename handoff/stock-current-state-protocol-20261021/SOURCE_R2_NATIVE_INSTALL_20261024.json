@@ -1,0 +1,53 @@
+{
+  "system": "FMCGMALAYSIA",
+  "cohort": "MASTER_20261024_R2",
+  "editorTab": "51427457",
+  "originalInstallEditorTab": "51427367",
+  "hashFormat": "SHA256_UTF8_LF",
+  "savedDraftOnly": true,
+  "originalCodeUnchanged": false,
+  "pagesSwitched": "three_saved_draft_only_not_published",
+  "pageRelayReadbacks": [
+    {"page":"Buyer Room","beforeSha256":"a7f2061f6b79c9bead0edca45648227ad796100afbcac9f236662ecc49cb06a6","afterSha256":"14dc162030d86bba3d81c765a97b3beacdee426635b0a73acc0ec53f47ccfca4","literalReplacementCounts":[1,1],"fullNativeExactMinimalPatch":true,"candidateEqualIgnoringTerminalWhitespaceOnly":true,"autosaveSuccess":true},
+    {"page":"Sales Room","beforeSha256":"940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777","afterSha256":"c3cdc2107424c74f069b6e3bf8b876358c4b40ecb5e0776f0a1febbc8cc08559","literalReplacementCounts":[2,1,1,1,1,1],"fullNativeExactMinimalPatch":true,"candidateExact":true,"autosaveSuccess":true},
+    {"page":"Catalogue","beforeSha256":"817acc21ad8248ed7e3ef0a056fa8b9bf26f9e8d985c1760b8a8e3e2cc4838dd","afterSha256":"747cad838cf4a150a1b84dc4308526903e03edc5892aaec538b3604043a848d5","literalReplacementCounts":[1,1,1],"fullNativeExactMinimalPatch":true,"candidateEqualIgnoringTerminalWhitespaceOnly":true,"autosaveSuccess":true}
+  ],
+  "unchangedLightbox":"Order Received - generated relay identical, not edited",
+  "preservedOriginalDependencies":["staffAuth.web.js","catalogueSelection.web.js","fxRates.web.js","original quotation callback and selection tables"],
+  "published": false,
+  "active": false,
+  "nativeDependencyReadback": {"package":"@wix/data","version":"1.0.534","installed":true,"reinstalled":false},
+  "nativeInspectReceipt": {
+    "function":"backend/r2cohortBootstrap.web.js/inspectFreshCohort",
+    "parameters":{"input":{}},
+    "callsThisCheck":1,
+    "cohort":"MASTER_20261024_R2",
+    "system":"FMCGMALAYSIA",
+    "emptyBusiness":true,
+    "activationAllowed":false,
+    "completeAdminOnlyMetadataValidated":true,
+    "businessRowsWritten":false,
+    "rows":[
+      {"original":"WixBuyerOrders","target":"R2WixBuyerOrders","total":0,"control":null,"metadataDigest":"660d6093cedde45025b05fdb4fb6ede2"},
+      {"original":"WixBuyerOrderLines","target":"R2WixBuyerOrderLines","total":0,"control":null,"metadataDigest":"89dfb5608c7f27b33109e7a468f7eab6"},
+      {"original":"WixOrderAudit","target":"R2WixOrderAudit","total":0,"control":null,"metadataDigest":"764df49d83ea49498e6a5170358e0adb"}
+    ],
+    "screenshot":"C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/r2-source-native-empty-receipt-20261024.png"
+  },
+  "files": {
+    "r2nctSubmissionPayload.js": "8535234f848b2599992d1a15975aacc926e24958d875da75594c3c600703eccc",
+    "r2masterQuantityProjection.js": "85f3676b715228bc0d66223fe2bb2da531e9cb4322d13c30756ff6d85e0cd1eb",
+    "r2masterQuantityClient.js": "209ac96cd34d624a6b4875850399ed3b8198f5cafe8260d83a0f37773975556f",
+    "r2masterFulfilmentClient.js": "c6fb7e9fc42b42423e11db63ba58731fb151e8b51f298a1531d401fb50b5ff63",
+    "r2nctSalesIntake.js": "f2cefe5acb9d60ed97bae6921ac12703597f65886cdd8fffae10058a8ef62c9f",
+    "r2nctSubmissionDelivery.js": "123c549ada04317dbb2fa2d3698159516f61da73525825e8eb48cbdd011552f5",
+    "r2buyerOrderDownload.js": "5286d6c0d129a1a6b0acdf2f626febe10a3ea40ea26275dcb65d525f39b5eb60",
+    "r2buyerOrderExportToken.js": "e1432cfffae5ceb283df1c34e884f14e919b0105972010005fdfd1fe8fc1bc1e",
+    "r2buyerSelectionExportToken.js": "56500353f72b355c7fd1cbea166a3b3d679ff6f1c977b6bd0c8d37681ef94463",
+    "r2buyerSelectionExcel.js": "e494ca9678e098e3601dfd4acbc029e37c107bb5d3d54e7fb29f9a8c6bc80e2f",
+    "r2buyerSelectionDownload.js": "43742a850c5ab3997e8a5256297857eeebd8fba9462bd0d126aa13d5ac77660a",
+    "r2catalogueAuth.web.js": "e4d86565580a6ecf9f2a4efc7fc20ef3557cfe2bc257feccf4424536b9a339d9",
+    "r2onboarding.web.js": "4e91ee3ac6c7edba3d0e778ff01cf4ce5a50c389ec2983288d1646c133fb1c61",
+    "r2cohortBootstrap.web.js": "8bf3967b63797e9e3b6d65adaa39c2075e0a7f1e2c550f5afa21fe69215635c0"
+  }
+}

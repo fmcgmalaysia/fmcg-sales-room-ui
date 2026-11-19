@@ -1,0 +1,77 @@
+2026-10-22 ORIGINAL SOURCE LARGE-ORDER INTAKE PHASE UX — CANDIDATE ONLY
+
+Scope/recovery
+After pushed3be814a original PO connection, continue remaining approved Source
+large-order progress seam. Existing framework/spec/Astra decision reused. Relevant
+original Source delivery, actual adapter, order mutation wrapper, submit method,
+parent relay, feedback controller and current receiver reread. Production unchanged.
+No new business rule, department, queue, authentication, request authority or CMS.
+
+One original server identity, not repeated new orders
+- Current Master pending now returns original order/destination/submission identity
+  and bounded BEFORE/APPLY/VERIFY counters only, without internal plan/cost data.
+- Isolated nctSubmissionDelivery candidate validates exact progress against the
+  original saved body. It raises only its own typed pending exception, preserving
+  original adapter catch and original withSalesOrderMutation cleanup ownership.
+- ORIGINAL Source mutation wrapper remains byte-identical. On a typed pending error
+  its existing keepOrderMutationLock behavior preserves the saved immutable body.
+  Neither Source accepted audit, transferred order status, receipt nor lock release
+  is emitted before the original complete Master receipt verifies.
+- Original submit method alone exposes the validated minimal progress result from
+  either first owned-lock path or same-order held-lock retry. No SUBMITTED status on
+  pending. Original staff/customer authorization, opposite-company guard, snapshot,
+  bearer/FX/quantity capture, original finalization and lookup behavior stay intact.
+- Source existing waiting dialog presents phases and continues only a correlated
+  known pending outcome for the same order and destination. Per-phase TRANSPORT
+  correlation suffix rejects stale replies; actual Master commit identity and
+  Source immutable order/submission ID remain unchanged. No new save UUID is minted.
+- Duplicate/stale/late pending cannot trigger another phase. Timeout or malformed
+  progress uses original read-only receipt lookup, not an automatic new submission.
+  At64 automatic continuations the existing uncertainty UI pauses; saved server
+  snapshot/lock remains recoverable by explicit same-order retry/reopen. This budget
+  is a UI retry bound, NOT a production order/product capacity claim.
+- Reload still follows original authorized order/receipt path and prepared Source
+  lock. No new browser business-record storage or alternative source authority.
+
+Actual evidence (NODE/VM/MOCK ONLY)
+- New6 tests: reproducible three overlays, original mutation wrapper unchanged;
+  both companies actual Source wrapper+adapter+generated Master intake100lines;
+  no early Source audit/status/receipt/unlock, exact frozen body on every phase,
+  opposite destination refused, one captured cost result and final audit;
+  malformed/foreign pending retains prepared lock and cannot become progress;
+  actual feedback/correlation/timeout/finite budget; complete original browser→
+  parent→wrapper→adapter→generated Master intake100line composition.
+- Original unchanged31 delivery/cross-site/feedback assertions executed against
+  candidate paths, no assertion filtering/rewrite:31pass0fail212.6187ms.
+- New progress plus related existing Source transport/date tests24pass0fail
+  5513.5659ms. New Source seam causes existing exact-mechanical overlay assertions
+  to include ONLY this tested additional overlay; all other original code remains
+  compared, not an arbitrary allowed diff.
+- FINAL complete current suite943pass0fail19610.9669ms; runtime96modules49exports.
+- No real browser/Wix/native SDK/capacity/end-to-end acceptance performed; all rows
+  and credentials used in tests are synthetic local fixtures. Original production
+  Source/MASTER modules, index.html and pages remain untouched. No live lock removed,
+  fake business rows, permissions, upload/delete, main merge or release action.
+- Repeated full tests here were necessary after current-intake/runtime shared change
+  and correction of two exact-overlay seam expectations. Actual Credit UNKNOWN.
+
+Next precise code dependency
+Original shared record/file co-writers still need actual guarded roots and durable
+clients. Account original accountPurchase.web.js was READ ONLY inspected: separate
+saveAccountSettlement (including APPLY_CREDIT), legacy saveAccountInvoiceCheck and
+file actions must not be mistaken for the already tested non-file Account adapter.
+No Account code was edited here. Preserve these existing writers/policies under the
+same barrier; do not implement new finance features or mark coverage complete.
+
+Other release gates unchanged
+Actual Wix collections/schema/indexes/permissions/Date type and conditional roundtrip;
+recovery and unknown file/lock outcomes; measured capacity/relationship lifecycle;
+initial state migration/shadow parity/maintenance/single-authority cutover; complete
+order→PO→receiving→Support packing→Loaded with borrowing/partial repayment/halo/split;
+focused review and four release phases. First user test ends Loaded, invoice/exit OFF.
+
+Release states
+Code: this Source phase seam tested; overall stock implementation incomplete.
+Pages: unchanged, feature not deployed.
+Wix: no install/sync/publish.
+Public: new stock/borrowing not accepted. Empty coverage, ACTIVE OFF.

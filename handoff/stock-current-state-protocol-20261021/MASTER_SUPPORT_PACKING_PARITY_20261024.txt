@@ -1,0 +1,63 @@
+2026-10-24 Asia/Kuala_Lumpur — Support/packing native pre-install comparison
+Parent86aa88a. Same overnight implementation/installation authorization, current
+checkout/branch, root framework and ownership rules reused. No model/agent changes.
+Computer-use skill and required guidance/confirmation rules read. Current browser
+documentation refreshed, existing Chrome3/Master51427123 used; no Source/localhost/
+localfile retry and no hidden editor model, credential, cookie or token retrieval.
+
+Resolved previous unexpected page-selector input by observing actual CMS overlays:
+closed read-only CMS window, separately closed Collections side panel, then real
+Warehouse top page selector visibly exposed Support. Opened Support; screenshot
+showed correct Support imports before select-all/copy. No typing, Run or Publish.
+Then actual Backend & Public list opened; copied each relevant file after title
+and rendered code visibly confirmed selected file. Complete clipboard strings,
+not truncated editor accessibility values, were hashed after CRLF->LF normalization.
+
+Observed full saved-editor fingerprints (all match repository originals):
+integration/wix/support-department-page.js:1829native CRLFchars/1823LFchars
+ca2c23c99ca01ac8b110d4c0844f688b5aa13900dac03de708e81f6845046be4
+integration/wix/packingListBridge.js:1468native CRLFchars/1459LFchars
+911042fa6b83d712954d6ed5baecafcd3b00baf6e209529e14ab65c0ffb91de9
+integration/backend/packingLists.web.js:1555native CRLFchars/1543LFchars
+0117a38a6c45347a4d91a8d80edc87a229b60ac6d8728e442ef5e663440374da
+integration/backend/packingListModel.js:9868native CRLFchars/9760LFchars
+e5be4fb0ce3d8105bf9f0adb325836a13b59073d7c2a0da6bae1f0a5baf94a1c
+integration/backend/packingListOperations.js:8011native CRLFchars/7944LFchars
+f10474c7ee5c1c2486b3a9cb29b40b6712dd1357bb130bb2004dc2ea29075991
+
+All5also match beforeSha256 in current-install-manifest/business-ui-install for
+their exact system/target, not the candidate AFTERsha. No conflicting preimage
+found in this limited scope. Existing Support page still uses packing-v1, not new
+packing-arrangement-v1. Candidate new code is NOT installed by this comparison.
+Public bridge is shared by Support/Warehouse; backend by original packing workflows,
+so installation must preserve both departments, original draft/Send/change/Loaded,
+request replay, staff auth, photos, current list identity and holds. This evidence
+does not permit deploying only one side or activating stock before other writers.
+
+Private exact LF preimages preserved below root directory (not Git-staged/exported):
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/
+master-support-page-live-readback-20261024-install.txt
+master-packing-bridge-live-readback-20261024-install.txt
+master-packing-web-live-readback-20261024-install.txt
+master-packing-model-live-readback-20261024-install.txt
+master-packing-operations-live-readback-20261024-install.txt
+Support text saved from full readback. Other4exact repository images copied using
+apply_patch ONLY after their complete editor readback SHA matched, then checked
+again against original/manifests. No inferred or partial code image preserved asfull.
+
+No application code edits, sync, backend install, CMS item/schema/index/permission
+write, diagnostic Run, save/borrow/dispatch, publish, Pages dispatch, GitHub push,
+export, main merge, deletion or new support ticket. Read-only local fingerprint
+checks are appropriate; no unchanged business test rerun. Previous98affected UI
+checks and earlier1323full result reused for unchanged code, not native proof.
+
+Remaining: other backend/shared/page originals, exact additive installation and
+semantic schema/index/runtime/capacity/recovery/shadow checks, Source path blocked,
+unsafe old-request drain unresolved/no Wix reply verified, specific GitHub export
+authorization unanswered, current UI and real partial borrowing/repayment/split/
+row movement/archive acceptance.20writer categories remainUNVERIFIED. Existing
+HTTPS review still wrong old placement; no new preview deployed during this turn.
+Four release states: candidate code86aa88a local only; Pages unchanged; new Wix
+flow not synchronized/published-live; public borrowing unavailable/unverified.
+ACTIVE and real Support invoice/physical dispatch remainOFF. Independent work still
+remains; heartbeat retained. Editor left on original packingListOperations, no edits.

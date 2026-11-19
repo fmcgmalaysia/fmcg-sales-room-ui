@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-14",
+  "scope": "User accepted Sales/Buyer visual design as basically perfect; design-only checkpoint",
+  "tag": "verified/sales-buyer-design-20261014",
+  "commit": "d928546",
+  "applicationCommit": "9aa8fc3",
+  "build": "2026-10-14-sales-buyer-closeout-v1",
+  "releaseRecord": "integration/releases/sales-buyer-closeout-20261014.json",
+  "preserved": ["Exact Sales/Buyer HTML", "Release Wix Sales/Buyer full readbacks", "Restored global CSS", "Buyer-only Head CSS", "SHA256 manifest", "Fresh computed styles and public screenshots"],
+  "publicReadOnlyObservation": "Fresh Sales Dashboard and Order Progress loaded; five task lines. Purchase Active Orders loaded five task lines. No Save or business change performed.",
+  "previousSalesReadIncident": "Not reproduced during this audit. Root cause remains unconfirmed; no backend or permissions changes.",
+  "notClaimed": ["Blanket business workflow acceptance", "Confirmed resolution of intermittent authorization errors", "Purchase Save failure reproduction", "Main merge", "New production release"],
+  "privateEvidence": "C:/FMCG-WIX-LOCAL/handoff/master-workroom-design-save-plan-20261014/",
+  "masterStandard": "docs/MASTER_WORKROOM_STANDARD.md",
+  "purchaseProposal": "docs/PURCHASE_SAVE_PLAN.md"
+}

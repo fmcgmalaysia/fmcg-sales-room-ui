@@ -1,0 +1,44 @@
+{
+  "at": "2026-10-28T17:41:36.426Z",
+  "method": "VISIBLE_PUBLIC_WIX_UI_READ_ONLY",
+  "runtimeCommit": "39bf0674694069cab05a511d414cea1e24a1cbd1",
+  "productionBusinessWrites": 0,
+  "warehouse": {
+    "forceRefreshed": true,
+    "incomingProgress": 1,
+    "incomingCompleted": 2,
+    "packingEntry": true,
+    "packingBuild": "20261028-stock-loaded-v1",
+    "packingLists": 0,
+    "visibleError": false,
+    "stock": {
+      "onHand": 95,
+      "reserved": 95,
+      "available": 0,
+      "isolated": 0,
+      "reviewRequired": 0
+    },
+    "stockSources": [
+      50,
+      45
+    ]
+  },
+  "support": {
+    "firstForceRefresh": "WIX_REACT_RESOURCE_CONNECTION_RESET",
+    "recoveryReloadRequested": true,
+    "recoveryReloadResult": "CUSTOMERS_NCT_2_VISIBLE",
+    "packingLinkBuild": "20261028-stock-loaded-v1",
+    "packingEntry": true,
+    "packingReadyObserved": 0,
+    "packingReadyBeforePublish": 95,
+    "visibleReadFailure": false
+  },
+  "regression": {
+    "status": "CONFIRMED_UI_QUANTITY_DIFFERENCE_RECOVERY_REQUIRED",
+    "warehouseOnHand": 95,
+    "warehouseReserved": 95,
+    "supportReadyBefore": 95,
+    "supportReadyAfter": 0,
+    "at": "2026-10-28T17:46:36.959Z"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "state": "LIVE_FORMULA_EXACT_2646_EXISTING_PRODUCT_SORTS_PRESERVED",
+  "date": "2026-11-03",
+  "spreadsheet": "12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg",
+  "sheet": "NONFOOD",
+  "anchor": "Z2",
+  "before": "=ARRAYFORMULA(\n  IFERROR(\n    VSTACK(\n      \"\",\n      \"NF-\"&TEXT(\n        SEQUENCE(\n          MATCH(\n            2,\n            1/(LEN(TRIM(G3:G))>0),\n            1\n          )\n        ),\n        \"00000\"\n      )\n    ),\n    \"\"\n  )\n)",
+  "after": "=ARRAYFORMULA(IFERROR(IF(ROW(G2:G)=2,\"\",IF(LEN(TRIM(G2:G))>0,\"NF-\"&TEXT(ROW(G2:G)-2,\"00000\"),\"\")),\"\"))",
+  "objective": "Retain the existing row-position SORT NO. convention while removing global last-nonblank MATCH and SEQUENCE reconstruction. Each populated row calculates its existing NF number directly.",
+  "checks": {
+    "existingProductRows": 2646,
+    "existingNumberChanges": 0,
+    "formulaErrors": 0,
+    "firstNumber": "NF-00001",
+    "lastExistingNumber": "NF-02646",
+    "nextEmptyRowBlank": true,
+    "quotationRowsWithDescription": 330,
+    "quotationMissingDescriptions": 0,
+    "quotationRows318to323Sorts": [
+      "NF-01959",
+      "NF-01960",
+      "NF-01961",
+      "NF-01962",
+      "NF-01963",
+      "NF-01964"
+    ]
+  },
+  "scope": "Only Z2 userEnteredValue changed. No product values, prices, permissions, scripts,extra helper sheet,ID registry orWix deployment changed.",
+  "boundary": "This remains an ordering number derived from row position, not an immutable product identity. Moving or inserting rows still changes the position-based number, as before. The removed calculation dependency is demonstrated; no measured global UI latency or guarantee that all network/recalculation delays are solved.",
+  "recovery": "Restore exact before formula in Z2; complete before sort values retained locally in SORT_BEFORE.json.",
+  "previousWork": "Customer history,actual downloads andlong-termCMS remain paused until user exact resume instruction."
+}

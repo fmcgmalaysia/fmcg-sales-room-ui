@@ -1,0 +1,10 @@
+{
+  "approval": "用户：这个好，PURCHASE DEPT全部顶部用这个设计",
+  "scope": "Sales Invoicing 销售开票标题视觉参照；不是业务验收或发布确认",
+  "recovery": "b8932e902b0c284a002fd6eb51b67dace3618034",
+  "files": {
+    "support-room/index.html": "09eec48f63c81b50447941633cdd5dd85b959431c264f269cf180ef61ebd5933",
+    "support-room/app.js": "797d303c36d1d7d7e441d816c6384031d504df9bc1b4f1c8aa211f633d925cb2",
+    "master-shared/workroom-theme.css": "38aa21b8031adb6febd9a2f78f11b0b0a411fa7b9f599cb0a8346a56c51d9160"
+  }
+}

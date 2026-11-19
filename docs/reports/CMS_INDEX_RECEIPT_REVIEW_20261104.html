@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-Hans"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CMS 实际索引与收货读取核对</title>
+<style>body{font:16px/1.7 system-ui,'Microsoft YaHei',sans-serif;background:#f4f7fa;color:#173650;margin:0}main{max-width:1050px;margin:auto;padding:28px}h1{font-size:27px}h2{font-size:21px;margin-top:26px}table{border-collapse:collapse;width:100%;background:white}td,th{border:1px solid #cbd9e5;padding:10px;text-align:left;vertical-align:top}th{background:#e0ebf5}.note{padding:14px;background:#fff1db;border-left:4px solid #f58a00}a{color:#2563eb}code{overflow-wrap:anywhere}</style>
+<main><h1>已有索引不能直接承担新的采购读取</h1>
+<p>2026-11-04 · 现场只读检查＋既有快照对照 · 基准 10055c7</p>
+<p class="note">本轮取得真实 Wix 索引证据，并完成 8 张 PO 的收货明细等价检查。没有修改正式代码、索引、CMS 记录或发布版本。这是局部读取边界验证，不是整个 CMS 优化完成。</p>
+<h2>1. 现场发现：普通索引名额已满</h2>
+<p>MASTER 的 NCT Activity 显示 400 条。索引列表有 2 个系统索引和以下 3 个普通用户索引。打开新增表单后，界面明确显示“最多 3 个普通、1 个唯一索引”，普通索引选项已禁用。已点 Cancel，原列表未改变，没有点 Save。</p>
+<table><tr><th>现有索引</th><th>升序字段</th><th>目前证据</th></tr>
+<tr><td>SC_ACTIVE_PRODUCT</td><td>company, stockKey, status</td><td rowspan="3">名称和字段与旧 stock-current-state 原型的 native-setup-review.cjs 相同。当前 integration/backend 中搜索这些专用字段没有命中；不能仅凭这一点删除，尚需核对全部线上调用。</td></tr>
+<tr><td>SC_REPAID_SOURCE</td><td>company, replacementSourceId, repaidQuantity</td></tr>
+<tr><td>SC_TASK_REL</td><td>company, participantTaskIds, status</td></tr></table>
+<p>11 月 3 日保留的 400 条原始 Activity 快照中，上述 6 个不同字段均有 0 条非空值。因此不能把 SC_TASK_REL 当作已覆盖正式采购的关联索引，也不能在只剩唯一索引名额时用它代替普通索引：同一任务本来就有多条历史，唯一约束不符合这个用途。</p>
+<p>限制：旧快照与现场总数同为 400，不代表逐条内容未变化。新导出等待超时，随后 Chrome 控制连接断开，未取得新文件路径；本报告没有把旧快照冒充新快照。GHR 索引、本站套餐名称、总条目上限及真实查询延迟仍未核实。</p>
+<h2>2. 最小读取边界：整张 PO 的收货链</h2>
+<p>验证对象是原有 <code>readWarehouseReceipts</code> 和 <code>purchaseReceiptInfo</code>，没有重写计算。使用既有字段筛选 <code>action=WAREHOUSE_RECEIPT_SAVED</code>、<code>result=SAVED</code>、<code>description=PO ID</code>，再交给原函数。无需给这些收货事实增加 rootIds 或另存一份收货总数。</p>
+<table><tr><th>检查</th><th>结果</th></tr>
+<tr><td>真实快照全部 8 张有收货的 PO，共 12 条收货事实</td><td>每张 PO 取 1～2 条相关事实，与取全部 400 条后计算的收货链、最新行结果及 Purchase 明细完全一致。</td></tr>
+<tr><td>170＋30，随后更正减 10</td><td>保留 170、30、−10 的原解释，没有改成第三次正数收货。</td></tr>
+<tr><td>缺中间批次、同一前序出现两个后继</td><td>原校验仍拒绝，不吞错或显示 0。</td></tr>
+<tr><td>合并 PO：A 的第一次、B 的第一次、A 的第二次</td><td>必须读取整张 PO 的链；只取 A 会缺少 B 的中间事件，不能按客户任务机械过滤。</td></tr>
+<tr><td>完整漏掉最后一次收货</td><td>原函数会返回合法旧值。验证已有返回记录，并不能证明最新批次没有遗漏。</td></tr>
+<tr><td>查询没有收货记录</td><td>只能表示此次未返回收货事实，不能证明库存为 0，也不能证明没有待恢复请求。</td></tr>
+<tr><td>NCT 与 GHR</td><td>必须先选各自集合。相同 PO ID 的外公司数据不能混入；本轮公司边界反例为离线验证，没有操作 GHR。</td></tr>
+<tr><td>加入 0、1,000、100,000 条无关记录</td><td>模拟返回量始终 2 条；这是内存筛选结果，不是 Wix 索引命中或耗时证明。</td></tr></table>
+<p>共 10 组诊断通过，包括明确复现的局限。真实快照只用于读取，没有再次执行收货、Loaded、借还或付款。收货源文件与保留的 D02 草稿比较，仅换行差异；这不是本轮新鲜 Wix 原件核对。</p>
+<h2>3. 为什么现在不直接发布这个小查询</h2>
+<p>Purchase 工作台先读取 Activity 供采购计划、保存完整性、借还货、隔离、Loaded 和财务状态共同使用，然后才生成收货明细。单独把最后一步换成另一次 PO 查询，前面的全历史读取仍在，反而多一次请求。因此本轮只确定可缩小的边界，不新增一个看似快、实际重复读取的接口。</p>
+<p>另一个候选 <code>getPurchaseReferenceCost</code> 确实会先读取整个采购 workspace，才向 Pointbase 请求一条产品参考价。但它借此验证已接受任务及归档状态，而未结借货能改变归档状态。直接改为按 taskId 取一行会改变这些保护，也暂不作为首个生产补丁。</p>
+<h2>4. 决定及下一步</h2>
+<ol><li><strong>不立即上线固定当前结果存储，也不直接增加 rootIds。</strong>先利用现有事实中的 PO、任务、请求关联，逐类列出查询所需范围；复杂共享事件不能假定只属于一个任务。</li>
+<li><strong>先核实索引是否可以安全调整。</strong>核对线上正式调用是否仍依赖这 3 个旧索引，以及 GHR 的配置。若确实要释放名额，提交一个明确的索引替换范围和恢复方案，单独批准；本轮没有删除或改名。</li>
+<li><strong>采购计划与未完成请求仍是下一道关键验证。</strong>必须让窄查询保留原请求恢复及跨任务保护，尤其是合并 PO 和新增来源；不能用收货明细的局部成功代替这一项。</li>
+<li><strong>正式切换前再测真实 Wix。</strong>核对原件、已授权测试环境的实际查询和分页、全部相关事实的完整性、对照结果及耗时。当前没有真实 hasSome 性能或百万行容量结论。</li></ol>
+<p>容量问题仍独立保留：减少返回记录不减少 CMS 存储条数。本轮没有把 PREPARED、RESULT 或已完成历史视为可删除数据，也没有按月份截断未结责任。</p>
+<h2>5. 本轮交付状态</h2>
+<ul><li>代码：仅离线核对程序、聚合结果、现场索引记录和报告，正式运行文件修改 0。</li><li>GitHub Pages：未改变。</li><li>Wix Studio：未同步草稿、未发布，索引与业务记录修改 0。</li><li>正式页：完成 CMS 索引界面只读核对；没有新功能版本验收。</li></ul>
+<p><a href="../../integration/prototypes/cms-read-review-20261103/site-index-observation-20261104.json">现场索引证据</a> · <a href="../../integration/prototypes/cms-read-review-20261103/receipt-scope-audit-results.json">10 组结果、源文件与私有快照哈希</a> · <a href="CMS_READ_ROUTE_COMPARISON_20261103.html">上一轮两条路线比较</a></p>
+</main></html>

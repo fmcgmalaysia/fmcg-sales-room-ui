@@ -1,0 +1,46 @@
+{
+  "branch": "fix/purchase-split-allocation-entry-20261029",
+  "before": [
+    {
+      "id": 59773235,
+      "name": "main",
+      "type": "branch"
+    },
+    {
+      "id": 62530810,
+      "name": "feat/nct-order-submit-room6",
+      "type": "branch"
+    },
+    {
+      "id": 62584139,
+      "name": "fix/purchase-approved-ux-layout",
+      "type": "branch"
+    },
+    {
+      "id": 62596223,
+      "name": "feat/purchase-adjustment-cost",
+      "type": "branch"
+    },
+    {
+      "id": 62603322,
+      "name": "feat/master-gp-margin",
+      "type": "branch"
+    },
+    {
+      "id": 62611670,
+      "name": "style/purchase-table-track",
+      "type": "branch"
+    },
+    {
+      "id": 62639211,
+      "name": "style/purchase-icons-spacing-feedback",
+      "type": "branch"
+    }
+  ],
+  "at": "2026-10-29T15:12:46.309Z",
+  "head": "39503390606d8e4840be83e036c1448cce3d008d",
+  "dispatchedAt": "2026-10-29T15:12:58.063Z",
+  "runId": 40899277077,
+  "restoredAt": "2026-10-29T15:14:38.396Z",
+  "removedPolicyId": 64805260
+}

@@ -1,0 +1,13 @@
+/* Status surfaces are pale; real controls retain the existing action palette. */
+body :is(button,a):is(.po-number-link,.po-reference.complete,.acc-po,[data-wh-review],[data-po-view],[data-archive-view]){color:#2563EB!important;font-weight:600!important}
+#app .active-order-table :is(.order-quantity,.received-quantity){font-family:inherit;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+#app .active-order-table :is(.order-quantity,.received-quantity) :is(.quantity-reference,.quantity-aligned,.qty-pair,.quantity-aligned>span){font-family:inherit;font-size:inherit;font-weight:inherit;font-variant-numeric:tabular-nums}
+#app .active-order-table .quantity-aligned>span.qty-mismatch{background:#FFF0D6!important;color:#8A4B00!important}
+#app .active-order-table .received-quantity>span.quantity-reference.receipt-complete{background:#DBEAFE;color:#1E40AF}
+#app .active-order-table .received-quantity>span.quantity-reference.receipt-problem{background:#FEE2E2;color:#991B1B}
+#app #taskRows span.gp.gp-good{background:#DBEAFE;color:#1E40AF!important}
+#app #taskRows .gp.gp-low{background:#E51B2B;color:#fff!important}
+.payment-workspace span.pf-status{cursor:default}
+.payment-workspace span.pf-status:hover{filter:none}
+.payment-workspace .pf-editable{display:block;border:0;background:transparent;color:#E51B2B;font-family:inherit;font-size:10px;font-weight:600;text-decoration:underline;text-underline-offset:2px;padding:4px 0 0;cursor:pointer}
+.po-payment-readonly .dialogfoot{display:none}

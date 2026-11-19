@@ -1,0 +1,72 @@
+2026-10-24 — NEW COHORT DEFINITION READ, INDEX API PATH STOPPED
+
+Scope/recovery: same approved fresh order/stock isolation task, local25c8bfc
+preserves all seven exact native page relay patches. No protected production
+business source changed. Admin-only r2cohortBootstrap.web.js gets one new fixed
+new-table definition inspector; actual member before/after, exact one-key scope,
+two unchanged-revision/full-metadata reads, complete Admin ACL, no items capability.
+Activation remains false. No field/index/permission/business record mutation.
+
+Native MASTER initial definition inspector full readback exact9768642c... then
+R2StockClaims called ONCE. Actual Wix error WDE0144 Not permitted to do this action
+at indexes.listIndexes. No repeated unchanged call. User explicitly approved ONLY
+read-only elevated new-table field/index definitions in async reply, not employees,
+record access, schema changes or inventory activation. Official wix-auth elevation
+implemented ONLY for listIndexes with Admin webMethod/fixed scope retained; exact
+native full readback86b57953.... Called ONCE after changed code/explicit approval.
+SameWDE0144, applicationError.data empty; precise missing permission UNKNOWN.
+Native requestId1792818337.76824301601721465. No tokens/cookies/credential access.
+
+STOPPED index API path after these two real failures; no different endpoint/API,
+SDK client/token, broad grant, permission setting, reload or repeated Run. Removed
+unused elevate import/call AND index-read capability locally and native. Final
+MASTER native SHA a026b693aa159e04aa9d9623530deb39cefab0048ef942ac096df36edf2bb507
+exact generated candidate; Autosave success. Current inspector explicitly returns
+indexes:null/indexesComplete:false/NOT_READ_API_PATH_STOPPED_WDE0144 and cannot
+advertise index ACTIVE or activation. Two native full comparisons before edits.
+
+Focused18pass0fail463.5552ms after final removal:7definition boundary checks,
+4original bootstrap and7actual generated isolation. Initial normal index-page
+tests and intermediate approved-elevation checks are not claimed native success.
+Index paging test deliberately replaced with explicit NO index capability test
+because index querying is removed, not relabeled accepted. Other business/runtime
+candidates and prior substantive test outputs unchanged. Builder --check passed.
+
+SUBSEQUENT ACTUAL RESULTS: fields-only inspector called ONCE for each of10MASTER
+tables. Complete native JSON copied each. All121required fields in existing native
+installation contract match observed wire types; all40ACLoperationsADMIN. Separate
+R2_NATIVE_FIELD_READBACK_20261024.json records field counts/hash/provenance and exact
+qualifications. This is NOT every application field, stored-value roundtrip/index/
+writer/capacity/recovery/public acceptance. EstimatedShipmentDate wire DATE on both
+company order tables, versus actual DATETIME for receipt/submission timestamps.
+
+Source appended ONLY30generated lines after original inspector, entire original
+prefix unchanged. Native before d9a9d220..., after8bf3967b63797e9e3b6d65adaa39c2075e0a7f1e2c550f5afa21fe69215635c0
+exact candidate; Autosave success. Source inspect-only bootstrap still has NO
+initialize export and NO elevate/index operation. One fields-only call each:
+ R2WixBuyerOrders fields11 metadataSHA60c90b01f27cc0ad084fcb995ccfa7ba19b0dc55d301b31b9cf83b88f75da8e1
+ R2WixBuyerOrderLines fields8 metadataSHAf5f6bd06482e7337e661c62c2af688911449591f710fe1597e84c78175e93220
+ R2WixOrderAudit fields6 metadataSHA614d3843f316b40341d7f2f1cdcd1756ea2d65db3c60fa739e491f742bfd21a5
+All four permissionsADMIN; Source application field parity NOT inferred from zero
+contract fields (MASTER-only contract). No Source business/control mutations.
+
+Fresh-cohort bootstrap initializer (unchanged implementation) then called ONCE NCT,
+ONCE GHR with exact newly recorded requests. Both native returned createdtrue,
+initializedtrue, modeMAINTENANCE, activationAllowedfalse. Builtin all12empty/private/
+stablemetadata checks ran before each insert; no old schema/test/UNKNOWN grant used,
+old tables or lock deletes. ONLY2new maintenance controls, no business stock/order
+record. R2_EMPTY_GENESIS_20261024.json has requests/outcomes. No repeated initialize.
+
+UI recovery: MASTER IDE quick-open did not select file; fresh actual notification
+Disconnected Attempting to reconnect. No reload/new IDE created. Existing successful
+MASTER Studio used instead, full native baseline f36e3108... verified before edits.
+Native output AX expansion stale twice in different results; fresh screenshots and
+actual visible triangles expanded existing responses; no backend re-execution.
+
+Private screenshots outside checkout/public assets:
+ r2-native-index-read-permission-required-20261024.png
+ r2-native-index-read-after-approved-elevation-20261024.png
+ r2-native-field-inspector-no-elevation-20261024.png
+First two embedded in commentary. No GitHub push/Pages deployment/Wix Publish/
+initialization/ACTIVE/business write. Native index/state/capacity/recovery/writer/
+operational and public acceptance gates remain OPEN, not implied by draft install.

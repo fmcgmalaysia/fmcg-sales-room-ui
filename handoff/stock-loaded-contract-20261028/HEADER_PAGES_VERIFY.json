@@ -1,0 +1,47 @@
+{
+  "at": "2026-10-29T11:37:27.856Z",
+  "build": "20261029-support-details-v1",
+  "codeCommit": "6971fb1315f8ebc36f9814ce65ecb302f2db5397",
+  "resources": 92,
+  "exact": 92,
+  "mismatches": [],
+  "retired": [
+    {
+      "path": "support-room/app.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/style.css",
+      "status": 404
+    },
+    {
+      "path": "support-room/draft-app.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/invoice-draft-model.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/packing-workbench.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/packing-workbench.css",
+      "status": 404
+    },
+    {
+      "path": "support-room/packing-model-browser.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/packing-transport.js",
+      "status": 404
+    },
+    {
+      "path": "warehouse-room/packing-list-link.js",
+      "status": 404
+    }
+  ],
+  "productionBusinessWrites": 0
+}

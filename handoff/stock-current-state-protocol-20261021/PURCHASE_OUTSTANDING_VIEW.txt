@@ -1,0 +1,47 @@
+2026-10-22 PURCHASE OUTSTANDING BORROWING — CANDIDATE ONLY
+
+Single objective: outstanding debt remains visible independently of task shipping/
+archive. No change to department history eligibility, financial policy, stock counts,
+or original head colours. Recovery productiond447185/runtime32b812c; candidatebe7daa9.
+
+Implementation
+- New compact Outstanding Borrowing view uses EXISTING Purchase-only bounded
+  CURRENT_BORROW_RELATIONS_V1 OUTSTANDING query. It does NOT use roomRows() or
+  filter by archived. Both archived customers stay visible while relation ACTIVE.
+- Current public workspace labels, customer short names, product and PO references
+  reused and escaped. Missing labels show stable saved IDs/unavailable, not fabricated
+  ROW numbers or inferred0. Original actual row labels accepted only when supplied;
+  app does NOT reinterpret stored rowPosition as a user-visible row number.
+- Relationship counts (not mixed-product carton sums), borrowed/repaid/returned/
+  remaining columns, complete25row paging bound to same company/generation/version.
+  Zero is shown only from verified empty complete index; contradictory cached halo,
+  unknown quantity, incomplete/duplicate/stale/foreign page =>unconfirmed with retry.
+- Existing unused-return module on current page only, actual quote required. Same
+  original save tracker; modal/any price/source/parked draft, cost retry or pending
+  operation blocks mutations. No halo update, shipping cancellation, stock move or
+  shared archive-blocking flag is performed by list UI.
+- Narrow generated app/index overlays: hidden-by-default nav, visible only with exact
+  current-workspace metadata; new render branch; task signals hidden on this view.
+  All existing handlers unchanged. Ordinary legacy UI remains unchanged/entry hidden.
+
+Evidence
+6new Node VM tests: both parties archived remain visible, actual OUTSTANDING contract,
+escaped PO label, full26relation paging, old return panel invalidation, malformed/
+unknown/foreign/stale/duplicate/contradictory-empty refusal, verified empty, legacy
+no-query, detached/replaced render and explicit network retry; generator exact check.
+Initial test compared async resolver functions in fixture queue with wire payload;
+fixed fixture assertion to JSON wire representation, no business assertion weakened.
+Latest full current suite647pass0fail6145.8063ms. Existing original63UI scenarios
+remain unchanged against candidate; no all-repository or browser acceptance claim.
+Protected production directories exactd447185. Credits UNKNOWN.
+
+Still OPEN
+This view is NOT installed or available live. Official current Purchase WORKSPACE
+read/metadata still unconnected; it must retain ORIGINAL GP refresh/financial/source
+version semantics while current ownership/progress is integrated. Prior borrow root
+and approval/return relay candidates remain closed by empty all-writer coverage and
+unverified schemas/SDK production authority. Do not merely expose cached stock or
+enable half the system to show this page. Remaining writer/read/file/legacyWarehouse/
+reload/schema/index/init/recovery/shadow/capacity and4release gates remain OPEN.
+No CMS/business data/schema/deletes, Wix edits/publish, Pages dispatch, permission
+changes or main merge performed. Original Support real invoicing remainsOFF.

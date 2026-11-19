@@ -1,0 +1,80 @@
+/* Shared task tables. Page styles still own columns, sticky offsets, and state colours. */
+:root {
+  --task-font: var(--master-font, Inter, "Segoe UI", "Microsoft YaHei", Arial, sans-serif);
+  --task-text-color: #203047;
+  --task-header-color: #d2dfea;
+  --task-text-size: 11px;
+  --task-text-leading: 15px;
+  --task-meta-size: 10px;
+  --task-meta-leading: 14px;
+  --task-header-meta-color: #42586f;
+  --task-cell-block-padding: 5px;
+}
+
+body :is(main, #app) :where(table:not(.shipment-metrics, .shipment-metrics *, [aria-label="Order quantity value and CBM"], dialog *, [role="dialog"] *)) > thead > tr > th,
+body #order-progress .sales-progress-head {
+  background-color: var(--task-header-color) !important;
+  color: var(--task-text-color) !important;
+  font-family: var(--task-font) !important;
+  font-size: var(--task-text-size) !important;
+  font-weight: 700 !important;
+  line-height: var(--task-text-leading) !important;
+  padding-block: var(--task-cell-block-padding) !important;
+}
+
+body :is(main, #app) :where(table:not(.shipment-metrics, .shipment-metrics *, [aria-label="Order quantity value and CBM"], dialog *, [role="dialog"] *)) > tbody > tr > td:not([colspan]) {
+  font-family: var(--task-font) !important;
+  font-size: var(--task-text-size) !important;
+  line-height: var(--task-text-leading) !important;
+  padding-block: var(--task-cell-block-padding) !important;
+}
+
+body :is(main, #app) :where(table:not(.shipment-metrics, .shipment-metrics *, [aria-label="Order quantity value and CBM"], dialog *, [role="dialog"] *)) > thead th
+  :where(small, .pd-bi-zh, .zh) {
+  color: var(--task-header-meta-color) !important;
+  font-size: var(--task-meta-size) !important;
+  font-weight: 400 !important;
+  line-height: var(--task-meta-leading) !important;
+}
+
+body :is(main, #app) :where(table:not(.shipment-metrics, .shipment-metrics *, [aria-label="Order quantity value and CBM"], dialog *, [role="dialog"] *)) > tbody td
+  :where(.task-received-date, .task-received-actor, .activity-detail-zh) {
+  font-size: var(--task-meta-size) !important;
+  font-weight: 400 !important;
+  line-height: var(--task-meta-leading) !important;
+  font-variant-numeric: normal;
+  letter-spacing: normal;
+}
+
+body :is(main, #app) :where(table:not(.shipment-metrics, .shipment-metrics *, [aria-label="Order quantity value and CBM"], dialog *, [role="dialog"] *)) > tbody
+  :where(.product-stack, .dd-description, .description) :where(.itemname, strong) {
+  font-size: var(--task-text-size) !important;
+  font-weight: 700 !important;
+  line-height: var(--task-text-leading) !important;
+}
+
+body :is(main, #app) :where(table:not(.shipment-metrics, .shipment-metrics *, [aria-label="Order quantity value and CBM"], dialog *, [role="dialog"] *)) > tbody
+  :where(.product-stack, .dd-description, .description) :is(.barcode, .packing, small) {
+  font-size: var(--task-meta-size) !important;
+  font-weight: 400 !important;
+  line-height: var(--task-meta-leading) !important;
+  margin-block: 0;
+}
+
+body :is(main, #app) :where(table:not(.shipment-metrics, .shipment-metrics *, [aria-label="Order quantity value and CBM"], dialog *, [role="dialog"] *)) > tbody
+  :is(.po-number-link, .invoice-link) {
+  font-size: var(--task-text-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--task-text-leading) !important;
+}
+
+body main.main .incoming-order-table > tbody > tr > :is(td:first-child, td:nth-child(2)),
+body #order-progress .sales-progress-row:not(.sales-progress-head) > :first-child {
+  font-weight: 400 !important;
+}
+
+body #order-progress .sales-progress-head > div {
+  font-size: var(--task-text-size) !important;
+  font-weight: 700 !important;
+  line-height: var(--task-text-leading) !important;
+}

@@ -1,0 +1,74 @@
+2026-10-22 — CURRENT OWNERSHIP INSIDE ORIGINAL PURCHASE CALCULATOR; CANDIDATE ONLY
+
+Recovery point: pushedb1ec6e2, existing draftPR220. Same framework/task continued;
+read exact Purchase workspace/projection/progress, current allocation/scoped reader/
+product authority and original margin refresh because required dependency was not
+in the previous continuation context. No unrelated project scan or browser use.
+Production runtime32b812c/baselined447185 unchanged. No new permissions or data.
+
+Concrete finding / single objective
+Original Purchase projection computes supplier availableCtn, aggregate inc, shipment
+split entitlements and received batch metrics in sequence. Overwriting final inc alone
+leaves split/batch figures stale. Existing currentAllocationContext already computes
+correct current claims + dispatched provenance; do not replace its business model.
+
+Implementation
+- New private purchase-current-projection adapter groups working products, uses the
+  existing complete scoped current reader and original PO/demand/packing authority,
+  exact migrated task checkpoints and the common generation supplied by its caller.
+  No all-historical-stock rebuild, new stock authority, fabricated allocation event,
+  write, browser grant, autonomous GP refresh or authentication bypass.
+- Includes required working demand AND confirmed source coverage. Related archived
+  demand/source rows may be loaded when an ACTIVE claim/relationship requires them.
+  Missing product/checkpoint/counter/progress/paired version refuses, not old history.
+- Paired ORIGINAL purchaseProjection candidate has narrow optional currentStock seam:
+  current allocations before computations; current customer inc and source physical/
+  free availability before ORIGINAL split and batch calculation. Original receipt/
+  shortage/quantity-case/financial facts, source commitments, prices, auth, redaction,
+  PO identities and display-order mechanism retained. Default path remains original.
+- Current owned inc is cumulative reservation plus actual dispatch, not onHand alone.
+  Source accepted remains original physical receipt; only availableCtn/free-allocation
+  enablement and availablePhysical are current-state quantities. A source with no
+  free stock is not an arbitrary reserved-stock reallocation shortcut.
+- Final raw projection must still match original context task set, stable identities,
+  customer, product/spec, demand, PO, source kind and planned total. A mismatched raw
+  demand/PO/product refuses; no stale authority paired with a different new workspace.
+- Runtime exports the private reader (76modules34exports), NOT a webMethod/permission.
+  Generator writes only candidate copy; original production source exact unchanged.
+
+Evidence
+Focused6pass0fail410.3627ms. Real existing borrower gateway fixture approves30 from
+B to A through bounded current save. Current read uses actual model/native mock rows:
+old projection A null/B100; current A30/B70; B original PO and accepted100 unchanged,
+physical usable100/free0; no stock/GP writes. Original Sales SPLIT50/50 yields current
+A received30/0 and committed50/50 without copying task/PO/receipt. Missing products,
+task counters, pending control, unpaired calculator, invalid current view and foreign/
+changed original authority refuse. Financial/selling/FX source details stay redacted.
+Initial test failures were VM cross-realm comparison and an incomplete synthetic
+fixture (missing native PURCHASE_PLAN_SAVED records; raw totals null vs model100).
+Fixed fixtures/assertion serialization; did not weaken new authority-equivalence guard.
+All original purchase-projection tests run against candidate:8pass0fail10.6877ms.
+All stock-current tests:701pass0fail6664.9783ms, including runtime exact-bundle checks.
+Protected production-directory diff vsd447185 empty; git diff --check passed.
+These are offline Node/VM/native-mock tests, not real SDK/public acceptance.
+
+Remaining exact root dependency
+Original getPurchaseWorkspace is NOT read-only: it calls createPurchaseMarginRefresh,
+which may write GP audit/cache and use legacy task locks. Calling it from a current
+read barrier would leave an unfenced co-writer. Dropping its GP behavior or returning
+raw financial fields is also not permitted. Current private margin-reference-plan
+exists but actual current GP request/resume/root binding is still unfinished. This is
+preservation of existing GP cache behavior, NOT a new financial feature or policy.
+Need bind actual original-auth workspace/tables/current reader, fenced GP co-writer,
+short names/progress and complete current transfer metadata/halo into ONE current
+entry, plus server-owned mode gate on old public entry; no two competing ACTIVE paths.
+Original context stage/archived projection must be preserved by that composition.
+Do not install only this paired projector or claim the public workroom reads current.
+
+Four release states
+Code: incomplete candidate, this calculator/read portion locally verified.
+GitHub Pages: unchanged.
+Wix Studio: no candidate install/sync/publish.
+Public page: new current-stock/borrowing unavailable/unverified; ACTIVE OFF.
+Other writers/file/reload/termination/native schema/permissions/capacity/init/cutover/
+shadow verification still required. Support true invoicing OFF. No main merge.

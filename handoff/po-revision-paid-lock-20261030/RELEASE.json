@@ -1,0 +1,111 @@
+{
+  "state": "PAGES_AND_WIX_LIVE_PUBLIC_QA_PARTIAL",
+  "branch": "feat/po-revision-paid-lock-20261030",
+  "build": "20261030-po-revision-paid-lock-v1",
+  "backend": [
+    {
+      "file": "accountPurchase.web.js",
+      "beforeHash": "39c26f0b92344e702e03eab86bf86364d6e78970fc6269bb54aaf6f1ede8117c",
+      "afterHash": "0d2667ce8b45fd1b27b3d90df53e752d74a6b4b4b2fa96fbd4b352a20c4f8ceb",
+      "hunks": 1
+    },
+    {
+      "file": "accountSettlement.js",
+      "beforeHash": "3222fbc5fd0f5f367ac7f60cad32f5b9afba4132463ab2e45b41f90142bcc6f6",
+      "afterHash": "3714c406780da10216129b395b4d82b0988a868309b44cd9b251dd7f536a9ef8",
+      "hunks": 2
+    },
+    {
+      "file": "paymentHandoff.js",
+      "beforeHash": "940bb4e99e709719868183d1edcf4c693df87e1f483ab6b722a548dd104049ca",
+      "afterHash": "93c9a6d0151c00f3c322739a81b17bf1fc7e5fbcab8c297f95ae6bf78f547c0d",
+      "hunks": 3
+    },
+    {
+      "file": "purchaseDocumentPolicy.js",
+      "beforeHash": "1b6d69de59fc97da18b7899b7dda415ab1f6d350e9d09cbd3d3883472be9edea",
+      "afterHash": "49a9a8a996388e962d3fdd648fc5a41d0ac29ba39be2a49785ebc6183ec1fe79",
+      "hunks": 1
+    },
+    {
+      "file": "purchaseOperations.js",
+      "beforeHash": "b86db882d965cb8b6b8566e5f28ddbdc305f7d584afffe7fc1e61db0db35ad6e",
+      "afterHash": "d98598cafccf2caad2e62c00f89c73b26df7145afed8c8b7df00d8523cccadb7",
+      "hunks": 4
+    },
+    {
+      "file": "purchaseOperations.web.js",
+      "beforeHash": "68d656ca2fc303f64c88ae6f4497586e03ba953d2b9de9657eaf7d662e1bb0a9",
+      "afterHash": "4c6398be66b89ac1f32af2b332b718f6901713eb3c2f7b2b588bacbe0a8ac891",
+      "hunks": 1
+    },
+    {
+      "file": "purchaseOrderWorkflow.js",
+      "beforeHash": "4e8f70beecd5112b674847bc37b98264fdfec54a46337317dcd1c9e075493531",
+      "afterHash": "908e5edd3e85cf7e4a0d85c65107e3691fd8b334271dd9fadecbb8df1406dd24",
+      "hunks": 6
+    },
+    {
+      "file": "purchaseProjection.js",
+      "beforeHash": "a0a0f4c0dbe0b3fbe298a7b527699851e614d4a44d1b7dd2a52495608d2a3f77",
+      "afterHash": "7f79075978922a60ea198426e01d958e0642cb461a5fa14b74ea885d039af13c",
+      "hunks": 2
+    }
+  ],
+  "protectedLiveJournal": "e015b58eab7767e7d83a54146d7f6ca7132840713bfc2dd6f0a36e1852ef80c3",
+  "tests": {
+    "broad": {
+      "total": 401,
+      "passed": 399,
+      "failures": [
+        "Historical Buyer-language assertion reproduced unchanged on 5bd4788",
+        "Support CRLF comparison fixed; focused 2/2 pass"
+      ]
+    },
+    "liveJournal": {
+      "passed": 120,
+      "failed": 0
+    },
+    "historicalBuyerFailure": "Unchanged Buyer Room renders English; old assertion expects Chinese. Evidence HISTORICAL_FEEDBACK_TEST.json"
+  },
+  "productionDataWrites": 0,
+  "publication": {
+    "codeVersion": "f5c8de20b30fe24c6218e25e608043d8e4c210d4",
+    "build": "20261030-po-revision-paid-lock-v1",
+    "pages": {
+      "status": "VERIFIED",
+      "runId": 41021081020,
+      "resourcesMatched": 94,
+      "total": 94
+    },
+    "permissions": {
+      "temporaryRuleRemoved": true,
+      "originalRules": 7
+    },
+    "wix": {
+      "status": "PUBLISHED_AND_LIVE",
+      "evidence": "WIX_PUBLISHED.png",
+      "backendDraftsMatched": 8,
+      "pageVersionPatchesMatched": 3
+    },
+    "public": {
+      "status": "PARTIAL",
+      "purchase": {
+        "loadedNewBuild": true,
+        "readonlyFieldsVerified": true,
+        "pencilEnablesEditing": true,
+        "noReasonOnAmend": true,
+        "screenshot": "PURCHASE_AMEND.png"
+      },
+      "pending": [
+        "Cancel/reopen and Review history",
+        "Finance live canonical button states",
+        "Support Planned/Loaded display",
+        "Cross-department live convergence"
+      ],
+      "blocker": "Chrome control connection lost: Debugger unattached. Reconnect requested; do not redeploy."
+    },
+    "productionBusinessWrites": 0
+  },
+  "deployedCode": "f5c8de20b30fe24c6218e25e608043d8e4c210d4"
+}

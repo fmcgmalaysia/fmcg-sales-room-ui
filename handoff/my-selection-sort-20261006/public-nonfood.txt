@@ -1,0 +1,80 @@
+Browser tab: 51421698, Title: "Buyer Room | FMCG MALAYSIA", URL: "https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=CUS-261005-81091F".
+1 AXWebArea Buyer Room | FMCG MALAYSIA, URL: fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=CUS-261005-81091F
+	2 container main_MF
+		3 container Description: top of page, ID: SCROLL_TO_TOP
+		4 link Description: Built on Wix Studio, Value: wix.com/studio
+		5 container ic0dd
+			6 container
+				7 container comp-mtza6nh7
+					8 container Embedded Content
+						9 AXWebArea FMCG Malaysia Buyer Room, URL: fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261004-selection-same-site-download-v98
+							10 container
+								11 button Description: Return to your Catalogue, Help: Return to Catalogue
+									12 image fmcgMalaysia.com
+								13 text BUYER ROOM
+								14 button (collapsed) Description: Notifications, ID: quoteBell, Secondary Actions: Expand
+								175 text B
+								176 text BERJAYA 06
+								177 text LAW
+							18 container
+								19 button My Selection
+									20 image
+									21 text My Selection
+								22 button Order Form
+									23 image
+									24 text Order Form
+								25 button Track Orders
+									26 image
+									27 text Track Orders
+								28 button Completed Orders
+									29 image
+									30 text Completed Orders
+								31 button Documents
+									32 image
+									33 text Documents
+								34 button Account
+									35 image
+									36 text Account
+							37 container myView
+								38 heading My Selection, Value: 1
+									39 text My Selection
+								178 text 8
+								41 text Products
+								179 text 1
+								43 text Awaiting Quotation Transaction Currency
+								180 text USD
+								45 link Description: Open Catalogue in a new tab, Value: fmcg999.wixstudio.com/fmcgmalaysia/catalogue?assist=CUS-261005-81091F, ID: browse
+								46 container adminAccessBanner
+									47 text Admin Access · 管理员访问
+									48 text You are operating this customer account with Admin authority. All changes are recorded under your Admin identity. ADMIN
+								49 tab group Filter My Selection
+									50 tab (selectable, settable, boolean) All 8, ID: currentTab, Value: 0
+All
+8
+									51 tab (selectable, settable, boolean) Food 8, Value: 0
+Food
+8
+									52 tab (selected, settable, boolean) Non-food 0, Value: 1
+										174 text Non-food 
+										181 text 0
+									53 tab (selectable, settable, boolean) Removed 0, ID: removedTab, Value: 0
+Removed
+0
+								54 search text field (settable) Description: Search selection by product, brand or barcode, ID: mySearch
+								55 button Download Excel, ID: exportToggle
+								182 text Showing 0 NON-FOOD products
+								57 button (collapsed) Description: How selection limits and V.I.P quotations work, ID: limitInfoButton, Secondary Actions: Expand
+								183 text 8
+								59 text of
+								184 text 100
+								61 text selected
+								62 container currentPanel
+									63 container
+										64 text Barcode Image Descriptions Normal Price V.I.P Price Added Time Selected By Last Quoted
+										65 container Remove
+									66 container myRows
+										185 text No Matching Products
+										186 text Try another Item Name, brand or barcode.
+		162 container Description: bottom of page, ID: SCROLL_TO_BOTTOM
+
+The focused UI element is 52 tab (selected, settable, boolean) Non-food 0, Value: 1

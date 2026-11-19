@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://fmcg999.wixstudio.com/master/account-department",
+    "src": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261016-master-header-v2",
+    "header": {
+      "background": "rgb(19, 56, 88)",
+      "children": [
+        {
+          "text": "MASTER",
+          "width": 86.6500015258789,
+          "x": 24
+        },
+        {
+          "text": "CompanyNorth Cape Trading · NCTGlobal HR · GHR",
+          "width": 240,
+          "x": 1074.0625
+        },
+        {
+          "text": "Account Department 财务部",
+          "width": 182.9499969482422,
+          "x": 128.65000915527344
+        },
+        {
+          "text": "LAW / Account",
+          "width": 77.5374984741211,
+          "x": 1332.0625
+        }
+      ],
+      "height": 49
+    }
+  },
+  {
+    "url": "https://fmcg999.wixstudio.com/master/warehouse-department",
+    "src": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261016-master-header-v2",
+    "header": {
+      "background": "rgb(19, 56, 88)",
+      "children": [
+        {
+          "text": "MASTER",
+          "width": 86.6500015258789,
+          "x": 24
+        },
+        {
+          "text": "CompanyNorth Cape Trading · NCTGlobal HR · GHR",
+          "width": 240,
+          "x": 1127.5750732421875
+        },
+        {
+          "text": "Warehouse Department 仓库部",
+          "width": 201.0375061035156,
+          "x": 128.65000915527344
+        },
+        {
+          "text": "LAW",
+          "width": 24.024999618530273,
+          "x": 1385.5750732421875
+        }
+      ],
+      "height": 49
+    }
+  },
+  {
+    "url": "https://fmcg999.wixstudio.com/master/support-department?check=20261016-master-header-v2",
+    "src": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/support-room/?v=20261016-master-header-v2",
+    "header": {
+      "background": "rgb(19, 56, 88)",
+      "children": [
+        {
+          "text": "MASTER",
+          "width": 86.6500015258789,
+          "x": 24
+        },
+        {
+          "text": "Company 公司North Cape Trading · NCTGlobal HR · GHR",
+          "width": 240,
+          "x": 1127.5750732421875
+        },
+        {
+          "text": "Support Department 支持部",
+          "width": 180.8125,
+          "x": 128.65000915527344
+        },
+        {
+          "text": "LAW",
+          "width": 24.024999618530273,
+          "x": 1385.5750732421875
+        }
+      ],
+      "height": 49
+    }
+  }
+]

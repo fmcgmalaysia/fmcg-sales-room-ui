@@ -1,0 +1,33 @@
+{
+  "status": "Published; formal Sales and Buyer read/layout verified",
+  "codeCommit": "335389a",
+  "branch": "style/buyer-menu-icons-20261014",
+  "pullRequest": 74,
+  "pagesRun": 38506753641,
+  "pagesJob": 115665912503,
+  "pagesStatus": "Success",
+  "pagesDuration": "30s",
+  "publicAssetsExact": 11,
+  "wixScope": "Sales and Buyer page URL tokens only; full readbacks exact",
+  "wixPublishedLive": true,
+  "salesBuild": "2026-10-14-sales-menu-review-v1",
+  "buyerBuild": "2026-10-14-buyer-menu-icons-v1",
+  "publicChecks": {
+    "loadingImmediate": true,
+    "duplicateReviewControlsDisabled": true,
+    "reviewReturnWorks": true,
+    "qtyEditVisibleForUnsubmitted": true,
+    "reviewBarcodeWidth": 124,
+    "reviewDescriptionWidth": 506.4,
+    "headerAndCellTextAligned": true,
+    "progressCustomerCount": 1,
+    "adminOriginal": true,
+    "buyerIcons": "Six 21px rounded icons with 1.65px stroke",
+    "errors": []
+  },
+  "temporaryRuleRemoved": true,
+  "originalRulesRestored": 7,
+  "actualBusinessWrites": false,
+  "mainMerged": false,
+  "pending": "User real workflow acceptance; new loading-bar colour request is separate and not included"
+}

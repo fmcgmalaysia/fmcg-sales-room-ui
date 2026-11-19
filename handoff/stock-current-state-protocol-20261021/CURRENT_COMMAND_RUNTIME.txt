@@ -1,0 +1,34 @@
+2026-10-22 WIX-FORMAT CURRENT COMMAND RUNTIME — CANDIDATE ONLY
+
+Mechanical build produces stockCurrentCommands.js from21 scoped current-command
+modules. Original receipt/borrow authority, current reader, exact plan mapper, all20
+writer admission and shared conditional protocol remain the SAME tested algorithms.
+Only shared hash is imported from superseded commit-proof; unsafe overwrite protocol
+is deliberately NOT bundled. No Node require, public webMethod, elevation, new SDK
+import, collection creation, permission grant or mode transition in this runtime.
+Existing original business validators/authentication still supplied by real gateway.
+
+Exact-source --check and VM runtime tests pass. Generated coordinator authenticates
+each replay, applies20 once, default empty coverage refuses. Missing department deps
+now fail with explicit authorization-required error instead of undefined destructuring.
+Initial test regex falsely matched comment "No webMethods"; changed to call/import
+syntax check, not weaker functionality. Subsequent missing-dependency check exposed
+the constructor error described above; fixed source and rebuilt before rerun.
+
+Affected19tests pass299.7826ms. Shared-module regression: all395 current tests pass,
+0fail2752.4294ms. Prior406 set also included21original delivery tests; counts overlap,
+do not sum them. Known separate original financial baseline discrepancy unchanged.
+
+This is syntax/runtime-composition evidence in Node VM, NOT Wix editor acceptance,
+production SDK permission validation or final gateway integration. Nothing synced to
+Wix or deployed. All actual writer/client routes, original data reads, production
+capacity/lifecycle, external files, recovery, migration/shadow/G3 and4release gates
+remain open. Protected production/source directories still matchd447185.
+
+Official permission review reconfirmed SDK does NOT implement legacy suppressAuth:
+https://dev.wix.com/docs/develop-websites-sdk/code-your-site/work-with-data/data-api/about-the-data-api
+https://dev.wix.com/docs/velo/apis/wix-data/get
+https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/authorization/elevate-api-call-permissions
+Current real package grant covered isolated Admin test only. Do not infer production
+elevation authorization or relax CMS collections for ordinary members. This generated
+module takes a private adapter; no such new privilege was installed or exercised.

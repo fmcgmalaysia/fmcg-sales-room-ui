@@ -1,0 +1,71 @@
+2026-10-23 — Native schema read observability, not a release
+
+User reiterated autonomous completion without ordinary-stage authorization waits.
+No ordinary permission question sent in this increment. Scope remains current
+inventory/borrow/repay/customer split/halo, initial acceptance through Loaded only.
+The previous request for a human field-popup observation was not an authorization
+request and has no response; it is not a basis to retry the stopped field UI path.
+
+Startup: same ongoing task, reused previously read same-version historical framework;
+fresh current STATUS/CMS handoff, full boundary record and ownership, local AGENTS/
+efficiency, root AGENTS and relevant implementation spec portions reread. Initial
+combined root START_HERE output truncated; no new live facts inferred from it.
+
+Single objective: distinguish a native schema SDK error from a missing editor
+execution result. Only new stockSchemaAdmin candidate/its generator/core/tests
+changed. Protected original Purchase/receipt/split/finance modules unchanged.
+Recovery:9e52c0a plus exact pre-edit saved Wix module13853characters SHA256LF
+5d3e3d6c249e34e731e16cb0f212e9963dfab2b0cb5ab80f455f3a8b31555cf9.
+Before source captured privately, native clipboard equals repository exactly.
+
+Patch: initialize SDK installer lazily inside Admin endpoint, so missing metadata
+SDK methods can return INITIALIZE failure instead of throwing at module load.
+Read-only stage markers READ_COLLECTION/CHECK_COLLECTION/READ_INDEXES/CHECK_INDEXES
+contain no business values. Read returns bounded error stage/code/message; no
+elevation, ACL modification, retry, timeout-as-termination assertion or write.
+Field/index writes still propagate unknown errors; never return fake success.
+No claim async keyword was the cause: official webMethod docs permit sync functions.
+14focused tests pass141.0945ms, including unavailable SDK/denied read/index failure
+and unchanged write-error behavior. Not a full-suite/native acceptance result.
+
+Native update used ONLY4exact unique Find/Replace anchors, not whole-file replacement.
+Full resulting source readback14722characters exact, SHA256LF
+d81e89a9db14e831b1844fdb4e0638f1129ab285653445288fdaaf8e72fbb271.
+Saved draft only; no whole-site Publish or Pages action.
+
+Browser5 connection disappeared while opening the diagnostic parameter panel.
+Fresh inventory exposed browser6 with SAME provider tab identities/URLs including
+editor51426657/CMS51426755. Rebound those existing tabs; no new browser profile,
+login, cookies/tokens or security changes. Not a rejection or permission workaround.
+
+ONE new READONLY diagnostic invocation with same exact fixed StockPositions input,
+after changed instrumentation/lazy construction and source verification. This is
+not an unchanged automatic repeat, and no SDK mutator was invoked. Editor still
+showed called-only with no stage/result; subsequently showed Request timed out.
+Together with previous schema read no-result, SAME execution-result fault TWICE:
+STOP this native schema function-testing path. No further Run, Preview/reload or
+alternate endpoint/cookie/API workaround. Execution/side effects are UNKNOWN;
+the function is read-only, but timeout is not proof its execution terminated.
+Private schema-observable-read-timeout-20261023.png retained.
+
+Independent read-only investigation: Logging tools->Wix Logs opened existing site
+real-time viewer (no historical messages available), then existing Monitoring->
+Backend requests. Loaded27function aggregates for Last7days; no schema/protocol
+function entry present. Preview/test coverage/aggregation delay unknown, so absence
+does NOT prove execution never started. No historical business errors repaired.
+Native schema SDK/identity authorization availability remains unconfirmed.
+
+No stock collection field/index/ACL/row changes in this increment. Native CMS
+remains3private empty tables, Positions12fields+listedSC_ACTIVE_PRODUCT, Claims/
+Products defaultTitle. Field-add UI path remains stopped after prior2failures.
+No old locks/test300 continuation, deletion, business writes or new staff/Drive access.
+
+Official compute documentation still says backend code may continue after client
+timeout. Focused maximum-execution search established no stronger termination/drain
+contract; do NOT turn14seconds or empty locks into safety proof. Legacy writer
+drain/fence remains unresolved, and Admin migration/apply binding cannot be called
+accepted from private core/mock tests. No provider contact was sent or authorized.
+
+Four states: code candidate amended on PR220 branch; Pages unchanged baseline;
+Wix new Admin-module saved draft only, not published; real public borrowing/Loaded
+not available/accepted.20writer categories remainUNVERIFIED; ACTIVE/invoice/exitOFF.

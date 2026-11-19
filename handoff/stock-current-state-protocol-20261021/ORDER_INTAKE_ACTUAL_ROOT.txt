@@ -1,0 +1,78 @@
+2026-10-22 — ORIGINAL AUTHENTICATED ORDER INTAKE / CURRENT ROOT CANDIDATE
+
+Recovery and bounded scope
+- Before patch: pushed189b829, draftPR220. Production baselined447185/runtime32b812c.
+- Continued the approved inventory task, not a new financial feature. Reused current
+  specification/Astra decision; reread original Source delivery/adapter/order wrapper,
+  receiver/intake/read receipt and candidate protocol because complete bodies were
+  absent from continuation context. Root START_HERE was at parent, not checkout.
+  Some initial oversized history output truncated; targeted relevant framework and
+  original code were read separately. No unrelated user untracked files edited.
+- All edits remain isolated prototypes/tests/this task evidence. Protected original
+  Source/MASTER files untouched; no UI, CMS, schema, permission or test-lock operation.
+
+Original routing evidence, not a new global route table
+- Existing withSalesOrderMutation obtains the ordinary Source ORDER-LOCK first.
+- Existing nctSalesIntake hands that owned lock to nctSubmissionDelivery. The original
+  delivery saves and read-confirms the immutable complete body/destination BEFORE
+  contacting MASTER. Unknown delivery retains that snapshot/lock. Another destination
+  conflicts; a final original receipt is required before Source transfer is saved.
+- Existing actual-adapter tests already prove simultaneous opposite requests and
+  lost-reply opposite retry. New paired Source delivery/current-receiver tests retain
+  both companies through pending, lost final acknowledgement and read-only recovery.
+- This does not make arbitrary private plans a routing authority. Existing bearer
+  trust and original Source lock are prerequisites; no global collection/new grant.
+
+Implementation
+- build-current-intake.cjs keeps exact original receiver secret/header/JSON/error
+  handling, adds private default current root AFTER bearer authentication only.
+  LEGACY dispatch remains original, but only explicit clean server LEGACY may select
+  it. ACTIVE cannot fall through on errors; SHADOW/MAINTENANCE/missing control refuse.
+- stockCurrentOrderIntake.js composes the actual original factories, existing SDK
+  conditional store, segmented protocol and original POINTBASE callback. Coverage
+  intentionally EMPTY. New DateTime field map follows original writes, NOT confirmed
+  CMS inspection of all these fields; real schema/type roundtrip remains a gate.
+- current-order-intake.cjs reads exact original PREPARED/ACCEPTED/order/task/initial
+  cost IDs and only opposite-company PREPARED. No full journal/table/stock-history scan.
+  Original input validator runs before real intake reads. Current product IDs are read
+  exactly, deduplicated by company+barcode+packing+EA. New zero CLOSED product metadata
+  and new task cumulative counters are committed with original insert-only plan;
+  no physical stock, claim, PO, receipt or customer procurement is invented.
+- Internal request ID derives from original source/order/destination. Build/generation
+  admission derives inside owned company protocol callback, not browser values. Every
+  replay still requires ACTIVE and all20 writer verification. Same manifest resumes
+  exact original captured costs/rows; no new request, price recapture after manifest,
+  manual procurement overwrite, or successful partial receipt.
+- Bounded pending returns only original order/company/pending, never private plan or
+  costs. Original Source delivery retains its snapshot/lock instead of declaring
+  SUBMITTED. READ_RECEIPT never resumes or mutates; pending barrier cannot acknowledge
+  an applied marker before verified completion. Existing accepted original receipt
+  replays read-only under shared barrier, without empty plan or another generation.
+- Shared generated backend runtime now95modules/48private exports. Newly reachable
+  intake byte budget explicitly maps Buffer builtin. Existing factories retain order
+  to avoid unrelated mechanical generated diff.
+
+Evidence actually run
+- First affected composition/original runs39pass0fail1738.3254ms.
+- After final explicit DateTime SDK adapter test/root simplification:29pass0fail
+  1738.8192ms (new9, runtime5, original intake11/receipt4). Do not add reruns as coverage.
+- All stock-current tests878pass0fail19762.0701ms, latest shared runtime included.
+- SDK native rows/condition behavior are MOCKS. Generated receiver/root/runtime run
+  in Node/VM, not real Wix/browser/platform capacity acceptance. Segmented100lines
+  complete without truncation offline; actual request time/RPM and Source large-order
+  phase UX remain open. One simple one-line current intake completes within its normal
+ 20step invocation; large order may require original same-order explicit continuation.
+
+Next and remaining release gates
+- Continue actual remaining original writer/read entrypoints and complete classification
+  (including order update/date already paired with Source arrangement, not a new
+  arbitrary ORDER_UPDATE route). Do not mark coverage from these mocks.
+- Source large-order bounded progress presentation/transport still needs acceptance;
+  original safe retained-error behavior is not claimed as final efficient UX.
+- Real schemas/indexes/types/permissions, conditional adapter platform acceptance,
+  recovery/unknown callback/lock proof, capacity/relationship lifecycle, initial parity/
+  maintenance/shadow/cutover, Loaded golden path and final focused review remain OPEN.
+- Four states: candidate code only; Pages unchanged; Wix not synchronized/published;
+  public new inventory/borrowing unverified. ACTIVE OFF. Real invoice/physical exit OFF.
+- Actual Credit UNKNOWN. No production or fake business data written, no old lock
+  deletion authority reused, no main merge, no temporary deployment rule added.

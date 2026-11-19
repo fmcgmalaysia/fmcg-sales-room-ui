@@ -1,0 +1,98 @@
+2026-10-23 — BOUNDED CANDIDATE WRITER ENTRY REVIEW, NOT NATIVE COVERAGE
+
+User away; continue background work without ordinary-stage consent. Reused unchanged
+previous source reads, then completed bounded selected entry/adapter reads. No project
+wide scan, new model, UI preview, native test, backend installation or release.
+This is entry/authority/commit-seam inspection, NOT complete semantic G3 PASS, native
+capacity acceptance, proof of all deployed code, or authority to set any coverage flag.
+
+Common seam inspected: current-stock-save.cjs createCurrentStockSave authenticates
+original actor per invocation, binds optional expected original staff/member into
+immutable digest, evaluates all20writer coverage/build/protocol/generation under
+original fenced coordinator, prepares server-owned plan and accepts only confirmed
+result or bounded original pending receipt. Intake uses original bearer gateway and
+its own same evaluateStockAdmission/coordinator composition. No legacy fallback
+inside a current command. LEGACY root routes remain separate and require the STILL
+UNRESOLVED provider drain or sufficient old-writer fencing before migration.
+
+Mandatory categories and actual candidate path inspected
+01 RECEIPT: current-department-saves -> Warehouse original auth/PO validator ->
+   warehouse-stock-reader/receipt-plan -> same source/claim/product + event commit.
+02 ALLOCATION: allocation-authority -> original Purchase permission/current view ->
+   original allocation validator -> ordinary free-stock assignment, not arbitrary
+   reassignment of another customer's reserved stock.
+03 BORROWING: borrowing-authority -> actual Purchase identity and both original
+   confirmed matching POs -> current individual rows -> approval/return plan. Current
+   approval binds future replacement source; Warehouse-only cannot approve.
+04 SALES_DEMAND: current-sales-save -> original delegated Sales customer identity ->
+   original Sales validator/current workspace -> same demand/claim/relationship plan.
+05 PURCHASE_SOURCE: current-department-saves ADD_SOURCE -> original Purchase/source
+   authority -> current-purchase-stock preparation, no fake customer demand.
+06 PURCHASE_PLAN: same PLAN route, confirmed supplier/source and procurement guards.
+07 PURCHASE_TASK: same EDIT/PO/AVERAGE_COST/QTY plus current-purchase-reorder-save.
+   QTY keeps original Super Admin gate. REORDER changes only rowPosition after
+   original complete customer/display/task/invoice/archive checks, preserving v2
+   counters and committing its original display receipt under same company fence.
+08 STOCK_EXCEPTION: current-stock-exception-save -> original stock permission and
+   original exception validator. Unambiguous customer isolation leaves demand
+   unchanged and records physical review on SAME affected packing lists; mixed
+   ownership refuses, no Warehouse automatic borrowing/reallocation.
+09 STOCK_RESOLUTION: current-stock-resolution-save -> action-specific original
+   permission/financial validators -> exact existing attributed case/current row.
+   No financial-close shortcut to physical disposal or disappearance of isolation.
+10 PACKING: current-packing-service -> original department permission -> original
+   current preparation/packing rules; photos require paired immutable file protocol.
+   It does not itself invoice or perform physical departure.
+11 WAREHOUSE_PREPARATION: current-warehouse-preparation-save allows original PACK/
+   LOAD/UNPACK/PHOTOS, original identity/validators/current customer ready quantity.
+   Paired file receipts and same company coordinator; no cross-customer allocation.
+12 SHIPMENT: current-sales-shipment-save SELECT/CANCEL, current-sales-document-save,
+   current-warehouse-dispatch-save and original paired gateways. Source delegated
+   customer and original document/dispatch rights retained. Actual candidate root
+   stockCurrentFulfilment CURRENT_PHYSICAL_DISPATCH_ENABLED is literalfalse; initial
+   test stops at Loaded. No Support invoice activation added.
+13 ORDER_INTAKE: current-order-intake -> unchanged original source bearer validator,
+   stable destination/submission receipt -> exact same original request/coordinator.
+   Existing accepted receipt is read-only replay; no new empty stock commit.
+14 ORDER_UPDATE: mandatory category still retained. Actual inspected original Sales
+   order-date intent is routed by current-sales-arrangement-save under SHIPMENT_PLAN,
+   not a missing unguarded order-row writer. No category removal/coverage promotion
+   inferred from this overlap; native semantic classification remains review scope.
+15 COST_REFERENCE: current-cost-reference-save + current-warehouse-cbm-save preserve
+   ORIGINAL provider/department validators. Already-known CBM is guarded read only;
+   new original event uses same coordinator. Failed provider result remains explicit
+   recorded failure, not guessed zero or successful stock mutation.
+16 MARGIN_REFERENCE: current-margin-reference-save + Purchase workspace read router
+   preserve original GP/cache calculation and original demand group identity. Explicit
+   immutable refresh request/receipt, no old unfenced whole-order cache overwrite.
+17 SHIPMENT_PLAN: current-sales-arrangement-save PLAN/ORDER_DATE retains original
+   customer permission, validators and immutable original intent event, not physical
+   receipt/dispatched stock or new invoice.
+18 QUANTITY_CASE: current-department-saves QUANTITY_CASE/SHORTAGE preserves original
+   Purchase decision authority, supplier/customer choices and original event receipt.
+19 PURCHASE_ORDER_RECORD: current-order-record-save/current-order-file-save preserve
+   original Purchase PO metadata/file/delete rules; same shared PurchaseOrders CAS.
+   Files require existing paired staging protocol. No actual file/record deletion
+   was performed or newly authorized by this inspection.
+20 ACCOUNT_PURCHASE_RECORD: current-order-record-save/current-account-auxiliary-save/
+   current-order-file-save preserve ORIGINAL Account roles/review/settlement/file/
+   credit validators and same shared PO/journal fence. These are existing co-writers,
+   NOT a new finance task, bank instruction or permission expansion.
+
+Concrete finding corrected separately
+RECEIPT_PO_SOURCE_LABEL_20261023.txt: original authority dropped readable PO number
+before a receipt-created StockPositions row. Two minimal mapping changes; quantities,
+customer ownership, original event, stable IDs and PO plans unchanged. NCT/GHR direct
+authority->receipt->public detail and actual original two-product Warehouse root
+assertions cover this. No cosmetic-only change to invoice/physical workflow.
+
+Potential helper short-page concern inspected: actual public stock-control service
+already rejects incomplete product/count/detail pages under same generation barrier.
+No extra fallback/helper rewrite or peripheral test added to duplicate that guard.
+
+Remaining gate is NOT consent to ordinary development. Existing review map remains
+all20UNVERIFIED and roots keep empty coverage. Need exact native installed sources,
+permissions/schema/index/typed behavior, old execution boundary, whole-request quota/
+timeout/recovery acceptance, migration/shadow then actual public split/borrow/receipt
+repayment/Loaded use. Candidate assertions do not prove any deployed native path.
+Do not call this full G3 or user acceptance, or declare independent work exhausted.

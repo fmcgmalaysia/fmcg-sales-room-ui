@@ -1,0 +1,59 @@
+{
+  "at": "2026-10-29T07:05:38.552Z",
+  "mode": "READ_ONLY_ORIGINALS_COMPARED_BEFORE_EDITS",
+  "files": [
+    {
+      "name": "packingListOperations.js",
+      "beforeSha256": "d8f2f544c1f9b9658e33f3fb13225ec4e2862c345e337ec862e2d0d7f04311dd",
+      "at": "2026-10-29T01:41:06.913Z",
+      "matched": true,
+      "hunks": 13
+    },
+    {
+      "name": "packingListService.js",
+      "beforeSha256": "56ef7dbf805859f69252c2ec615cc12aa6b087b8738894fd8e9225bfb9597aed",
+      "at": "2026-10-29T06:05:12.081Z",
+      "matched": true,
+      "hunks": 2
+    },
+    {
+      "name": "packingLists.web.js",
+      "beforeSha256": "0117a38a6c45347a4d91a8d80edc87a229b60ac6d8728e442ef5e663440374da",
+      "at": "2026-10-29T06:06:06.130Z",
+      "matched": true,
+      "hunks": 1
+    },
+    {
+      "name": "purchaseProjection.js",
+      "beforeSha256": "eab2417c3d8e036f3234888fea33077a53a050f0437da4845f81994f7f8bd5cf",
+      "at": "2026-10-29T06:07:16.089Z",
+      "matched": true,
+      "hunks": 2
+    },
+    {
+      "name": "supportDesk.js",
+      "beforeSha256": "ce7acf946f7555b042454c35ecc469c3a83fc0b005c7780b19368e3bee16ca25",
+      "at": "2026-10-29T06:01:56.816Z",
+      "matched": true,
+      "hunks": 4
+    },
+    {
+      "name": "warehouseReceiving.web.js",
+      "beforeSha256": "4644837b3125d5cfb8269109ea361f4c75dd2feaa3d8b12f8562fea1dea3c877",
+      "at": "2026-10-29T06:02:52.838Z",
+      "matched": true,
+      "hunks": 1
+    },
+    {
+      "name": "packingListBridge.js",
+      "beforeSha256": "911042fa6b83d712954d6ed5baecafcd3b00baf6e209529e14ab65c0ffb91de9",
+      "at": "2026-10-29T06:03:50.032Z",
+      "matched": true,
+      "hunks": 1
+    }
+  ],
+  "newModule": "deskDelivery.js",
+  "wixDraftWrites": 0,
+  "newModulesCreated": 0,
+  "publishPending": true
+}

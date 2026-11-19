@@ -1,0 +1,68 @@
+2026-10-22 — ORIGINAL REFERENCE COST WEB / PRIVATE ROOT CANDIDATE
+
+Recovery: pushedaa22615 (original intake root) on existing PR220; production
+baselined447185/runtime32b812c unchanged. Same task/framework/Astra decision reused.
+Read original purchaseCostRetry.web/core, Purchase authorizer, selected current-cost
+plan/save, original parent/app callback and existing Purchase UI builder. No financial
+feature, model/agent, real file/cost service call, CMS/schema or permission mutation.
+
+Concrete remaining co-writer
+Original reference retry spreads an entire current task and optional order CBM row.
+After stock activation this must participate in the common company fence, preserving
+all new counters/borrowing state, not overwrite them through an old unfenced save.
+
+Implemented
+- build-current-cost-root.cjs generates minimal original purchaseCostRetry.web overlay
+  and private stockCurrentCostReference.js. Same original SiteMember method/name,
+  authorizer and legacy retry preserved. Optional fourth argument is current protocol
+  metadata only, no staff grant/row patch. Only clean explicit LEGACY with no current
+  request can run original path; ACTIVE/unknown/SHADOW/MAINTENANCE never fall through.
+- Actual private root binds original Purchase staff/member authorization and original
+  retry factory/POINTBASE service to tested current cost saver and segmented protocol.
+  Coverage remains EMPTY. Candidate DateTime schema map requires real CMS inspection/
+  roundtrip; no native permission/type acceptance claimed.
+- current-cost-tables.cjs uses exact task/parent/result/attempt/capture/legacy lock IDs
+  and original two-row-bounded order/accepted/special-evidence criteria. It never reads
+  all company activity for one reference retry. Duplicate/foreign/query errors refuse.
+  Original pre-ACTIVE immutable accepted/special history may lack company/version,
+  just like existing Purchase table bridge; not rewritten or used as conditional row.
+  Task/order before-images remain company/version validated. Old per-task lock is not
+  removed or stolen by TTL. Original validators still determine special-task eligibility.
+- readCostTables receives the exact original request UUID for receipt IDs. Existing
+  three-argument fixture readers remain compatible. Current authenticated actor now
+  returns original staffId alongside memberId: new root tests exposed that omitted
+  field previously rejected a correctly bound stockIdentity. No weaker identity check.
+- Generated runtime96modules49private exports, explicit lazy Buffer builtin mapping
+  for existing cost-plan byte budget. No public endpoint/dependency grant added.
+
+Tests
+- Initial new-root test run15pass4fail: all four failures exposed missing returned
+  authenticated staffId in current-cost saver. Fixed that one-line actor result, not
+  request validation/tests. Final affected19pass0fail835.6751ms.
+- New6 tests exercise exact original web/root/generated runtime, both companies,
+  original immutable receipt, manual9/carton-empty prices, PO/qty/cumulative dispatch
+  preservation, bounded reads, pending/interruption/same UUID, revoked or changed
+  identity, missing coverage/metadata/modes, duplicate/foreign rows and untouched old
+  lock. Special reader test proves evidence inclusion, NOT full special-purchase QA.
+- All stock-current tests884pass0fail18874.3029ms. Runtime95/48 previous evidence
+  superseded for current code, not added as separate coverage.
+- All Node/VM/mock SDK, no real platform/browser/POINTBASE/upload/business write.
+  Protected production-directory diff againstd447185 empty; generated --check passes.
+
+NEXT — not yet a usable installed Catch Cost path
+1. Connect original Purchase parent optional metadata and browser costRetry retained
+   request/phase/final/cleanup/reload path. Current browser still sends three arguments;
+   ACTIVE deliberately refuses that stale client rather than writing old rows.
+2. Preserve original known failed-attempt immutable audit: current preparation throws
+   and its scratch failure audit is not yet committed. Do not call this complete or
+   activate while original failure behavior is missing. No new financial action needed.
+3. Remaining other actual original roots/read writer classification, native permissions/
+   schemas/indexes/conditional tests, operational recovery/capacity/lifecycle, migration/
+   shadow/cutover, Loaded acceptance/focused review/four-stage release remain OPEN.
+4. Original Source large-order bounded-progress presentation remains open separately;
+   simple one-line intake works offline, not proof large native order UX is ready.
+
+Release: code candidate/Git sync only; Pages unchanged; Wix not installed/published;
+public new stock/borrowing unverified. ACTIVE OFF, real invoice/physical exit OFF.
+Do not ask user for another business-theory decision; resolved rules stand. No user
+action currently needed. Actual Credit UNKNOWN. Automation retained, no main merge.

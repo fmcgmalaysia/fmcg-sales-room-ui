@@ -1,0 +1,21 @@
+{
+ "schema":"R2_INSERT_ONLY_NATIVE_INSTALL_V1","system":"MASTER","savedDraftOnly":true,
+ "core":"890658ad682033b4eb10af629931f052d8478b280f343402692a90aa45b2daa5",
+ "change":"One batchNewInserts flag per plain database constructor; generic, photo, PDF and trash defaults unchanged",
+ "exactWholeNativeReadbacks":[
+  {"name":"r2stockCurrentOrderIntake.js","before":"60c1585b8d30b64f005ce82d45e3f1ee9205d32e6849d6af542748aa0b504157","after":"0d0dd9d0d879d483b3b30f2a26a905f7307ebc2e5f34a1b95d97430b7cb47348"},
+  {"name":"r2stockCurrentBorrow.web.js","before":"98824d68f051cefa401f740e4345f30c8fd89493446bb23e9955faaf525c5404","after":"440c557f59338114862185fcf79981cd988bee419b8fdb4dd5817d3e27a2b379"},
+  {"name":"r2stockCurrentWarehouse.web.js","before":"29022e03669cf7f0620ae174f5ab6d482ea20755adee94d969bae065fc3e650c","after":"497c98dbf260d121bc1f4807cb79a19efce842b5b9ee362e0d34ead75bdc8d79"},
+  {"name":"r2stockCurrentSourceSales.js","before":"8efbfe20898c879d395f2c1da65566a338de7469429a1dead47d64f0fc0f7ad4","after":"cdb6c5857addc183736dd9133fdca0da8050603be7da83d16fdcbca7987858c3"},
+  {"name":"r2stockCurrentPurchaseOrders.js","before":"b914293b329e279d9a3c87ceb0c1cd9e377ff2c91654564ca088e232a9e09866","after":"b8e8f2051ee8b582c3b619605dfba4152e45eedfa0b1cd07368f5cfc0c6e836b"},
+  {"name":"r2stockCurrentFulfilment.js","before":"85254b392897f0919f02c87adbf99aeeb96d8145b5bfd61f67223792507ab6d9","after":"364ba5fa33f1a5cbf893a070c3fb7d06618fdae5448839335f51f9f03ab18383"},
+  {"name":"r2stockCurrentQuantityRead.js","before":"359a8635e06960dd1402092721d44c3a8094f9767598e2914c6434978683b819","after":"5213f4cdc4b232cbdc1f99a9d76a2e8f163d96f4c035eb195142e9774afa476d"},
+  {"name":"r2stockCurrentAccountPurchase.js","before":"b0f563ea23853e729d48df987ae659d5aee2f13b9b83547c2a78c340fbe12899","after":"217c7e45112644bce03d128e4574126d0e876b3fd8e81ec11a91dbd01e96a90f"},
+  {"name":"r2stockCurrentCostReference.js","before":"b926902d2215374366ee755df4725517b87cb53ec8a87496e6313e3b0ab82b71","after":"c9ef08dc1c978577c0129e59eb888417ddf1caa29ea1025ce84139d6a70fb262"},
+  {"name":"r2stockCurrentExceptions.js","before":"aff656bfee2219755d4372a3fdda15e144e01a10615921a8e0b501d2e3482440","after":"bf37afa161488ec6dfa758f48481a03dc8c4f3ea004a860ae04e6268f8a44ae3"},
+  {"name":"r2stockCurrentPacking.js","before":"81268c71179c05fd6dcb9e395d46745fc61362e0d77943c5dc675ca42e5e41b3","after":"6ae08348b5c1895bf2c174dedef7f23f4f3c07e250b9d2ff5e55681fdd2aa2eb"}
+ ],
+ "confirmedRoots":11,"autosaveOn":true,"active":false,"wixPublished":false,"pagesDeployed":false,"publicBuyerAccepted":false,
+ "userPackingDirection":"After common flag saved user deferred further Packing workflow/UI/optimization until discussed; no further Packing feature work or physical dispatch activation",
+ "uiRecovery":"Global Escape collapsed code/navigation. New tab later read-only due another tab editing. Inspected screenshot, expanded panel, Take Control then resumed exact before/after checks; no root overwritten on mismatch. Use explicit Close (Escape) button, not global Escape."
+}

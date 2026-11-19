@@ -1,0 +1,145 @@
+{
+  "date": "2026-11-03",
+  "status": "BUSINESS_DESIGN_COMPLETE_TECHNICAL_GATES_OPEN",
+  "scope": "Read-only source review and design. No production code, Wix draft, business record, permission, archive or deletion change.",
+  "baselineEvidenceCommits": [
+    "6475227",
+    "7857388"
+  ],
+  "report": "docs/reports/CMS_LONG_TERM_DESIGN_20261103.html",
+  "decision": "Operational reads use verified current open state; history queries are scoped and paginated. Month is not an active-work cutoff. One command path; no independently editable second ledger.",
+  "reuseFirst": true,
+  "currentStateSchemaApproved": false,
+  "migrationApproved": false,
+  "archiveDestinationSelected": false,
+  "deferred": "Request-local purchaseProjection maps are a subordinate candidate, not the long-term solution.",
+  "technicalGates": [
+    "Fresh live comparison before production edits",
+    "Actual query/read/write/latency budget and plan quotas",
+    "Multi-record pending visibility, conflict prevention and original-request recovery proof",
+    "Controlled initialization reconciliation and consumer inventory",
+    "Rollback after newly accepted business facts",
+    "Retention and archive retrieval/deletion approval"
+  ],
+  "acceptance": [
+    {
+      "id": "C01",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Fixed active set with 10k/100k/1m closed history"
+    },
+    {
+      "id": "C02",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Growing active set and true database pagination"
+    },
+    {
+      "id": "C03",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Idle polling, timeout and late-response limits"
+    },
+    {
+      "id": "C04",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "No-op save and original-request replay"
+    },
+    {
+      "id": "C05",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Failure after every write step"
+    },
+    {
+      "id": "C06",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Shared-resource concurrency"
+    },
+    {
+      "id": "C07",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "500/480/300/quarantine10/load170"
+    },
+    {
+      "id": "C08",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Cross-month borrow and repayment"
+    },
+    {
+      "id": "C09",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Partial payment, matching, CN/DN and charges"
+    },
+    {
+      "id": "C10",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Reusable Desk and unresolved remainder"
+    },
+    {
+      "id": "C11",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Month-end cutoff with pending operation"
+    },
+    {
+      "id": "C12",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Closed-period correction and return"
+    },
+    {
+      "id": "C13",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Unknown cost/specification/FOC"
+    },
+    {
+      "id": "C14",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Company, customer and staff isolation"
+    },
+    {
+      "id": "C15",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Archive failure prevents deletion"
+    },
+    {
+      "id": "C16",
+      "status": "PLANNED_NOT_EXECUTED",
+      "title": "Rollback retains new business facts"
+    }
+  ],
+  "evidenceReused": {
+    "oldReaderBoundaryProbesPassed": 8,
+    "productionActivitySampleRows": 400,
+    "preparedRows": 99,
+    "resultRows": 99,
+    "duplicateNestedEventPayloads": 72,
+    "duplicatePayloadCharacters": 65701,
+    "notBilledBytes": true
+  },
+  "unfinishedPreserved": [
+    "Buyer identity/download/back navigation public acceptance",
+    "Intermittent blank embed root cause",
+    "Payment Follow-up issue classification",
+    "Mixed-source GP/transport",
+    "Live month-end loss acceptance",
+    "Sales Management design only",
+    "Cost migration and image mechanism deferred"
+  ],
+  "release": {
+    "code": "No business code changed; documentation only",
+    "pages": "NOT_APPLICABLE",
+    "wix": "NOT_APPLICABLE",
+    "public": "NOT_APPLICABLE_TO_READ_ONLY_DESIGN"
+  },
+  "unknowns": [
+    "Actual CMS subscription capacity",
+    "Actual daily row growth",
+    "Measured end-to-end latency",
+    "Atomicity/visibility mechanism for proposed current-state maintenance"
+  ],
+  "historicalQuotaEvidence": {
+    "recordedAt": "2026-10-31T16:05:37.403Z",
+    "itemLimit": 10000,
+    "storageDisplay": "10 GB",
+    "usedItemsThen": 536,
+    "currentQuotaVerified": false,
+    "source": "handoff/master-cms-baseline-20261031/BASELINE.json"
+  },
+  "followup": "docs/reports/CMS_SAVE_BOUNDARIES_20261103.html; 13 current-code diagnostic observations and 10 existing recovery checks; not new-design acceptance."
+}

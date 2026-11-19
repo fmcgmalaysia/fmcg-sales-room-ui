@@ -1,0 +1,13 @@
+{
+  "testsPassed": 29,
+  "clickNextSaves": true,
+  "nextInputKeepsFocus": true,
+  "directReviewWaitsForAll": true,
+  "failedSaveKeepsValue": true,
+  "failureStopsReview": true,
+  "enterRetryWorks": true,
+  "cssUnchanged": true,
+  "backendUnchanged": true,
+  "wixUnchanged": true,
+  "recoveryTag": "verified/my-selection-sort-20261006"
+}

@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const root=path.resolve(__dirname,'../../..'),baseline='080d3578fbddc0995938a08d452828cc24e12f6d',hash=text=>crypto.createHash('sha256').update(text).digest('hex');
+const git=args=>cp.execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer:10000000}).replace(/\r\n/g,'\n');
+const files=git(['diff','--name-only','--diff-filter=M',baseline,'--','integration/backend']).trim().split('\n').filter(Boolean),result=[];
+for(const file of files){const before=git(['show',baseline+':'+file]),after=fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n'),lines=before.split('\n');
+ const diff=git(['diff','--no-ext-diff','--unified=0',baseline,'--',file]),hunks=diff.split(/^@@ /m).slice(1).map(part=>{const header=part.match(/^-(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^\n]*\n/);assert(header);const oldStart=Number(header[1]),count=header[2]===undefined?1:Number(header[2]),body=part.slice(header[0].length).split('\n'),old=[],next=[];for(const row of body){if(row.startsWith('-'))old.push(row.slice(1));if(row.startsWith('+'))next.push(row.slice(1));}assert.equal(old.length,count);let find=old.join('\n'),replace=next.join('\n');if(!count){const anchor=oldStart?lines[oldStart-1]:lines[0];find=anchor;replace=oldStart?anchor+'\n'+replace:replace+'\n'+anchor;}
+  let low=oldStart-2,high=oldStart-1+count;while(!find||before.split(find).length!==2){if(low>=0){find=lines[low]+'\n'+find;replace=lines[low--]+'\n'+replace;}else if(high<lines.length){find+='\n'+lines[high];replace+='\n'+lines[high++];}else throw Error('Nonunique patch '+file);}return {find,replace};}).reverse();
+ let simulated=before;for(const patch of hunks){assert.equal(simulated.split(patch.find).length-1,1,file);simulated=simulated.replace(patch.find,()=>patch.replace);}assert.equal(simulated,after,file+' isolated patches must recreate candidate');result.push({name:path.basename(file),beforeSha256:hash(before),afterSha256:hash(after),hunks});
+}
+const added='physicalOutflow.js',source=fs.readFileSync(path.join(root,'integration/backend',added),'utf8').replace(/\r\n/g,'\n');
+const report={baseline,files:result,newModule:{name:added,sha256:hash(source),source}};fs.writeFileSync(path.join(__dirname,'WIX_PATCHES.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({files:result.length,hunks:result.reduce((sum,row)=>sum+row.hunks.length,0),newModules:1}));

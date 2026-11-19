@@ -1,0 +1,19 @@
+{
+  "runtime":"96fdf7792620dbe64469a52921e7d1eb1fa2c72e",
+  "branch":"feat/support-workbench-preview-20261021",
+  "pullRequest":218,
+  "marker":"2026-10-21-support-preview-v1",
+  "scope":"Explicit example-data UI preview. No real invoice issue or live task/POINTBASE data claim.",
+  "acceptedFontPreserved":true,
+  "originalSupportAndWarehouseUntouched":true,
+  "focusedTests":{"passed":15,"failed":0},
+  "pages":{"runId":39526232269,"success":true,"verifiedAssets":13,"normalization":"UTF8 CRLF to LF"},
+  "permission":{"temporaryPolicyId":63779122,"removed":true,"originalSevenExactBefore":true,"originalSevenExactAfter":true},
+  "wix":{"site":"Master","page":"Support Department","singleUrlPatch":true,"completeReadbackExact":true,"entryLfSha256":"04c591b0516c56f0d55cc2aa7aca5681f14db90f9a9d2a798055b87d45ce9407","published":true,"officialEvidence":"Wix Site History: Published by site owner","publishedRevision":143,"publishedAtLocal":"2026-10-21 09:16 MYT","publishAttempts":1},
+  "public":{"url":"https://fmcg999.wixstudio.com/master/support-department","verified":true,"cleanReloadVerified":true,"exampleNctRows":8,"exampleGhrRows":1,"font":"Support Inter, Segoe UI, Microsoft YaHei, Arial, sans-serif","groupedPreviewQty":130,"groupedExampleAmount":"USD 1466.40","groupedExampleCbm":1.869,"groupedExampleNetKg":1272,"crossCustomerSelectionDisabled":true,"notIssuedWatermark":true,"realSaveButtonAbsent":true,"historyReadOnly":true,"relevantConsoleErrors":[],"screenshots":["PUBLIC_SUPPORT.jpg","PUBLIC_INVOICE_PREVIEW.jpg","WIX_PUBLISHED_HISTORY.jpg"]},
+  "warehouseRegression":{"readAtLocal":"2026-10-21 09:18 MYT","stockOnHand":[1,95],"deliveryRows":11,"splitQuantities":[80,20],"relevantConsoleErrors":[]},
+  "businessWrites":false,
+  "releaseComplete":true,
+  "userBusinessAcceptance":false,
+  "actualCredits":"UNKNOWN"
+}

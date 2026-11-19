@@ -1,0 +1,30 @@
+{
+  "runtime": "6394291038b0a8bce56bdc8d2c0ec5d93b4a3e28",
+  "branch": "fix/purchase-selected-row-po-20261016",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/153",
+  "recoveryRuntime": "b2ec19cb3979942a9e86e39d5de40f93ce8c140e",
+  "protectedTag": "verified/purchase-row-drag-save-20261016",
+  "tests": {
+    "ui": 107,
+    "backendSave": 48,
+    "failed": 0
+  },
+  "pages": {
+    "run": 38927143288,
+    "conclusion": "success",
+    "marker": "2026-10-16-purchase-selected-row-po-v1",
+    "changedAssetsExact": [
+      "purchase-live/app.js",
+      "purchase-live/index.html"
+    ],
+    "originalSevenPoliciesRestored": true
+  },
+  "wix": {
+    "beforeHash": "ec33b02039824716605a4f6d4b6e8c1fa6413ca43b7655f4e42178c7e7961396",
+    "afterHash": "bd3dfd9617b584766e721901962d344b65e49ef7994ce18a22ac59d159a0e8fd",
+    "fullReadbackOnlyVersionChange": true,
+    "publishLiveReceipt": true
+  },
+  "public": "pending fresh frame loading; no transaction submitted",
+  "mainMerged": false
+}

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QUOTATIONS · Isolated QA</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/quote-grid.css">
+</head>
+<body>
+  <div class="qa-bar"><span>Isolated preview · Fictional customers & costs</span><label>Test identity <select id="actor"><option value="sales">QA Sales</option><option value="admin">QA Admin</option><option value="support">QA Support</option></select></label></div>
+  <header class="masthead"><strong>MASTER</strong><span class="department">Sales Management</span><select id="company" aria-label="Workspace company" hidden><option>NCT</option><option>GHR</option></select><button id="menu" aria-label="Open navigation" aria-expanded="false">☰</button><div class="header-bottom"><input id="search" type="search" placeholder="Search product or barcode" aria-label="Search products"><span id="staff">QA Sales</span></div></header>
+  <nav id="navigation" aria-label="Preview workflow"><a href="#quotes" data-view="quotes">Quotations</a><a href="#catalogue" data-view="catalogue">Catalogue</a><a href="#buyer" data-view="buyer">Buyer Room</a></nav>
+  <main>
+    <div class="page-title"><h1 id="title">Quotations</h1><label class="customer-control">Customer<select id="customer"><option value="QA-A">Harbour Market · QA</option><option value="QA-B">Cedar Stores · QA</option></select></label></div>
+    <div id="notice" role="status" aria-live="polite"></div>
+    <section id="content" aria-label="Workspace"></section>
+  </main>
+  <script src="/app.js"></script>
+</body></html>

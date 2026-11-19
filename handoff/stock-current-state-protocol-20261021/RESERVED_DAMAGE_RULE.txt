@@ -1,0 +1,61 @@
+2026-10-23 — HUMAN-APPROVED RESERVED CUSTOMER DAMAGE RULE
+
+User explicitly replied: the following is completely reasonable:
+Warehouse records damage and isolation → customer order quantity unchanged, shortage
+shown → Purchase decides replacement or approves borrowing. Warehouse must not use
+another customer's stock on its own. This resolves the preceding business question;
+do not keep asking for the same approval. It is NOT a completed implementation or
+permission to alter PO identity, clear borrowing debt, add employees or release ACTIVE.
+
+Required protected outcomes
+- Accepted PO receipt remains historical truth; actual good stock falls by recorded
+  damaged quantity, isolated physical stock remains in warehouse until actual return.
+- Requested customer quantity unchanged; good Ready/arrangeable quantity falls and
+  customer shortage becomes visible. Never turn damage into customer cancellation.
+- Purchase alone chooses replenishment/eligible approved borrowing; original both-PO,
+  same-company/specification, uncommitted-future and source/financial guards still hold.
+- Borrowing debt/halo is NOT cleared by damage, Loaded or cancellation of a packing
+  remainder. Recorded supplier return is not a loan repayment.
+- No automatic new PO, replacement receipt, free-stock reclassification or borrowing.
+- Original stock exception/supplier resolution/separate Admin/Account checks remain;
+  this is not a new financial adjustment policy or general loss-writeoff authority.
+
+Concrete current-code gaps from fresh bounded reads
+1 borrowing-model quarantineFree intentionally rejects quantity above source.available.
+  It cannot identify the customer whose reserved units are damaged. Removing this
+  check alone would produce negative free stock or an arbitrary customer's loss.
+2 StockClaims already has isolatedAttributed, but borrowing-stock-plan mapTransition
+  asserts oldClaim.isolatedAttributed===0 and always creates zero. original-product-
+  state assembles usable claims but discards isolated attribution. Must pair these
+  readers/mappers with exact case attribution rather than inventing another ledger.
+3 validate requires task-total packing held<=reservedUsable. A sent list50with10damaged
+  cannot simply become usable40while original planned hold remains50: the model rejects
+  future reads. Original packing PROGRESS calls checkSupply on old planned quantities,
+  so a naive change could prevent Warehouse reducing Packed/Loaded to resolve damage.
+  Preserve original list identity/revisions, support physical reduction with reason,
+  and do not silently rewrite Support's list or customer demand. Reviewed shortage
+  semantics and all affected original consumers need regression proof before activation.
+4 approveBorrow rejects any borrower with packing holds. If repair of a genuinely
+  under-backed active packing list is supported, keep lender's held stock protected,
+  bind only verified shortage and eligible future PO. Never relax all packing guards.
+5 Supplier-approved replacement/return/release must preserve exact customer's case
+  attribution. Replacement after the customer is already covered elsewhere cannot
+  double-cover demand or erase outstanding borrowing promises. Original free-case
+  movement always adds replacement to free stock, so cannot be reused blindly.
+
+Attribution boundary not decided by the broad approval
+If a physical source currently holds multiple customers' usable claims and no packing
+evidence identifies whose units were damaged, Warehouse must NOT pick which customer
+loses stock as if that were an allocation authority. Need a fact-bound, explicit
+attribution decision or a narrowly phrased human clarification before implementing
+that ambiguous branch. No arbitrary FIFO/pro-rata rule is authorized by this approval.
+This does not prevent independent implementation/testing of unambiguous cases and
+remaining original intake/PO/split/G3 checks.
+
+Status
+Rule approved, implementation/read/UI/packing/borrow/regression still pending. This
+entry is not a fake green test. Current code690e68a pushed PR220; retained offline
+suite1019pass0fail21895.5304ms applies BEFORE reserved damage changes. Production
+runtime32b812c/baselined447185 untouched, all current coverage maps EMPTY/ACTIVE OFF,
+Support real invoice and physical exit OFF. Native/recovery/capacity/cutover/four-stage
+release gates unchanged. No platform/CMS/permission/write/test operation this turn.

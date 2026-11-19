@@ -1,0 +1,9 @@
+{
+  "problem": "Legacy active-layout CSS forces missing PO red; Purchase gray differs from Finance actual #B8C4D0",
+  "fix": "Remove forced missing-PO override; match canonical missing color; preserve problem red and available blue",
+  "changedPublicResources": 3,
+  "totalResources": 94,
+  "backendChanged": false,
+  "wixVersionOnly": true,
+  "publicEvidence": "LIVE_DOCUMENT_BUTTONS.json"
+}

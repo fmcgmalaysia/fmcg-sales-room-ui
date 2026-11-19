@@ -1,0 +1,157 @@
+[
+  {
+    "file": "account-room/app.js",
+    "normalizedExact": true,
+    "sha256": "41b0e836d66fd36e7d3fdfef133bf14ecbe3d4609383f0219d490f292d90102a"
+  },
+  {
+    "file": "account-room/customer-debtors.js",
+    "normalizedExact": true,
+    "sha256": "0dee5893b6ea2ef128a485735f98a0b7e5b3c8895c8eb0748952f19b0a96195d"
+  },
+  {
+    "file": "account-room/index.html",
+    "normalizedExact": true,
+    "sha256": "62c710f84369e8da6364e8ce4481cbfe4ca9b7e18017a36c2a317bb78ddf4b30"
+  },
+  {
+    "file": "account-room/purchase-payments.js",
+    "normalizedExact": true,
+    "sha256": "1a1705828fb86ab2d6f6eaddd1c279a33af852744ac9fae90b5cfef05f39077e"
+  },
+  {
+    "file": "account-room/settlement.js",
+    "normalizedExact": true,
+    "sha256": "5aa2d15547d90483db20667a531e5e548f103ff83c0caf91ab7a8e0008bde234"
+  },
+  {
+    "file": "account-room/style.css",
+    "normalizedExact": true,
+    "sha256": "84dee7aae72b16dcf65f87d8d097059aa9a35ea0bffff1b1aea8fd9ce5d6279d"
+  },
+  {
+    "file": "buyer-login.html",
+    "normalizedExact": true,
+    "sha256": "1e7a3659b475f43b161a7f1e9f1e655e2bf760767064c2ade74c41fb5aa14b3e"
+  },
+  {
+    "file": "buyer-room.html",
+    "normalizedExact": true,
+    "sha256": "d29e287d95df0cbd457b9825db29cac5d2aae18ed61971909aeee981d81257ad"
+  },
+  {
+    "file": "index.html",
+    "normalizedExact": true,
+    "sha256": "23ba131c0657de264f7eff764499f85b9894a7cc95ed2c99476bead301f1f40e"
+  },
+  {
+    "file": "master-shared/stock-exceptions.css",
+    "normalizedExact": true,
+    "sha256": "163f453a48994a76dedf7d512ec991d73a68a279574f21ba020fe8f208d94ae1"
+  },
+  {
+    "file": "master-shared/stock-exceptions.js",
+    "normalizedExact": true,
+    "sha256": "244f5bb65eaeee6389d6827ac2288fce0080bce89c8152d26463e91f8913d475"
+  },
+  {
+    "file": "master-shared/task-signals.css",
+    "normalizedExact": true,
+    "sha256": "cbf47f9d20a041b038813396d7ee618de7795ef2afb8a4c17f935ed5bc729c95"
+  },
+  {
+    "file": "master-shared/task-signals.js",
+    "normalizedExact": true,
+    "sha256": "cf5b8fcfbac6092e16679751a4e325e287b6207d1d1f6c415a2f6e5ede9f4b30"
+  },
+  {
+    "file": "master-shared/workroom-theme.css",
+    "normalizedExact": true,
+    "sha256": "dfc968b3d0b6431607d66740020e3e1b04ad8da5e8de05ac0616bf089aee556d"
+  },
+  {
+    "file": "purchase-live/active-orders.css",
+    "normalizedExact": true,
+    "sha256": "729c09bedf4c9522aebc0b6e611f04340b8e557eb1b8c819152d64fca356deaf"
+  },
+  {
+    "file": "purchase-live/app.js",
+    "normalizedExact": true,
+    "sha256": "dc61aa578b018b3874f5e947e63ac89de131a8e414ec8ee8c8c78f9e047e0f60"
+  },
+  {
+    "file": "purchase-live/dashboard.css",
+    "normalizedExact": true,
+    "sha256": "e001f3fc46a4ea88c49eafd2a755e42a5fd6bb54342528b0f70e35f88d827a9e"
+  },
+  {
+    "file": "purchase-live/dashboard.js",
+    "normalizedExact": true,
+    "sha256": "0ca68927065bb98564ab7f0995984b771a18f9d2e814e3cb8fd4799d764e06a6"
+  },
+  {
+    "file": "purchase-live/header.css",
+    "normalizedExact": true,
+    "sha256": "22482d3cd3bc7a1a5310f54dce0213aec6ac517b7a4fddc0a204f1ab15d46fb8"
+  },
+  {
+    "file": "purchase-live/index.html",
+    "normalizedExact": true,
+    "sha256": "5cc678a1b252c97f5784bf4455e825a88090027e504e57c038e5888ff3b1a5c1"
+  },
+  {
+    "file": "purchase-live/style.css",
+    "normalizedExact": true,
+    "sha256": "8309313f73b950f2dd80a756d579f6d1750a6f7faa571cb1f2d3f8e1c63e0bfa"
+  },
+  {
+    "file": "purchase-live/supplier-allocation.js",
+    "normalizedExact": true,
+    "sha256": "5fb93cd2ce541ab4e3e9dba65e87ca78c2ae4ca57508059d4ce6cdd1152bbd26"
+  },
+  {
+    "file": "purchase-live/task-grid.css",
+    "normalizedExact": true,
+    "sha256": "2f0dea38e3b64d8fba0a852794332f89e55ed8679d8b3d4b0a6ceaead1ebfaf5"
+  },
+  {
+    "file": "purchase-live/task-grid.js",
+    "normalizedExact": true,
+    "sha256": "d21b32aa843960b8e427817759240785059911f8e1fc16f629b61043517c499f"
+  },
+  {
+    "file": "support-room/app.js",
+    "normalizedExact": true,
+    "sha256": "797d303c36d1d7d7e441d816c6384031d504df9bc1b4f1c8aa211f633d925cb2"
+  },
+  {
+    "file": "support-room/index.html",
+    "normalizedExact": true,
+    "sha256": "edbd47f073a6b40658d47de40a6f90624c63e8b40a0a6a2f9b0cd2789451fb7c"
+  },
+  {
+    "file": "support-room/style.css",
+    "normalizedExact": true,
+    "sha256": "4c7d10f1d9fe2c93c75327fe4f0af1f08d46841c9efe0e63962d742bff97659c"
+  },
+  {
+    "file": "warehouse-room/app.js",
+    "normalizedExact": true,
+    "sha256": "0b8fefc86376a6afe9cafd7c6a93fee578978bc7271a54ad33b1878083d7f8c8"
+  },
+  {
+    "file": "warehouse-room/dispatch.js",
+    "normalizedExact": true,
+    "sha256": "c3e71ae4fdf49a05c71b9926f6ff1c36608cd5ac18095344f150053a9574d445"
+  },
+  {
+    "file": "warehouse-room/index.html",
+    "normalizedExact": true,
+    "sha256": "78637486b288cdf7c1dcde5047cdf96a8004fe4ced440ef0b819284b76a53b73"
+  },
+  {
+    "file": "warehouse-room/style.css",
+    "normalizedExact": true,
+    "sha256": "9dcfa420cc347de9625168fb09073bc2934157e2bd6a6935e1f7715bc7ba1f0e"
+  }
+]

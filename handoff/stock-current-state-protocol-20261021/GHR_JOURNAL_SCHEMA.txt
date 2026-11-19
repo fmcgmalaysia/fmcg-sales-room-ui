@@ -1,0 +1,27 @@
+2026-10-22 — second company journal DateTime inspection; candidate only
+
+Fresh MASTER CMS read using existing Chrome3 tab51426755:
+https://manage.wix.com/dashboard/f80870fd-a3d8-47c0-9917-1bfd9c16ea44/wix-cms/data/NCTActivity1?referralInfo=sidebar
+CMS directory > GHR Activity > Manage Fields > Activity Time > Edit.
+Visible accessibility state reported:
+  Field type: Date and Time
+  Field name: Activity Time
+  Field ID: activityTime
+Clicked Cancel (element347); edit dialog316-348 removed. No input changed, Save/
+Change type clicked, record mutation, schema edit, permission or publication.
+Collection directory13collections; StockProtocolTest13 retained synthetic rows,
+both company business tables0, no StockPositions/Claims/Products installed.
+This is native schema evidence only, NOT an actual SDK write/roundtrip test.
+
+Candidate borrowing root now explicitly configures NCTActivity AND NCTActivity1
+activityTime. No other dates/types inferred. Empty all-writer coverage retained,
+no elevation/initialization/activation. Original member + Purchase reauthorization
+still precedes stock context reads; GHR adapter construction does not bypass coverage.
+Focused web/relay6pass0fail353.2131ms. Initial expectation omitted the existing
+StaffMasterAccess reauthorization read; corrected fixture expectation, not auth.
+GHR fixture proves exact collection/type routing and CLOSED coverage only; it does
+not prove real GHR borrowing success or native SDK permissions.
+
+Recovery productiond447185/runtime32b812c untouched; candidate checkpoint965a488.
+Remaining all-writer/read/root/client/schema/SDK/recovery/initialization/capacity/
+shadow and all four release gates remain OPEN. ACTIVE OFF. No deployment.

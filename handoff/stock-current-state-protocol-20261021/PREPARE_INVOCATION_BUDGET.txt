@@ -1,0 +1,80 @@
+2026-10-23 — ACTUAL read-only native sample and OFFLINE first-invocation blocker
+
+Native read-only test completed
+- New isolated Admin stockProtocolReadCapacity.web.js saved in existing MASTER editor;
+  whole clipboard readback LF3106 SHA2560ea4df405c12cf11f7441233edd689b86af126b25a5d394852375ab76a8c038d
+  matches repository. Only this isolated diagnostic added; original23business modules
+  remain unchanged. No new data/lock/schema/permissions or production publish.
+- Wix dedicated function test, explicit input, invoked EXACTLY twice: NCT samples3
+  returned3reads/495ms; samples12 returned12reads/1969ms. Original13synthetic rows
+  observed in both. Full safe metrics LIVE_READ_CAPACITY_RESULT.json; screenshot
+  native-read-capacity-result.png. No private record payload or actual IDs committed.
+- Code guarantees fixed StockProtocolTest table and no mutation API. Query totals
+  confirmed, Admin only. This is preview functional testing using live test data,
+  NOT published endpoint/public-page/business roundtrip/capacity acceptance.
+- Operator correction: generic editor Run clicked once first; it opened Purchase
+  page preview (console said Running code for Purchase Department), NOT this function.
+  Immediately exited via Edit Site. No business action or Publish clicked. Do not count
+  that as diagnostic execution or claim independent proof of zero underlying preview
+  read-side effects. Correct function gutter play at declaration then Set Parameters
+  Run used for the two actual successful tests. No repeated unknown dispatch.
+- First expanding result via stale AX2082 failed; reobserved and used visible object
+  chevron coordinate once. Retrieved Copy JSON only after actual visible metrics.
+
+Offline preparation instrumentation (new concrete G3 blocker, no native business save)
+measure-warehouse-invocation-budget.cjs loads EXACT existing original300line receipt
+root fixture with current source, then counts calls AFTER synthetic fixture setup.
+Same original UUID, stepsPerInvocation20. First TWO invocations only, not a rerun of
+the complete receipt, no network/native test records or old deletion authorization.
+
+Invocation1: pending BEFORE completed20/901records
+  store.read1250; items.query.find900; insert13; CAS2; conditionalRemove1.
+  Counted SDK data roundtrip lower bound2168 (each CAS adapter reads then patches).
+Invocation2: pending BEFORE completed40/901records
+  store.read35; query.find0; insert1; CAS1; conditionalRemove1; lower bound39.
+Original context/member/table/file transport and native latency not fully counted;
+these are OFFLINE interface counts, not measured2168native roundtrips. Do not multiply
+test-table latency and assert a real business completion time or throughput estimate.
+
+Conclusion supported by evidence: bounded apply/verify progress is NOT bounded first
+preparation. The current product-by-product scoped reader performs3queries/product
+before returning any bounded BEFORE progress. Native12read measurement does not make
+that first300product invocation acceptable. Original901image/300line mock pass does
+not close production capacity. This is a technical blocker, not unclear user policy.
+
+Focused next analysis, BEFORE another architecture/protocol patch
+Prefer preserve existing common fence/plan/auth/business contracts. Evaluate bounded
+batched strong reads of the same requested product/source/claim identities and complete
+paging (including exact CLOSED and zero states), reusing server-only normalized listed
+rows inside ONE verified snapshot. Compare against existing scoped readers and every
+counterexample. Native hasSome/index/limits require primary docs and platform checks;
+never silently omit missing rows or use partial batch totals. Request-scoped read
+reuse is not a second stock authority, but must be proved safe before implementation.
+If insufficient, resumable preparation needs exact durable digest/snapshot/fencing
+and failure review rather than casually adding another coordinator or lock.
+Exact bounded dependencies now read for this next work: warehouse-stock-reader.cjs
+per-product loop; warehouse-authority.cjs server-created product scopes/task readers;
+scoped-current-reader.cjs complete current/correction/exact-CLOSED closure; original-
+product-state.cjs task scope; sdk-conditional-store.cjs native typed normalization.
+Potential minimal seam: private strong readMany/complete multi-key active sets scoped
+to ONE immutable readSnapshot, preserving existing single-product validation and all
+commit/apply/verify code. Query rows must undergo same version/company/type validation;
+no permission/network errors may become absence. Task checkpoint reads must be batched
+too, otherwise300serialexact task reads remain. Never cache writes or later protocol
+phases. This is an analysis candidate, NOT implemented or reviewed production logic.
+Primary hasSome docs read: https://dev.wix.com/docs/sdk/backend-modules/data/items/wix-data-query/has-some
+Supports matching exact scalar values/array membership; no value-count limit was
+established by that page. Native hasSome/index compatibility NOT yet tested. No API
+budget reduction claimed until actual same-data/query-count and corruption tests.
+G3 user manual AstraHigh question already pending; do NOT send it again or auto-switch.
+Do NOT enable ACTIVE or claim current code ready to publish while this blocker stands.
+
+Code tests retained:1050full offlinepass plus isolated new4diagnostic tests, NOT a
+1054full execution claim. GitHub candidate c2c5e51 confirmed pushed PR220. Production
+runtime32b812c/baselined447185 unchanged, Pages no dispatch/Wix no Publish/public new
+workflow not verified. Added read-only diagnostic saved ONLY; do not say entire Wix
+editor untouched now. Prior23original editor comparisons reusable unchanged.
+
+8fcc4c6 actual native result/instrumentation/evidence commit confirmed PUSHED PR220.
+No active native call or command session; two successful samples are enough for this
+bounded read latency question. Do not repeat native runs merely to reprint metrics.

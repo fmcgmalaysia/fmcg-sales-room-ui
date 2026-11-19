@@ -1,0 +1,27 @@
+CURRENT afterc8814ea — standalone Wix Admin recovery READ candidate, not live
+
+Added query-only createRecoveryReadStore: only read capability, exact ID bounded2 query,
+consistent read, fixed company journal/stock/domain scope. No Staff/supplier/foreign-table
+access and no mutation API. Same SDK stockCommitVersion decoding as conditional store.
+Generated stockRecoveryRead.web.js embeds exact current inspector/read store/domain map,
+wrapped in webMethod(Permissions.Admin). No role flags from browser, no business endpoint,
+lock deletion/stealing/retry/mode change/upload or external data export.
+
+Requires original request/member/input to classify; bounds request size and rejects extra
+fields. Reports only status/IDs/versions/fingerprint; never original input/plan/customer
+payload. Errors return generic failure without provider diagnostics. Old lock stays blocked,
+even for matching request and age; no automatic recovery granted by classification.
+
+Evidence:14inspector+new Admin-bundle tests pass0fail178.5686ms. New tests use simulated
+webMethod boundary, NOT real Wix administrator acceptance. Exact bundled helper equality
+checked; query-only store tested without any SDK mutation methods. Prepared domain image
+classifies privately, DB unchanged. No live module sync/publish/new dependency use or
+synthetic mutation/deletion. Official @wix/data authorization remains isolated-test scope
+until actual production approval/release conditions; candidate is offline only.
+
+OPEN: deploy/read back the real private admin boundary only after live compare and release
+conditions; actual stuck execution termination proof, exact authorized conditional release
+and operational rehearsal still absent. Read-only diagnosis does NOT complete operational
+recovery or justify ACTIVE. All writer/read/capacity/lifecycle/migration/UI/release gates
+remain. A mistaken local placeholder was briefly added under a different task path, then
+deleted immediately with apply_patch; no user file or production source touched.

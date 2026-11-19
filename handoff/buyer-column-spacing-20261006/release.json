@@ -1,0 +1,33 @@
+{
+  "objective": "Balance My Selection and Order Form column widths and padding",
+  "commit": "a01e18a7dd09b6104a5f170bafb4a5c8036e6530",
+  "branch": "style/buyer-column-spacing-room5",
+  "pullRequest": 11,
+  "marker": "2026-10-06-buyer-column-spacing-room5-v1",
+  "recoveryTag": "verified/my-selection-sort-20261006",
+  "previousCode": "0038703",
+  "pages": {
+    "run": 37417200546,
+    "status": "success",
+    "sourceEqualsRepository": true
+  },
+  "wix": {
+    "pageCodeUnchanged": true,
+    "readbackMatches": true,
+    "publishedAndLive": true
+  },
+  "temporaryPermissionRevoked": true,
+  "public": {
+    "account": "BERJAYA 06",
+    "bothTableSpacing": "assistant initially passed; user subsequently rejected spacing",
+    "barcodeAndTime": "complete",
+    "externalQuantityPencil": "complete",
+    "totals": "150 CTN, 2.3800 CBM, USD 20,838.00",
+    "errors": [],
+    "initialLoadFailure": "Wix santa-data-fixer script fetch error on existing tab; fresh public visit loaded successfully without code changes",
+    "userAcceptance": "rejected: 有太宽，也有太窄的情况出现; Order Form spacing screenshot supplied",
+    "quantityOrOrderWrites": false
+  },
+  "javascriptAndBodyMarkupUnchanged": true,
+  "regressionChecksPassed": 6
+}

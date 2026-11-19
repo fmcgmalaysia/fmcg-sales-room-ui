@@ -1,10 +1,16 @@
 import wixData from 'wix-data';
 import { mediaManager } from 'wix-media-backend';
+import { createHash } from 'crypto';
+
 import { buildBuyerSelectionExcel } from 'backend/buyerSelectionExcel.js';
+import { applyWebQuotations } from 'backend/masterWebQuotationData.js';
+import { isWebQuotationCustomer } from 'backend/webQuotationCustomer.js';
+
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const PRODUCT_COLLECTION = 'FMCGMALAYSIA';
 const BUYER_LIST_COLLECTION = 'WixBuyerListItems';
+
 
 function normalize(value) { return String(value ?? '').trim(); }
 function upper(value) { return normalize(value).toUpperCase(); }
@@ -40,6 +46,7 @@ function imageUrl(value, depth = 0) {
   return '';
 }
 
+
 async function allSelectionRecords(customerId) {
   let result = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', customerId).limit(1000).find({ suppressAuth: true, consistentRead: true });
   const records = [...result.items];
@@ -47,6 +54,7 @@ async function allSelectionRecords(customerId) {
   return records.map(record => ({ record, data: payloadData(record) }))
     .filter(({ record, data }) => normalize(data.customerId) === customerId && !Boolean(record.removed || data.removed));
 }
+
 
 async function productsByIds(ids) {
   const products = [];
@@ -56,6 +64,7 @@ async function productsByIds(ids) {
   }
   return products;
 }
+
 
 async function productByBarcode(barcode) {
   try {
@@ -70,6 +79,7 @@ async function productByBarcode(barcode) {
   } catch (_) { return null; }
 }
 
+
 export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   const id = normalize(customerId);
   const customers = await wixData.query(CUSTOMER_COLLECTION).eq('customerId', id).limit(2).find({ suppressAuth: true, consistentRead: true });
@@ -79,8 +89,9 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   const access = upper(customer.catalogueAccessStatus || customer.accessStatus || customer.customerStatus);
   if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) throw new Error('This customer account is suspended.');
   const currency = upper(customer.preferredCurrency || customer.tradingCurrency || 'USD');
-  const selections = await allSelectionRecords(id);
+  let selections = await allSelectionRecords(id);
   if (!selections.length) throw new Error('There are no products to export.');
+
 
   const productIds = [...new Set(selections.map(({ data }) => normalize(data.productId)).filter(Boolean))];
   const products = await productsByIds(productIds);
@@ -95,6 +106,15 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
     });
   }
 
+
+  if (isWebQuotationCustomer(customer)) {
+    const quoteRows = await applyWebQuotations(customer, selections.map(({ record, data }) => {
+      const barcode = normalize(data.barcode || data.unitBarcode);
+      const product = byId.get(normalize(data.productId)) || byBarcode.get(barcode) || {};
+      return { ...data, id: record._id, barcode, ea: numberOrBlank(product.ea ?? product.price) };
+    }));
+    selections = quoteRows.map(data => ({ data }));
+  }
   const rows = selections.map(({ data }) => {
     const storedBarcode = normalize(data.barcode || data.unitBarcode);
     const product = byId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};
@@ -117,17 +137,31 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   });
   const bytes = buildBuyerSelectionExcel({ buyerRoomUrl, currency, rows });
   const fileName = `fmcgmalaysia.com-My-Selection-${new Date().toISOString().slice(0, 10)}.xlsx`;
-  return { fileName, bytes: Buffer.from(bytes), rowCount: rows.length };
+  const versionKey = createHash('sha256').update(JSON.stringify({ format: 'selection-image-links-v1', id, buyerRoomUrl, currency, rows, quoteVersions: selections.map(({ data }) => data.quoteEffectiveAt || data.quoteSyncedAt || '') })).digest('hex');
+  return { fileName, bytes: Buffer.from(bytes), rowCount: rows.length, versionKey };
+}
+
+async function selectionExportFolder(safeCustomerId) {
+  const roots = await mediaManager.listFolders(null, null, null);
+  const root = roots.find(folder => folder.folderName === 'buyer-selection-exports');
+  if (!root) return '';
+  const customers = await mediaManager.listFolders({ parentFolderId: root.folderId }, null, null);
+  return customers.find(folder => folder.folderName === safeCustomerId)?.folderId || '';
 }
 
 export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl) {
   const id = normalize(customerId);
   const file = await buildBuyerSelectionDownload(id, buyerRoomUrl);
   const safeCustomerId = id.replace(/[^A-Za-z0-9_-]/g, '_') || 'buyer';
-  const uploaded = await mediaManager.upload(
+  const storedName = 'fmcgmalaysia.com-My-Selection-' + file.versionKey + '.xlsx';
+  const folderId = await selectionExportFolder(safeCustomerId);
+  const existingFiles = folderId ? await mediaManager.listFiles({ parentFolderId: folderId }, null, null) : [];
+  let uploaded = existingFiles.find(candidate => candidate.originalFileName === storedName && candidate.isPrivate === true);
+  const reused = Boolean(uploaded);
+  if (!uploaded) uploaded = await mediaManager.upload(
     `/buyer-selection-exports/${safeCustomerId}`,
     file.bytes,
-    file.fileName,
+    storedName,
     {
       mediaOptions: {
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -141,7 +175,9 @@ export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl
     }
   );
   if (!uploaded?.fileUrl) throw new Error('Excel file could not be prepared for download.');
-  const downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 10, file.fileName, null);
+  const info = await mediaManager.getFileInfo(uploaded.fileUrl);
+  if (info.isPrivate !== true) throw new Error('Excel export must remain private.');
+  const downloadUrl = await mediaManager.getDownloadUrl(info.fileUrl, 10, file.fileName, null);
   if (!downloadUrl) throw new Error('Excel download URL is unavailable.');
 
   // Keep only the current export in this customer's dedicated folder.
@@ -161,6 +197,10 @@ export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl
     url: downloadUrl,
     expiresAt: Date.now() + (10 * 60 * 1000),
     fileName: file.fileName,
-    rowCount: file.rowCount
+    rowCount: file.rowCount,
+    reused,
+    versionKey: file.versionKey
   };
 }
+
+

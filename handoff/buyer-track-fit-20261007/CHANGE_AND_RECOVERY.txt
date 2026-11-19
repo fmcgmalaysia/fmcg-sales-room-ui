@@ -1,0 +1,9 @@
+Track Orders one-screen layout 2026-10-07.
+Parent9dc747792fc1989a5d9bd463f0215207b823af89 (local time candidate PR26), depending on Track PR25. Current public remains sort-v1; live script unchanged before edit. Existing exact Wix/before snapshots and protected verified tags recorded in Track handoff.
+Only Track grid widths, inner padding and wrapping changed; no hidden columns/ellipsis/horizontal min-width. Existing 11 data columns plus reserved edit action cell. Long text wraps, numeric values preserved. Header font600, hover movement/edit scale unchanged.
+All inline scripts and body markup exact identical to parent. Quantities, stage calculations, sorting, events, backend and download functions unchanged. Version marker/frame.src candidate advanced to buyer-track-fit-room5-v1.
+Browser checks at1280/1440/1920: grid clientWidth==scrollWidth1059/1219/1699; no cell horizontal overflow; 11 columns remain. Simulated committed-zero/nonzero/pending quantities show red0.0000/normal0.2000/em dash. Goods Exp blank, hover title exact Chinese text. Default window restored. Public verification not yet done.
+One-screen fit verified only at desktop widths tested; very narrow/mobile devices may wrap into tall rows; not claimed as a polished mobile redesign.
+Full requested candidate combines PR25Track columns/badges/help/CBM, PR26all-Buyer viewer-local24h Today/Yesterday, this responsive CSS. Qty Updated/Goods Exp MASTER mapping remains explicitly future, no new fields.
+Code prepared/tested. Pages/Wix/public pending; no main merge/new verified tag. Deploy only after new branch temporary access approval, remove immediately after Pages succeeds. Must perform all four release stages.
+Recovery: reverse only fit CSS/version diff to9dc7477. Parent snapshots and exact prior live recovery are retained; never whole-site old-tag rollback. Unrelated dirty historic release.json excluded.

@@ -1,4 +1,8 @@
+import { handleMasterSupportCustomers } from 'backend/masterSupportCustomers.js';
+import { receiveMasterWebQuotation, receiveMasterWebQuotationRead } from 'backend/masterWebQuotationHttp.js';
 import { response } from 'wix-http-functions';
+import { readMasterFxRates } from 'backend/masterFxRead.js';
+import { readMasterCustomerNames } from 'backend/masterCustomerNames.js';
 import { fetch } from 'wix-fetch';
 import { getSecret } from 'wix-secrets-backend';
 import { authentication } from 'wix-members-backend';
@@ -7,12 +11,12 @@ import { verifyBuyerSelectionExportToken } from 'backend/buyerSelectionExportTok
 import { buildBuyerSelectionDownload } from 'backend/buyerSelectionDownload.js';
 import { verifyBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
+import { getMasterStaffScope } from 'backend/masterStaffAccessClient.js';
 
-const SITE_BASE = 'https://fmcg999.wixstudio.com/fmcgmalaysia';
+const SITE_BASE = 'https://www.fmcgmalaysia.com';
 const CALLBACK_URL = SITE_BASE + '/_functions/googleStaffAuth';
 const LOGIN_URL = SITE_BASE + '/sales-room-login';
-const BUYER_LOGIN_URL = SITE_BASE + '/buyer-room-login';
-const STAFF_COLLECTION = 'StaffMaster';
+const BUYER_LOGIN_URL = SITE_BASE + '/';
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const ACTIVE_STATUS = 'ACTIVE';
@@ -40,13 +44,6 @@ async function oauthSecrets() {
   const [clientId, clientSecret] = await Promise.all([getSecret('GOOGLE_OAUTH_CLIENT_ID'), getSecret('GOOGLE_OAUTH_CLIENT_SECRET')]);
   if (!clientId || !clientSecret) throw new Error('OAUTH_SECRETS_MISSING');
   return { clientId, clientSecret };
-}
-async function findAuthorizedStaff(email) {
-  const matches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items;
-  if (matches.length !== 1) return { authorized: false, reason: matches.length > 1 ? 'DUPLICATE_STAFF_EMAIL' : 'STAFF_NOT_REGISTERED' };
-  const staff = matches[0];
-  if (normalize(staff.status).toUpperCase() !== ACTIVE_STATUS) return { authorized: false, reason: 'STAFF_INACTIVE' };
-  return { authorized: true, staff };
 }
 async function findAuthorizedBuyer(email) {
   const users = (await wixData.query(CUSTOMER_USER_COLLECTION).eq('email', email).limit(2).find({ suppressAuth: true, consistentRead: true })).items;
@@ -115,9 +112,9 @@ export async function get_googleStaffAuth(request) {
     const email = normalizeEmail(user.email);
     if (!email || user.email_verified !== true) return oauthRedirect('unverified_email', state);
     const isBuyer = state.startsWith('B_');
-    const access = isBuyer ? await findAuthorizedBuyer(email) : await findAuthorizedStaff(email);
-    if (!access.authorized) {
-      console.warn(isBuyer ? 'Buyer Room access denied' : 'Sales Room access denied', { reason: access.reason });
+    const access = isBuyer ? await findAuthorizedBuyer(email) : await getMasterStaffScope(email, true);
+    if (isBuyer ? !access.authorized : !access) {
+      console.warn(isBuyer ? 'Buyer Room access denied' : 'Sales Room access denied');
       return oauthRedirect('not_authorized', state);
     }
     const sessionToken = await authentication.generateSessionToken(email);
@@ -130,57 +127,6 @@ export async function get_googleStaffAuth(request) {
 }
 
 // QUOTATION DESK -> BUYER ROOM RELEASE
-const QUOTE_LIST_COLLECTION = 'WixBuyerListItems';
-const QUOTE_CUSTOMER_COLLECTION = 'WixCustomers';
-function quoteJson(status, payload) {
-  return response({ status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }, body: JSON.stringify(payload) });
-}
-function quotePayload(record) {
-  const raw = record?.payload;
-  if (raw && typeof raw === 'object') return raw;
-  try { return JSON.parse(String(raw || '{}')); } catch (_) { return {}; }
-}
-function quoteNumber(value) { const number = Number(value); return Number.isFinite(number) ? number : 0; }
-function quoteBarcode(value) { return String(value || '').replace(/\.0$/, '').trim(); }
-function quoteFingerprint(value) {
-  return JSON.stringify({
-    quotePerPc: quoteNumber(value?.quotePerPc),
-    quotePerCtn: quoteNumber(value?.quotePerCtn),
-    currency: normalize(value?.vipCurrency || value?.currency || '').toUpperCase()
-  });
-}
-async function quoteSecret() {
-  try { return await getSecret('WIX_QUOTE_SYNC_TOKEN'); }
-  catch (_) { return getSecret('FMCG_QD_ROUTER_TOKEN'); }
-}
-async function authorizeQuotationSync(request, body) {
-  const authorization = normalize(request?.headers?.authorization);
-  const expected = normalize(await quoteSecret());
-  if (expected && authorization === 'Bearer ' + expected) {
-    return { actorEmail: normalizeEmail(body?.actorEmail), mode: 'service' };
-  }
-
-  const match = /^Bearer\s+(.+)$/i.exec(authorization);
-  if (!match) return null;
-  try {
-    const userResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-      method: 'get',
-      headers: { Authorization: 'Bearer ' + match[1] }
-    });
-    if (!userResponse.ok) return null;
-    const user = await userResponse.json();
-    const email = normalizeEmail(user?.email);
-    if (!email || user?.email_verified !== true) return null;
-    const access = await findAuthorizedStaff(email);
-    if (!access.authorized) return null;
-    const claimedActor = normalizeEmail(body?.actorEmail);
-    if (claimedActor && claimedActor !== email) return null;
-    return { actorEmail: email, staff: access.staff, mode: 'google' };
-  } catch (_) {
-    return null;
-  }
-}
-
 export async function get_buyerSelectionExcel(request) {
   try {
     const authorization = verifyBuyerSelectionExportToken(request?.query?.token, await getSecret('FMCG_QD_ROUTER_TOKEN'));
@@ -264,81 +210,37 @@ export async function get_buyerOrderExcel(request) {
   }
 }
 
-export async function post_quotationSync(request) {
+export async function post_quotationSync() {
+  return response({
+    status: 410,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    body: JSON.stringify({ ok: false, error: 'This action has been retired.' })
+  });
+}
+export async function post_masterFxRates(request) {
   try {
-    const body = await request.body.json();
-    const authorized = await authorizeQuotationSync(request, body);
-    if (!authorized) return quoteJson(401, { ok: false, error: 'Unauthorized quotation sync.' });
-    const customerId = normalize(body?.customerId);
-    const qdFileId = normalize(body?.quotationDeskFileId);
-    const quotations = Array.isArray(body?.quotations) ? body.quotations : [];
-    if (!customerId || !qdFileId || !quotations.length) return quoteJson(400, { ok: false, error: 'Quotation sync payload is incomplete.' });
-    const customers = await wixData.query(QUOTE_CUSTOMER_COLLECTION).eq('customerId', customerId).limit(2).find({ suppressAuth: true, consistentRead: true });
-    if (customers.items.length !== 1) return quoteJson(404, { ok: false, error: 'Customer account was not found.' });
-    const customer = customers.items[0];
-    if (normalize(customer.qdFileId) !== qdFileId) return quoteJson(403, { ok: false, error: 'Quotation Desk identity does not match this customer.' });
-    const currency = normalize(customer.preferredCurrency || customer.tradingCurrency || 'USD').toUpperCase();
-    const requestId = normalize(body.requestId);
-    const results = [];
-    for (const quotation of quotations) {
-      const wixMyListId = normalize(quotation?.wixMyListId);
-      try {
-        if (!wixMyListId) throw new Error('WIX MY LIST ID is missing.');
-        const record = await wixData.get(QUOTE_LIST_COLLECTION, wixMyListId, { suppressAuth: true });
-        if (!record) throw new Error('Buyer list item was not found.');
-        const item = quotePayload(record);
-        if (normalize(item.customerId) !== customerId) throw new Error('Buyer list item belongs to another customer.');
-        if (quoteBarcode(item.unitBarcode || item.barcode) !== quoteBarcode(quotation.unitBarcode)) throw new Error('Unit Barcode does not match the selected item.');
-        const quotePerPc = quoteNumber(quotation.quotePerPc);
-        const quotePerCtn = quoteNumber(quotation.quotePerCtn);
-        if (!(quotePerPc > 0) || !(quotePerCtn > 0)) throw new Error('Both quotation prices must be greater than zero.');
-        const incomingFingerprint = quoteFingerprint({ quotePerPc, quotePerCtn, currency });
-        const currentFingerprint = quoteFingerprint(item);
-        const priorRequestId = normalize(item.quoteRequestId);
-        if (requestId && priorRequestId === requestId && currentFingerprint !== incomingFingerprint) {
-          throw new Error('This request ID was already used for a different quotation value.');
-        }
-        if (item.quoteActive === true && normalize(item.quoteStatus).toUpperCase() === 'VIEW QUOTE' && currentFingerprint === incomingFingerprint) {
-          results.push({
-            ok: true,
-            changed: false,
-            unchanged: true,
-            wixMyListId,
-            quoteStatus: 'VIEW QUOTE',
-            quoteEffectiveAt: item.quoteEffectiveAt || item.quoteSyncedAt || ''
-          });
-          continue;
-        }
-        const now = new Date().toISOString();
-        const hadLiveQuote = item.quoteActive === true && normalize(item.quoteStatus).toUpperCase() === 'VIEW QUOTE' && quoteNumber(item.quotePerPc) > 0 && quoteNumber(item.quotePerCtn) > 0;
-        const previousQuote = hadLiveQuote ? {
-          quotePerPc: quoteNumber(item.quotePerPc),
-          quotePerCtn: quoteNumber(item.quotePerCtn),
-          currency: normalize(item.vipCurrency || currency).toUpperCase(),
-          quoteEffectiveAt: item.quoteEffectiveAt || item.quoteSyncedAt || '',
-          expiredAt: now,
-          requestId: normalize(item.quoteRequestId)
-        } : null;
-        const actorEmail = authorized.actorEmail || normalizeEmail(body.actorEmail);
-        const next = { ...item, quoteStatus: 'VIEW QUOTE', quoteActive: true, quotePerPc, quotePerCtn, vipPriceEa: quotePerPc, vipPriceCtn: quotePerCtn, vipCurrency: currency, targetGp: quotation.targetGp ?? null, previousQuote, quoteEffectiveAt: now, quoteSyncedAt: now, quoteRequestId: requestId, quoteActorEmail: actorEmail, lastEditedBy: actorEmail || 'FMCG Malaysia' };
-        await wixData.update(QUOTE_LIST_COLLECTION, { ...record, payload: JSON.stringify(next) }, { suppressAuth: true });
-        results.push({ ok: true, changed: true, unchanged: false, wixMyListId, quoteStatus: 'VIEW QUOTE', quoteEffectiveAt: now });
-      } catch (error) {
-        results.push({ ok: false, wixMyListId, error: normalize(error?.message || error) });
-      }
-    }
-    return quoteJson(200, {
-      ok: true,
-      requestId,
-      summary: {
-        changed: results.filter((item) => item.ok && item.changed).length,
-        unchanged: results.filter((item) => item.ok && item.unchanged).length,
-        failed: results.filter((item) => !item.ok).length
-      },
-      results
-    });
-  } catch (error) {
-    console.error('Quotation sync failed', error);
-    return quoteJson(500, { ok: false, error: normalize(error?.message || error || 'Quotation sync failed.') });
+    const result = await readMasterFxRates(request);
+    return response({ status: result.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify(result.body) });
+  } catch (_) {
+    return response({ status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify({ ok: false, error: 'Current Admin FX rates could not be confirmed.' }) });
   }
+}
+export async function post_masterCustomerNames(request) {
+  try {
+    const result=await readMasterCustomerNames(request);
+    return response({status:result.status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify(result.body)});
+  } catch (_) {return response({status:503,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({ok:false,error:'Customer short names could not be confirmed.'})});}
+}
+
+export async function post_masterSupportCustomers(request) {
+ try { const result=await handleMasterSupportCustomers(request); return response({status:result.status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify(result.body)}); }
+ catch (_) {return response({status:503,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({ok:false,error:'Customer profiles could not be confirmed.'})});}
+}
+
+export async function post_masterWebQuotation(request) {
+  return response(await receiveMasterWebQuotation(request));
+}
+
+export async function post_masterWebQuotationRead(request) {
+  return response(await receiveMasterWebQuotationRead(request));
 }

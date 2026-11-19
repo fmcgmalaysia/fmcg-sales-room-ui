@@ -1,0 +1,68 @@
+{
+  "status": "Published; public read/layout verified; user business acceptance pending",
+  "branch": "fix/sales-submit-wait-20261014",
+  "base": "feat/sales-progress-shipment-20261014",
+  "baseCommit": "4331d3a",
+  "build": "2026-10-14-sales-submit-wait-v1",
+  "scope": "Immediate blocking submission and receipt-check modal; original terminal feedback and receipt workflow preserved",
+  "checksPassed": 16,
+  "publicBefore": "Exact published5e63e24 inline scripts",
+  "recoveryTag": "verified/send-order-addition-user-tests-20261009",
+  "recoveryCode": "5e63e24",
+  "realBusinessWrites": false,
+  "publication": {
+    "githubPages": true,
+    "wixPublished": true,
+    "publicCandidateVerified": true,
+    "temporaryRuleRemoved": true,
+    "originalRulesRestored": 7
+  },
+  "dependencies": "Includes unpublished PR71 candidate; that branch remains preserved separately. Release requires scoped combined permission and prior prepared backend compatibility steps.",
+  "codeCommit": "a68899d",
+  "pages": {
+    "run": 38500402514,
+    "job": 115645745548,
+    "result": "Success",
+    "duration": "19s",
+    "exactPublicAssets": 11
+  },
+  "publicChecks": {
+    "rooms": [
+      "Sales",
+      "Buyer",
+      "Purchase",
+      "Account",
+      "Warehouse",
+      "Support"
+    ],
+    "errors": [],
+    "salesRows": 5,
+    "buyerRows": 5,
+    "headerHeight": 49,
+    "ringHeight": 58,
+    "rowDots": 18,
+    "postTransferDateEditor": true,
+    "submittedPoReadonly": true,
+    "actualBusinessWrites": false,
+    "waitingModal": "Official code marker and waiting implementation verified; delay/Esc/timeout/result behavior validated in isolated preview. Real submission test left to user."
+  },
+  "wixComponents": 16,
+  "isolatedWixReplacements": 25,
+  "wixEvidenceHashes": {
+    "live-after-master-customerFulfilmentService.js": "d1e64032f49a0fa048a93c45cd45975dabf7e789fdcd0061a18649fc58d62929",
+    "live-after-master-customerShipmentPlan.js": "3508fb64f3f3731c237144f383a39b5aa42031e8a7a30770ebd556ca519a0294",
+    "live-after-master-purchaseOrderWorkflow.js": "a025ab2e991af3663bc5cfef835d3a1f7bcf5a82f2cd4a2f4013afc1e2a87721",
+    "live-after-master-purchaseProjection.js": "4bf61a143d3ba837df39f05b252a021855f3273c61e69f3eaa4dd727f1e87f41",
+    "live-after-master-purchaseQuantityProjection.js": "b9f01c940445e4968aa5770b5994ae0725b6f1627222236f6681a444a4dec4bf",
+    "live-after-master-warehouseCustomerReadiness.js": "146df327b37b072862ed0d462afd6c155bc534a71f161d5d8f292111520555af",
+    "live-after-master-warehouseReceiving.js": "67995e160976418e4f38fc13a0396357229d56ce254ee379fd34bbae0c66470d",
+    "live-after-source-masterFulfilmentClient.js": "74f68f1ed15d05dc0ec63462ac615caa5f27c6df818d842e47ebe6853d5a0ce2",
+    "live-after-source-masterQuantityProjection.js": "78860c5720f12f055893c46b58acff3730113b760428b5bc6d157b0ad876f904",
+    "live-after-source-onboarding.web.js": "54cd77f31115433e49246687247d2ebd138a93b3bdda58c19a39137243f96aa1",
+    "page-after-master-Account Department.js": "a28ecc357692a0b028cddc6ffa6caef12a60f4d330a0ee4ad5cbe302bcbf9460",
+    "page-after-master-Support Department.js": "d6ce5c4e339f187b7a8f3c6cc3acf09d086c12e14729768a63bde7b00f6114b7",
+    "page-after-master-Warehouse Department.js": "89c0e2795911a7814847edc75977bef4aee1ff598c75715865097d3bf001131b",
+    "page-after-source-Buyer Room.js": "2bfa611ac796b8bea5f33cc29fb1d25d8aa6192b75cbd488edacda41f75a6873",
+    "page-after-source-Sales Room.js": "180ba6a4f14ac0c01fba89d3fa92c03c65b57db8839991fccac2e29f51bf26fb"
+  }
+}

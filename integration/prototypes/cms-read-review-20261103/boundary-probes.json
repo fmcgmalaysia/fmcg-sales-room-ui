@@ -1,0 +1,39 @@
+{
+  "mode": "READ_ONLY_SYNTHETIC_BOUNDARY_PROBES_UNMODIFIED_MODULES",
+  "checks": [
+    {
+      "name": "Plan full chain returns190",
+      "passed": true
+    },
+    {
+      "name": "Plan latest-only rejected",
+      "passed": true
+    },
+    {
+      "name": "Plan unordered full chain remains190",
+      "passed": true
+    },
+    {
+      "name": "Plan duplicate revision branch rejected",
+      "passed": true
+    },
+    {
+      "name": "Receipt170plus30 returns200",
+      "passed": true
+    },
+    {
+      "name": "Receipt latest-only rejected",
+      "passed": true
+    },
+    {
+      "name": "Receipt unordered full chain remains200",
+      "passed": true
+    },
+    {
+      "name": "Receipt conflicting cumulative quantities rejected",
+      "passed": true
+    }
+  ],
+  "productionWrites": 0,
+  "claim": "Proves latest-only/history truncation unsafe for these readers; not optimization acceptance or live performance."
+}

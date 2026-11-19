@@ -1,0 +1,70 @@
+2026-10-22 — ORIGINAL WAREHOUSE RECEIPT MODAL + DURABLE CURRENT REQUEST CANDIDATE
+
+Recovery pushed2ab826a/PR220; protected productiond447185/runtime32b812c untouched.
+Scope original receipt client/relay, not redesigning Incoming or granting allocation.
+No browser/native data/schema/permission/real lock mutation, mode change or publication.
+
+Implementation
+- build-warehouse-current-ui.cjs mechanically overlays ORIGINAL app/modal/receipt
+  inputs/validation into warehouse-ui/app.js/index.html. New immutable own-tab storage
+  helper warehouse-receipt-resume.js. Session key exactcompany/staffId/memberId only;
+  no cache enumeration, other-member read, localStorage/Drive/new CMS receipt queue.
+- Complete current request retained/read-back verified BEFORE first network write,
+  including source PO/version/line input, generation/build and expected staff session.
+  A different retained request cannot be overwritten; storage failure blocks network.
+  Legacy read/send/result path does not use this new cache. Original receipt entry
+  cannot clear/replace an unresolved current pending request.
+- Known BEFORE/APPLY/VERIFY counts continue SAME UUID/request; no partial success.
+  Unknown/malformed/retryablefalse/timeout keeps original request and explicit retry.
+  Per-send serial excludes obsolete timer/progress continuation. Late valid final
+  receipt may confirm, but old/foreign malformed messages cannot discard cache.
+- Cache clears only exact original full request after matching company/UUID/PO,
+  original receipt ID/time and newer current generation. Failed cleanup keeps same
+  request/retry; no new UUID. Original modal closes and reads fresh workspace normally.
+- Reload while common pending blocks workspace: original auth-only identity endpoint
+  resolves first, then ONLY own exact key is read. No fake PO/zero stock/success inferred.
+  Employee explicitly retries original save; company/new entries blocked while pending.
+  Original staff/member session now also compared by server root BEFORE SDK/context,
+  on EVERY receipt invocation, so changed member cannot adopt old in-memory request.
+  stockIdentity is only an equality precondition, NEVER a role/grant/member selector for
+  privileged callbacks. Original Warehouse grant still independently checked repeatedly.
+- Wix candidate passes current version+identity ONLY to original receipt wrapper and
+  exposes narrow auth-only resume relay. Receipt transport budget raised ONLY on its
+  existing route to match current root1M; other routes retain bounds. Neither global
+  actor/approved flags nor a legacy-client preference can choose ACTIVE old writer.
+- Current candidate index cache-busts receipt app/helper/current stock relay. Existing
+  packing host recognizes this exact NEW paired release pointer in addition to old
+  approved pointers; other/unpaired pointers still refuse. Existing same-frame/company/
+  busy/chat behavior remains. Its child still uses old packing transport until remaining
+  current packing work is completed: this is NOT ready for half-system deployment.
+  Candidate index is overlay for warehouse-room paths/assets, not a complete standalone
+  folder/site. Do not serve/publish its subset as full Warehouse build.
+
+Evidence
+New receipt UI+existing current stock UI/ORIGINAL focus+packing host23pass0fail
+384.1551ms before final session-boundary hardening. Actual app+helper VM tests exercise
+original modal input->durable request->bounded phases->exact receipt cleanup; changed
+form input cannot alter retained request. Storage denial, unknown outcome, retryablefalse,
+stale generation, bad counts/old timers, pending reload without fake workspace, other
+member key isolation, original legacy no-cache path and paired relay tested.
+After identity guard: UI7pass0fail311.4687ms; actual-import root4pass0fail1385.329ms
+(both companies receipt, original-role/mismatchedidentity refusal before context,
+read-only/coverage and original server route). Final all stock-current746pass0fail
+14490.1492ms. Generator checks exact UI/root/runtime/relay, backend82modules40exports.
+Protected production directories exactd447185; whitespace check pass. VM tests are NOT
+Chrome visual/real sessionStorage durability/native Wix/public acceptance. Actual Credits
+UNKNOWN. No user test records introduced. Pending mutation work remains gated OFF.
+
+Next / final audit of remaining work
+Actual Warehouse preparation/PACK/LOAD/UNPACK/photo/document/CBM and dispatch routes,
+Packing/Support and Sales current client/read/writer binding, remaining all20writer
+native admission and intake proof, production schemas/indexes/SDK grants/CMS init,
+unknown-lock termination and cross-tab/session request recovery, measured platform
+capacity, quiescent cutover/in-flight legacy proof/shadow parity, focused production
+diff/golden regressions and visual/public acceptance remain OPEN. Current receipt tab
+retention does NOT solve browser-close/session loss or unknown admin lock safety.
+Original SHIPPED/history/orphan-loaded cases must be accepted without shared archive
+debt blocking all departments. Support real invoices remain OFF. No financial scope
+expansion. main unchanged. Do not ask user to run real borrowing test on current site.
+Four states: code incomplete candidate; Pages unchanged; Wix not synchronized/published;
+new public inventory/borrowing unavailable/unverified. ACTIVE OFF.

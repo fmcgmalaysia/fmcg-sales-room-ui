@@ -1,0 +1,10 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{createHash}=require('node:crypto');
+const {patchStaffDomain}=require('../prototypes/staff-custom-domain-20261119/patch.cjs');
+const folder=process.argv[2];assert(folder&&fs.statSync(folder).isDirectory());
+const sha=b=>createHash('sha256').update(b).digest('hex');
+const tree=()=>new Map(fs.readdirSync(folder,{recursive:true,withFileTypes:true}).filter(e=>e.isFile()).map(e=>{const p=path.join(e.parentPath,e.name);return[path.relative(folder,p).split(path.sep).join('/'),sha(fs.readFileSync(p))]}));
+const before=tree();assert.equal(before.size,117);
+const file=path.join(folder,'master-staff/index.html');fs.writeFileSync(file,patchStaffDomain(fs.readFileSync(file,'utf8')));
+const after=tree();assert.equal(after.size,before.size);
+assert.deepEqual([...after].filter(([name,hash])=>before.get(name)!==hash).map(([name])=>name),['master-staff/index.html']);
+console.log(JSON.stringify({changed:[{file:'master-staff/index.html',sha256:after.get('master-staff/index.html')}],unchanged:116}));

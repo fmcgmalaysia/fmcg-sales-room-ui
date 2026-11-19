@@ -1,0 +1,641 @@
+{
+  "task": "Real three-customer cross-department pressure test",
+  "branch": "fix/support-split-desk-document-20261103",
+  "baseline": "3ddc82e documentation; live R2-retired current business code and101 assets preserved",
+  "status": "OVERNIGHT_BACKEND_LIVE_STATIC_AWAITING_DEPLOYMENT_CONFIRMATION",
+  "orders": {
+    "TESTING01": {
+      "tasks": 6,
+      "quantityEach": 100,
+      "etd": "2026-12-03"
+    },
+    "TESTING801": {
+      "tasks": 6,
+      "quantities": [
+        50,
+        150,
+        100,
+        300,
+        200,
+        500
+      ],
+      "etd": null
+    },
+    "TESTING802": {
+      "tasks": 4,
+      "quantityEach": 150,
+      "etd": "2026-11-27"
+    }
+  },
+  "observedSuppliers": 4,
+  "plan": [
+    "PO auto planned allocation before receiving; no physical stock fabricated",
+    "801 7UP500 receives430;802 7UP150 receives150;borrow70 then late receipt70 and repay70",
+    "Support separate confirmed Desks; Warehouse only authorized tasks; planned/ready/Loaded distinct",
+    "Partial Loaded and Support move unshipped remainder without changing demand or prior movements",
+    "Supplier two-payment references and first-proof purchase lock; Finance-only actual posting",
+    "Customer SI and accounts receivable; Buyer/Sales committed/history/files; no cost leak",
+    "Normal and split receipts versus borrowed source visual distinction",
+    "Stock quarantine and current-month premature loss rejection; no forged month-end",
+    "Read/Refresh/Info do not grow Activity; company isolation"
+  ],
+  "protected": [
+    "Single Loaded physical stock deduction",
+    "Finance first-payment PO lock",
+    "Supplier/customer identities and separate NCT/GHR",
+    "Original save-request receipts; no new-request blind retry",
+    "Source product/QD/POINTBASE unchanged"
+  ],
+  "limits": [
+    "No real bank transfer or supplier/customer communication",
+    "No generic deletion or permission changes",
+    "Code repair if needed requires fresh live comparison and separately scoped minimal fix"
+  ],
+  "actions": [
+    {
+      "step": "POs CONFIRMED",
+      "count": 6,
+      "ids": [
+        "NCT-PO-T3-801-7UP-1102",
+        "NCT-PO-T3-802-7UP-1102",
+        "NCT-PO-T3-01-7UP-1102",
+        "NCT-PO-T3-802-AJAX-1102",
+        "NCT-PO-T3-01-AJAX-1102",
+        "NCT-PO-T3-801-AJAX-1102"
+      ]
+    },
+    {
+      "step": "7UP receipts CONFIRMED",
+      "customers": {
+        "801": "430+70=500",
+        "802": 150,
+        "01": "70+30=100"
+      }
+    },
+    {
+      "step": "Borrow and repay CONFIRMED",
+      "quantity": 70,
+      "borrower": "801",
+      "lender": "802",
+      "earlyRepay": "REJECTED without free stock",
+      "lateRepay": "CONFIRMED; no outstanding borrowing shown"
+    },
+    {
+      "step": "Support shortload CONFIRMED",
+      "firstPlan": 300,
+      "firstLoaded": 290,
+      "remaining10": "TRANSFERRED_TO_DESK2",
+      "secondPlan": 210,
+      "secondLoaded": 210,
+      "totalLoaded": 500,
+      "invalidRemainder11": "REJECTED",
+      "overload211": "REJECTED",
+      "firstTransferAttempt": "STALE_REJECTED; fresh context then confirmed"
+    },
+    {
+      "step": "SI/Finance/Buyer/Sales CONFIRMED",
+      "invoices": [
+        {
+          "id": "NCT-INV-T3-801-D1-1102",
+          "qty": 290,
+          "amountUSD": 2784
+        },
+        {
+          "id": "NCT-INV-T3-801-D2-1102",
+          "qty": 210,
+          "amountUSD": 2016
+        }
+      ],
+      "totalReceivableUSD": 4800,
+      "noCustomerPaymentPosted": true
+    },
+    {
+      "step": "AJAX receipts CONFIRMED",
+      "customer802": 170,
+      "customer01": 90,
+      "customer801": 200,
+      "freeStock10": "ALLOCATED from802 extra20 to01, after explicit stale rejection and fresh read"
+    },
+    {
+      "step": "Other sources saved, NOT PO issued",
+      "supplier": "KOH SOON HUAT",
+      "count": 10,
+      "quantity": 1300,
+      "items": [
+        "01 DETTOL100",
+        "01 LABOUR100",
+        "01 CAPTAIN100",
+        "01 AMBIPUR100",
+        "802 SKITTLES150",
+        "802 WRIGLEY150",
+        "801 FARCENT50",
+        "801 COZZO150",
+        "801 POPS100",
+        "801 CAPTAIN300"
+      ]
+    },
+    {
+      "step": "Support802 reference",
+      "desk": 1,
+      "assigned": [
+        "7UP150",
+        "AJAX150"
+      ],
+      "warehouseOpen": false,
+      "depositSGD": 123.4,
+      "financialReceipt": "NONE; Finance AR reread shows only801 SI4800",
+      "etd": "2026-11-27",
+      "lastGateIn": "2026-11-26T12:30",
+      "logistic": "LAND"
+    },
+    {
+      "step": "Supplier/customer PDF upload",
+      "state": "PO PI INV CONFIRMED UPLOADED; supplier two8425 proofs CONFIRMED; customer first2400 reference saved after504; no customer receipt posted",
+      "localFixtures": 8,
+      "suppliedFilesAllTestOnly": true,
+      "bankTransfers": 0
+    },
+    {
+      "step": "Supplier payment real UI test CONFIRMED",
+      "po": "NCT-PO-T3-801-7UP-1102",
+      "firstMYR": 8425,
+      "secondMYR": 8425,
+      "totalMYR": 16850,
+      "confirmedInvoiceMYR": 16850,
+      "balanceMYR": 0,
+      "twoOriginalPaySlipsRetained": true,
+      "lockedSupplierPopup": "No input fields or pencils; lock icon and bilingual locked message",
+      "realBankTransfer": false
+    },
+    {
+      "step": "Customer first reference proof saved after504",
+      "reference": "TEST-CUSTOMER-801-FIRST-2400",
+      "amountUSD": 2400,
+      "finance": "Pending review1; Awaiting Finance; no Review action",
+      "actualReceiptPosted": false,
+      "currentReceivableUSD": 4800
+    },
+    {
+      "step": "Customer first receipt CONFIRMED",
+      "amountUSD": 2400,
+      "invoiceD1": 1000,
+      "invoiceD2": 1400,
+      "remainingD1": 1784,
+      "remainingD2": 616,
+      "buyerTotalDueUSD": 2400,
+      "duplicatePosting": false
+    },
+    {
+      "step": "Warehouse isolation CONFIRMED",
+      "source": "802 AJAX extra",
+      "quantity": 5,
+      "onHand": 710,
+      "reserved": 700,
+      "free": 5,
+      "isolated": 5,
+      "monthEndLossPosted": false
+    },
+    {
+      "step": "Customer second receipt CONFIRMED before pause and reread after recovery",
+      "amountUSD": 2400,
+      "invoiceD1": 1784,
+      "invoiceD2": 616,
+      "financeDueUSD": 0,
+      "buyerDueUSD": 0,
+      "totalReceiptsUSD": 4800
+    },
+    {
+      "step": "Stock Take authority candidate withdrawn",
+      "candidate": "14b911d",
+      "reason": "User also reported Finance unable to open; recovery-first rule applied without asserting root cause",
+      "restoredCode": "10c8303",
+      "wix": "published and live",
+      "public": "Fresh user Finance51430505 displays AR twoSI/two receipts/due0 after recovery",
+      "customerReceiptPatch": "eea8160 retained",
+      "businessRecordsChangedByRecovery": false
+    },
+    {
+      "step": "Merged PO confirmed once",
+      "po": "NCT-PO-T3-MERGED-KOH-1102",
+      "taskRows": 10,
+      "distinctProducts": 9,
+      "customers": 3,
+      "quantity": 1300,
+      "amountMYR": 193885.95,
+      "receiptQuantity": 0
+    },
+    {
+      "step": "Merged PO receipts confirmed",
+      "po": "NCT-PO-T3-MERGED-KOH-1102",
+      "batches": [
+        1230,
+        70
+      ],
+      "captain801": [
+        250,
+        50
+      ],
+      "captain01": [
+        80,
+        20
+      ],
+      "finalQuantity": 1300
+    },
+    {
+      "step": "01 Desk1 authorized and Loaded confirmed",
+      "taskCount": 6,
+      "loadedEach": 100,
+      "loadedTotal": 600,
+      "mixedAjax": "90 original source plus10 Ready Stock",
+      "etd": "2026-12-03",
+      "lastGateIn": "2026-12-02T18:00",
+      "noInvoiceYet": true
+    },
+    {
+      "step": "01 Desk1 Sales Invoice confirmed",
+      "number": "NCT-INV-T3-01-D1-1102",
+      "loaded": 600,
+      "amountUSD": 16476,
+      "financeOutstandingUSD": 16476,
+      "quantityInputsReadOnly": true
+    },
+    {
+      "step": "801 Desk3 Loaded confirmed",
+      "lines": [
+        50,
+        150,
+        100,
+        300,
+        200
+      ],
+      "quantity": 800,
+      "existingDesks1and2Retained": true
+    },
+    {
+      "step": "802 Desk1 opened and Loaded queued",
+      "lines": [
+        150,
+        150,
+        150,
+        150
+      ],
+      "quantity": 600,
+      "depositSGD123_40": "Reference only; no Finance receipt"
+    },
+    {
+      "step": "802 Desk1 Loaded confirmed",
+      "quantity": 600,
+      "lines": [
+        150,
+        150,
+        150,
+        150
+      ]
+    },
+    {
+      "step": "801 Desk3 Sales Invoice confirmed",
+      "number": "NCT-INV-T3-801-D3-1102",
+      "amountUSD": 16662,
+      "quantity": 800
+    },
+    {
+      "step": "802 Desk1 Sales Invoice confirmed",
+      "number": "NCT-INV-T3-802-D1-1102",
+      "amountSGD": 39411,
+      "quantity": 600
+    },
+    {
+      "step": "Finance final AR confirmed",
+      "customer01USD": 16476,
+      "customer801USD": 16662,
+      "customer802SGD": 39411,
+      "original801Invoices": [
+        2784,
+        2016
+      ],
+      "original801Receipts": [
+        2400,
+        2400
+      ],
+      "originalInvoicesStillPaid": true,
+      "referenceDepositSGD123_40NotPosted": true
+    }
+  ],
+  "findings": [
+    {
+      "id": "T3-01",
+      "issue": "Warehouse receiving content replaced by Delivery content on background Support/Desk notification",
+      "evidence": "03-warehouse-background-route-overwrite.txt/png",
+      "status": "FIXED_13fc348_PUBLIC_LATE_RESPONSE_NAVIGATION_PASS_LOCAL_NOTIFICATION_PASS"
+    },
+    {
+      "id": "T3-02",
+      "issue": "Rejected pre-receipt Loaded failure notice disappears after background read; input retained; no Loaded committed",
+      "evidence": "02-loaded-before-receipt.txt",
+      "status": "OBSERVED_NEEDS_ROOT_CONFIRMATION"
+    },
+    {
+      "id": "T3-03",
+      "issue": "Waiting reason visually shows first option but remains unset until explicitly selected; initial C70 submit rejected",
+      "status": "OBSERVED_NOT_FIXED"
+    },
+    {
+      "id": "T3-04",
+      "issue": "Cross-room stale remainder and allocation context rejected; fresh read required. Scope may be broader than actual affected product.",
+      "evidence": [
+        "10-remainder-stale-conflict.txt",
+        "16-free10-stale-context-rejected.txt"
+      ],
+      "status": "PROTECTION_PASSED; UX_SCOPE_TO_REVIEW"
+    },
+    {
+      "id": "T3-05",
+      "issue": "Normal business selection works; toolbar omits existing createSelectedPo action. Original PO handler and validations are present.",
+      "status": "FIXED_1d4ca00_PUBLIC_MERGE_ACCEPTED"
+    },
+    {
+      "id": "T3-06",
+      "issue": "Logistic internal token SEA_20FT exposed in customer history and Warehouse; should display readable Sea20ft label",
+      "evidence": "19-buyer-history4800.png",
+      "status": "VISUAL_DEFECT_NOT_FIXED"
+    },
+    {
+      "id": "T3-07",
+      "issue": "WRIGLEY source has missing CBM; Support warns Missing CBM. Actual product source incomplete, not safe to invent zero.",
+      "status": "DATA_COMPLETENESS_PENDING"
+    },
+    {
+      "id": "T3-08",
+      "issue": "Transaction history initially showed stale pre-cleanup invoices4200 while Updating; fresh read replaced with new4800.",
+      "status": "STALE_CACHE_DISPLAY_OBSERVED; NOT PERSISTENT_OLD_LEDGER"
+    },
+    {
+      "id": "T3-09",
+      "issue": "01 AJAX GP disappears after mixing PO90 plus Ready Stock10; parent purchase total5141.23 remains original PO90. Need clarify aggregate display versus effective source cost before changing formula.",
+      "status": "FOLLOW_UP_NOT_A_CONFIRMED_FINANCIAL_WRITE_BUG"
+    },
+    {
+      "id": "T3-10",
+      "issue": "Second supplier payment summary compares against already-paid first partial request and calls actual remaining8425 above current balance; confirmed whole-PO balance was8425; two payments ultimately retained and net balance0",
+      "status": "REPRODUCED_SUMMARY_SCOPE_NOT_FIXED"
+    },
+    {
+      "id": "T3-11",
+      "issue": "Support customer proof returned504 but file and pending document actually saved; read-back still retains Retry Upload instead of reconciling successful original attempt",
+      "status": "ORIGINAL_REQUEST_RETRY_RECOVERED; first proof retained once; second proof separate. Automatic read-back recovery still needs patch."
+    },
+    {
+      "id": "T3-12",
+      "issue": "Finance customer pending receipt visible but shows Awaiting Finance and no Review button for current LAW session; fresh Wix customerFulfilment.web original matches repository exactly; Finance page forwards full result",
+      "status": "FIXED_AND_FORMALLY_VERIFIED_EEA8160; one existing TOP MANAGEMENT account-role expression;90checks; GitHub and Wix complete; Review and customer posting real-UI pass"
+    },
+    {
+      "id": "T3-14",
+      "issue": "Warehouse merged PO receiving displays identical product twice with expected300/100 but no per-line customer label; human attribution is ambiguous. First1230 then70 receipts remained correctly separated.",
+      "status": "VISUAL_DEFECT_REPRODUCED_NOT_FIXED"
+    },
+    {
+      "id": "T3-15",
+      "issue": "Task selection and redraw in long scroll area can reset viewport; observed check failure/offscreen native second coordinate no-op, actual checked states read back before PO.",
+      "status": "OBSERVED_NEEDS_BROWSER_VERSUS_APP_ROOT_CONFIRMATION"
+    }
+  ],
+  "blocker": {
+    "current": "Fresh Support read fails with page-level Failed to fetch after user-bookmark open. SI original upload and Buyer preview succeeded before reload. Actual Google download ERR_BLOCKED_BY_RESPONSE. No repeated upload, payment or stock operation needed."
+  },
+  "stop": {
+    "status": "RESOLVED_AFTER_USER_RESUME",
+    "history": "Former URL safety stop retained in prior commits; not an active blocker."
+  },
+  "pending": [
+    "Fresh Support read fails with page-level Failed to fetch after user-bookmark open. SI original upload and Buyer preview succeeded before reload. Actual Google download ERR_BLOCKED_BY_RESPONSE. No repeated upload, payment or stock operation needed.",
+    "Refresh Buyer/Sales transaction history for latest5 SI and verify customer downloads; preserve old801 paid allocations",
+    "Stock Take TOP MANAGEMENT permission remains withdrawn after recovery; true month-end rejection not yet accepted",
+    "Complete Finance stock valuation/GHR and customer download acceptance",
+    "Fix remaining reproduced UX defects in isolated scopes; legacy4 test failures separately retained"
+  ],
+  "expectedCurrentStockNotYetVisuallyVerified": {
+    "status": "FINANCE_FORMAL_UI_VERIFIED",
+    "valueMYR": 34702.41
+  },
+  "cmsMidpoint": {
+    "activity": 168,
+    "tasks": 16,
+    "orders": 16,
+    "purchaseOrdersLegacy": 0,
+    "suppliers": 4,
+    "supplierActivity": 6,
+    "ghrBusiness": 0,
+    "warning": "Midpoint was read before last sources saved; not final counts. Shared supplier count4 was already present on new-task baseline; not changed by agent."
+  },
+  "publication": {
+    "codeChanged": true,
+    "pagesDeployment": false,
+    "wixPublish": true,
+    "allTestingComplete": false,
+    "warehouseRoute": {
+      "code": "13fc348",
+      "pages": "Run330 success https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41475496877;101/101 resource hashes exact",
+      "wix": "Published and live; sole Warehouse version reference matched completely",
+      "public": "New clean Warehouse loaded build20261102-warehouse-desk-route-v1. Five completed Desks render correctly. Started Delivery refresh then immediately navigated to Incoming; after read completion Incoming remained visible and Delivery heading count0; no captured errors. Same-company notification skip checked in local UI and runtime tests, not by manufacturing extra business writes."
+    }
+  },
+  "resume": {
+    "buyerTab": "51430491",
+    "buyerHistory": "Two actual invoices2784+2016, receipts2400+2400; due0",
+    "browserControl": "Restored; same Chrome browser3 and same CUA controller",
+    "uploadMethod": "Standard chooser event repeatedly timed out; current native Chrome owned Open dialog observed, selected exact TEST ONLY PDF through filename input; no security settings changed by agent",
+    "poUpload": "CONFIRMED",
+    "newFinancialPostings": 4,
+    "financeTab": "51430505"
+  },
+  "currentVerified": {
+    "supplierPaymentsMYR": [
+      8425,
+      8425
+    ],
+    "supplierConfirmedPayableMYR": 16850,
+    "supplierBalanceMYR": 0,
+    "customerReceiptsUSD": [
+      2400,
+      2400
+    ],
+    "customerInvoicesUSD": [
+      2784,
+      2016
+    ],
+    "warehouseOnHand": 10,
+    "reserved": 0,
+    "free": 5,
+    "isolated": 5,
+    "customerLoaded": 2500,
+    "goodsReceipts": 2510,
+    "noRealBankTransfers": true,
+    "financeStockValueMYR": 571.25,
+    "ghrFinanceStockQuantity": 0,
+    "ghrFinanceStockValueMYR": 0,
+    "purchaseOrders": 7,
+    "stockMeasuredAt": "After all3 customers Loaded; after01 and802 SI; final801 SI does not move stock",
+    "customer01InvoiceUSD": 16476,
+    "financeDueByCustomer": {
+      "801": {
+        "currency": "USD",
+        "amount": 16662
+      },
+      "802": {
+        "currency": "SGD",
+        "amount": 39411
+      },
+      "01": {
+        "currency": "USD",
+        "amount": 16476
+      }
+    },
+    "buyer801DueUSD": 16662,
+    "buyerOriginalD1PaidUSD": [
+      1000,
+      1784
+    ],
+    "customerInvoiceCount": 5,
+    "cmsActivityReadCycle": [
+      327,
+      327
+    ]
+  },
+  "mergePoCandidate": {
+    "build": "20261102-purchase-merge-po-entry-v1",
+    "changedResources": [
+      "purchase-live/app.js",
+      "purchase-live/index.html"
+    ],
+    "tests": {
+      "pass": 42,
+      "fail": 0
+    },
+    "public": "PASS_REAL_MERGE_10_TASKS_1300_CTN",
+    "commit": "1d4ca00",
+    "authorization": "User explicitly approved one scoped Pages run and immediate restoration of original7 rules",
+    "deployment": "Run329 succeeded,101 hashes exact,original7 rules restored,Wix published/live"
+  },
+  "currentExpectedStockAfterLoaded": {
+    "status": "PUBLIC_WAREHOUSE_AND_FINANCE_MATCH",
+    "onHand": 10,
+    "reserved": 0,
+    "free": 5,
+    "isolated": 5,
+    "valueMYR": 571.25
+  },
+  "cmsReadComparison": {
+    "beforeActivity": 327,
+    "operations": "Purchase refresh attempted (tool action uncertain); Support/Warehouse stock/Finance AR refresh clicked; no business saves during interval",
+    "afterActivity": 327,
+    "result": "PASS_NO_ACTIVITY_GROWTH"
+  },
+  "warehouseRouteCandidate": {
+    "build": "20261102-warehouse-desk-route-v1",
+    "checksPass": 90,
+    "legacyPackagingFailure": {
+      "test": "warehouse-operational-header.test.cjs",
+      "cause": "Historical frozen retired support-room/packing-model-browser.js hash mismatch c1fcb6f5 versus50022e0a. Existing tracked test/staging inputs unchanged at0a13b69; current101-resource pipeline uses the verified public archive and does not traverse this old99-resource packager. No business production changes to satisfy this assertion.",
+      "fixed": false
+    },
+    "wix": "Published/live",
+    "pages": "Run330 success;101 hashes exact;original7 rules restored",
+    "ui": "Incoming stays visible; stable local notify Packing read count3 to3",
+    "public": "PUBLIC_LATE_READ_NAVIGATION_PASS_NO_ERRORS"
+  },
+  "supportUploadCandidate": {
+    "checkout": "C:\\FMCG-WIX-LOCAL\\worktrees\\support-upload-stale-20261102",
+    "branch": "fix/support-upload-fresh-version-20261102",
+    "rootError": "Documents changed. Refresh before uploading. at backend/supportDocuments.js, prepare before allocation",
+    "scope": "Fresh server document version only for an unprepared upload; same original request/file, all current identity/duplicate/posted proof checks and prepared unknown-result guard preserved",
+    "testsPass": 77,
+    "wix": "NOT_SYNCED",
+    "status": "SUPERSEDED_AFTER_RECOVERY_BY_C640AE6",
+    "public": "Original SI upload remains unresolved; two original customer proofs still Recorded",
+    "newEvidence": {
+      "wrongInitialHypothesis": "Archive removal was inferred prematurely. readFulfilmentContext preserves archived tasks.",
+      "confirmedCause": "Split Desk document selection still calls supportDeskForTask, which returns0 for a parts assignment. Existing canonical deskTaskPortions returns positive290/210.",
+      "readOnlyDiagnostic": "Original backend functions with an archived retained task: single Desk uploads; split290/210 rejects before file allocation. Results root handoff/master-three-customer-stress-20261102/read-only-split-document-diagnosis.json",
+      "nextMinimalScope": "Reuse existing deskTaskPortions only in document membership plus fresh preparation version; no new history store or change to active/stock/Finance projection."
+    },
+    "recoveryVerification": {
+      "originalExact": true,
+      "originalUploadTestsPass": 10,
+      "existingCustomerProofsVisible": 2,
+      "noNewFileOrFinancialRecordsClaimed": true
+    }
+  },
+  "supportSplitDocument": {
+    "code": "c640ae6",
+    "pr": 292,
+    "checks": 136,
+    "wix": "Exact full readback; published and live",
+    "pages": "Unchanged run330,101 resources previously verified; no deployment permission changes",
+    "publicUpload": "Retained original801 Desk1 SI request succeeded once. File10nWphnHdEu9ExYiqOEoO299fH5eGz2dl, USD2784,290CTN; subsequent original retry reconciled the result, no duplicate link. Buyer801 history displays the same SI; original invoice due0,new due16662 unchanged.",
+    "freshRead": "User-bookmark Support51430555 displays iframe but no customer data; one Refresh ended Loading could not be confirmed; Sign in click had no response. Wix page log00:38:19 TypeError Failed to fetch, no stack obtained. Previous tool reload blank. Exact cause and relation to repeated pre-existing Wix load issue unconfirmed. No repeated reload loop or business replay.",
+    "download": "Buyer SI opens readable TEST ONLY PDF. Drive UI reports Anyone with link/no sign-in required. Download clicked; new usercontent tab ERR_BLOCKED_BY_RESPONSE. Do not bypass; actual download not accepted.",
+    "evidence": [
+      "55-split-upload-wix-published.png",
+      "56-split-si-original-confirmed.png",
+      "57-buyer-split-si-visible.png",
+      "58-customer-si-preview.png",
+      "59-customer-si-download-blocked.txt",
+      "60-support-fresh-fetch-log.txt",
+      "61-support-fresh-read-failed.png"
+    ]
+  },
+  "overnightLatest": {
+    "asOf": "2026-11-03",
+    "branch": "release/master-stress-closeout-20261103",
+    "code": "b5af6a1",
+    "build": "20261103-master-stress-closeout-v1",
+    "checks": {
+      "passed": 419,
+      "failed": 0
+    },
+    "pages": {
+      "status": "NOT_DEPLOYED",
+      "baseline": "13fc348",
+      "resources": 101,
+      "changed": 19,
+      "unchanged": 82,
+      "permission": "PENDING_ACTION_TIME_CONFIRMATION",
+      "rules": "ORIGINAL_7_UNCHANGED"
+    },
+    "wix": {
+      "backend": "PUBLISHED_AND_LIVE_EXACT_READBACK",
+      "pageVersionReferences": "UNCHANGED_PENDING_STATIC_RELEASE"
+    },
+    "public": {
+      "backendReads": "NCT_7_PO_GHR_0; STOCK_NCT_10_FREE_5_ISOLATED_5_VALUE_571.25_GHR_0",
+      "newStaticUI": "NOT_YET_DEPLOYED_OR_ACCEPTED"
+    },
+    "businessWritesReplayed": 0,
+    "remaining": [
+      "Static release and two-site page reference synchronization/public acceptance",
+      "Actual customer PDF download blocked by browser response",
+      "Fresh Sales Room iframe is about:blank; no new test order created overnight",
+      "Mixed Ready Stock/PO parent GP requires confirmed source-cost boundary; issued SI protected",
+      "Missing product CBM must be repaired at source",
+      "Actual month-end loss closure remains unaccepted; no mid-month date/permission bypass"
+    ],
+    "counts": {
+      "beforeActivity": 330,
+      "afterActivity": 330,
+      "orders": 16,
+      "tasks": 16,
+      "purchaseOrderCollectionRows": 1,
+      "logicalPOs": 7,
+      "sharedSupplierActivity": 6,
+      "sharedSuppliers": 4,
+      "staff": 1,
+      "ghrOrders": 0,
+      "ghrTasks": 0,
+      "ghrActivity": 0
+    },
+    "report": "integration/maintenance/master-cms-followup-20261103/REPORT.html"
+  },
+  "currentReleaseCode": "b5af6a1",
+  "currentReleaseBranch": "release/master-stress-closeout-20261103"
+}

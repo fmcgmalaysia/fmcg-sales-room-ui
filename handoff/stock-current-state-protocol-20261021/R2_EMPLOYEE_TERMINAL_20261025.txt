@@ -1,0 +1,91 @@
+2026-10-25 — NEW ORDINARY EMPLOYEE TERMINAL RECEIPT; CLOSED NATIVE INSTALL
+
+User resumed after charging and prioritizes actual split/borrow interfaces. No more
+ordinary consent wait. Existing root framework reused; scoped UI/native parity only.
+Recovery: production d447185/runtime32b812c; task before6bff12e; old temporary page
+45d9f220a71d9c89ea6ae2d2b041346b7d253b938fb273d0b5c7da23736ffa79.
+
+New dedicated StockProtocolTest only, no business table/permission/delete access.
+Prefixes SPT-R2TERMINAL-PURCHASE-20261025-d491: and
+SPT-R2TERMINAL-WAREHOUSE-20261025-b381:, each CONDITIONAL/BULK-A/BULK-B/TERMINAL.
+No old occupied employee, UNKNOWN capacity, completed borrowing or typed fixture
+is reset, reseeded, replayed or adopted. Each new RUN rejects ANY occupied fixture.
+Original Purchase/Warehouse staff grant and same actor/staff identity retained;
+raw SDK denial, elevated insert/bulk/CAS and stale rejection precede terminal proof.
+Only after exact after-images and all assertions does one immutable receipt insert.
+Lost final reply propagates, INSPECT alone may verify receipt; no automatic rerun.
+Three after-images alone without terminal receipt cannot be accepted as write proof.
+Business authority/allwriter/activation remainfalse even after this diagnostic pass.
+
+Content marker (NOT Git commit):03ca8d21023736f45e2526f0d503989ab29bcea6.
+Probe source SHA256:93f04d5946b74481eff770786c958ffe53488955df15e2d3aa280bea3306ec9a.
+20new+existing focused assertions pass0fail416.4079ms, retained/reused after pause;
+no unchanged full-suite rerun. Page tests include SSR suppression, session flag
+BEFORE RUN, no second RUN after unknown reply, readonly lost-receipt recovery,
+and paired backend build refusal. Official storage API:
+https://dev.wix.com/docs/velo/apis/wix-storage-frontend/introduction
+https://dev.wix.com/docs/velo/apis/wix-storage-frontend/storage/set-item
+
+Native new backend r2EmployeeTerminalAcceptance.web.js CLOSED installed exact,
+13484chars SHA845165d15da3a5bdd561f043fb9e9b5138daeb3a31bf40dcee47d7878f24f692,
+54/54disjoint250char selections (one skipped49 subsequently literal exact verified).
+No function RUN/INSPECT or new fixture data yet. Not a native runtime CLOSED receipt.
+
+After resume native Page Code navigation indexed geometry unavailable. Stopped
+that indexed-click route; fresh screenshots + normal coordinates opened existing
+R2 Capacity Test, not a business Purchase page. Actual whole original4354char page
+18/18segments matches45d9f220...ffa79 before edit. Appended ONLY own2820char addition
+via unique180char tail ReplaceAll once; retained original old gatesfalse/body exact.
+New CLOSED7175char page whole29/29segments exact
+58728f7ff951fc3c44b1cf658ba5d34a9a148de2cbfcb7402873b7a04cb55e67.
+Current native state BOTH new backend/page gatesfalse, old test gatesfalse.
+No Test-site update/main Publish/Pages/fixture invocation. MASTER149/Test154,
+Source766/Test767 are last release receipts; no new revision assumed.
+
+Next: fresh native backend comparison before opening ONLY new test gate, then
+fresh temp page compare/open ONLY new browser gate. Update own Test Site at0%,
+read actual revision, invoke one public browser page (editor ADMIN cannot certify
+employee). Check durable receipts, close both new gates and update Test Site.
+If unknown before terminal: retain fixed IDs and INSPECT only, never RUN again.
+Then continue allwriter/server-owned activation/paired installation and actual
+Buyer->split/partial receipt/ALLOC borrowing/repayment UI. Do not call test proof
+public business acceptance, nor show old rejected HTTPS supplier-borrow preview.
+Precise Pages temporary task-branch rule approval already granted; add at actual
+deployment only and restore original7rules. No main merge or employee/Drive ACL.
+
+NATIVE COMPLETED AFTER USER RESTART — 2026-10-25
+See R2_EMPLOYEE_TERMINAL_NATIVE_20261025.json, not earlier pending lines above.
+cua browser2 existing Master tab51427484 successfully read and clicked. Fresh
+whole ordinary editor CtrlA/C -> documented browser clipboard source matched both
+CLOSED baselines. No hidden Monaco/runtime API or machine/browser workaround.
+One transient editing-ownership prompt Start Coding restored this same account;
+Find replacement stayed non-mutating until ownership restored and1of1 confirmed.
+Only backend/page ENABLEDfalse->true changed; complete after-images matched exact
+single replacements (451c3e96...b3bcd /28f5d7d2...60c08). Old gates stayedfalse.
+
+Create Test Site once made actualTest1550%, Live149100% retained. Wix auto-opened
+rc=test-site tabs; do not treat those links as correct-version acceptance. Our one
+explicit public page used blank?siteRevision=155. Its browser title/dev log capture
+remained uninformative, so neither was used as success evidence. Opened actual
+Wix Logs through ReleaseManager ->GetStarted/DeveloperTools. Same-session reload
+of that one explicit page retained BEFORE-RUN session markers, inspected existing
+durable results and did not replay RUN. No new fixture identity/reset/cleanup.
+Native backend actual INSPECT receipts, PURCHASE+WAREHOUSE, both verified4records,
+terminaltrue, ordinaryStaffWriteAcceptedtrue, mutationAttemptedfalse. Log details
+also showed current backend source and repeat readonly inspection only. Terminal
+proof asserts all3data after-images, actor hash, rawSDK refusal, elevated methods,
+successful CAS and stale CAS rejection before permitting the immutable receipt.
+The initial complete RUN transcript was not captured; durable terminal inspection
+is the accepted recovery evidence, unlike the prior3images-only old fixture.
+
+Closed PAGE gate first, backend second, preserving whole exact original sources;
+both CLOSED hashes fully read back. One further CreateTestSite updated actual
+Test1560%, Live149100% unchanged. No mainPublish/Pages/ACL/ACTIVE mutation. Eight
+new dedicated rows remain, with no deletion ability and no repeated RUN allowed.
+This completes the ordinary-employee SDK terminal subgate only. Allwriter/business
+typed rows/server-owned activation/paired UI/liveBuyer tests remain mandatory.
+Private screenshots saved only in thread visualization folder; not Git:
+r2-employee-terminal-native-155.png, r2-test156-closed-live149.png.
+No unchanged tests rerun; existing20focused/1606full retained. Static artifact
+c4bc72d remains valid through this evidence-only commit; do not regenerate it.
+

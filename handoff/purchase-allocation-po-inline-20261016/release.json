@@ -1,0 +1,37 @@
+{
+  "branch": "style/purchase-allocation-po-inline-20261016",
+  "protected": "No quantity logic, save handler, backend, drag, permission, receipt or finance changes. User retained orange mismatch and This P.O. logic.",
+  "wix": {
+    "afterReadbackExact": true,
+    "onlyVersionTokenChanged": true,
+    "publishedLiveReceipt": true,
+    "beforeSha256": "007134d5f7ee0bc9f6e177ec9d14aeb85f6faa1c88baaf3145c22b56df31aedc",
+    "freshBeforeNormalizedExact": true,
+    "afterSha256": "d08ecd32692e4abe9ff9f44a15ecd5871729112590b6f33228b6d44ef3c6e5dd"
+  },
+  "deploymentPolicies": {
+    "originalSevenExact": true,
+    "temporary": 63186015,
+    "removed": true
+  },
+  "date": "2026-10-16",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/94",
+  "wixLinkRecord": "b59f9262bb303f048a0756edda06461c82656f5e",
+  "code": "302f01b51b1a4e03a63d15a5026b51b17eee857d",
+  "tests": {
+    "pass": 87,
+    "fail": 0
+  },
+  "recovery": "052cbf8622f297ec854e675ed22a41259ca1b34e",
+  "public": {
+    "url": "https://fmcg999.wixstudio.com/master?check=20261016-po-inline-v1",
+    "verification": "Pending: fresh public iframe points to new inline-v1 build, but browser shows blank embedded area. Real modal visual acceptance not completed; no complete-publication claim."
+  },
+  "pages": {
+    "run": 38780238106,
+    "status": "success",
+    "normalizedExact": true,
+    "marker": "2026-10-16-purchase-po-inline-v1",
+    "verifiedAssets": 31
+  }
+}

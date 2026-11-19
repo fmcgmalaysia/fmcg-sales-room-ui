@@ -1,0 +1,50 @@
+{
+  "at": "2026-10-28T20:11:50.671Z",
+  "environment": "ISOLATED_SYNTHETIC_VERSIONED_SOURCE_COMPARISON",
+  "baseline": "080d3578fbddc0995938a08d452828cc24e12f6d",
+  "candidate": "39bf0674694069cab05a511d414cea1e24a1cbd1",
+  "networkRequests": 0,
+  "productionWrites": 0,
+  "productionRawContextCaptured": false,
+  "observations": [
+    {
+      "scenario": "additional supplier received95 while main demand receipt counter0",
+      "sourcePhysical": 95,
+      "demandReceiptCounter": 0,
+      "baselineReady": 95,
+      "candidateReady": 0,
+      "baselineReview": false,
+      "candidateReview": false
+    },
+    {
+      "scenario": "main source50 plus additional source45",
+      "sourcePhysical": 95,
+      "demandReceiptCounter": 50,
+      "baselineReady": 95,
+      "candidateReady": 50,
+      "baselineReview": false,
+      "candidateReview": false
+    },
+    {
+      "scenario": "existing test shape with demand counter already95",
+      "sourcePhysical": 95,
+      "demandReceiptCounter": 95,
+      "baselineReady": 95,
+      "candidateReady": 95,
+      "baselineReview": false,
+      "candidateReview": false
+    },
+    {
+      "scenario": "no physical receipt remains unavailable",
+      "sourcePhysical": 0,
+      "demandReceiptCounter": 95,
+      "baselineReady": 0,
+      "candidateReady": 0,
+      "baselineReview": false,
+      "candidateReview": false
+    }
+  ],
+  "identifiedCondition": "Candidate caps unanchored readyByBatch by task.inc. task.inc records the main demand row receipt counter and need not equal physical coverage from additional supplier sources. Baseline readyStockFor already accounts for those sources. The isolated graph reproduces95→0 and95→50.",
+  "productionAttribution": "Reproduces the observed symptom, but the exact production main/source receipt structure has not been captured; do not claim definitive production causation or apply a production fix before complete recovery.",
+  "next": "After approved static recovery, obtain the minimal real read context or visible receipt-source facts, validate source identity/cumulative Loaded and anchored batches, then make a separate minimal correction."
+}

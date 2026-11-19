@@ -1,0 +1,125 @@
+2026-10-21 — Architecture review after f37957a
+DECISION: retain current-state inventory design; reject unrestricted overwrite recovery.
+This is a design/adapter contract, NOT production implementation or a Wix capability pass.
+
+Evidence and limits
+The original 31-test run remains valid evidence: 24 ordinary candidate checks, six existing
+checks and one passing unsafe counterexample. No need to rerun it merely for this review.
+The simulated delayed mutation is a legitimate unknown-outcome schedule. It does not prove
+that Wix actually runs a rejected write later, nor that deployed data was corrupted.
+Wix official docs expose a condition parameter for Data Items PATCH/UPDATE/REMOVE. This is
+a promising supported direction, but the retrieved text did not expose the complete Condition
+schema or a statement sufficient to verify atomic comparison at the storage mutation point.
+Current legacy wix-data adapter availability, identity/elevation and hook behavior are untested.
+Do not substitute collection-schema revision or Wix Stores inventory revision for CMS item CAS.
+
+Official sources checked, 2026-10-21
+https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/patch-data-item
+https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/bulk-update-data-items
+https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/aggregate-pipeline-data-items
+  Item mutation conditions are documented; bulk is NOT claimed to be a cross-item transaction.
+https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/data-api/working-with-wix-data
+  Timeout is an error response; no verified guarantee that all effects have been cancelled.
+https://dev.wix.com/docs/api-reference/business-solutions/cms/eventual-consistency
+  consistentRead addresses freshness; it does not itself fence future delayed writes.
+REST docs opening encountered oversized page/timeout; search exposed relevant official text.
+One shell retrieval failed DNS. No repeated bypass, live API mutation or credentials were used.
+
+Why the old proof is insufficient
+1. Reading before-image then UPDATE is two operations; a version field alone is not protection.
+2. Same-request retry can finish A, then B can commit, then old A overwrites B.
+3. The same schedule can corrupt mutable CONTROL.pending/generation, not just StockPositions.
+4. LOCK removal is also a mutation. A delayed unconditional remove can delete B's new lock.
+5. Reusing the operation key as lock owner cannot distinguish two executions of that operation.
+6. Reading equal images repeatedly, waiting a chosen number of seconds, or seeing RESULT does
+   not prove that an earlier storage request can no longer execute.
+7. Atomic increments alone do not solve unknown retries: replay may increment twice.
+
+Required storage contract (chosen implementation direction)
+I. insertUnique(collection,id,payload): atomic create-if-absent, no automatic upsert. Duplicate
+   recovery compares the stored identity/digest; a different payload is a conflict.
+II. compareAndSet(collection,id,expectedVersion,patch): server checks the version AND changes
+   fields/version in one indivisible item mutation. A stale request changes nothing. Version
+   is never recycled, including after archive/reopen. Use exact opaque tokens if supported.
+III. compareAndRemove(collection,id,expectedAttempt): deletion checks the exact execution token
+   atomically. No unconditional delete or read-then-delete approximation.
+IV. strongRead: current committed item, with distinct missing/error outcomes. Query consistency
+   and multi-page consistency still require explicit handling.
+These are abstract requirements, not invented Wix request field names.
+
+Scope of protection
+Every mutable row in a commit requires fencing: position, claim, product summary, company
+control and any mutable domain/task/packing row included in that plan. Append-only domain
+events use unique insert. Protecting only the three new collections leaves the protocol unsafe.
+New row creation uses unique insert; do not delete/recreate a stock ID with version zero.
+Keep closed rows or explicit tombstones until a separately verified retention process exists.
+CMS/manual/legacy writers must not bypass versions. Admin editing must be controlled by an
+operational maintenance procedure; authentication still uses current employee authorization.
+
+Commit and recovery contract
+1. Acquire existing company-scope exclusion with a fresh execution attempt token, separate from
+   stable operation/request identity. Never steal a timed-out lock by its age.
+2. Store immutable PREPARED plan and digest under stable operation identity. Save exact expected
+   versions and deterministic new versions for each row. Never regenerate a recovery plan from
+   changed live quantities. Before business mutation, conditionally publish pending ownership.
+3. Apply each row with its expected version. Exact already-applied token/digest means that row
+   is complete. Any other version is a conflict; never rewrite it to the old planned value.
+4. Unknown write result: read exact row identity/version. If it has the planned after-token,
+   continue. If still before-token, retry only the SAME conditional transition; any late copy
+   can succeed at most once. Never retry with a newly read version just to make it succeed.
+5. Validate quantities and all required rows, then insert immutable RESULT. Finalize company
+   pending/generation by a conditional transition against its expected version/operation.
+6. Release lock only by matching the fresh attempt token. Once release is requested the worker
+   performs no further business writes. A late old release must not remove a newer attempt.
+7. A crashed execution/unknown lock remains blocked until its completion or an enforceable
+   recovery handoff is established. Do not expose an automatic force-unlock button. Per-row
+   CAS does not by itself authorize a second worker to take over a still-running logical plan.
+8. Reader checks company control before/after; pending blocks usable inventory. Every state
+   transition, including pending, changes control version. If update/permission/query fails,
+   preserve inputs and show pending/error, not zero, success or historical fallback.
+
+Safety versus availability
+The conservative stop policy prevents continuing on uncertain state but may block a company.
+It is an emergency policy, not an acceptable claim of completed operational reliability.
+A production go-live needs an explicit recovery runbook, exact stuck-operation identity,
+platform-supported settlement/fencing and a tested restoration process. Repeated same values
+or an administrator deciding that enough time elapsed are insufficient recovery evidence.
+
+Rejected shortcuts
+- Do not swap every UPDATE for PATCH without a proven condition at the storage boundary.
+- Do not use beforeUpdate hooks as a substitute for atomic compare-and-set.
+- Do not use bulk success as proof of all-or-nothing cross-collection commit.
+- Do not introduce per-SKU locks or change business authorization as part of this proof.
+- Do not adopt permanent immutable inventory copies per action merely to pass the counterexample.
+  That alternative changes row growth, indexes, publication, retention and recovery, and would
+  need a separate review. Current-state sources/claims still grow with real business relationships.
+
+Concrete Sol work order
+A. Resolve the complete official Condition contract and actual site-supported server API route.
+   Pin exact parameters, mismatch response, conditional delete, auth and hooks. No guessed API.
+B. Extend isolated protocol through an injected conditional adapter; keep original unsafe proof
+   as a regression witness. Test source/control/claim/summary and lock-release delayed requests;
+   cover lost acknowledgement, duplicate attempt, version reuse and pending read barriers.
+C. Continue pure inventory conversion/schema/read pagination independently; leave activation OFF.
+   No shared production journal changes until A/B pass and live source baseline is compared.
+D. A live contract test needs a specifically authorized isolated non-business location. Current
+   authorization is not permission to recreate fake data in the cleaned production collections.
+E. If CMS conditions cannot provide the contract, return to Astra with that precise evidence.
+   Do not implement a silent read-then-write fallback, move to another server, or change auth.
+F. Once adapter evidence passes, resume G1/G2 and later G3 review from the original specification.
+
+Acceptance additions to T16-T18
+R01 late source write after newer allocation is rejected without changing any quantity.
+R02 late control finalize/pending write cannot roll back generation or hide another pending plan.
+R03 late old lock deletion cannot delete a different attempt, even for the same operation key.
+R04 lost acknowledgement and identical retry advance the row once only.
+R05 decrement/increment replay cannot execute twice; wrong digest/version is rejected.
+R06 company isolation, stale prepared plans and incomplete multi-row reads remain blocked.
+R07 platform integration proves the adapter actually sends and enforces the condition; a mock
+    implementing the desired semantics only proves the algorithm under that explicit assumption.
+
+Release/model status
+Architecture direction selected; G0 production gate remains OPEN until capability evidence and
+complete protocol tests pass. Sol can implement the isolated conditional adapter and pure model.
+Switch back to Sol for that work; request Astra only for a failed contract or the planned G3 review.
+No production code, CMS, permissions, Pages or Wix publish changed in this review.

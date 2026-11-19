@@ -1,0 +1,9 @@
+Track detail revision v2, 2026-10-07. User test corrections; no final acceptance/closeout yet.
+Parent/current public recovery f39230f6dc6cca171871e57ceb74fc12cd6562f3, exact before HTML included. Live inline scripts match prior recorded repository before this revision.
+English GoodsExp tooltip: Blank by default. Filled only upon customer request. Yellow14px question circle, pointer cursor. Default blank/date-only future MASTER behavior unchanged.
+Author only visual text by NAME,9px gray#7b8794; missing author remains dash. Exact tracking renderer difference assertion; calculations/other functions unchanged.
+OrderOn fixed106px movesBarcode left; GoodsExp100px allows26Oct2026, distributes extra space to middle columns with minimum CBM/Progress widths. Header/tab count labels and column order unchanged.
+Track tabs700bold; history orange14px800 to match OrderForm count. No auth/backend/Excel/QTY/sort/timezone changes.
+Browser1280 grid1059==scrollWidth and no clipped cells;1920grid1699==scrollWidth, OrderOn106/GoodsExp100. Author9px/color and pointer/English title/count14px800 verified. Window override reset.
+Code pending publication. Pages/Wix/public v2 pending; v1 remains currently live. Same narrow task branch retained. Must obtain temporary deployment access again because previous access removed. No main merge/verified tag/final user acceptance.
+Recovery reverse v2 display diff only, preserving all prior local-time and Track improvements.

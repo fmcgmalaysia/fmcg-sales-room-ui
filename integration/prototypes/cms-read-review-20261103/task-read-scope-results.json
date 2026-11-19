@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "baseline": "7ad78a2 / bf2815c",
+  "productionWrites": 0,
+  "checks": [
+    {
+      "id": "S01",
+      "observation": "Selecting one task without accepted-order siblings fails the existing intake integrity check.",
+      "error": "Accepted receipt is missing a task. Please contact Admin."
+    },
+    {
+      "id": "S02",
+      "observation": "Naive task/order filtering omits PREPARED, exposes an unconfirmed price and removes its save guard.",
+      "confirmedPrice": 16,
+      "incorrectPrice": 32,
+      "fullPending": 1,
+      "filteredPending": 0
+    },
+    {
+      "id": "S03",
+      "observation": "Complete evidence permits original-request recovery and replay adds no rows.",
+      "additionalRowsOnReplay": 0
+    },
+    {
+      "id": "S04",
+      "observation": "Task/order identifiers alone omit PO-keyed receipt batches.",
+      "fullAccepted": 200,
+      "filteredReceiptLines": 0,
+      "receiptBatches": 2
+    },
+    {
+      "id": "S05",
+      "observation": "November receipt alone cannot replace the October170 + November30 receipt chain.",
+      "accepted": 200,
+      "lastBatchDelta": 30
+    },
+    {
+      "id": "S06",
+      "observation": "Full and known-dependency projections match with 100000 unrelated records. Efficient dependency discovery is not proven."
+    },
+    {
+      "id": "S07",
+      "observation": "A single task with1000 revisions still requires its full version chain; latest-only is rejected.",
+      "relatedRevisions": [
+        1,
+        10,
+        100,
+        1000
+      ]
+    },
+    {
+      "id": "S08",
+      "observation": "Lender-only top-level filtering loses cross-customer ownership and the remaining cross-month debt.",
+      "fullLenderAllocation": 260,
+      "loanOutstanding": 20,
+      "filteredLenderAllocation": 0,
+      "filteredLoanCount": 0
+    },
+    {
+      "id": "S09",
+      "observation": "Closed-task filtering discards still-usable stock from an old FOC source.",
+      "fullOnHand": 220,
+      "fullFree": 20,
+      "activeOnlyOnHand": 200,
+      "activeOnlyFree": 0
+    },
+    {
+      "id": "S10",
+      "observation": "Omitting the authoritative PO finance record incorrectly removes an existing paid lock.",
+      "fullLocked": true,
+      "omittedLocked": false
+    },
+    {
+      "id": "S11",
+      "observation": "Dropping old-month completed Desk and unresolved isolation overstates current stock; these are still live dependencies.",
+      "fullOnHand": 50,
+      "fullIsolated": 10,
+      "fullUsable": 40,
+      "cutOnHand": 200,
+      "cutIsolated": 0
+    },
+    {
+      "id": "S12",
+      "observation": "One supplier PO shared by two customers needs its full task membership; customer-only scope is rejected.",
+      "mergedAmount": 5600,
+      "taskCount": 2
+    }
+  ],
+  "growth": [
+    {
+      "unrelatedRows": 0,
+      "fullActivityRows": 15,
+      "knownDependencyRows": 15,
+      "resultHash": "fe64a335bcde857c82da21c7ceecdd6460c30427cfc55a8e5c24943ff35a56dc"
+    },
+    {
+      "unrelatedRows": 1000,
+      "fullActivityRows": 1015,
+      "knownDependencyRows": 15,
+      "resultHash": "fe64a335bcde857c82da21c7ceecdd6460c30427cfc55a8e5c24943ff35a56dc"
+    },
+    {
+      "unrelatedRows": 100000,
+      "fullActivityRows": 100015,
+      "knownDependencyRows": 15,
+      "resultHash": "fe64a335bcde857c82da21c7ceecdd6460c30427cfc55a8e5c24943ff35a56dc"
+    }
+  ],
+  "limitations": [
+    "Synthetic in-memory data passed to current production functions; no live business transaction.",
+    "Known dependency rows are selected by an offline oracle; discovery still reads the complete fixture. This is NOT a bounded Wix query.",
+    "No Wix index plan, server latency, million-row capacity or complete replacement-reader acceptance is claimed.",
+    "Loan and archived-stock cases test actual component readers with explicit valid event fixtures, not the entire UI workflow."
+  ],
+  "sourceHashes": {
+    "purchaseProjection.js": "affda5f5a1c76a650e6cf0a7d1836b9cbcbaf4d740b549a232e7bb280d525cb7",
+    "purchasePlan.js": "f1f2dbcf1656bde00cc2af5344d9ba3620a99de3ff8071482beab13743870f72",
+    "purchaseWorkspace.web.js": "20516c6aca2ca60dccffdc4315a4be34e7d1802e0b3857006dd68e781ce79d43",
+    "warehouseReceiving.js": "285eff17f720a11294876fe5680f2b9d5da925e25772a08a885640a08d74c2ee",
+    "customerAllocationContext.js": "13c3f2d15cb01f93c6007cf99ccb04cbb1be855b59f2d4d59645979de62347f3",
+    "plannerAllocation.js": "ff2e9df6e8cd9c9693cd33000822119524cc763a06b0bb59cefe34e9eaf5e153",
+    "stockCardProjection.js": "7dc6cab242d5e59469b9d41c769f1c227ad80049fd90345ea1cb4c6540cbb9ae",
+    "purchaseOrderWorkflow.js": "f204f79cadf2ea1897aaca8d8cb304ce3b5194ca447a0a24fa51e9e595f6fd07",
+    "paymentHandoff.js": "c0aa5be52626745c6696f399a9444ff0a9107bf7854a6ddc5a082193e382ad73",
+    "physicalOutflow.js": "db0a66bee98aac9c8109dedf256f0ca60e3da4d29e6f18308111ac44c057ed20"
+  },
+  "verdict": "NO_PRODUCTION_SCOPED_READER_APPROVED: current relations and revision chains require a defined current-state checkpoint before bounded everyday reads can replace full history."
+}

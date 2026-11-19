@@ -1,0 +1,79 @@
+2026-10-22 — EXISTING GP CACHE CO-WRITER + ACTUAL PURCHASE ROOT BINDING
+
+Recovery point: pushed42276e5 on existingPR220. Same current-stock task; no financial
+policy, new invoice capability or department authority added. Production protected
+runtime32b812c/baselined447185 exact unchanged. No browser/CMS/permission writes.
+
+Specific dependency addressed
+Original Purchase workspace read also calls original GP refresh, which writes audit/
+order cache using old locks. Therefore a current inventory workspace cannot simply
+call the old public workspace function, nor discard its GP behavior. Original pure
+margin plan adapter existed; a real authenticated current save/root binding did not.
+
+Concrete implementation
+- createCurrentMarginReferenceSave uses original approved-member/Purchase staff
+  authorization EVERY invocation, including completed replay. Empty writer coverage,
+  unknown mode/stale generation, role downgrade and forged browser grant refuse.
+- Original createPurchaseMarginRefresh and prepareMarginReferenceGroup remain the
+  ONLY formula/cache policy. Existing locked invoices, partial invoice policy,
+  source children and unavailable cost/rate behavior retained. Original GP/COST
+  locks are inspected only, never removed/stolen in real storage.
+- Same common company fence/segmented BEFORE/APPLY/VERIFY/finalization. Original
+  GP audit plus exact versioned order-cache image plus immutable request result are
+  one durable plan. No task/PO/demand/receipt/physical-stock mutation.
+- Exact target task ID only; arbitrary GP, FX or price input fields refuse. Results
+  may contain only known group IDs and finite GP or null; never rates/selling prices.
+- Immutable MARGIN_REFERENCE_RESULT retains captured values for same-request replay;
+  interrupted save never calls current rates again. Receipt explicitly identifies its
+  generation; old receipt values are NOT labelled current after later operations.
+- Per-request receipt is needed even for a race where original cache no longer needs
+  updating. This is an EXPLICIT save capability, not permission to save every read.
+  Workspace orchestrator must first determine actual refresh need; unchanged/unknown
+  ordinary reads must not call it just to create journal rows or bump generation.
+- Actual candidate Purchase root MARGIN_REFRESH now uses existing SiteMember entry,
+  original getPurchaseStaffContext, private paged current tables, paired ORIGINAL
+  Purchase current projector and native current product reader, original FX client/
+  margin factory. No call to public getPurchaseWorkspace or unfenced refresh.
+- Selected gateway constructs only this save. Existing EDIT/REORDER/borrow/shortage
+  routes retain their original behavior. Original cached-request recovery allowlist
+  accepts MARGIN_REFRESH; it cannot create/schedule a request by itself.
+- Runtime78modules35exports. Existing runtime harness intentionally covers its prior
+  33exports; added executable VM test for the two newer read/margin capabilities and
+  exact total35. No new public webMethod or activation switch.
+
+Evidence
+25focused current read/margin/runtime/root tests pass0fail1638.3528ms.
+Both-company original GP/FX recalculation, once-only progress/replay, original staff,
+role downgrade, coverage, private current context, locked/unknown/no-op results,
+forged input, malformed/corrupted results, actual-import root and paired-marker gate.
+Interruption after GP audit/before order cache: rate changes3.2->5, original replay
+still completes0.25 once; next NEW request computes0.52; replay first request remains
+generation1 receipt, not latest GP. Task counters/physical stock untouched.
+Root integration fixture exercises current unknown/no-cache-change receipt path;
+changed GP persistence is exercised separately through concrete save+original formula.
+Do not misrepresent this as actual real Wix SDK/FX transport acceptance.
+One new no-op path initially supplied Date in pure JSON receipt; canonicalized valid
+time to ISO before segmentation, kept native Date conversion in inspected SDK codec.
+Actual-import test mock initially passed module object instead of projector and lacked
+paired display reader; fixed mock composition, not production behavior. New malformed
+dependency VM test also exposed undefined control/company guard in private current
+read; added explicit known-company/control guard rather than accepting a TypeError.
+Final all stock-current710pass0fail6819.2485ms. All affected generator checks passed.
+Protected production directories vsd447185 empty; git diff --check passed.
+
+Next exact dependency / still not done
+Full getPurchaseWorkspaceCurrent orchestration + server-mode gate on original read
+entry remain unfinished. It must retain ORIGINAL authenticated request identity/cache
+BEFORE any refresh save, serialize needed demand-group refreshes, handle unknown/
+reload without a new UUID, and then read ONE fresh current workspace + committed GP,
+short names, progress, outstanding metadata/halo. Do not call MARGIN_REFRESH from a
+read with an ephemeral server UUID or silently discard an unknown save.
+Existing session storage only survives the original browser session; no cross-session
+recovery claim. File/cost/source/Packing durability/unknown-lock termination still
+unproved. Native permissions/schemas/capacity (including repeated company context
+reads), all remaining writers, initialization/maintenance/cutover/shadow and public QA
+remain required. No automatic GP behavior was enabled by this patch.
+
+Four states: code partial candidate/root save locally tested; Pages unchanged; Wix
+not installed/synchronized/published; public new-stock/borrowing unavailable/unverified.
+ACTIVE OFF, writerCoverage empty. Support actual invoice OFF. Main untouched.

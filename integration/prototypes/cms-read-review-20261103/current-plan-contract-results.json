@@ -1,0 +1,203 @@
+{
+  "schema": 1,
+  "baseline": "4d26f89",
+  "productionWrites": 0,
+  "productionSourceChanges": 0,
+  "checks": [
+    {
+      "id": "C01",
+      "observed": "Actual PLAN plus two in-memory hooks yields the same confirmed plan/prices/shares. Original request replay adds no rows or metadata writes."
+    },
+    {
+      "id": "C02",
+      "observed": "14 handled interruption/lost-response boundaries recover through the original request, with no repeated business rows.",
+      "faults": [
+        {
+          "boundary": "BEFORE_STAGE",
+          "readerBlocked": false,
+          "legacyPending": 1,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "AFTER_STAGE",
+          "readerBlocked": true,
+          "legacyPending": 1,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_TASK",
+          "readerBlocked": true,
+          "legacyPending": 1,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "AFTER_TASK",
+          "readerBlocked": true,
+          "legacyPending": 1,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_PURCHASE_PRICE_SAVED",
+          "readerBlocked": true,
+          "legacyPending": 1,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "AFTER_PURCHASE_PRICE_SAVED",
+          "readerBlocked": true,
+          "legacyPending": 1,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_PURCHASE_SOURCE_SHARES_SAVED",
+          "readerBlocked": true,
+          "legacyPending": 1,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "AFTER_PURCHASE_SOURCE_SHARES_SAVED",
+          "readerBlocked": true,
+          "legacyPending": 1,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_PURCHASE_PLAN_SAVED",
+          "readerBlocked": true,
+          "legacyPending": 1,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "AFTER_PURCHASE_PLAN_SAVED",
+          "readerBlocked": true,
+          "legacyPending": 0,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_COMMIT",
+          "readerBlocked": true,
+          "legacyPending": 0,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "AFTER_COMMIT",
+          "readerBlocked": false,
+          "legacyPending": 0,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_PURCHASE_OPERATION_RESULT",
+          "readerBlocked": false,
+          "legacyPending": 0,
+          "recoveredUsingSameRequest": true
+        },
+        {
+          "boundary": "AFTER_PURCHASE_OPERATION_RESULT",
+          "readerBlocked": false,
+          "legacyPending": 0,
+          "recoveredUsingSameRequest": true
+        }
+      ]
+    },
+    {
+      "id": "C03",
+      "observed": "Two acceptance failures: PREPARED exists before the candidate pending marker, so candidate misses a pending save; after final business event but before state publication candidate blocks a save already confirmed by the existing reader. These are NOT accepted behavior changes."
+    },
+    {
+      "id": "C04",
+      "observed": "Actual company journal rejects a second concurrent PLAN; unrelated root remains readable. This does not prove all other writers share the same coordination."
+    },
+    {
+      "id": "C05",
+      "observed": "A replacement request is rejected while the original save is incomplete; the original request still recovers."
+    },
+    {
+      "id": "C06",
+      "observed": "An unchanged prior-month confirmed plan is readable without fetching old-month Activity. This is a stored-state date fixture, not a real month-close test."
+    },
+    {
+      "id": "C07",
+      "observed": "For this one-root PLAN reader, 0/1000/100000 unrelated rows require one task-ID read, no Activity query and no writes. Full Purchase page is NOT replaced."
+    },
+    {
+      "id": "C08",
+      "observed": "Wrong company, missing state and payload/hash mismatch stop explicitly; no zero default, automatic initialization or history fallback. Hash is an integrity check, not a security signature."
+    },
+    {
+      "id": "C09",
+      "observed": "Explicit offline initialization is no-op when equal and refuses conflicting or pending records. It never silently overwrites confirmed values."
+    },
+    {
+      "id": "C10",
+      "observed": "Real PO assignment, not instrumented in this PLAN-only experiment, changes task version and makes candidate stop. Updating PLAN alone is insufficient."
+    },
+    {
+      "id": "C11",
+      "observed": "Counterexample: an uncoordinated stale whole-task update can roll back a valid state envelope without changing taskEditVersion. Existing-item reuse requires all writers to preserve current metadata under compatible locks; candidate NOT production-ready."
+    },
+    {
+      "id": "C12",
+      "observed": "20 actual PLAN revisions replace one metadata envelope, adding zero extra CMS rows but 40 extra metadata writes. Existing journal/event rows are unchanged and still grow.",
+      "revisions": 20,
+      "extraMetadataWrites": 40,
+      "extraMetadataRows": 0,
+      "totalFixtureRowGrowth": 100
+    },
+    {
+      "id": "C13",
+      "observed": "Actual ADD_SOURCE200+50 leaves root taskEditVersion unchanged; PLAN-only candidate silently returns200 and one source, while actual history confirms250 and two sources. All source writers must publish the same root state; this is a candidate bug, not a live regression."
+    }
+  ],
+  "growth": [
+    {
+      "unrelatedRows": 0,
+      "pointReads": 1,
+      "activityQueries": 0,
+      "writes": 0,
+      "responseBytes": 891,
+      "resultHash": "ae17db45db9090c539b8b4441ee98b03f53d66cceae4a5e27ca9e6af4e7bf53e"
+    },
+    {
+      "unrelatedRows": 1000,
+      "pointReads": 1,
+      "activityQueries": 0,
+      "writes": 0,
+      "responseBytes": 891,
+      "resultHash": "ae17db45db9090c539b8b4441ee98b03f53d66cceae4a5e27ca9e6af4e7bf53e"
+    },
+    {
+      "unrelatedRows": 100000,
+      "pointReads": 1,
+      "activityQueries": 0,
+      "writes": 0,
+      "responseBytes": 891,
+      "resultHash": "ae17db45db9090c539b8b4441ee98b03f53d66cceae4a5e27ca9e6af4e7bf53e"
+    }
+  ],
+  "limitations": [
+    "Only PLAN for existing root tasks is instrumented; PO, ADD_SOURCE, SPECIAL and other writers are not migrated.",
+    "Initialization and commit oracle still read full in-memory history. This does not solve save preparation or full-page dependencies.",
+    "No Wix transaction, conditional-update, actual query latency or million-row capacity claim.",
+    "Task metadata is a feasibility candidate; storage field, migration and production writes are NOT approved.",
+    "Handled exceptions run existing finally cleanup; abrupt worker termination and stale-lock takeover are NOT simulated as recovered."
+  ],
+  "candidateAcceptance": {
+    "readyForProduction": false,
+    "decision": "REJECT_CURRENT_TWO_HOOK_CANDIDATE",
+    "blockers": [
+      "PREPARED-before-marker gap",
+      "Complete-events-before-current-publication gap",
+      "Real PO assignment conflicts and ADD_SOURCE silently misses new source",
+      "Stale whole-item overwrite counterexample",
+      "Abrupt process death/recovery not proven"
+    ],
+    "productionScopeApproved": false
+  },
+  "sourceHashes": {
+    "purchaseOperations.js": "ba6f7c1684fdc2560ed3a559efd7298285becf34cde7e48e119fc897311156fb",
+    "purchasePlan.js": "f1f2dbcf1656bde00cc2af5344d9ba3620a99de3ff8071482beab13743870f72",
+    "purchaseOperationJournal.js": "f32a447abc140e5210bcde73e6a7f94b933cd0b9c3a9d21fdd03e3ce34d72006",
+    "purchaseTaskIdentity.js": "5766827f1a8f715ecbe3fe0492d91980c5879e1ce9ad1ca3ed040c1ab4f8be12",
+    "purchaseCostRetry.js": "8468fea805096f2f100905d8d756822f67d8101dedd6a07babe630768b1d0023",
+    "purchaseSources.js": "ad4ee2babcf25847cbdd4b7dd34be548e008755697a4dfa8e52cabfce70fc4e6"
+  }
+}

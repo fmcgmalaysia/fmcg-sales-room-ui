@@ -1,0 +1,28 @@
+{
+  "objective": "Release the individually tested three-customer stress closeout patches",
+  "branch": "release/master-stress-closeout-20261103",
+  "build": "20261103-master-stress-closeout-v1",
+  "staticBaseline": "13fc348",
+  "resources": 101,
+  "changedResources": 19,
+  "byteUnchangedResources": 82,
+  "workflowInput": "master-stress-closeout-only",
+  "checks": {"passed": 419, "failed": 0},
+  "packagingCorrection": "Use a literal replacement callback so the dollar document code cannot interpolate replacement-tail text. The exact staged model is now executed by a regression test; all changed JavaScript is syntax checked.",
+  "alreadyLiveBackend": [
+    "Supplier-ready GP projection b8b902a",
+    "Invocation-local validated history reuse 6fa2852",
+    "Company-scoped PurchaseOrders query 5f30d6a",
+    "Support original upload-request read projection and two receiving customer-identity projections; full Wix readbacks exact, Wix published/live"
+  ],
+  "protected": [
+    "No second inventory, payment or allocation ledger",
+    "No financial locks, permissions, write validators, issued SI snapshots or document delivery changes",
+    "No replay of the completed 2500 Loaded or supplier/customer payments",
+    "No catalogue migration, POINTBASE modification or invented missing product metrics"
+  ],
+  "pages": "NOT_DEPLOYED_ACTION_TIME_BRANCH_PERMISSION_REQUIRED",
+  "wixPageReferences": "UNCHANGED_PENDING_STATIC_DEPLOYMENT",
+  "public": "NEW_STATIC_UI_NOT_YET_VERIFIED",
+  "originalDeploymentRules": "7_ORIGINAL_RULES_UNCHANGED"
+}

@@ -1,0 +1,44 @@
+2026-10-22 Original Warehouse physical dispatch current binding
+
+After BUSINESS_JSON_ORDER_FIX regression repair, concrete PRIVATE original Warehouse
+dispatch/read composition implemented. Original fulfilment staffContext callback must
+authenticate actual member/department; shape checks are NOT auth replacement. No Source
+Sales customer identity or browser canDispatch flag accepted. This factory accepts only
+DISPATCH, never invoice creation, loading completion, arbitrary allocation or correction.
+
+READ/DISPATCH share same full original company shipment-version view: active demand plus
+existing REQUESTED/INVOICED tasks retained even if archived, grouped once per SKU. Scoped
+current active sources/claims, explicit shipment source closure, current relation sources
+and exact raw task counters feed original context. No global lifetime CLOSED source scan.
+Missing authority/index/product/task checkpoint fails, not old-history fallback. No new
+Warehouse outgoing instruction created from reading related other-customer stock.
+Original generic fulfilment public gateway's readFinancial filtering remains mandatory;
+new PRIVATE read calls original optional-context service and must sit before that same
+redaction, not replace its public wrapper. Account/Support read integration still open.
+
+Original createCustomerFulfilmentOperations prepares actual immutable DISPATCH event,
+preserving invoice-required/reference/packing-release/customer/company rules and locked
+invoice fields. Common v2 dispatch plan writes original event + physical source/claim/
+product delta + existing raw task dispatched cumulative under same fence/root. Replay
+does not subtract again. Stable confirmed event receipt returns original shipmentId and
+DISPATCHED status. No mutation of shared archived flag to keep a procurement debt visible.
+
+Real-core in-memory tests:
+- Existing invoice dispatch20: onHand50->30, claims50->30, task cumulative0->20 exactly
+  once after replay; original invoice bytes unchanged and subsequent original history
+  read valid. Missing invoice and revoked Warehouse grant reject before physical save.
+- Approved borrowing20 from T's source to A, A invoice/dispatched first: Tsource onHand
+  50->30, A task counter20, outstanding relation remains ACTIVE20/repaid0. Departure does
+  not clear replacement debt. Receipt automatic repayment remains covered by earlier
+  concrete current Warehouse receipt suite; no duplicate PO created by this dispatch.
+- Private READ provides same original shipmentVersion as save view and current form
+  metadata. Its unrelated financial result was stubbed, NOT financial/public acceptance.
+
+Full520current candidate tests pass0fail5132.8945ms. Runtime58modules20exports after
+exact-source generation. No original production file edited, no real business CMS write,
+no official package elevated into live business, no permission/deployment/ACTIVE/publish.
+Protected d447185/runtime32b812c unchanged. Production fresh-schema/DateTime/nested-order
+SDK roundtrip and all other capacity/recovery/init/routing/migration/shadow/four release
+gates remain mandatory. Actual business gateways/relays/UI have not been installed.
+Remaining inventory co-writers and whole client/borrowing detail UI must finish before
+permission concentration and actual release. Do not call this formally published.

@@ -1,0 +1,73 @@
+2026-10-23 — CMS ITEM-QUOTA FAILURE MATRIX, OFFLINE ONLY
+
+Single objective / recovery point
+Exercise the newly relevant storage-item quota dimension against the existing actual
+authenticated Warehouse receipt root. Startinga57255f record-footprint increment
+confirmed PUSHED PR220. Original productiond447185/runtime32b812c, all protocol/
+business/runtime/UI/schema/permission files unchanged. No model switch or agents.
+Native10000item UI limit is the motivating evidence, NOT an assertion about native
+error codes or enforcement behavior. No actual new quota/test records or upgrades.
+
+Exact model and scope
+New stock-current-quota-recovery.test.cjs reuses the actual original root fixture,
+real original receipt authority/model, current coordinator and read-only inspector.
+Only fake store insert is bounded: if a new record would exceed the simulated total
+item limit, it fails BEFORE insertion. Existing-row CAS and conditional lock remove
+remain available in this MODEL. Whether Wix native quota blocks other operations,
+delays accounting or permits lock removal at limit is UNKNOWN, not assumed proven.
+Limit is restored IN MEMORY, not by deleting data or purchasing a plan.
+
+Four concrete boundaries
+1 First lock insert: no plan/domain mutation; no confirmed receipt; exact request
+  retained and generation0. Later capacity permits the original request once.
+2 Second fragment of actual300product receipt: one orphan fragment remains, no root/
+  pending/domain receipt yet; original request is unconfirmed, not a failed-stock
+  assertion. More capacity allows fresh attempt/root; original orphan evidence is
+  retained, never automatically deleted or reused as the authoritative manifest.
+3 Domain insert after one physical source already inserted: pending barrier remains,
+  mixed actionable stock read refuses, new request cannot advance. Restoring capacity
+  resumes only existing manifest/quantities and finishes exactly once.
+4 Final RESULT insert after domain images: generation stays0 and pending remains,
+  despite a saved business receipt existing. No UI success from that receipt alone.
+  Same request later publishes RESULT/control generation1 exactly once.
+
+For every scenario: original browser request/UUID/identity/payload unchanged; no
+inverse writes, reset, dropped receipt, new-business-request workaround or lock theft.
+Failed retry/inspection leaves whole fake DB unchanged. Completion has1manifest,
+1Warehouse receipt,1generation, exact physical total. Published manifest resumes
+without recapturing context/time/quantity; pre-root retry is separately identified.
+Unknown lock-acquisition lost-reply behavior remains the prior protected protocol
+test; quota recovery is NOT permission to steal an uncertain lock or force unlock.
+
+Final retained evidence
+4new quota cases +7existing segmented recovery cases:11pass0fail6686.3551ms.
+lock:2products, failure pendingfalse, orphan0, finalgeneration1/receipt1.
+fragment:300products, failure pendingfalse, orphan1RETAINED, finalgeneration1/receipt1,
+  physical30000. Test fixture explicitly uses100steps/invocation for this large
+  completion rehearsal, NOT production default20 or measured native throughput.
+domain/result:2products each, failure pendingtrue, finalgeneration1/receipt1,
+  physical200. Read-only final small inspection CONFIRMED_RESULT.
+Large recovery inspection correctly remains PAGED_RESULT_INSPECTION_ONLY with
+receiptVerifiedtrue/currentImagesVerifiedfalse; one page cannot verify901images.
+Initial4test run3pass1fail6585.7531ms was an outdated test expectation that one large
+recovery page should CONFIRM. Corrected the assertion to the already hardened
+classifier contract; no classifier/business guard was weakened.
+
+Only new test+handoff added. No unchanged full regression rerun. Last actualFULL1133
+belongs993c8c3; record-footprint11 and this11 are overlapping affected runs, NOT new
+full-suite counts. Diff --check clean; protected original path diff vsd447185 empty.
+Actual CreditUNKNOWN. All data synthetic local models; no screenshots/business data
+or telemetry uploaded. No browser action this increment.
+
+Remaining/native limitations
+This is failure-injection evidence, not native item quota, timeout, lock release or
+production300line recovery/capacity acceptance. No automated cleanup/retention/upgrade
+policy adopted. Actual whole-site budget, failed staging growth, other-company work
+and legacy admitted writers remain capacity/cutover gates. Administrator recovery
+still cannot mutate or release an unknown execution. Native2INIT+1TYPE consent still
+PENDING; no repeated question or execution. Old lock-delete grants remain exhausted.
+
+Four release states
+Code: scoped quota recovery fault tests complete; overall release incomplete.
+GitHub Pages unchanged; Wix published-live unchanged; public new Loaded inventory/
+borrowing acceptance not performed. CoverageEMPTY/ACTIVEOFF, realinvoice/exitOFF.

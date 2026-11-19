@@ -1,0 +1,48 @@
+Buyer Room compact green styling — 2026-10-07
+Scope: presentation only; user-approved visual changes. Assistant publication/verification complete; user acceptance pending.
+
+Production changes:
+- buyer-room.html: compact framed Admin note below Account; existing adminAccess gate retained.
+- Hide only the title product count; keep myCount element and state update.
+- My Selection / Order Form thumbnails 40x40; measured product rows remain43px.
+- Product headers use Track colors background #DCE7F1 / text #173557.
+- Row hover uses subtle gray-blue #EDF2F7, per latest user correction.
+- Track keeps translateY(-1px) and edit scale(1.05); only both shadows removed.
+- buyer-room/wix/buyer-room-page.js: one iframe version reference only.
+- Existing native Wix downloadExcelButton: top margin250px* ->156px only.
+  Width150px, height51px*, right24px*, pinning and ID unchanged. This is a Wix layout setting,
+  not a change to link binding, click handling, generation, authentication or file storage.
+
+Inspected before editing:
+Public inline styles/script match repository after LF normalization.
+Exact Wix page normalized-match current repository before patch.
+Wix global.css equals prior recovery snapshot and is not edited.
+
+Checks:
+All HTML element IDs retained and unique. Inline JS identical except placeAdminBanner placement.
+QTY, sorting, order, quote, identity and notification handlers unchanged.
+Local preview at1280px and1024px: My Selection and Order Form rows43px, images40x40.
+Customer fixture hides note; Admin fixture shows note in sidebar.
+Track fixture initially computed green237/245/240 (v1); v2 ordinary-row hover measured gray-blue237/242/247, no shadow, translateY -1px; edit scale1.05.
+Wix full page readback exactly matches one-line candidate.
+No production customer values edited or orders submitted in preparation.
+
+Recovery:
+Current production parent code: d9fa4d9b7acd737886ca04e57298e5d64ffaadd7.
+Protected QTY tag: verified/buyer-quantity-arrows-20261006 (scope only; never deploy entire old tag).
+Local before HTML: C:/FMCG-WIX-LOCAL/handoff/buyer-compact-green-20261007/buyer-html-before.html
+Local exact Wix page before: same directory/wix-page-before.js
+Local global.css before: same directory/wix-global-before.css
+Native button before settings: same directory/excel-position-before.txt.
+For rollback, reverse only this task's HTML presentation patch and one version query;
+restore only native button top margin250px* if its placement is rejected.
+Do not replace whole Wix page or change the current download mechanism.
+
+Pause boundaries:
+Excel download implementation remains paused under PR21 archive. Entry popup download is NOT fixed.
+Sales Room PUBLISH remains paused. No AppsScript, CMS, auth, download backend, schema, or main changes.
+Draft/test receipts and mocked data do not prove production publication.
+GitHub Pages branch permissions must be separately approved and reverted to main-only after deployment.
+Confirm all four release stages and user visual acceptance before creating a new verified baseline.
+
+V1 Pages run37561721006 succeeded; temporary permission revoked. Wix build96a23399-39cc-48cc-bf31-1228b1147a1d succeeded at2026-10-07 10:25:21, publish/live receipt captured. Initial public visits remained loading; a later refresh loaded the correct customer and9 products. No login/backend change was made and no loading issue is claimed fixed. Public rows43px, thumbnails40x40, sidebar note and hidden title count verified. Native margin156px and actual top186px verified. User rejected the green hover and requested gray-blue, v2 now deployed as703123f, Pages37563345416; Wixpublish/live and exact readback confirmed; correct public data and layout measured. User acceptance pending.

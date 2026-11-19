@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>Purchase save server timing</title><style>body{font:15px Arial;line-height:1.6;max-width:960px;margin:32px auto;color:#173653}td,th{padding:8px;border:1px solid #d5e1eb}table{border-collapse:collapse}</style>
+<h1>Purchase保存耗时诊断</h1><p>2026-11-06。恢复基准33bb9f2f，运行deb66e03/PR363，正式build20261106-purchase-quantity-save-v1。上一笔保存回执6571ms、读回2066ms、合计8637ms；不能由此推断服务端每步耗时或根因。</p>
+<p>唯一目标：分解PLAN保存的服务端数据操作，依据证据修补不必要的查询或等待。先诊断，后决定。沿用同一createPurchaseOperations工厂；不改变输入、回执、财务锁、收货锁、库存、借还货、权限或CMS记录。精确Wix web/core原件已读回一致，回执模块通过编辑器原生Download取得并比对一致。</p>
+<p>诊断只改purchaseOperations.web.js现有工厂绑定：每个请求独立观察原store调用，记录方法、集合、查询类别、起点、耗时、返回行数和失败标志，不记录输入值、价格、文件或员工资料；单条JSON控制台输出。没有新集合、字段、接口或业务分支；其他操作复用同一工厂且不输出PLAN诊断。日志失败不得改变保存结果。</p>
+<p>最初诊断阶段95项检查通过，包含Finance并发锁、原请求恢复、保存中断与回执。以下正式实测和收尾状态取代最初候选状态。Pages96资源保持原状，本轮没有部署Pages或修改部署权限。</p>
+<p>线上测量计划：仅用未开PO的现有WRIGLEY100测试来源，运输方式Supplier Deliver→Self Collect取得基线，再最小修复后恢复Supplier Deliver取得对照。数量、成本、PO、收货、付款和Loaded不变；每步原请求确认后才继续，禁止重试生成新请求。真实测试原件、后台日志仅保存在本地handoff/purchase-save-server-timing-20261106。</p>
+<h2>真实诊断与最小候选</h2>
+<p>诊断7ddf3e55已取得MASTER Wix published/live及正式服务器日志。Pages未部署。首次沿用旧外层页面的保存只有总计时：staff511ms、operation5587ms、server6098ms；不作为分步样本。完整重载后，恢复Supplier Deliver的原请求1e32b43e-dc6c-499c-b3f5-18e8f62a6528得到MASTER_SAVE_STEPS：staff345ms、operation5382ms、server5727ms。31次数据操作，活动全量读取273行531ms，多数单条读取155–173ms，两次删除352/374ms。不是某个单次查询独占8秒；原8637ms还包括客户端网络和读回，不能直接与服务器5727ms比较。</p>
+<p>按证据仅修改purchaseOperations.js：同次apply复用不可变、请求专属事件ID的存在性结果，去掉2次重复读取；订单与任务独立读取并行；计划与份额版本校验并行、两边全部结束才允许写入或清理。事件写入前仍重新核对任务锁。每次恢复重新创建事件检查表，不跨请求缓存，不修改journal、财务/收货校验、历史事实或输入。</p>
+<p>6项新增场景通过，含与7ddf3e55同输入、同时间的全部保存记录逐字相等且仅少2次读取；并行仍等待全部校验、付款和实收锁、三处丢响应后原请求恢复。相关13文件首轮183项181通过；2项为旧发布包后端哈希断言及PurchaseOrders查询计数3≠2，均在修改前7ddf3e55复现。新增差异测试另通过，合计184项182通过、2项已证明既有失败。未删除财务或实收校验来迎合旧查询计数断言。</p>
+<h2>正式发布与真实对照</h2>
+<table><tr><th>阶段</th><th>结果</th></tr>
+<tr><td>代码和GitHub</td><td>运行修补eb1b3823，远程分支已核实，草稿PR364；main未合并，等待用户测试。</td></tr>
+<tr><td>GitHub Pages</td><td>未重复部署，保留96资源及20261106-purchase-quantity-save-v1正式引用。</td></tr>
+<tr><td>Wix</td><td>新鲜原件与恢复点一致，仅4处最小替换。完整读回与代码逐字一致（忽略CRLF）；SHA-256 e543e4a659fbf49beefd4b1dce6d42bebf2d88d4a1026ea244e0bba06403d1a5。Sync site完成，MASTER明确published and live。</td></tr>
+<tr><td>正式页</td><td>外层完整重载后LAW身份正常；两笔真实保存成功，日志验证29次数据操作及并行起点；原Supplier Deliver已恢复，100箱及价格不变，弹窗已关闭并交回采购任务页。</td></tr></table>
+<table><tr><th>测量</th><th>修补前诊断</th><th>修补后首次</th><th>恢复原值</th></tr>
+<tr><td>身份核对</td><td>345ms</td><td>335ms</td><td>464ms</td></tr>
+<tr><td>采购核心</td><td>5382ms</td><td>4484ms</td><td>4559ms</td></tr>
+<tr><td>服务器合计</td><td>5727ms</td><td>4819ms</td><td>5023ms</td></tr>
+<tr><td>数据操作次数</td><td>31</td><td>29</td><td>29</td></tr>
+<tr><td>客户端等回执</td><td>未捕获本笔；更早样本6571ms</td><td>5429ms</td><td>5606ms</td></tr>
+<tr><td>客户端后续读回</td><td>更早样本2066ms</td><td>1955ms</td><td>1991ms</td></tr>
+<tr><td>客户端总等待</td><td>更早样本8637ms</td><td>7384ms</td><td>7597ms</td></tr></table>
+<p>首次请求a66e3a9c-0dc8-42f6-869b-6c6dc08bfbb2；恢复请求fbdaaedb-693b-4344-a9f7-b7277f4d61ef。均PLAN、threw=false、29步骤全部failed=false。活动总量从273增至277/281，因此不是完全受控基准；单次查询也存在波动，不把观察到的节省全部归因于修补，不承诺固定秒数。此次没有业务数量、价格、库存、借还货、付款或Loaded变化，只有已授权测试运输方式及其原有保存轨迹。原回执证据和所有锁均保留。</p>
+<h2>给用户的测试方法与剩余限制</h2>
+<p>从正式Purchase进入BEAUTY MAMA，打开WRIGLEY 100箱来源，检查现有价格/数量及Supplier Deliver；修改需要测试的可编辑资料，点一次“保存这项采购”，等待成功并确认读回。不要重复点保存或重新开单。已有财务锁定/首次实收的来源继续按原规则禁止相应修改。</p>
+<p>保存仍需数秒：约4.5秒核心加上身份、网络及约2秒页面读回。此次消除了有直接证据的重复查询和串行等待，没有把完整历史读取、保存证据、公司/任务锁或强制读回全部取消。进一步压缩整体等待需要单独审查剩余依赖，不能假装本轮已解决CMS长期全历史读取问题。</p>
+<p>原始日志、准确前后原件、测试输出和PNG在本地handoff/purchase-save-server-timing-20261106。用户实测确认和生产基准冻结尚待完成。</p>

@@ -1,41 +1,18 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-
-const root = path.resolve(__dirname, '..');
-
-test('successful order opens the native Wix Order Received lightbox', () => {
-  const pageCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'buyer-room-page.js'), 'utf8');
-  assert.match(pageCode, /openLightbox\('Order Received', \{ orderId: result\.orderId, downloadReady: Boolean\(downloadFile\), downloadError \}\)/);
-  assert.doesNotMatch(pageCode, /BUYER_ROOM_NATIVE_ORDER_SUBMIT/);
-  assert.doesNotMatch(pageCode, /BUYER_ROOM_PREPARE_ORDER_DOWNLOAD/);
-});
-
-test('Order Received popup hands its signed Excel to the embedded Buyer Room downloader', () => {
-  const lightboxCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'order-received-lightbox.js'), 'utf8');
-  const pageCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'buyer-room-page.js'), 'utf8');
-  const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
-  assert.match(lightboxCode, /#downloadOrderExcelButton/);
-  assert.match(lightboxCode, /#closeButton/);
-  assert.match(lightboxCode, /closeButton\.onClick\(\(\) => wixWindowFrontend\.lightbox\.close\(\)\)/);
-  assert.match(lightboxCode, /Download Order Excel/);
-  assert.match(lightboxCode, /downloadButton\.enable\(\)/);
-  assert.doesNotMatch(lightboxCode, /wixLocationFrontend/);
-  assert.match(lightboxCode, /downloadButton\.onClick/);
-  assert.match(lightboxCode, /lightbox\.close\(\{ action: 'download' \}\)/);
-  assert.match(pageCode, /lightboxResult\?\.action === 'download'/);
-  assert.match(pageCode, /BUYER_ROOM_DOWNLOAD_ORDER_EXCEL/);
-  assert.match(html, /function downloadOrderExcel/);
-  assert.match(html, /atob\(String\(payload\?\.base64/);
-  assert.match(html, /new Blob\(\[bytes\]/);
-  assert.match(html, /URL\.createObjectURL\(blob\)/);
-  assert.match(html, /anchor\.download=fileName/);
-});
-
-test('Review Order submits directly and has no embedded success modal', () => {
-  const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
-  assert.match(html, /post\('BUYER_ROOM_SUBMIT_ORDER'/);
-  assert.doesNotMatch(html, /id="successModalBg"/);
-  assert.doesNotMatch(html, /BUYER_ROOM_NATIVE_ORDER_SUBMIT/);
-});
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),cp=require('node:child_process');
+const page=fs.readFileSync('buyer-room/wix/buyer-room-page.js','utf8'),html=fs.readFileSync('buyer-room.html','utf8');
+function fixture(){let ready,message,readError=false,heldRead,submission={ok:true,orderId:'ORDER-EXISTING'},writes=0,excel=0;const posted=[],errors=[];
+ const frame={onMessage(fn){message=fn},postMessage(m){posted.push(m)}},button={disable(){},enable(){},show(){},hide(){},onClick(){}};
+ const $w=id=>id==='#html1'?frame:button;$w.onReady=fn=>ready=fn;
+ vm.runInNewContext(page.replace(/^import .*;\r?\n/gm,''),{$w,console:{error(...a){errors.push(a)},warn(){}},Date,setInterval(){},setTimeout(){},encodeURIComponent,session:{setItem(){}},wixWindowFrontend:{rendering:{env:'browser'},openLightbox(){throw Error('Retired popup called')}},wixLocationFrontend:{query:{assist:'CUS-T'},baseUrl:'https://example.test',to(){}},wixRealtimeFrontend:{subscribe:()=>Promise.resolve()},getBuyerWorkspace:async()=>{if(readError)throw Error('Read timed out');if(heldRead)return heldRead;return {ok:true,context:{customerId:'CUS-T',status:'ACTIVE'},myList:[]}},createBuyerSelectionDownload:async()=>({ok:true,url:'https://example.test/a.xlsx',expiresAt:Date.now()+3600000}),createBuyerOrderDownload(){excel++;throw Error('Retired export called')},submitBuyerOrder:async()=>{writes++;if(submission instanceof Error)throw submission;return submission}});
+ return {ready:()=>ready(),send:()=>message({data:{type:'BUYER_ROOM_SUBMIT_ORDER',requestId:'same-original',lines:[]}}),posted,errors,counts:()=>({writes,excel}),failRead(){readError=true},holdRead(p){heldRead=p},setSubmission(v){submission=v}};
+}
+test('one success acknowledges without receipt Excel or native popup calls',async()=>{const f=fixture();await f.ready();await f.send();assert.deepEqual(f.counts(),{writes:1,excel:0});assert.deepEqual(f.posted.filter(m=>m.type==='BUYER_ROOM_ORDER_RESULT').map(m=>m.ok),[true]);assert.equal(f.errors.length,0)});
+test('acknowledgement precedes a slow workspace read',async()=>{const f=fixture();await f.ready();let finish;f.holdRead(new Promise(r=>finish=r));const pending=f.send();await new Promise(r=>setImmediate(r));assert.equal(f.posted.filter(m=>m.type==='BUYER_ROOM_ORDER_RESULT').length,1);finish({ok:true,context:{customerId:'CUS-T',status:'ACTIVE'},myList:[]});await pending});
+test('readback failure cannot issue false failure or resubmit',async()=>{const f=fixture();await f.ready();f.failRead();await f.send();assert.deepEqual(f.posted.filter(m=>m.type==='BUYER_ROOM_ORDER_RESULT').map(m=>m.ok),[true]);assert.equal(f.counts().writes,1);assert.equal(f.errors.length,1)});
+test('unconfirmed or incomplete responses never produce success',async()=>{for(const result of [new Error('not confirmed'),{ok:false},{ok:true}]){const f=fixture();await f.ready();f.setSubmission(result);await f.send();assert.deepEqual(f.posted.filter(m=>m.type==='BUYER_ROOM_ORDER_RESULT').map(m=>m.ok),[false]);assert.deepEqual(f.counts(),{writes:1,excel:0})}});
+function uiFixture(){const nodes=new Map(),handlers=new Map(),shown=[],doc={activeElement:null};function $(id){if(!nodes.has(id)){const classes=new Set();nodes.set(id,{textContent:'',isConnected:true,classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x)},setAttribute(k,v){this[k]=v},focus(){doc.activeElement=this},addEventListener(k,fn){handlers.set(id+':'+k,fn)}})}return nodes.get(id)}const context=vm.createContext({$,document:doc,showView:v=>shown.push(v),setTrackHistoryTab:v=>shown.push(v)});vm.runInContext(html.slice(html.indexOf('let receivedReturnFocus='),html.indexOf('function downloadOrderExcel(')),context);return {$,doc,handlers,shown,open:id=>vm.runInContext('openOrderReceived('+JSON.stringify(id)+')',context)}}
+test('existing confirmation opens, closes and reopens without an order writer',()=>{const f=uiFixture(),trigger=f.$('existingRequest');trigger.focus();f.open('OLD-ABCD1234');assert.equal(f.$('receivedOrderReference').textContent,'Order #ABCD1234');assert.equal(f.$('orderReceivedBg')['aria-hidden'],'false');assert.equal(f.doc.activeElement,f.$('viewReceivedOrder'));f.$('closeOrderReceived').onclick();assert.equal(f.$('orderReceivedBg')['aria-hidden'],'true');assert.equal(f.doc.activeElement,trigger);f.open('OLD-ABCD1234');f.$('viewReceivedOrder').onclick();assert.deepEqual(f.shown,['track',false]);assert.equal(f.doc.activeElement,f.$('trackCurrentTab'))});
+test('confirmation supports Escape, focus cycling and empty-identity guard',()=>{const f=uiFixture();f.open('');assert.equal(f.$('orderReceivedBg').classList.contains('show'),false);f.open('OLD-1');let prevented=false;f.handlers.get('orderReceivedBg:keydown')({key:'Tab',preventDefault(){prevented=true}});assert.equal(prevented,true);assert.equal(f.doc.activeElement,f.$('closeOrderReceived'));f.handlers.get('orderReceivedBg:keydown')({key:'Escape',stopPropagation(){}});assert.equal(f.$('orderReceivedBg').classList.contains('show'),false)});
+test('only completed Request Sent gets the read-only reopen action',()=>{const fn=html.slice(html.indexOf('function trackingDots('),html.indexOf('\nfunction trackingLineHtml'));const context=vm.createContext({trackingStages:['Request Sent','Order Confirmed','Processing','Goods Received','Repacking','Shipped'],committedLineQty:()=>null,effectiveRequestedQty:()=>100,num:Number,esc:x=>String(x)});vm.runInContext(fn,context);const s=vm.runInContext("trackingDots({orderId:'EXISTING'}, {}, 1)",context);assert.equal((s.match(/data-order-received=/g)||[]).length,1);assert.match(s,/Request Sent · Completed/);assert.match(s,/Processing · Pending/);const start=html.indexOf("document.querySelectorAll('[data-order-received]')"),handler=html.slice(start,html.indexOf("$('trackMore').hidden",start));assert.doesNotMatch(handler,/post\(|submitBuyerOrder|saveBuyerQuantity/)});
+test('one active English confirmation with illustration and no submission export',()=>{assert.doesNotMatch(page,/openLightbox|createBuyerOrderDownload|BUYER_ROOM_DOWNLOAD_ORDER_EXCEL/);assert.equal((html.match(/id="orderReceivedBg"/g)||[]).length,1);assert.match(html,/We’ve received your order!/);assert.match(html,/assets\/order-received-flow-v2\.png/);assert.match(html,/openOrderReceived\(m\.orderId\)/)});
+test('backend authority, immutable receipt builder and My Selection export remain intact',()=>{for(const file of ['backend/catalogueAuth.web.js','backend/buyerOrderDownload.js','backend/buyerSelectionExcel.js'])assert.equal(fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n'),cp.execFileSync('git',['show','44c698f3:'+file],{encoding:'utf8'}).replace(/\r\n/g,'\n'),file);const old=cp.execFileSync('git',['show','44c698f3:buyer-room/wix/buyer-room-page.js'],{encoding:'utf8'});const block=s=>s.slice(s.indexOf('  function updateDownloadButtonVisibility('),s.indexOf('  let workspaceRefreshPromise')).replace(/\r\n/g,'\n');assert.equal(block(page),block(old))});

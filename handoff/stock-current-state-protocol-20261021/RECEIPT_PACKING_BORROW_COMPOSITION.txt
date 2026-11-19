@@ -1,0 +1,91 @@
+2026-10-23 — SHARED RECEIPT/PACKING/BORROW COMPOSITION, NOT NATIVE ACCEPTANCE
+
+Recovery:6862e559cbea221162c430d9c11bca6b2bc4274f, confirmed pushed PR220.
+Production stilld447185/runtime32b812c. Same ongoing framework/decision reused.
+Objective: connect previously isolated receipt/packing/borrowing fixtures on ONE
+mock SDK and database, up to user's Loaded boundary. No business files edited.
+
+Implementation
+- stock-current-receipt-packing-composition.test.cjs starts approved original PO
+  tasks and zero physical stock; NO pre-seeded claims, receipts or packing drafts.
+- Reuses actual Warehouse root fixture/store/items/protocol, and evaluates actual
+  generated private Packing and Purchase borrowing roots with original auth,
+  validators, PO/list/receipt parsers and candidate coordinator. Synthetic TEST
+  coverage exists ONLY inside VM test source; deployed maps remain EMPTY.
+- Warehouse test fixture now exposes SAME store/items for composition and models
+  query skip plus existing array-member equality for relation halo query. No SDK
+  implementation or live schema claims inferred from mocks.
+- Distinct original Support S/SM, Warehouse W/M and Purchase P/PM accounts enforce
+  role boundaries; no shared all-departments shortcut in composed scenario.
+- Full request replay tested after every successful packing save, borrowing and
+  each actual replacement receipt. Only original final result advances generation.
+
+Scenarios proved OFFLINE
+1 NCT/GHR receipt100perproduct→Support CREATE→hidden draft→SEND→Warehouse START→
+  PROGRESS Loaded100→COMPLETE. One original list, no duplicate receipt, sent holds
+  prevent second arrangement, same physical source/claim rows throughout packing.
+2 Container full: A100planned/80loaded, B100loaded. A20remainder remains reserved,
+  can be sent in a second list; old list cannot REOPEN to steal those20. Loaded
+  neither deducts onHand nor creates free stock. Customer demand not cancelled.
+3 Partial receipt40perproduct cannot SEND50draft; actual second receipt60 enables
+  SEND/START/Loaded50. Approved/planned PO is never treated as physical stock.
+4 Missing supply SEND, Support PROGRESS, loaded101>packed100 all refuse without
+  changing stock or generation. No department gains allocation permission.
+5 Both companies and same/different original PO numbers: only lender B received100;
+  borrower A has approved PO100but no receipt. Warehouse/Support cannot quote borrow.
+  Purchase approves30using real quote, borrower ready30/lender70. Support sends A30,
+  Warehouse completes Loaded30; outstanding30 and both halos stay. A actual first
+  delivery20repays20, debt10/halos stay. A actual next80repays10remaining, then owner's
+  capacity restored: A100/B100reserved, A70still arrangeable after Loaded30hold.
+  One relationship becomes CLOSED/repaid30, same original two tasks/POs; no new PO,
+  physical exit/invoice or invented receipt. Same receipt replay cannot repay twice.
+
+Fixture corrections during development
+- VM arrays require plain JSON copy before deepStrictEqual (cross-realm prototypes).
+- Original receipt disallows zero changed-line entries. First B-only receipt and
+  subsequent A-only deliveries now use ORIGINAL contract; production validator was
+  not weakened to accommodate a synthetic zero line. Changing synthetic customer/
+  product/PO fields requires refreshing original PO version before its first save.
+These were test assembly mistakes, not discovered production regressions.
+
+Verification
+- Final composed5pass0fail5410.4803ms.
+- Earlier affected Warehouse/Packing roots+initial3composition18pass0fail26414.1572ms;
+  superseded by final FULL stock-current suite1004pass0fail40390.4264ms. Do not add
+  repeated counts as separate coverage.
+- build-current-command-runtime --check103scoped modules/53private exports unchanged.
+- git diff--check passed; protected account-room/purchase-live/integration/backend/
+  integration/wix directories still matchd447185. Unrelated untracked assets retained.
+- No browser/live CMS/real file service operation, lock deletion or permission change.
+
+Explicit remaining gaps / immediate next work
+This starts at approved PO tasks, not actual intake/PO issuance. Full original order→
+PO→customer split composition still requires proof. Native Wix, actual browser UI,
+capacity/lifecycle/Date/index/permissions, recovery and migration/cutover remain open.
+
+Bounded G3 dependency read found a concrete actual root still unpaired:
+- integration/backend/stockExceptions.web.js getStockExceptions/saveStockException
+  directly call legacy original stock readers/writers. Implemented private
+  createCurrentStockExceptionSave/createCurrentStockResolutionSave are ONLY runtime
+  exports today, not used by an actual root or original wrapper. All three candidate
+  department parent pages still import that original module. Mandatory exception/
+  resolution writer coverage remains FALSE until binding/tests/native acceptance.
+- getDepartmentMessages in same module reads original PO facts outside common current
+  barrier; keep original auth/projector but use stable paired current PO read. Original
+  saveDepartmentMessage ALREADY refuses all sends: preserve, do not enable legacy
+  createDepartmentMessageOperations just because factory is declared in module.
+- Read complete original customerAccountLedger.js: only own document event/file and
+  original PURCHASE operation receipts, no task/PO/current image writes. Actual Source
+  DOCUMENT candidate is ALREADY paired (customer-document-plan/fenced-store), not a
+  newly missing financial feature. Need retain exact root/read evidence in final G3.
+- Read complete accountReadIndex.js: only writes AccountReadIndex immutable generation
+  records/control, not stock authority. Original accountPurchase candidate already has
+  current routing around index row reader; verify exact seam before concluding G3.
+No arbitrary ORDER_UPDATE route, extra global dispatcher or new financial workflow.
+
+Four statuses
+Code: broader implementation incomplete; this composed offline milestone complete.
+GitHub Pages: unchanged feature resources; no deployment invoked.
+Wix Studio: no install/sync/publish for current-stock feature.
+Public page: stock/borrowing feature unverified/unavailable; ACTIVE OFF.
+Support real invoice and physical exit OFF. No main merge. No new user choice now.

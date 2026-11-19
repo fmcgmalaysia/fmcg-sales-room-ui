@@ -1,0 +1,41 @@
+{
+  "account-room/index.html": {
+    "before": "79347c7e1fd471a68be5721ba1ed7705b7457a40174105dde3be5215f6f539ff",
+    "after": "cd1016966da47039b23eb44c7effaddb009a728f9a1e4e6e00ca320bfc060f01",
+    "hunks": [
+      {
+        "index": 11,
+        "before": [
+          "<script src=\"customer-debtors.js?v=20261113-support-standalone-dn-v1\"></script>"
+        ],
+        "after": [
+          "<script src=\"customer-debtors.js?v=20261114-finance-confirmed-save-v1\"></script>"
+        ]
+      }
+    ]
+  },
+  "account-room/customer-debtors.js": {
+    "before": "c25f77f928fb27ee35cb40ac9c1d381475a72640473b770475ef310678e3a39a",
+    "after": "49a1a5ecfdf64de1927769cb2f58d99ff108506d39d81f1a652e5464c9c8a621",
+    "hunks": [
+      {
+        "index": 45,
+        "before": [
+          "  const button=proofDialog.querySelector('#confirmCustomerPosting');button.disabled=!!done||!!attempt?.sending||!row||requestId!=='';button.textContent=done?'Recorded':attempt?.sending?'Confirming…':attempt?.rejected?'Review again':attempt?'Retry confirmation':'Confirm';",
+          "  proofDialog.querySelector('#checkCustomerPosting').hidden=!attempt;",
+          "  proofDialog.querySelector('#customerPostingStatus').textContent=done?(row?.status==='RECORDED'?'Recorded: '+row.postedCurrency+' '+money(row.postedAmountCents)+' · '+date(row.postedDate):attempt.error):(attempt?.error||'This records the customer account; it does not transfer money.');"
+        ],
+        "after": [
+          "  const button=proofDialog.querySelector('#confirmCustomerPosting'),check=proofDialog.querySelector('#checkCustomerPosting');",
+          "  const focusClose=!!done&&[button,check].includes(document.activeElement);",
+          "  button.hidden=!!done;",
+          "  button.disabled=!!done||!!attempt?.sending||!row||requestId!=='';",
+          "  button.textContent=attempt?.sending?'Confirming…':attempt?.rejected?'Review again':attempt?'Retry confirmation':'Confirm';",
+          "  check.hidden=!!done||!attempt;",
+          "  proofDialog.querySelector('#customerPostingStatus').textContent=done?(row?.status==='RECORDED'?'Recorded: '+row.postedCurrency+' '+money(row.postedAmountCents)+' · '+date(row.postedDate):attempt.error):(attempt?.error||'This records the customer account; it does not transfer money.');",
+          "  if(focusClose)proofDialog.querySelector('footer [data-close-review]')?.focus();"
+        ]
+      }
+    ]
+  }
+}

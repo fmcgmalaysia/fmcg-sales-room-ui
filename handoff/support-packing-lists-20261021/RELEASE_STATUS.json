@@ -1,0 +1,41 @@
+{
+  "dateMYT": "2026-10-21",
+  "branch": "feat/support-packing-lists-20261021",
+  "pullRequest": 219,
+  "runtimeCommit": "32b812c655e1083306037c008314c72373a15f72",
+  "code": "released; real Save/packing/photo business acceptance remains for user, no new verified business baseline tag",
+  "pages": {
+    "status": "success",
+    "run": 39590023698,
+    "resourceVerification": "25 initial runtime/font resources exact; each subsequent changed resource independently fetched and commit-exact. Final Warehouse entry hash ff80639d4e0cc015453d26313e6922281df452d2bfbe24ce9bc8e624c99c57a3; final host hash994d427517233e38591009c42793caa2f3290eb3238a50d1050f2b6b472e60ec. Unchanged runtime bytes reused, not gratuitously refetched.",
+    "removedTemporaryPolicyIds": [63824713, 63825327, 63826166, 63826825, 63827089, 63827423],
+    "originalSevenRulesRestored": true
+  },
+  "wix": {
+    "exactInitialReadbacks": 14,
+    "firstOfficialPublishedHistoryMYT": "18:44",
+    "finalOfficialPublishedHistoryMYT": "19:14",
+    "managementCorrectionOfficialPublishedHistoryMYT": "18:58",
+    "latestCorrection": "Warehouse cache-fresh entry pointer exact in editor; official history confirms Published19:14. Actual public outer URL, host script and inner workbench script all carry packing-company-v1. No additional backend/logic changes after18:58.",
+    "contextHashLF": "d33b0d6b435e6221c52bc843c67a59027c3c71a8d7eec88b85ce0fa9ecd13bc8",
+    "bridgeHashLF": "911042fa6b83d712954d6ed5baecafcd3b00baf6e209529e14ab65c0ffb91de9"
+  },
+  "publicVerification": {
+    "support": "LAW, NCT10 actual demand tasks, GHR0; same-customer checkbox isolation, draft dialog opened then cancelled without saving",
+    "warehouse": "LAW, NCT/GHR Outgoing reads passed after management correction with no error; NCT has0 actual sent lists, deliberately no test data. Existing receiving data and real Stock Control1/95cartons, reserved1/95/free0 retained. Final GHR child title Global HR and new company-v1 scripts publicly confirmed; NCT restored afterwards.",
+    "unknownDimensions": "CBM/net weight remain null, never synthetic production zero",
+    "complete": true,
+    "acceptanceScope": "Read-only public visual/interface checks. No claim of user-confirmed business Save, upload, loading, invoice or dispatch. New Outgoing starts from Support-sent lists, not automatically copied procurement tasks."
+  },
+  "diagnosis": {
+    "directEvidence": "Read-only Staff Master Access shows one ACTIVE LAW record, role TOP MANAGEMENT and SUPPORT department. Existing requireWarehouseStaff explicitly authorizes TOP MANAGEMENT, unlike the initial new packing authorizer.",
+    "correction": "Restore existing Warehouse entitlement only. No CMS role/department/permission change; TOP MANAGEMENT still needs explicit Support department for Support API.",
+    "editorRecovery": "Original51426657 retained. New51426763 stopped at98%, one clean retry also stalled, then closed; no more editor opens/reloads. Original editor remained usable. Earlier technical-error popup did not negate later official18:44 published history."
+  },
+  "tests": {"latestFullTotal":843,"pass":839,"fail":4,"baselineFailuresUnchanged":true,"durationMs":4556.8672,"laterIsolatedCompanyAndHostChecks":14,"laterFocusedPass":14},
+  "businessWrites": false,
+  "mainMerged": false,
+  "driveAccessExpanded": false,
+  "realInvoiceEnabled": false,
+  "credits": "UNKNOWN"
+}

@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-26",
+  "timezone": "Asia/Kuala_Lumpur",
+  "status": "USER_VERIFIED",
+  "userConfirmation": "对不起，是我搞错了，测试了没问题",
+  "scope": "The deployed stop-waiting receipt lock, departmental quantity states, CN reasons and current-shortfall CN association discussed in this task. No claim that unrelated R2, Packing, dispatch or payment workflows were newly accepted.",
+  "runtimeCommit": "911d31a59b6e6e44962dc678445f65ac192430a8",
+  "tag": "verified/stop-waiting-cn-20261026",
+  "build": "20261026-stop-waiting-cn-v1",
+  "pages": {
+    "runId": "40312694599",
+    "runNumber": 273,
+    "mode": "receipt-feedback-only",
+    "status": "Success",
+    "resources": 95
+  },
+  "wix": {
+    "site": "Master",
+    "publishedLiveReceipt": true,
+    "nativePageEntries": "Full readbacks exact after unique version-token edits",
+    "backendNativeReadbacks": "Full exact readbacks recorded before publish",
+    "normalizedSha256": {
+      "integration/backend/purchaseOrderWorkflow.js": "68e7d8def7189b6e00cde560a68ad67b2d2718e4cac178c4118075823a102a51",
+      "integration/backend/warehouseReceiving.js": "b328fc23caaa94662bbb1465f725982760c532e5058d1e2048e5e48eac966c6d",
+      "integration/wix/purchase-room-page.js": "e650c8e49e03117dbfaaf57ceda00084ce7861a197108cdfefa03bc716808e44",
+      "integration/wix/account-department-page.js": "975c0d8f7f7952755829a6bdc21d6e41916dd4b0d439fe1db9d2faa68fa57f18",
+      "integration/wix/warehouse-department-page.js": "b6eea179e63d8bc9c6e37153f07d849b089f4b2f98c6938ca5e70cade28b67c0"
+    }
+  },
+  "publicEvidence": {
+    "actualBuildAndScripts": "Purchase, Warehouse and Finance new build confirmed from live DOM",
+    "cnDialog": "Four reason options and no date input visually verified",
+    "businessAcceptance": "User personally tested and confirmed no issue; detailed individual test steps were not supplied and are not invented"
+  },
+  "releaseRules": "Temporary branch rule removed; original seven restored",
+  "github": "Task branch and PR221; main not merged",
+  "recovery": "Use exact runtime commit and its versioned Wix files; do not overwrite unrelated subsequently verified work"
+}

@@ -1,0 +1,105 @@
+{
+  "localOnlyExactEvidence": [
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/backend-candidate.js",
+      "bytes": 53798,
+      "sha256": "97f8ed534447f9862304b9f60a776a4ee2bd17ec32c64812cbf2e28d56e6ec3d"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/backend-readback.js",
+      "bytes": 53802,
+      "sha256": "ed17eec456dd75615c2821b3b60ea543650c25a2fd6f0108e64d6626a7f8c05c"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/catalogueAuth-before.js",
+      "bytes": 53739,
+      "sha256": "2a3193fe0e7978b27c04652f2b7128c349a1c73973e9de23fd12a3165d91ecec"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/check-download.mjs",
+      "bytes": 4843,
+      "sha256": "4b70cfd4f7a62b67843b1cfac84fe97a0f50159791e6ca8ef771b8fce6c2adcf"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/download-validation.json",
+      "bytes": 390,
+      "sha256": "5d7b97ac30bb4680dfc667996dc40893aeed1fc7e651bd675a54a9470124e497"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/media-before.js",
+      "bytes": 8742,
+      "sha256": "074b56fa52b3d08ab210856bc6d484cff7ad1eb13c8531b10cc47edb214d97de"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/media-candidate.js",
+      "bytes": 10046,
+      "sha256": "4b1cc5097452efad867601293a537a189e739ef2f1c2dbb8b5366282dc47f2c0"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/media-readback.js",
+      "bytes": 10063,
+      "sha256": "c6659eb477a7a1fe7c5764fab365a821e9f5838678b40306d8006f3506bad562"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/media-repository.js",
+      "bytes": 8720,
+      "sha256": "3a3c4c5bd2fe0f7a28417859334433ff26e2ca8cecca2b00d2dc4c004fe85405"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/normal-public-before-download.txt",
+      "bytes": 5329,
+      "sha256": "b328bceea6ed0e776756bbe11ad4ced0bc6ccc67bace140936a53f3a32c31d5b"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/normal-public-success.png",
+      "bytes": 107013,
+      "sha256": "f36d1637c279807bcff8454f485667347652709b3fb6875e37f5920f99db9793"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/normal-public-success.txt",
+      "bytes": 5338,
+      "sha256": "3bb31cf1a28e4696971654e6a2dcd4cc8d6e2d265fb4654139d0b09e758b37ca"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/ordinary-native-download.xlsx",
+      "bytes": 11161,
+      "sha256": "1883018b67dc95f040acd89ff32f821ac6892179129288a80842892c65164bbd"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/page-before.js",
+      "bytes": 12723,
+      "sha256": "967431dbdfe329bf851e660d5874d77bd572b77eb2d4eb8bdb6e823d4492fde0"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/page-candidate.js",
+      "bytes": 13366,
+      "sha256": "66d22ff5ca5cbc663b591ce4bfa36181bb6610133e185c4f3a70061fbbf55e0a"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/page-readback.js",
+      "bytes": 13386,
+      "sha256": "cb68581bb71b101071466e3caa47a35f58da721eaa4a594d3522f2dcca1ebe01"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/patches.json",
+      "bytes": 6690,
+      "sha256": "f49610e990ae4c3b56703285462cb9c8672747303dfe29e0d3d324b06d304b0f"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/publish-receipt.txt",
+      "bytes": 9462,
+      "sha256": "4a7e26a6d7fe63e73f9c747e2a16ac12798d5c9772483ddb7af74176d5bdc788"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/release.json",
+      "bytes": 3767,
+      "sha256": "32e7ce22e4221d52a2b14efcc73ddd03d4b4d732139c1792e1dedf3f62c893d4"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/wix-publish.png",
+      "bytes": 56195,
+      "sha256": "3356b92a0a79ffc77d4cbb23b3a4acff74b095cafe14641e79af33d7b442635e"
+    }
+  ],
+  "note": "Private XLSX, screenshots and exact Wix readbacks retained locally; download tokens excluded."
+}

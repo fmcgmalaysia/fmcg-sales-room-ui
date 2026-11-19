@@ -1,0 +1,18 @@
+✔ confirmed allocation recovers retained lock after AFTER interruption exactly once (12.3666ms)
+✔ confirmed allocation recovers retained lock after RESULT interruption exactly once (1.0927ms)
+✔ confirmed allocation recovers retained lock after SUCCESS interruption exactly once (1.3554ms)
+✔ fresh completed result returns immediately without reclaiming a still-active lock (0.5302ms)
+✔ uncommitted terminated save remains blocked without rebuilding or removing its lock (0.8509ms)
+✔ changed receipt, different actor and a competing request cannot clear original lock (1.5223ms)
+✔ CMS object field order can change, but source array order and receipt identity remain protected (1.5867ms)
+✔ 1 simultaneous allocation requests consume the same20 only once (1.0072ms)
+✔ 5 simultaneous allocation requests consume the same20 only once (0.6054ms)
+✔ 10 simultaneous allocation requests consume the same20 only once (0.7729ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 182.9258

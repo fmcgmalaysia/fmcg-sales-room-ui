@@ -1,0 +1,92 @@
+{
+  "count": 17,
+  "state": "SAVED_DRAFT_NOT_PUBLISHED",
+  "normalization": "UTF-8 LF trimEnd",
+  "files": [
+    {
+      "path": "integration/backend/shipmentBatchAllocation.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "e04ab6f4b397a259de5887496bb8313b6347cbf73562a0bffd782fd17ea97685"
+    },
+    {
+      "path": "integration/backend/salesOrderAdjustment.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "e9c197e7db7beb5ca1b403567fc04b178dc208adaf04d2b591962b7b166e0b90"
+    },
+    {
+      "path": "integration/backend/customerFulfilmentGateway.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "6aac5ffabdf51e624f12bef21e373002d915fade78129cf075f5578b485fb474"
+    },
+    {
+      "path": "integration/backend/plannerAllocation.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "24d043c91bbda5f735aecf926cc6df242384651c661801cd60caafd71d7d7ecd"
+    },
+    {
+      "path": "integration/backend/customerFulfilmentService.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "3ad283f47ba05190875b122197f737483cb14b005e99d01a7a8e2636a21bb2cf"
+    },
+    {
+      "path": "integration/backend/customerShipmentPlan.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "2e3991bd5e87255d2a20597e95758b3578413cd9e02d943c900cc8e7fdcfe840"
+    },
+    {
+      "path": "integration/backend/purchaseProjection.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "0ddb30352df13587839f7ee0125d1a4f43e995a9c399e9ddbdfad5fd92fc9e5d"
+    },
+    {
+      "path": "integration/backend/purchaseQuantityProjection.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "65deb58f611010d3af3666697f375982a4574056f8c9fc8925005d7218056894"
+    },
+    {
+      "path": "integration/backend/purchaseOperations.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "8305bdbfb1ef6b84656e1d639028a7b5dd90f295b1e86e5e65b61690c1a7e45e"
+    },
+    {
+      "path": "integration/backend/purchaseSources.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "e4f1fffffec04204350885920b087f080b62e52648d41c4cfaf8616715b1dd06"
+    },
+    {
+      "path": "integration/backend/warehousePreparation.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "2c679dc761c8d00b9bfd299238f531d77efca13d3d6217c1830ff0dc2c55101c"
+    },
+    {
+      "path": "backend/masterFulfilmentClient.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "6e33ee80ea0b756c1f9f4787eccaa65b737adea93fb444f8dfac246d89aa6c9e"
+    },
+    {
+      "path": "backend/masterQuantityProjection.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "87922df39aec172d0bccf934729c6b787e376534cb9b89034dc32298fda71667"
+    },
+    {
+      "path": "integration/wix/purchase-room-page.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "dacd5373d897888f668ac2ee95ba167bd13ee22e6c0543ea7016ed0bf6c78605"
+    },
+    {
+      "path": "integration/wix/warehouse-department-page.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "97163aff8b95eb652051108ccdf840747f46fa67b98e11e541cf5220c4f87697"
+    },
+    {
+      "path": "sales-room/wix/sales-room-page.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "1c46b76f1e49fa0569d19bc9030e79935e6c7798a6e6c032dd3519e5b8d2b84a"
+    },
+    {
+      "path": "buyer-room/wix/buyer-room-page.js",
+      "nativeWixFullReadbackExact": true,
+      "sha256": "aa60daaa566bb50a4412cd12db71c4858a72994d788a8015db154a52cf26524a"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-16",
+  "projectName": "MASTER PURCHASE DOCUMENTS",
+  "projectId": "1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO",
+  "savedSourceSha256": "94fe73064585c6adba942a1be082f7180278079d0683f136de8467f08d20b159",
+  "immutableVersion": 4,
+  "deploymentId": "AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU",
+  "activeDeploymentVersion": 4,
+  "previousVersion": 3,
+  "executeAs": "existing owner unchanged",
+  "access": "existing authenticated application protocol; web app access unchanged",
+  "features": [
+    "Our PO PDF uploads",
+    "Verified recoverable purchase PDF deletion to Drive Trash"
+  ],
+  "receipt": "Deployment successfully updated. Version 4 on Oct 16, 2026, 10:50 PM",
+  "manifest": "Existing Drive v3 service unchanged; no manifest or OAuth changes",
+  "unauthenticatedEndpointCheck": "NOT_AUTHORIZED",
+  "realUploadDeleteAcceptance": false
+}

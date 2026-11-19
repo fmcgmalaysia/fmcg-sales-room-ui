@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-06T11:33:04.424Z",
+  "objective": "Restore native Wix #downloadExcelButton for My Selection; remove HTML download entry only",
+  "baseCommit": "ecfb4a8ed7e675c529f113bcbbca2583fba4039a",
+  "protectedRecoveryTag": "verified/buyer-quantity-arrows-20261006",
+  "wixPageBeforeHash": "1d984fbbf238f22c12eaa2244e4b2fb50a0a8acacfe9529200b5a714ebe6a7a0",
+  "wixAuthBeforeHash": "17bf5bcdee6d26357a02d763a90e8bd579009a69f78a568ab1ed5f0f4357ac1b",
+  "excelLiveHash": "b3de57c213a8008b071d68180575526d9c5870a0180319d62f8619ce8baf4944",
+  "excelRepositoryHash": "24d0e2dac791bf62ac4e47ee650c94e9e7184aecfe1626135b27554b000fb4f0",
+  "excelDifference": "Blank lines only; file not changed or synchronized",
+  "candidatePageHash": "b8d8c39dd01d5dcd15c5cf9e0dba67ecc69fdb7b243be60191b85ebf118d5424",
+  "backendChanges": 0,
+  "tests": {
+    "fullRun": 48,
+    "passed": 46,
+    "preExistingMarkerFailures": 2,
+    "baselineSameFailures": true
+  },
+  "release": {
+    "code": "Prepared locally; not user verified",
+    "githubPages": "Not deployed",
+    "wix": "Not synchronized or published",
+    "publicPage": "Not tested with candidate"
+  },
+  "acceptance": "Native button only in My Selection; XLSX reaches Downloads with 3 BERJAYA 07 items; reload and second download; QTY/order workflows unchanged"
+}
