@@ -1,6 +1,6 @@
 const KEY = /^[A-Za-z0-9_-]{1,120}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const ACTIONS = new Set(['customers', 'quotes', 'cost', 'draft', 'publish']);
+const ACTIONS = new Set(['customers', 'quotes', 'cost', 'cost-status', 'draft', 'publish']);
 
 function editInput(action, input) {
   if (!input || typeof input.selectionId !== 'string' || !KEY.test(input.selectionId) ||
@@ -26,8 +26,9 @@ export function connectMasterQuotationFrame(frame, run) {
     const { requestId, customerId, action } = data;
     const envelope = { type: 'MASTER_QUOTATION_RESULT', requestId, customerId, action };
     const editing = action === 'draft' || action === 'publish';
-    const input = editing ? editInput(action, data.input) : undefined;
-    if (editing && !input) {
+    const costRead = action === 'cost' || action === 'cost-status';
+    const input = editing ? editInput(action, data.input) : costRead && UUID.test(data.input?.requestId || '') ? { requestId: data.input.requestId } : undefined;
+    if ((editing || costRead) && !input) {
       frame.postMessage({ ...envelope, ok: false, error: 'Review the quotation inputs and try again.' });
       return;
     }
@@ -39,14 +40,14 @@ export function connectMasterQuotationFrame(frame, run) {
       }
       frame.postMessage({ ...envelope, ok: true, result });
     } catch (error) {
-      if (action === 'cost') {
+      if (costRead) {
         const code = String(error?.code || '');
-        console.warn('MASTER_QUOTATION_CATCH_COST_UNCONFIRMED', requestId,
-          /^[A-Z][A-Z0-9_]{2,63}$/.test(code) ? code : 'UNKNOWN');
+        console.warn('MASTER_QUOTATION_COST_CONFIRMING', requestId,
+          /^[A-Z][A-Z0-9_]{2,63}$/.test(code) ? code : 'UNCONFIRMED');
+        frame.postMessage({ ...envelope, ok: true, result: { pending: true } });
+        return;
       }
-      frame.postMessage({ ...envelope, ok: false, error: action === 'cost'
-        ? 'Catch Cost did not return a confirmed result. Check the refreshed rows before retrying.'
-        : 'The quotation action could not be confirmed.' });
+      frame.postMessage({ ...envelope, ok: false, error: 'The quotation action could not be confirmed.' });
     }
   });
 }

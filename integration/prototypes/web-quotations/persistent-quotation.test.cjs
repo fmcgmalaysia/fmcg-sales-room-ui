@@ -147,7 +147,7 @@ test('persistent MASTER quotation supplies the FMCG buyer price and resumes with
   t.after(() => { server.closeAllConnections(); server.close(); });
   const revisions = createMasterQuotationRevisionStore(privateCollection('revision'));
   const createService = () => createMasterQuotationService({ revisions, readSelections: async () => [selection], readSelection: async () => selection,
-    readCosts: async () => ({ [selection.barcode]: { costStatus: 'CAPTURED', costCurrency: 'MYR', unitBarcode: selection.barcode,
+    readCurrentCosts: async () => ({ [selection.barcode]: { costStatus: 'CAPTURED', costCurrency: 'MYR', unitBarcode: selection.barcode,
       capturedAt: '2026-11-17T10:00:00.000Z', lpPc: 3, lpCtn: 36, disc1: 0, disc2: 0, disc3: 0, note: 'Internal cost' } }),
     deliver: async packet => {
       const response = await fetch(`http://127.0.0.1:${server.address().port}/receive-master-quote`, { method: 'POST',
@@ -158,10 +158,9 @@ test('persistent MASTER quotation supplies the FMCG buyer price and resumes with
   });
   const scope = { staffId: 'STF-QA-001', customer };
   const workroom = createService();
-  assert.deepEqual(await workroom.catchCost(scope), { updated: 1, failed: 0 });
-  const draft = await workroom.saveDraft(scope, { selectionId: selection.id, revision: 1, requestId: randomUUID(), input: { mode: 'GP', value: 50 } });
-  assert.deepEqual(draft, { revision: 2 });
-  const command = { selectionId: selection.id, revision: 2, requestId: randomUUID(), enabled: true };
+  const draft = await workroom.saveDraft(scope, { selectionId: selection.id, revision: 0, requestId: randomUUID(), input: { mode: 'GP', value: 50 } });
+  assert.deepEqual(draft, { revision: 1 });
+  const command = { selectionId: selection.id, revision: 1, requestId: randomUUID(), enabled: true };
   assert.equal((await workroom.publish(scope, command)).pending, true);
   assert.equal((await workroom.list(scope))[0].published, null);
 
@@ -177,20 +176,20 @@ test('persistent MASTER quotation supplies the FMCG buyer price and resumes with
 
   dropReceipt = false;
   const restarted = createService();
-  assert.deepEqual(await restarted.publish(scope, command), { revision: 4 });
-  assert.deepEqual(await restarted.publish(scope, command), { revision: 4 });
+  assert.deepEqual(await restarted.publish(scope, command), { revision: 3 });
+  assert.deepEqual(await restarted.publish(scope, command), { revision: 3 });
   assert.deepEqual(submitted[0], submitted[1]);
   assert.equal(submitted.length, 2);
   assert.equal(receiptStore.data.size, 1);
   assert.equal((await restarted.list(scope))[0].published.priceCtn, 18);
 
-  const withdraw = { selectionId: selection.id, revision: 4, requestId: randomUUID(), enabled: false };
-  assert.deepEqual(await restarted.publish(scope, withdraw), { revision: 6 });
+  const withdraw = { selectionId: selection.id, revision: 3, requestId: randomUUID(), enabled: false };
+  assert.deepEqual(await restarted.publish(scope, withdraw), { revision: 5 });
   const current = await receiptStore.latest(customer.customerId, selection.id);
   assert.equal(current.version, 2);
   const withdrawn = presentMasterQuote(selectionPayload, current);
   assert.equal(withdrawn.vipPriceCtn || withdrawn.quotePerCtn || withdrawn.vipPrice, 0);
   assert.equal(withdrawn.vipPriceEa || withdrawn.quotePerPc, 0);
-  assert.deepEqual(await restarted.publish(scope, command), { revision: 4 });
+  assert.deepEqual(await restarted.publish(scope, command), { revision: 3 });
   assert.equal((await receiptStore.latest(customer.customerId, selection.id)).version, 2);
 });

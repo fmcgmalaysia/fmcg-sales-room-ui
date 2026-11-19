@@ -5,6 +5,7 @@ var MASTER_POINTBASE_TABS = ['FOOD', 'NONFOOD', 'OTHERS'];
 // Called only by the existing authenticated central doPost dispatcher after its live comparison.
 function WIX_masterCaptureCost(body) {
   if(body && body.mode === 'BRANDS') return {kind:'MASTER_POINTBASE_BRANDS_V1',brands:MPC_listBrands_()};
+  if (body && /^QUOTE_(CAPTURE|CURRENT|STATUS)$/.test(body.mode)) return MPC_quoteReference_(body);
   return { kind: 'MASTER_POINTBASE_COST_V1', costs: MPC_captureOrderCosts_(body && body.barcodes) };
 }
 
@@ -37,6 +38,11 @@ function MPC_columns_(headers) {
     if (matches.length !== 1) throw new Error('POINTBASE header missing or duplicated: ' + names[key]);
     columns[key] = matches[0];
   });
+  var sortMatches = [];
+  headers.forEach(function (header, index) {
+    if (MPC_header_(header) === MPC_header_('SORT NO.')) sortMatches.push(index);
+  });
+  if (sortMatches.length === 1) columns.sortNo = sortMatches[0];
   ['COST FRESHNESS', 'NOTES'].forEach(function (name) {
     var index = headers.findIndex(function (header) { return MPC_header_(header) === MPC_header_(name); });
     if (index !== -1) columns[name] = index;
@@ -57,6 +63,8 @@ function MPC_snapshot_(barcode, raw, display, columns, source, at) {
   if (typeof raw[columns.barcode] !== 'string' || MPC_text_(raw[columns.barcode]) !== barcode ||
       MPC_text_(display[columns.barcode]) !== barcode) return MPC_failure_(barcode, at, 'BARCODE_NOT_STORED_AS_TEXT');
   result.source = source;
+  var sortId = Number.isInteger(columns.sortNo) ? MPC_text_(display[columns.sortNo]) : '';
+  if (sortId) result.sortNo = sortId;
   result.productStatus = MPC_text_(display[columns.status]).toUpperCase();
   result.itemName = MPC_text_(display[columns.itemName]);
   result.packingSize = MPC_text_(display[columns.packing]);
@@ -94,7 +102,7 @@ function MPC_snapshot_(barcode, raw, display, columns, source, at) {
   return result;
 }
 
-/** Read only matching rows. Index reads only barcode cells, never cost catalogue export. */
+/** Export only matching rows; use bounded sheet ranges and a barcode-only index. */
 function MPC_captureOrderCosts_(barcodes) {
   if (!Array.isArray(barcodes) || !barcodes.length ||
       barcodes.some(function (value) { return typeof value !== 'string' || !value.trim(); })) {
@@ -123,6 +131,7 @@ function MPC_captureOrderCosts_(barcodes) {
     requested.forEach(function (barcode) { results[barcode] = MPC_failure_(barcode, at, 'POINTBASE_READ_FAILED'); });
     return results;
   }
+  var batches = Object.create(null);
   requested.forEach(function (barcode) {
     var entries = matches[barcode];
     if (entries.length !== 1) {
@@ -130,13 +139,136 @@ function MPC_captureOrderCosts_(barcodes) {
       return;
     }
     var entry = entries[0];
+    (batches[entry.sheetName] || (batches[entry.sheetName] = [])).push({ barcode: barcode, entry: entry });
+  });
+  Object.keys(batches).forEach(function (name) {
+    var items = batches[name].sort(function (a, b) { return a.entry.row - b.entry.row; });
+    for (var start = 0; start < items.length;) {
+      var end = start + 1, first = items[start].entry;
+      while (end < items.length && items[end].entry.row - first.row < 256 &&
+             items[end].entry.row - items[end - 1].entry.row <= 32) end++;
+      var raw, display;
+      try {
+        var range = first.sheet.getRange(first.row, 1, items[end - 1].entry.row - first.row + 1, 27);
+        raw = range.getValues(); display = range.getDisplayValues();
+      } catch (error) { raw = null; }
+      items.slice(start, end).forEach(function (item) {
+        var entry = item.entry, barcode = item.barcode;
     try {
-      var range = entry.sheet.getRange(entry.row, 1, 1, 27);
-      results[barcode] = MPC_snapshot_(barcode, range.getValues()[0], range.getDisplayValues()[0], entry.columns,
+      if (!raw) throw new Error('POINTBASE_ROW_READ_FAILED');
+      results[barcode] = MPC_snapshot_(barcode, raw[entry.row - first.row], display[entry.row - first.row], entry.columns,
         { spreadsheetId: MASTER_POINTBASE_ID, sheetName: entry.sheetName, row: entry.row }, at);
     } catch (error) { results[barcode] = MPC_failure_(barcode, at, 'POINTBASE_ROW_READ_FAILED'); }
+      });
+      start = end;
+    }
   });
   return results;
+}
+
+// Private, disposable references only. Point Base remains the durable source.
+// A lost cache can repeat this read; it never republishes a price or writes CMS.
+function MPC_quoteCache_() {
+  // A cache outage must not turn a successful source read into a failed refresh.
+  var cache; try { cache = CacheService.getScriptCache(); } catch (_) {}
+  var safe = function (method, args, fallback) {
+    try { return cache ? cache[method].apply(cache, args) : fallback; }
+    catch (_) { return fallback; }
+  };
+  return {
+    get: function (key) { return safe('get', [key], null); },
+    getAll: function (keys) { return safe('getAll', [keys], {}); },
+    put: function (key, value, ttl) { safe('put', [key, value, ttl]); },
+    putAll: function (values, ttl) { safe('putAll', [values, ttl]); },
+    remove: function (key) { safe('remove', [key]); }
+  };
+}
+function MPC_quoteBucket_(barcode) {
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, barcode);
+  return 'MQC1_' + ((bytes[0] + 256) % 64);
+}
+function MPC_quoteCached_(barcodes) {
+  var keys = Array.from(new Set(barcodes.map(MPC_quoteBucket_)));
+  var values = MPC_quoteCache_().getAll(keys), buckets = {}, result = {};
+  keys.forEach(function (key) { try { buckets[key] = JSON.parse(values[key] || '{}'); } catch (_) { buckets[key] = {}; } });
+  barcodes.forEach(function (barcode) {
+    var value = buckets[MPC_quoteBucket_(barcode)][barcode];
+    if (value && value.unitBarcode === barcode) result[barcode] = value;
+  });
+  return result;
+}
+function MPC_quoteRemember_(costs) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return;
+  try {
+    var cache = MPC_quoteCache_(), groups = {}, saved = {};
+    Object.keys(costs).forEach(function (barcode) {
+      var key = MPC_quoteBucket_(barcode);
+      (groups[key] || (groups[key] = [])).push(barcode);
+    });
+    var previous = cache.getAll(Object.keys(groups));
+    Object.keys(groups).forEach(function (key) {
+      var bucket; try { bucket = JSON.parse(previous[key] || '{}'); } catch (_) { bucket = {}; }
+      groups[key].forEach(function (barcode) {
+        var next = costs[barcode], old = bucket[barcode];
+        if (!old || Date.parse(next.capturedAt) >= Date.parse(old.capturedAt)) bucket[barcode] = next;
+      });
+      var text = JSON.stringify(bucket);
+      // Conservative character bound also fits 100 KB for multibyte notes.
+      var oldest = Object.keys(bucket).sort(function (a, b) { return Date.parse(bucket[a].capturedAt) - Date.parse(bucket[b].capturedAt); });
+      while (text.length > 20000 && oldest.length) { delete bucket[oldest.shift()]; text = JSON.stringify(bucket); }
+      saved[key] = text;
+    });
+    cache.putAll(saved, 21600);
+  } finally { lock.releaseLock(); }
+}
+function MPC_quoteReference_(body) {
+  var cache = MPC_quoteCache_(), result = { kind: 'MASTER_QUOTATION_COST_V1' };
+  var key = String(body.requestKey || '');
+  if (body.mode !== 'QUOTE_CURRENT' && !/^[a-f0-9]{64}$/.test(key)) throw new Error('POINTBASE_REQUEST_INVALID');
+  var receiptKey = 'MQR1_' + key, prior;
+  if (body.mode !== 'QUOTE_CURRENT') {
+    try { prior = JSON.parse(cache.get(receiptKey) || 'null'); } catch (_) { prior = null; }
+    if (prior && prior.requestKey === key && prior.pending !== true) return Object.assign(result, prior);
+    if (body.mode === 'QUOTE_STATUS') return Object.assign(result, { requestKey: key, pending: true,
+      missing: !prior || Date.now() - Date.parse(prior.startedAt) >= 120000 });
+    if (prior && Date.now() - Date.parse(prior.startedAt) < 120000) return Object.assign(result, { requestKey: key, pending: true });
+  }
+  var barcodes = body.barcodes;
+  if (!Array.isArray(barcodes) || !barcodes.length || barcodes.length > 1000 ||
+      barcodes.some(function (b) { return typeof b !== 'string' || !/^[0-9]{6,22}$/.test(b); })) throw new Error('POINTBASE_REQUEST_INVALID');
+  barcodes = Array.from(new Set(barcodes));
+  var old = MPC_quoteCached_(barcodes), costs;
+  if (body.mode === 'QUOTE_CURRENT') {
+    var missing = barcodes.filter(function (b) { return !old[b]; });
+    if (missing.length) {
+      var fetched = MPC_captureOrderCosts_(missing);
+      MPC_quoteRemember_(fetched);
+      Object.keys(fetched).forEach(function (b) { old[b] = fetched[b]; });
+    }
+    return Object.assign(result, { costs: old });
+  }
+  cache.put(receiptKey, JSON.stringify({ requestKey: key, pending: true, startedAt: new Date().toISOString() }), 180);
+  try {
+    costs = MPC_captureOrderCosts_(barcodes);
+    MPC_quoteRemember_(costs);
+  } catch (error) { cache.remove(receiptKey); throw error; }
+  var counts = { requestKey: key, pending: false, updated: 0, unchanged: 0, failed: 0,
+    capturedAt: '', barcodes: barcodes };
+  var semantic = function (value) {
+    if (!value) return '';
+    var copy = Object.assign({}, value); delete copy.capturedAt; delete copy.source;
+    return JSON.stringify(copy);
+  };
+  barcodes.forEach(function (barcode) {
+    var value = costs[barcode];
+    if (!value || value.costStatus !== 'CAPTURED') counts.failed++;
+    else if (semantic(value) === semantic(old[barcode])) counts.unchanged++;
+    else counts.updated++;
+    if (value && value.capturedAt > counts.capturedAt) counts.capturedAt = value.capturedAt;
+  });
+  cache.put(receiptKey, JSON.stringify(counts), 600);
+  return Object.assign(result, counts, { costs: costs });
 }
 
 

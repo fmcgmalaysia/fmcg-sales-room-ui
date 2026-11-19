@@ -7,7 +7,7 @@ import { createMasterQuoteSender, createMasterQuotationReader } from 'backend/ma
 import { createMasterQuotationActions } from 'backend/masterQuotationAccess.js';
 import { createMasterQuotationService } from 'backend/masterQuotationService.js';
 import { createMasterQuotationWixStore } from 'backend/masterQuotationWixStore.js';
-import { capturePointbaseCosts } from 'backend/pointbaseCostClient.js';
+import { captureQuotationCosts, readQuotationCosts, readQuotationCostResult } from 'backend/pointbaseCostClient.js';
 import { readCurrentAdminFx } from 'backend/adminFxClient.js';
 import { createLastInvoicedPrices } from 'backend/masterQuotationLastSale.js';
 
@@ -21,7 +21,7 @@ const quotation = createMasterQuotationService({
   revisions, deliver,
   readSelections: async customerId => (await read({ action: 'selections', customerId })).selections,
   readSelection: async (customerId, selectionId) => (await read({ action: 'selection', customerId, selectionId })).selection,
-  readCosts: capturePointbaseCosts,
+  readCosts: captureQuotationCosts, readCurrentCosts: readQuotationCosts, readCostResult: readQuotationCostResult,
   readLastInvoicedPrices: createLastInvoicedPrices(wixData)
 });
 

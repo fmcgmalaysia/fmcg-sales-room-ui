@@ -16,12 +16,12 @@ function nodeResponse(url, options) {
     if (options.body) req.write(options.body); req.end();
   });
 }
-export function createPointbaseCostClient({ send = nodeResponse, getSharedSecret = () => getSecret('FMCG_QD_ROUTER_TOKEN') } = {}) {
-  return async barcodes => {
+function createPointbaseRequester({ send = nodeResponse, getSharedSecret = () => getSecret('FMCG_QD_ROUTER_TOKEN') } = {}) {
+  return async fields => {
     const sharedSecret = await getSharedSecret();
     if (!sharedSecret) throw failure('POINTBASE_CONFIG_MISSING');
     let result = await send(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'MASTER_CAPTURE_COST', sharedSecret, barcodes }) });
+      body: JSON.stringify({ action: 'MASTER_CAPTURE_COST', ...fields, sharedSecret }) });
     for (let hop = 0; [301, 302, 303, 307, 308].includes(result.status); hop++) {
       if (hop >= 3) throw failure('POINTBASE_REDIRECT_LIMIT');
       const location = result.headers?.get?.('location');
@@ -33,8 +33,32 @@ export function createPointbaseCostClient({ send = nodeResponse, getSharedSecret
     let payload; try { payload = await result.json(); } catch { throw failure('POINTBASE_NON_JSON_RESPONSE'); }
     if (payload?.ok !== true) throw failure(/unauthori|shared.secret|authentic/i.test(String(payload?.error || '')) ?
       'POINTBASE_AUTH_REJECTED' : 'POINTBASE_SERVICE_REJECTED');
-    if (payload.result?.kind !== 'MASTER_POINTBASE_COST_V1' || !payload.result.costs || typeof payload.result.costs !== 'object') throw failure('POINTBASE_RESULT_INVALID');
-    return payload.result.costs;
+    return payload.result;
+  };
+}
+export function createPointbaseCostClient(options) {
+  const request = createPointbaseRequester(options);
+  return async barcodes => {
+    const result = await request({ barcodes });
+    if (result?.kind !== 'MASTER_POINTBASE_COST_V1' || !result.costs || typeof result.costs !== 'object') throw failure('POINTBASE_RESULT_INVALID');
+    return result.costs;
+  };
+}
+export function createQuotationPointbaseClient(options) {
+  const request = createPointbaseRequester(options);
+  return async (mode, barcodes, requestKey) => {
+    if (!['QUOTE_CAPTURE', 'QUOTE_CURRENT', 'QUOTE_STATUS'].includes(mode) ||
+        (mode !== 'QUOTE_CURRENT' && !/^[a-f0-9]{64}$/.test(requestKey || ''))) throw failure('POINTBASE_REQUEST_INVALID');
+    const result = await request({ mode, ...(barcodes ? { barcodes } : {}), ...(requestKey ? { requestKey } : {}) });
+    if (result?.kind !== 'MASTER_QUOTATION_COST_V1' || (requestKey && result.requestKey !== requestKey) ||
+        (mode === 'QUOTE_CURRENT' && (!result.costs || typeof result.costs !== 'object')) ||
+        (mode !== 'QUOTE_CURRENT' && result.pending !== true &&
+          ['updated', 'unchanged', 'failed'].some(key => !Number.isSafeInteger(result[key]) || result[key] < 0))) throw failure('POINTBASE_RESULT_INVALID');
+    return result;
   };
 }
 export const capturePointbaseCosts = createPointbaseCostClient();
+const quotationReferences = createQuotationPointbaseClient();
+export const captureQuotationCosts = (barcodes, requestKey) => quotationReferences('QUOTE_CAPTURE', barcodes, requestKey);
+export const readQuotationCosts = async barcodes => barcodes.length ? (await quotationReferences('QUOTE_CURRENT', barcodes)).costs : {};
+export const readQuotationCostResult = requestKey => quotationReferences('QUOTE_STATUS', undefined, requestKey);
