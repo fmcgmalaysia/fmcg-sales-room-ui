@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex">
-  <meta name="build" content="ltpos-staff-portal-custom-domain-v1">
+  <meta name="build" content="ltpos-staff-portal-brand-v1">
   <title>LTPOS · Staff Portal</title>
   <style>
     :root{color-scheme:dark;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;color:#fff;background:#07182c}
@@ -12,7 +12,8 @@
     body{margin:0;min-height:100vh;min-height:100svh;display:grid;grid-template-rows:auto 1fr;
       background:linear-gradient(90deg,#061527fa 0%,#061527e6 25%,#0615278f 49%,#06152700 78%),url("ltpos-team.jpg") center right/cover no-repeat}
     header{padding:25px clamp(24px,5vw,76px);display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .brand{font-size:clamp(27px,3vw,44px);font-weight:820;letter-spacing:.035em}
+    .brand{display:flex;align-items:center;gap:clamp(8px,1.1vw,16px);min-width:0;min-height:44px;font-size:clamp(27px,3vw,44px);font-weight:820;letter-spacing:.035em;line-height:1.15}
+    .brand-mark{display:block;flex:none;width:clamp(44px,4.4vw,64px);height:clamp(27px,2.65vw,38px);object-fit:cover}
     .account{display:flex;align-items:center;gap:13px;color:#e1edfa}
     #welcome{display:grid;gap:3px;line-height:1.15}
     #staff{font-weight:700}
@@ -48,7 +49,7 @@
 <link rel="stylesheet" href="../master-shared/mobile-menu.css?v=20261115-responsive-workrooms-v1"></head>
 <body class="touch-portal">
   <header>
-    <div class="brand">LTP Operating System</div>
+    <div class="brand"><img class="brand-mark" src="https://static.wixstatic.com/media/4ecd18_e1d405185f9a4efdbb867f139f234848~mv2.png" width="192" height="192" alt=""><span>LTP Operating System</span></div>
     <div class="account"><span id="welcome" hidden><span>Welcome Back!</span><strong id="staff"></strong></span><button id="signout" type="button" hidden>Sign out 退出</button></div>
   </header>
   <main>
