@@ -1514,17 +1514,17 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 44359144270
+          run-id: 44425938444
           github-token: ${{ github.token }}
           path: ${{ format('{0}/catalogue-complete-baseline', runner.temp) }}
 
-      - name: Update only the Catalogue workspace build marker
+      - name: Update only the approved Catalogue image loading and build marker
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'catalogue-complete-only'
         run: |
           site="$RUNNER_TEMP/catalogue-complete-site"
           mkdir "$site"
           tar --extract --file "$RUNNER_TEMP/catalogue-complete-baseline/artifact.tar" --directory "$site"
-          node --test tests/catalogue-startup-pages.test.cjs tests/catalogue-brand-sort.test.cjs
+          node --test tests/catalogue-startup-pages.test.cjs tests/catalogue-brand-sort.test.cjs tests/catalogue-browser-startup.test.cjs tests/catalogue-image-loading.test.cjs
           node integration/releases/stage-catalogue-startup-pages.cjs "$site"
 
       - name: Upload the verified Catalogue startup package
