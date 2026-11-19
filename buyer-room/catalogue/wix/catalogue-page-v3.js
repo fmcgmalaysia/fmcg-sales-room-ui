@@ -16,7 +16,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261119-catalogue-first-fifty-v1';
+const CATALOGUE_BUILD_VERSION = '20261119-catalogue-mobile-buyer-entry-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -477,7 +477,7 @@ $w.onReady(() => {
                     throw new Error('Catalogue customer access could not be verified.');
                 }
                 session.setItem('catalogueAssistCustomerId', selection.customerId);
-                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId };
+                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
                 sidebarSelectionState(selection);
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
@@ -879,6 +879,12 @@ function openBuyerRoom() {
         return;
     }
     const assistCustomerId = String(selectionContext?.assistCustomerId || '').trim();
+    if (catalogueContextMessage?.mode !== 'buyer' && !assistCustomerId) return;
+    if (assistCustomerId && selectionContext?.staffId) {
+        try {
+            session.setItem('staffBuyerEntryV1', JSON.stringify({ customerId: assistCustomerId, staffId: selectionContext.staffId, expiresAt: Date.now() + 30000 }));
+        } catch (error) { /* The explicit URL still carries the authorized customer. */ }
+    }
     wixLocationFrontend.to(assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : '/buyer-room');
 }
 
