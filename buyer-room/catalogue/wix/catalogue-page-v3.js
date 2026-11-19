@@ -426,6 +426,7 @@ async function loadSelectionState(assistCustomerId = '') {
 }
 
 $w.onReady(async () => {
+    if (wixWindowFrontend.rendering?.env === 'backend') return;
     const hasBuyerAccess = local.getItem('catalogueAccess') === 'granted' || session.getItem('catalogueAccess') === 'granted';
     const assistCustomerId = String(wixLocationFrontend.query?.assist || '').trim();
     const assistedSelection = assistCustomerId ? getCatalogueSelectionState(assistCustomerId).catch(() => null) : null;
@@ -874,6 +875,7 @@ function setupFluidCatalogueLayout() {
 
 $w.onReady(() => {
     setupFluidCatalogueLayout();
+    if (wixWindowFrontend.rendering?.env === 'backend') return;
     setupNav();
     setupCatalogueWorkspace();
 });
