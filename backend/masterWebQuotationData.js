@@ -42,7 +42,7 @@ function customerView(customer) {
   const preferredCurrency = text(customer.preferredCurrency || customer.tradingCurrency).toUpperCase();
   if (!/^[A-Z]{3}$/.test(preferredCurrency)) return null;
   return { customerId: customer.customerId, name: text(customer.customerShortName || customer.title),
-    fullName: text(customer.title), preferredCurrency,
+    fullName: text(customer.title), preferredCurrency, assignedStaffId: text(customer.assignedStaffId),
     quotationMode: 'WEB', webQuotationStatus: 'READY', accessStatus: 'ACTIVE' };
 }
 

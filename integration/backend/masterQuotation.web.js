@@ -28,15 +28,9 @@ const quotation = createMasterQuotationService({
 const operate = createMasterQuotationActions({
   readIdentity: readManagedStaffIdentity,
   async readCustomers(record) {
-    const scope = projectFmcgStaffScope(record);
-    if (!scope) return [];
-    const ids = scope.customerActions.VIEW;
-    if (scope.allCustomers) return (await read({ action: 'customers', customerIds: null })).customers;
-    const customers = [];
-    for (let index = 0; index < ids.length; index += 1000) {
-      customers.push(...(await read({ action: 'customers', customerIds: ids.slice(index, index + 1000) })).customers);
-    }
-    return customers;
+    // Filter ownership on the server before returning dropdown rows.
+    // Customer service grants are independent of internal quotation permission.
+    return (await read({ action: 'customers', customerIds: null })).customers;
   },
   async readCustomer(customerId, action) {
     const { customer } = await read({ action: 'customer', customerId });

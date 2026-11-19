@@ -74,7 +74,8 @@ export const getCurrentStaffContext = webMethod(Permissions.SiteMember, async ()
     quotationDeskFileId: normalize(legacy?.quotationDeskFileId),
     identitySource: legacy ? 'MASTER_WITH_LEGACY_REFERENCES' : 'MASTER_VERIFIED_EMAIL',
     customerScope,
-    canViewAllCustomers: customerScope.allCustomers
+    canViewAllCustomers: customerScope.allCustomers,
+    canBrowseAllCustomers: customerScope.allCustomers || customerScope.allCustomerActions?.includes('VIEW') === true
   });
 });
 

@@ -2,6 +2,7 @@ import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDown
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
+import { authentication } from 'wix-members-frontend';
 import wixRealtimeFrontend from 'wix-realtime-frontend';
 import { getCurrentBuyerContext } from 'backend/catalogueAuth.web';
 
@@ -118,7 +119,8 @@ $w.onReady(async function () {
     catch (error) {
       if (readEpoch !== workspaceReadEpoch) return;
       if (assistCustomerId) {
-        frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Assisted Access Error: ' + (error?.message || String(error)) });
+        if (!authentication.loggedIn()) { wixLocationFrontend.to('/sales-room-login?next='+encodeURIComponent('/buyer-room?assist='+assistCustomerId)); return; }
+        frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Staff Management could not authorize this Buyer Room. ' + (error?.message || String(error)) });
         throw error;
       }
       throw error;
@@ -293,7 +295,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261119-buyer-short-name-sort-v1';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261119-buyer-quote-date-order-v1';
   try { await refreshWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   // Visible-frame polling is the only periodic workspace refresh authority.

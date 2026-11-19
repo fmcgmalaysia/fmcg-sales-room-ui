@@ -10,7 +10,7 @@ async function catalogue({ admin = false, authorized = true, customerId = 'CUS-q
   const stored = new Map(buyer ? [['catalogueAccess', 'granted']] : []), callbacks = [], routes = [];
   const storage = { getItem: key => stored.get(key), removeItem: key => stored.delete(key), setItem(key, value) { if (storageFails) throw Error('Storage unavailable'); stored.set(key, value); } };
   const $w = () => ({ postMessage() {} }); $w.onReady = callback => callbacks.push(callback);
-  const context = vm.createContext({ $w, URL, console, session: storage, local: storage, setInterval() {},
+  const context = vm.createContext({ $w, URL, console, authentication:{loggedIn:()=>authorized}, session: storage, local: storage, setInterval() {},
     wixWindowFrontend: { viewMode: 'Site', formFactor: 'Mobile', rendering: { env: 'browser' } },
     wixLocationFrontend: { url: 'https://fixture.test/catalogue', query: buyer ? {} : { assist: customerId }, to: route => routes.push(route) },
     getCurrentStaffContext: async () => ({ authorized: authorized && !buyer, staffId: 'staff-qa', canViewAllCustomers: admin }),

@@ -94,6 +94,16 @@ test('Super Admin may list eligible Sales Edit owners without contact details', 
   assert.equal((await fixture({...options,assignmentRows:[salesperson,salesperson]}).check(forNewCustomer())).status,503);
 });
 
+test('Super Admin may assign an active authorized salesperson before their first MASTER member binding',async()=>{
+  const unbound={...salesperson,description:''};
+  const result=await fixture({rows:[{...staff,role:'SUPER ADMIN'}],assignmentRows:[unbound]}).check(forNewCustomer());
+  assert.equal(result.body.allowed,true);
+  assert.equal(result.body.assignees[0].staffId,unbound.title);
+  assert.deepEqual(Object.keys(result.body.assignees[0]).sort(),['staffId','staffName']);
+  const ordinary=await fixture({rows:[unbound]}).check(forNewCustomer());
+  assert.equal(ordinary.body.allowed,false,'the caller still needs a verified bound identity');
+});
+
 const newCustomerId = 'CUS-261116-TEST01';
 const resolveOwner = targetStaffId => request({action:'SALES_CREATION_ASSIGNEE',customerId:undefined,targetStaffId});
 const grantOwner = grantRevision => request({action:'SALES_GRANT_INITIAL_ACCESS',customerId:newCustomerId,targetStaffId:salesperson.title,grantRevision});

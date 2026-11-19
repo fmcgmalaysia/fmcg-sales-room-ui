@@ -36,12 +36,12 @@ test('quotation actions recheck the original staff policy and send no unassigned
   const source = fs.readFileSync(path.join(backend, 'masterQuotationAccess.js'), 'utf8').replace('backend/staffManagementPolicy.js', moduleUrl(policy));
   const { createMasterQuotationActions } = await import(moduleUrl(source));
   const customers = ['CUS-QA-001', 'CUS-QA-002', 'CUS-QA-003'].map((customerId, i) => ({ customerId,
-    name: 'QA ' + i, preferredCurrency: 'USD', rateToMyr: 4, quotationMode: 'WEB', webQuotationStatus: i === 2 ? 'PENDING' : 'READY' }));
+    name: 'QA ' + i, assignedStaffId:i===1?'STF-OTHER':'STF-QA', preferredCurrency: 'USD', rateToMyr: 4, quotationMode: 'WEB', webQuotationStatus: i === 2 ? 'PENDING' : 'READY' }));
   let identityReads = 0;
   let customerReads = 0;
   const writes = [];
   const staff = { title: 'STF-QA', staffName: 'Test staff', staffStatus: 'ACTIVE', staffAccess: {
-    departmentAccess: { 'SALES MANAGEMENT': 'EDIT' }, companyIds: ['GHR'], salesRoom: 'EDIT', salesFunction: 'SALES',
+    quotationAccess:'EDIT', departmentAccess: { 'SALES MANAGEMENT': 'EDIT' }, companyIds: ['GHR'], salesRoom: 'EDIT', salesFunction: 'SALES',
     customerAccess: { 'CUS-QA-001': 'EDIT', 'CUS-QA-003': 'EDIT' }
   } };
   const run = createMasterQuotationActions({
@@ -52,13 +52,13 @@ test('quotation actions recheck the original staff policy and send no unassigned
   });
   assert.deepEqual(await run('customers', ''), { staffId: 'STF-QA', staffName: 'Test staff', customers: [{ customerId: 'CUS-QA-001', name: 'QA 0' }] });
   assert.deepEqual(await run('quotes', 'CUS-QA-002'), { accessDenied: true });
-  assert.equal(customerReads, 0);
+  assert.equal(customerReads, 1,'ownership is read from the authoritative customer record');
   assert.deepEqual(await run('quotes', 'CUS-QA-003'), { accessDenied: true });
   assert.equal((await run('quotes', 'CUS-QA-001')).canPublish, true);
   assert.deepEqual(await run('publish', 'CUS-QA-001', { enabled: true }), { revision: 1 });
   assert.equal(writes[0].scope.staffId, 'STF-QA');
-  staff.staffAccess.salesFunction = 'SUPPORT';
-  assert.equal((await run('quotes', 'CUS-QA-001')).canEdit, false);
+  staff.staffAccess.quotationAccess = '';
+  assert.deepEqual(await run('quotes', 'CUS-QA-001'), {accessDenied:true});
   assert.deepEqual(await run('publish', 'CUS-QA-001', { enabled: true }), { accessDenied: true });
   staff.staffStatus = 'INACTIVE';
   assert.deepEqual(await run('customers', ''), { accessDenied: true });

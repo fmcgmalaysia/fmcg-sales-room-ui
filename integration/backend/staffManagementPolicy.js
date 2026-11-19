@@ -3,14 +3,14 @@ const text = value => String(value ?? '').trim();
 const upper = value => text(value).toUpperCase();
 const email = value => text(value).toLowerCase();
 const levels = new Set(['VIEW', 'EDIT']);
-const departments = new Set(['PURCHASE', 'WAREHOUSE', 'ACCOUNT', 'SUPPORT', 'SALES MANAGEMENT']);
+const departments = new Set(['PURCHASE', 'WAREHOUSE', 'ACCOUNT', 'SUPPORT', 'SALES MANAGEMENT', 'STOCK CONTROL']);
 const companies = new Set(['NCT', 'GHR']);
 const salesFunctions = new Set(['SALES', 'SUPPORT']);
 const customerActions = new Map([
   ['VIEW', 'VIEW'], ['ASSIST_SELECTION', 'EDIT'], ['SEND_ORDER_REQUEST', 'EDIT'],
   ['EDIT_REVIEW_QTY', 'EDIT'], ['SUBMIT_ORDER', 'EDIT'],
   ['EDIT_QUOTATION', 'EDIT'], ['PUBLISH_QUOTATION', 'EDIT'],
-  ['MANAGE_CUSTOMER', 'EDIT']
+  ['MANAGE_CUSTOMER', 'EDIT'], ['CATALOGUE_VIEW', 'VIEW'], ['BUYER_ROOM_VIEW', 'VIEW']
 ]);
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object ?? {}, key);
 function record(value) {
@@ -41,7 +41,7 @@ export function requireStaffManager(member, rows) {
 
 export function normalizeStaffAccess(input = {}) {
   if (!record(input)) throw Error('Invalid staff permissions.');
-  const fields = new Set(['departmentAccess', 'companyIds', 'customerAccess', 'supportViewAll', 'salesRoom', 'salesFunction']);
+  const fields = new Set(['departmentAccess', 'companyIds', 'customerAccess', 'supportViewAll', 'salesRoom', 'salesFunction', 'customerWork', 'quotationAccess', 'performanceAccess']);
   if (Object.keys(input).some(key => !fields.has(key))) throw Error('Unknown staff permission.');
   if (!record(input.departmentAccess ?? {}) || !record(input.customerAccess ?? {})) throw Error('Invalid access scope.');
   const departmentAccess = {};
@@ -51,6 +51,7 @@ export function normalizeStaffAccess(input = {}) {
   }
   if (input.supportViewAll !== undefined && typeof input.supportViewAll !== 'boolean') throw Error('Invalid Support view scope.');
   if (input.supportViewAll === true && !departmentAccess.SUPPORT) throw Error('Support department permission is required.');
+  if (input.performanceAccess !== undefined && input.performanceAccess !== '' && input.performanceAccess !== 'VIEW') throw Error('Invalid performance permission.');
   const companyIds = input.companyIds ?? [];
   if (!Array.isArray(companyIds) || companyIds.some(id => !companies.has(id))) throw Error('Invalid company permission.');
   const salesRoom = input.salesRoom ?? '';
@@ -71,8 +72,69 @@ export function normalizeStaffAccess(input = {}) {
     customerAccess,
     supportViewAll: input.supportViewAll === true,
     salesRoom,
-    salesFunction
+    salesFunction,
+    customerWork: normalizeCustomerWork(input.customerWork, {salesRoom, salesFunction}),
+    quotationAccess: normalizeQuotationAccess(input.quotationAccess, departmentAccess, salesFunction),
+    performanceAccess: input.performanceAccess ?? ''
   };
+}
+
+function normalizeQuotationAccess(value, departmentAccess, salesFunction) {
+  if (value === undefined) return salesFunction === 'SALES' && departmentAccess['SALES MANAGEMENT'] === 'EDIT' ? 'EDIT' : '';
+  if (value !== '' && value !== 'EDIT') throw Error('Invalid quotation permission.');
+  return value;
+}
+
+function normalizeCustomerWork(input, legacy) {
+  if (input === undefined) return {
+    enabled: Boolean(legacy.salesRoom), scope: 'SELECTED',
+    createCustomers: legacy.salesRoom === 'EDIT' && legacy.salesFunction === 'SALES',
+    editProfiles: legacy.salesRoom === 'EDIT' && legacy.salesFunction === 'SALES',
+    catalogue: legacy.salesRoom === 'EDIT' ? 'SELECT' : legacy.salesRoom ? 'VIEW' : '',
+    buyerRoom: legacy.salesRoom === 'EDIT' ? 'REQUEST' : legacy.salesRoom ? 'VIEW' : '',
+    submitOrders: legacy.salesRoom === 'EDIT'
+  };
+  const flags = ['enabled', 'createCustomers', 'editProfiles', 'submitOrders'];
+  const fields = new Set([...flags, 'scope', 'catalogue', 'buyerRoom']);
+  if (!record(input) || Object.keys(input).some(key => !fields.has(key)) ||
+      flags.some(key => typeof input[key] !== 'boolean') || !['SELECTED', 'ALL'].includes(input.scope) ||
+      !['', 'VIEW', 'SELECT'].includes(input.catalogue) || !['', 'VIEW', 'REQUEST'].includes(input.buyerRoom)) {
+    throw Error('Invalid customer work permission.');
+  }
+  return Object.fromEntries([...fields].map(key => [key, input[key]]));
+}
+
+export function customerWorkPermission(staff, action) {
+  const scope = normalizeStaffAccess(staff.staffAccess ?? {});
+  const work = scope.customerWork;
+  if (!work.enabled) return false;
+  if (action === 'VIEW') return true;
+  if (action === 'CATALOGUE_VIEW') return Boolean(work.catalogue);
+  if (action === 'ASSIST_SELECTION') return work.catalogue === 'SELECT';
+  if (action === 'BUYER_ROOM_VIEW') return Boolean(work.buyerRoom);
+  if (['SEND_ORDER_REQUEST', 'EDIT_REVIEW_QTY'].includes(action)) return work.buyerRoom === 'REQUEST';
+  if (action === 'SUBMIT_ORDER') return work.submitOrders;
+  if (action === 'MANAGE_CUSTOMER') return work.editProfiles;
+  return false;
+}
+
+export function canCreateManagedCustomer(staff) {
+  if (upper(staff?.staffStatus) !== 'ACTIVE') return false;
+  return upper(staff.role) === 'SUPER ADMIN' ||
+    (normalizeStaffAccess(staff.staffAccess ?? {}).customerWork.enabled &&
+      normalizeStaffAccess(staff.staffAccess ?? {}).customerWork.createCustomers);
+}
+
+export function canEnterQuotations(staff) {
+  const scope = normalizeStaffAccess(staff?.staffAccess ?? {});
+  return upper(staff?.staffStatus) === 'ACTIVE' &&
+    (upper(staff.role) === 'SUPER ADMIN' || scope.quotationAccess === 'EDIT' || scope.performanceAccess === 'VIEW');
+}
+
+export function canQuoteManagedCustomer(staff, customer) {
+  if (!canEnterQuotations(staff) || !text(customer?.customerId)) return false;
+  if (upper(staff.role) === 'SUPER ADMIN') return true;
+  return Boolean(text(customer.assignedStaffId) && upper(customer.assignedStaffId) === upper(staff.title));
 }
 
 function hasCustomerAccess(scope, customerId, action) {
@@ -104,13 +166,12 @@ export function canUseDepartment(staff, department, action, customerId, companyI
 export function canUseSalesRoomCustomer(staff, action, customerId) {
   if (upper(staff?.staffStatus) !== 'ACTIVE' || !customerActions.has(action) || !text(customerId)) return false;
   if (upper(staff.role) === 'SUPER ADMIN') return true;
-  const scope = staff.staffAccess;
+  const scope = normalizeStaffAccess(staff.staffAccess ?? {});
   const level = customerActions.get(action);
-  if (!salesFunctions.has(scope?.salesFunction) || !levels.has(scope.salesRoom) ||
-      (level === 'EDIT' && scope.salesRoom !== 'EDIT')) return false;
-  // A Support edit grant never includes either quotation operation.
-  if (['EDIT_QUOTATION', 'PUBLISH_QUOTATION', 'MANAGE_CUSTOMER'].includes(action) && scope.salesFunction !== 'SALES') return false;
-  return hasCustomerAccess(scope, customerId, level);
+  // Internal quotations use their own permission plus authoritative customer ownership.
+  if (['EDIT_QUOTATION', 'PUBLISH_QUOTATION'].includes(action)) return false;
+  if (!customerWorkPermission(staff, action)) return false;
+  return scope.customerWork.scope === 'ALL' || hasCustomerAccess(scope, customerId, level);
 }
 
 // Request-local decisions for FMCG. No MASTER financial or employee directory
@@ -119,20 +180,26 @@ export function projectFmcgStaffScope(staff) {
   if (upper(staff?.staffStatus) !== 'ACTIVE') return null;
   const scope = normalizeStaffAccess(staff.staffAccess ?? {});
   const allCustomers = upper(staff.role) === 'SUPER ADMIN';
-  if (!allCustomers && !scope.salesRoom) return null;
+  if (!allCustomers && !scope.customerWork.enabled) return null;
   const customerIds = Object.keys(scope.customerAccess);
   return {
     allCustomers,
-    canCreateCustomers: allCustomers || (scope.salesRoom === 'EDIT' && scope.salesFunction === 'SALES'),
+    pages: allCustomers ? ['SALES_ROOM', 'CATALOGUE', 'BUYER_ROOM'] : ['SALES_ROOM',
+      ...(scope.customerWork.catalogue ? ['CATALOGUE'] : []), ...(scope.customerWork.buyerRoom ? ['BUYER_ROOM'] : [])],
+    canCreateCustomers: canCreateManagedCustomer(staff),
+    allCustomerActions: allCustomers ? [] : [...customerActions.keys()].filter(action =>
+      scope.customerWork.scope === 'ALL' && customerWorkPermission(staff, action)),
     customerActions: Object.fromEntries([...customerActions.keys()].map(action =>
       [action, customerIds.filter(id => canUseSalesRoomCustomer(staff, action, id))]))
   };
 }
 
 export function canUseSalesManagementReport(staff, authoritativeStaffId, companyId) {
-  if (!canUseDepartment(staff, 'SALES MANAGEMENT', 'VIEW', undefined, companyId)) return false;
-  return upper(staff.role) === 'SUPER ADMIN' ||
-    Boolean(text(authoritativeStaffId) && text(authoritativeStaffId) === text(staff.title));
+  if (upper(staff?.staffStatus) !== 'ACTIVE' || !companies.has(companyId)) return false;
+  if (upper(staff.role) === 'SUPER ADMIN') return true;
+  const scope = normalizeStaffAccess(staff.staffAccess ?? {});
+  if (scope.performanceAccess !== 'VIEW' || !scope.companyIds.includes(companyId)) return false;
+  return Boolean(text(authoritativeStaffId) && text(authoritativeStaffId) === text(staff.title));
 }
 
 export function projectManagedStaff(row) {
@@ -164,6 +231,11 @@ export function prepareStaffUpdate(input, rows, actorStaffId) {
     throw Error('Administrator identity cannot be changed here.');
   }
   if (input.revision !== staffManagementRevision(row)) throw Error('Employee details changed. Reopen the employee before saving.');
+  if ((own(row.staffAccess, 'customerWork') && !own(input.access, 'customerWork')) ||
+      (own(row.staffAccess, 'quotationAccess') && !own(input.access, 'quotationAccess')) ||
+      (own(row.staffAccess, 'performanceAccess') && !own(input.access, 'performanceAccess'))) {
+    throw Error('Employee details changed. Reopen the employee before saving.');
+  }
   const name = text(input.name), workEmail = email(input.email);
   if (!name || name.length > 80 || workEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workEmail)) {
     throw Error('Enter a valid staff name and email.');

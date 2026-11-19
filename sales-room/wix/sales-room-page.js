@@ -44,7 +44,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261118-sales-qd-retirement-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261119-staff-workspace-permissions-v1';
   const staffPromise = loadCurrentStaff();
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
@@ -118,20 +118,28 @@ $w.onReady(function () {
     }
   }
 
-  staffPromise.then((staff) => {
-    if (!staff.authorized) {
-      wixLocationFrontend.to(STAFF_LOGIN_URL);
-    }
-  });
+  function showStaffAccessIssue(staff) {
+    if (!authentication.loggedIn()) { wixLocationFrontend.to(STAFF_LOGIN_URL); return; }
+    const message=staff?.reason==='MASTER_STAFF_ACCESS_UNAVAILABLE'?'Staff access is temporarily unavailable. The system will check again.':'Staff Management does not allow this customer work. Contact your administrator.';
+    salesRoom.postMessage({type:'SALES_ROOM_CUSTOMERS',ok:false,error:message});
+  }
+  staffPromise.then(staff => { if (!staff.authorized) showStaffAccessIssue(staff); });
 
   salesRoom.onMessage(async (event) => {
     const message = event.data || {};
 
 
     if (message.type === 'SALES_ROOM_OPEN_BUYER_ROOM') {
-      const staff = await staffPromise;
+      const staff = await loadCurrentStaff();
       const customerId = String(message.customerId || '').trim();
-      if (!staff.authorized || !/^CUS-[A-Za-z0-9-]+$/.test(customerId)) return;
+      if (!staff.authorized) { showStaffAccessIssue(staff); return; }
+      if (!/^CUS-[A-Za-z0-9-]+$/.test(customerId)) return;
+      const can=action=>staff.customerScope?.allCustomers===true || staff.customerScope?.allCustomerActions?.includes(action) || staff.customerScope?.customerActions?.[action]?.includes(customerId);
+      if (!can('BUYER_ROOM_VIEW')) {
+        if (can('CATALOGUE_VIEW')) wixLocationFrontend.to('/catalogue?assist='+encodeURIComponent(customerId));
+        else showStaffAccessIssue({reason:'CUSTOMER_ACTION_DENIED'});
+        return;
+      }
       try {
         session.setItem('staffBuyerEntryV1', JSON.stringify({ customerId, staffId: staff.staffId, expiresAt: Date.now() + 30000 }));
       } catch (error) { /* The explicit URL still carries the requested customer. */ }
@@ -168,7 +176,8 @@ $w.onReady(function () {
             staffName: staff.staffName,
             loginEmail: staff.loginEmail,
             role: staff.role,
-            canViewAllCustomers: staff.canViewAllCustomers
+            canViewAllCustomers: staff.canViewAllCustomers,
+            canBrowseAllCustomers: staff.canBrowseAllCustomers
           }
         : {
             authorized: false,

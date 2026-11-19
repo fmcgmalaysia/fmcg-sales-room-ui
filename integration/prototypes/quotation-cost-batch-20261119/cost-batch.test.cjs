@@ -85,14 +85,14 @@ test('missing CBM does not block valid quotation cost; strict Purchase result an
 });
 
 test('cost and result reads retain customer checks while avoiding unused FX; price actions still require current FX', async () => {
-  const policy=load('integration/backend/staffManagementPolicy.js',['canEnterDepartment','canUseSalesRoomCustomer']);
+  const policy=load('integration/backend/staffManagementPolicy.js',['canEnterQuotations','canQuoteManagedCustomer']);
   const {createMasterQuotationActions}=load('integration/backend/masterQuotationAccess.js',['createMasterQuotationActions'],policy);
   const record={title:'QA',staffStatus:'ACTIVE',staffAccess:{departmentAccess:{'SALES MANAGEMENT':'EDIT'},companyIds:['NCT'],salesRoom:'EDIT',salesFunction:'SALES',customerAccess:{'QA-CUSTOMER':'EDIT'}}};
   let fx=0, customers=0;
   const {runMasterQuotation}=load('integration/backend/masterQuotation.web.js',['runMasterQuotation'],{
     webMethod:(_,fn)=>fn,Permissions:{SiteMember:'member'},wixData:{},getSecret:async()=>'',readManagedStaffIdentity:async()=>({record}),
     projectFmcgStaffScope:()=>({allCustomers:true,customerActions:{VIEW:[]}}),createMasterQuoteSender:()=>async()=>{},
-    createMasterQuotationReader:()=>async()=>{customers++;return {customer:{customerId:'QA-CUSTOMER',quotationMode:'WEB',webQuotationStatus:'READY',preferredCurrency:'USD'}};},
+    createMasterQuotationReader:()=>async()=>{customers++;return {customer:{customerId:'QA-CUSTOMER',assignedStaffId:'QA',quotationMode:'WEB',webQuotationStatus:'READY',preferredCurrency:'USD'}};},
     createMasterQuotationActions,createMasterQuotationWixStore:()=>({}),createMasterQuotationService:()=>({catchCost:async()=>({pending:false}),costResult:async()=>({pending:true}),list:async()=>[]}),
     captureQuotationCosts:()=>{},readQuotationCosts:()=>{},readQuotationCostResult:()=>{},createLastInvoicedPrices:()=>()=>{},
     readCurrentAdminFx:async()=>{fx++;throw Error('FX unavailable');}
@@ -140,16 +140,16 @@ test('result lookup is scoped to staff and customer and never reads/writes any q
 });
 
 test('cost-status preserves staff/customer permissions and rejects forged scope before source access', async () => {
-  const policy=load('integration/backend/staffManagementPolicy.js',['canEnterDepartment','canUseSalesRoomCustomer']);
+  const policy=load('integration/backend/staffManagementPolicy.js',['canEnterQuotations','canQuoteManagedCustomer']);
   const {createMasterQuotationActions}=load('integration/backend/masterQuotationAccess.js',['createMasterQuotationActions'],policy);
-  const record={title:'QA-SALES',staffStatus:'ACTIVE',staffAccess:{departmentAccess:{'SALES MANAGEMENT':'EDIT'},companyIds:['NCT'],salesRoom:'EDIT',salesFunction:'SALES',customerAccess:{QA:'EDIT'}}};
+  const record={title:'QA-SALES',staffStatus:'ACTIVE',staffAccess:{quotationAccess:'EDIT',companyIds:['NCT']}};
   let reads=0;
-  const run=createMasterQuotationActions({readIdentity:async()=>({record}),readCustomer:async customerId=>({customerId,quotationMode:'WEB',webQuotationStatus:'READY'}),
+  const run=createMasterQuotationActions({readIdentity:async()=>({record}),readCustomer:async customerId=>({customerId,assignedStaffId:customerId==='QA'?'QA-SALES':'OTHER-SALES',quotationMode:'WEB',webQuotationStatus:'READY'}),
     quotation:{costResult:async scope=>{reads++;assert.equal(scope.staffId,'QA-SALES');return {pending:true};}}});
   assert.equal((await run('cost-status','OTHER',{})).accessDenied,true);
   assert.equal(reads,0);
   assert.equal((await run('cost-status','QA',{requestId:crypto.randomUUID()})).pending,true);
-  record.staffAccess.salesFunction='SUPPORT';
+  record.staffAccess.quotationAccess='';
   assert.equal((await run('cost-status','QA',{})).accessDenied,true);
   assert.equal(reads,1);
 });

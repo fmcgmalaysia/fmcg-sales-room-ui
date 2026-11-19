@@ -1,4 +1,4 @@
-import { canEnterDepartment, canUseSalesRoomCustomer } from 'backend/staffManagementPolicy.js';
+import { canEnterQuotations, canQuoteManagedCustomer } from 'backend/staffManagementPolicy.js';
 
 const ACTION_POLICY = Object.freeze({
   quotes: ['VIEW', 'VIEW'],
@@ -7,12 +7,6 @@ const ACTION_POLICY = Object.freeze({
   draft: ['EDIT', 'EDIT_QUOTATION'],
   publish: ['EDIT', 'PUBLISH_QUOTATION']
 });
-
-function departmentAccess(record, level) {
-  // Sales Management department rights still apply. Neither company scopes
-  // these quotations, and the browser does not choose a company here.
-  return ['NCT', 'GHR'].some(company => canEnterDepartment(record, 'SALES MANAGEMENT', level, company));
-}
 
 function activeWebCustomer(customer) {
   return customer?.quotationMode === 'WEB' && customer.webQuotationStatus === 'READY' &&
@@ -30,26 +24,24 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readC
     try { ({ record } = await readIdentity()); }
     catch { return { accessDenied: true }; }
 
-    if (!record?.title || !departmentAccess(record, 'VIEW')) return { accessDenied: true };
+    if (!record?.title || !canEnterQuotations(record)) return { accessDenied: true };
     const { title: staffId, staffName } = record;
-    const can = (level, customerAction, id) => departmentAccess(record, level) && canUseSalesRoomCustomer(record, customerAction, id);
     if (action === 'customers') {
       const customers = (await readCustomers(record))
-        .filter(customer => activeWebCustomer(customer) && can('VIEW', 'VIEW', customer.customerId))
+        .filter(customer => activeWebCustomer(customer) && canQuoteManagedCustomer(record, customer))
         .map(({ customerId, name }) => ({ customerId, name }));
       return { staffId, staffName, customers };
     }
 
-    if (typeof customerId !== 'string' || !/^[A-Za-z0-9_-]{1,120}$/.test(customerId) ||
-        !can(...ACTION_POLICY[action], customerId)) return { accessDenied: true };
+    if (typeof customerId !== 'string' || !/^[A-Za-z0-9_-]{1,120}$/.test(customerId)) return { accessDenied: true };
     const customer = await readCustomer(customerId, action);
-    if (customer?.customerId !== customerId || !activeWebCustomer(customer)) return { accessDenied: true };
+    if (customer?.customerId !== customerId || !activeWebCustomer(customer) || !canQuoteManagedCustomer(record, customer)) return { accessDenied: true };
     const scope = { staffId, customer };
     if (action === 'quotes') {
       const rows = await quotation.list(scope);
       const { preferredCurrency, rateToMyr, fullName } = customer;
       return { staffId, customer: { customerId, preferredCurrency, rateToMyr, ...(fullName ? { fullName } : {}) }, rows,
-        canEdit: can('EDIT', 'EDIT_QUOTATION', customerId), canPublish: can('EDIT', 'PUBLISH_QUOTATION', customerId) };
+        canEdit: true, canPublish: true };
     }
     if (action === 'cost') return quotation.catchCost(scope, input);
     if (action === 'cost-status') return quotation.costResult(scope, input);

@@ -1,8 +1,9 @@
+import { operationId } from 'backend/purchaseOperationJournal.js';
 import { PROCUREMENT_SAVE_PENDING } from 'backend/purchasePlan.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { getManagedDepartmentContext } from 'backend/staffManagementAccess.js';
 import wixData from 'wix-data';
-import { createAccountReviewOperations } from 'backend/accountPurchaseReview.js';
+import { requireAccountStaff, createAccountReviewOperations } from 'backend/accountPurchaseReview.js';
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { createPurchaseOrderOperations } from 'backend/purchaseOrderWorkflow.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
@@ -67,4 +68,23 @@ export const saveAccountInvoiceCheck=webMethod(Permissions.SiteMember,async(comp
   const staff=await accountStaff(company,'EDIT');
   try{return await reviews.save({company,staff,requestId,input});}
   catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};const message=String(error?.message||'');const safe=/^(Warehouse receipts and financial reconciliation are not connected\.|Unsupported Account action\.|Purchase order changed\.|Purchase order changed while saving\.|Invoice check has not changed\.|Final supplier Invoice is required before checking\.|Purchase amount is incomplete\.|Please enter a reason to cancel the invoice check\.|A save is still processing\.)/.test(message);return {ok:false,requestId,error:safe?message:'Invoice check save could not be confirmed. Retry the same save.'};}
+});
+
+
+// Proposed append to accountPurchase.web.js using its existing staff and private store.
+export const getAccountSettlementStatus=webMethod(Permissions.SiteMember,async(company,requestId,poId)=>{
+ const names=PURCHASE_COLLECTIONS[company];
+ if(!names||!/^[a-f0-9-]{36}$/i.test(requestId||'')||typeof poId!=='string'||!poId||poId.length>160)throw Error('Invalid settlement identity.');
+ const staff=await accountStaff(company);
+ if(!staff?.staffId||!staff.memberId)throw Error('Verified Finance employee is required.');
+ const key=operationId(company+'/PURCHASE',requestId,staff.memberId);
+ const record=await store.read(names.activity,operationId(key,'RESULT'));
+ const outcome=record?.details?.outcome;
+ if(record?.action==='PURCHASE_OPERATION_RESULT'&&record.details.actorMemberId===staff.memberId&&
+    record.details.actorStaffId===staff.staffId&&record.details.requestId===requestId&&
+    outcome?.ok===true&&outcome.company===company&&outcome.requestId===requestId&&outcome.poId===poId&&
+    Number.isFinite(Date.parse(outcome.savedAt))){
+  return {ok:true,company,requestId,poId};
+ }
+ return {ok:false,pending:true,company,requestId};
 });

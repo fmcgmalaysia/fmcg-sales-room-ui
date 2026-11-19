@@ -159,7 +159,7 @@ async function loadSalesRoomCustomers() {
     const staff = await requireAuthorizedStaffContext();
     let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
 
-    if (!staff.canViewAllCustomers) {
+    if (!staff.canBrowseAllCustomers) {
       const ids = staff.customerScope.customerActions.VIEW;
       if (!ids.length) return Object.freeze({ ok: true, summary: { customerCount: 0, qdReadyCount: 0 }, customers: [] });
       query = query.hasSome('customerId', ids);
@@ -1404,7 +1404,7 @@ async function putAccountNotification({ eventId, customerId, recipientUserId = '
 
 async function authorizedCustomerIdSet(staff) {
   let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
-  if (!staff.canViewAllCustomers) {
+  if (!staff.canBrowseAllCustomers) {
     const ids = staff.customerScope.customerActions.VIEW;
     if (!ids.length) return new Set();
     query = query.hasSome('customerId', ids);

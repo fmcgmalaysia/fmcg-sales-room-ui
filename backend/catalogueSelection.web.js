@@ -176,7 +176,7 @@ async function notifySalesRoomSelectionChanged_() {
   }
 }
 
-async function resolveSelectionContext_(assistCustomerId, staffAction = 'VIEW') {
+async function resolveSelectionContext_(assistCustomerId, staffAction = 'CATALOGUE_VIEW') {
   const member = await currentMember.getMember({ fieldsets: ['FULL'] });
   if (!member) throw new Error('Please sign in before selecting products.');
   const memberId = normalize(member._id);

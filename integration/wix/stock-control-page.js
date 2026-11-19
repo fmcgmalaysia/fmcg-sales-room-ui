@@ -1,5 +1,5 @@
 // Dedicated Stock Control page, using the site's existing html1 embed convention.
-import { getWarehouseStockControl } from 'backend/stockControl.web';
+import { getStockControlWorkspace } from 'backend/stockControl.web';
 import { authentication } from 'wix-members-frontend';
 import wixLocationFrontend from 'wix-location-frontend';
 
@@ -15,7 +15,7 @@ $w.onReady(() => {
     if (message.type !== 'STOCK_CONTROL_READ_REQUEST' || !['NCT', 'GHR'].includes(message.company)
       || typeof message.requestId !== 'string' || message.requestId.length > 100 || JSON.stringify(message).length > 2000) return;
     try {
-      const result = await getWarehouseStockControl(message.company, message.input || {});
+      const result = await getStockControlWorkspace(message.company, message.input || {});
       room.postMessage({ type: 'STOCK_CONTROL_READ_RESULT', company: message.company, requestId: message.requestId, ok: true, result });
     } catch (error) {
       room.postMessage({ type: 'STOCK_CONTROL_READ_RESULT', company: message.company, requestId: message.requestId,
@@ -23,5 +23,5 @@ $w.onReady(() => {
     }
   });
   const company = ['NCT', 'GHR'].includes(wixLocationFrontend.query.company) ? wixLocationFrontend.query.company : 'NCT';
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/stock-control.html?v=20261021-stock-control-v1&company=' + company;
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/stock-control.html?v=20261117-stock-contextual-retry-v1&company=' + company;
 });

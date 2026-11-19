@@ -1,6 +1,7 @@
 import { fetch } from 'wix-fetch';
 import { getSecret } from 'wix-secrets-backend';
 
+const salesStaffIdPattern = /^(?:STF-[A-Z0-9]{5,20}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/;
 const endpoint = 'https://fmcg999.wixstudio.com/master/_functions/staffAccess';
 
 // Call only after authenticating the current FMCG member and checking their
@@ -24,7 +25,7 @@ export async function masterAllowsStaffAction(loginEmail, action, customerId) {
   return (await requestStaffAccess(loginEmail, action, customerId)).allowed === true;
 }
 
-const scopeActions = ['VIEW', 'ASSIST_SELECTION', 'SEND_ORDER_REQUEST', 'EDIT_REVIEW_QTY', 'SUBMIT_ORDER', 'EDIT_QUOTATION', 'PUBLISH_QUOTATION', 'MANAGE_CUSTOMER'];
+const scopeActions = ['VIEW', 'ASSIST_SELECTION', 'SEND_ORDER_REQUEST', 'EDIT_REVIEW_QTY', 'SUBMIT_ORDER', 'EDIT_QUOTATION', 'PUBLISH_QUOTATION', 'MANAGE_CUSTOMER', 'CATALOGUE_VIEW', 'BUYER_ROOM_VIEW'];
 
 export async function getMasterStaffScope(loginEmail, verifiedFmcgEmail = false) {
   const result = await requestStaffAccess(loginEmail, 'DIRECTORY_SCOPE', undefined, verifiedFmcgEmail);
@@ -36,6 +37,8 @@ export async function getMasterStaffScope(loginEmail, verifiedFmcgEmail = false)
     throw Error('Staff authorization is incomplete.');
   }
   const customerScope = { allCustomers: scope.allCustomers, canCreateCustomers: scope.canCreateCustomers === true,
+    pages: Array.isArray(scope.pages) ? scope.pages.filter(page => ['SALES_ROOM', 'CATALOGUE', 'BUYER_ROOM'].includes(page)) : ['SALES_ROOM', 'CATALOGUE', 'BUYER_ROOM'],
+    allCustomerActions: Array.isArray(scope.allCustomerActions) ? scope.allCustomerActions.filter(action => scopeActions.includes(action)) : [],
     customerActions: Object.fromEntries(scopeActions.map(action => [action, [...scope.customerActions[action]]])) };
   if (!verifiedFmcgEmail) return customerScope;
   const { staffId, staffName } = result.identity ?? {};
@@ -50,7 +53,7 @@ export async function getMasterSalesCreationAssignees(loginEmail) {
   if (result.allowed !== true) return null;
   if (typeof result.mayAssignOthers !== 'boolean' || !Array.isArray(result.assignees) ||
       (!result.mayAssignOthers && result.assignees.length !== 1) ||
-      result.assignees.some(row => typeof row?.staffId !== 'string' || !/^STF-[A-Z0-9]{5,20}$/.test(row.staffId) ||
+      result.assignees.some(row => typeof row?.staffId !== 'string' || !salesStaffIdPattern.test(row.staffId) ||
         typeof row.staffName !== 'string' || !row.staffName.trim())) {
     throw Error('Salesperson assignment is unavailable.');
   }
@@ -60,7 +63,7 @@ export async function getMasterSalesCreationAssignees(loginEmail) {
 export async function resolveMasterSalesCreationAssignee(loginEmail, targetStaffId) {
   const result = await requestStaffAccess(loginEmail, 'SALES_CREATION_ASSIGNEE', undefined, false, { targetStaffId });
   if (result.allowed !== true) return null;
-  if (typeof result.owner?.staffId !== 'string' || !/^STF-[A-Z0-9]{5,20}$/.test(result.owner.staffId) ||
+  if (typeof result.owner?.staffId !== 'string' || !salesStaffIdPattern.test(result.owner.staffId) ||
       (targetStaffId && result.owner.staffId !== targetStaffId) ||
       typeof result.owner.staffName !== 'string' || !result.owner.staffName.trim() ||
       typeof result.grantRevision !== 'string' || !/^[a-f0-9]{64}$/.test(result.grantRevision)) {
@@ -78,6 +81,7 @@ export function staffMayAccessCustomer(staff, action, customerId) {
   const id = String(customerId ?? '').trim();
   if (staff?.authorized !== true || !id || !scopeActions.includes(action)) return false;
   return staff.customerScope?.allCustomers === true ||
+    staff.customerScope?.allCustomerActions?.includes(action) === true ||
     staff.customerScope?.customerActions?.[action]?.includes(id) === true;
 }
 

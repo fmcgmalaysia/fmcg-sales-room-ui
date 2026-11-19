@@ -443,11 +443,19 @@ function sendCatalogueWorkspaceFilter(update) {
     try { $w('#html5').postMessage({ type: 'catalogueWorkspaceFilter', ...catalogueWorkspaceFilter }); } catch (error) {}
 }
 
+let catalogueAccessIssue = false;
+function reportCatalogueAccess(message, blocked = true) {
+    catalogueAccessIssue = blocked;
+    try { $w('#text19').text=message?'Access unavailable':String(catalogueContextMessage?.sheetName||'Catalogue'); } catch (_) {}
+    try { $w('#text20').text=message||String(catalogueContextMessage?.signedInName||''); } catch (_) {}
+    try { if(blocked)$w('#html5').collapse();else $w('#html5').expand(); } catch (_) {}
+}
 async function loadSelectionState(assistCustomerId = '') {
     const pendingAtReadStart = new Set([...joinedMobileSelections].filter(productId =>
         readMobileSelectionFlight(mobileSelectionFlightKey(productId))?.expiresAt > Date.now()));
     const state = await getCatalogueSelectionState(assistCustomerId);
     sidebarSelectionState(state);
+    if(state?.ok) reportCatalogueAccess('', false);
     if (state?.ok && selectionContext?.mode === 'buyer' && catalogueBrowseKey === 'catalogueBrowseReturnV1:' + state.customerId) {
         for (const productId of joinedMobileSelections) {
             const saved = activeSelectedProductIds.has(productId);
@@ -471,6 +479,7 @@ $w.onReady(() => {
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
 
     if (staff?.authorized) {
+        if (staff.customerScope?.pages && !staff.customerScope.pages.includes('CATALOGUE')) { reportCatalogueAccess('Staff Management does not allow Catalogue access.'); return; }
         if (assistCustomerId) {
             try {
                 const selection = await assistedSelection;
@@ -487,7 +496,8 @@ $w.onReady(() => {
                 });
             } catch (error) {
                 session.removeItem('catalogueAssistCustomerId');
-                wixLocationFrontend.to('/blank-1');
+                if (!authentication.loggedIn()) wixLocationFrontend.to('/sales-room-login?next='+encodeURIComponent('/catalogue?assist='+assistCustomerId));
+                else reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
                 return;
             }
         } else {
@@ -499,7 +509,7 @@ $w.onReady(() => {
         return;
     }
 
-    if (!hasBuyerAccess && wixWindowFrontend.viewMode === 'Site') { wixLocationFrontend.to('/'); return; }
+    if (!hasBuyerAccess && wixWindowFrontend.viewMode === 'Site') { if(authentication.loggedIn()) reportCatalogueAccess('This account has no customer Catalogue access. Contact your administrator.'); else wixLocationFrontend.to(assistCustomerId?'/sales-room-login?next='+encodeURIComponent('/catalogue?assist='+assistCustomerId):'/'); return; }
     if (hasBuyerAccess) {
         try {
             selectionContext = { mode: 'buyer', assistCustomerId: '' };
@@ -525,6 +535,11 @@ $w.onReady(() => {
         try { await loadSelectionState(selectionContext.assistCustomerId || ''); }
         catch (error) {
             const expiredAssistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
+            if (expiredAssistCustomerId) {
+                if(!authentication.loggedIn())wixLocationFrontend.to('/sales-room-login?next='+encodeURIComponent('/catalogue?assist='+expiredAssistCustomerId));
+                else { const denied=/permission|not authorized|authorization is required|suspended|not found|not ready/i.test(error?.message||''); reportCatalogueAccess(denied?'Staff Management does not allow this customer Catalogue.':'Access is temporarily unavailable. The system is checking again.',denied); }
+                return;
+            }
             selectionContext = null;
             selectedProductIds = new Set();
             activeSelectedProductIds = new Set();
@@ -878,6 +893,7 @@ function setupCatalogueWorkspace() {
 }
 
 function openBuyerRoom() {
+    if(catalogueAccessIssue)return;
     if (catalogueContextMessage?.mode === 'preview') {
         wixLocationFrontend.to('/sales-room');
         return;

@@ -1,16 +1,16 @@
 import { authentication } from 'wix-members-frontend';
 import { getLtposWorkspaces } from 'backend/ltposWorkspaces.web';
 
-const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/managed.html?v=ltpos-staff-portal-custom-domain-v1';
+const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/managed.html?v=ltpos-staff-portal-brand-v1';
 const SITE = 'https://fmcg999.wixstudio.com/master';
 const workspaces = new Map([
   ['purchase', ['Purchase 采购', 'https://www.ltpos.ai/purchase']],
   ['support', ['Support 后勤', SITE + '/support-department']],
   ['warehouse', ['Warehouse 货仓', SITE + '/warehouse-department']],
-  ['finance', ['Finance 财务', SITE + '/account-department']],
-  ['sales-management', ['Sales Management 销售管理', 'https://www.ltpos.ai/quotations']],
+  ['stock-control', ['Stock Control 库存管理', 'https://www.ltpos.ai/stock-control']],
+  ['finance', ['Finance 财务', SITE + '/account-department']], ['sales-management', ['Sales Management 销售管理', 'https://www.ltpos.ai/quotations']],
   ['staff-management', ['Staff Management 员工管理', SITE + '/staff-management']],
-  ['sales-room', ['Sales Room 销售工作室', 'https://www.fmcgmalaysia.com/sales-room']]
+  ['sales-room', ['Sales Room 销售工作室', 'https://www.fmcgmalaysia.com/sales-room-login']]
 ]);
 
 $w.onReady(() => {
@@ -29,8 +29,7 @@ $w.onReady(() => {
     if (!authorized.length) { await clearLinks(); return false; }
     const anchors = authorized.map(([, [label, url]]) =>
       '<a href="' + url + '" target="_blank" rel="noopener noreferrer"><span style="color:#174c83;font-size:16px;font-weight:bold;">' + label.replace(' ', '&nbsp;') + '</span></a>');
-    links.html = '<p><span style="color:#143654;font-size:16px;font-weight:bold;">My Workspaces 我的工作室</span></p>' +
-      '<p>' + anchors.join(' &nbsp; ') + '</p>';
+    links.html = '<p><span style="color:#143654;font-size:16px;font-weight:bold;">My Workspaces 我的工作室</span></p>' + '<p>' + anchors.join('') + '</p>';
     await workspaceSection.expand();
     return true;
   }

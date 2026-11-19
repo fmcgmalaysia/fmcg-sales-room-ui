@@ -47,9 +47,11 @@ test('purchase editing and Support all-customer viewing can coexist with narrow 
 });
 
 test('sales reports require the transaction owner, with missing ownership denied', () => {
-  assert.equal(policy.canUseSalesManagementReport(active,active.title,'NCT'),true);
-  assert.equal(policy.canUseSalesManagementReport(active,'different-staff','NCT'),false);
-  assert.equal(policy.canUseSalesManagementReport(active,'','NCT'),false);
+  const performance={...active,staffAccess:{...active.staffAccess,performanceAccess:'VIEW'}};
+  assert.equal(policy.canUseSalesManagementReport(performance,active.title,'NCT'),true);
+  assert.equal(policy.canUseSalesManagementReport(performance,'different-staff','NCT'),false);
+  assert.equal(policy.canUseSalesManagementReport(performance,'','NCT'),false);
+  assert.equal(policy.canUseSalesManagementReport(active,active.title,'NCT'),false,'old department View is not a new performance grant');
 });
 
 test('Support view-only without all-customer scope sees only expressly assigned customers', () => {
@@ -101,7 +103,7 @@ test('Support can assist an authorized customer but cannot edit or publish quota
 
 test('View access at either layer prevents all customer writes', () => {
   for (const scope of [
-    {...active.staffAccess,salesRoom:'VIEW'},
+    {...active.staffAccess,customerWork:{...active.staffAccess.customerWork,catalogue:'VIEW',buyerRoom:'VIEW',submitOrders:false}},
     {...active.staffAccess,customerAccess:{'customer-a':'VIEW'}}
   ]) {
     const staff={...active,staffAccess:scope};
@@ -115,9 +117,11 @@ test('View access at either layer prevents all customer writes', () => {
 });
 
 test('sales quote permissions and historical report ownership remain separate', () => {
-  const sales={...active,staffAccess:{...active.staffAccess,salesFunction:'SALES'}};
-  assert.equal(policy.canUseSalesRoomCustomer(sales,'PUBLISH_QUOTATION','customer-a'),true);
+  const sales={...active,staffAccess:{...active.staffAccess,quotationAccess:'EDIT',salesFunction:'SALES'}};
+  assert.equal(policy.canUseSalesRoomCustomer(sales,'PUBLISH_QUOTATION','customer-a'),false,'FMCG customer work does not publish internal quotations');
   assert.equal(policy.canUseSalesRoomCustomer(sales,'PUBLISH_QUOTATION','customer-b'),false);
+  assert.equal(policy.canQuoteManagedCustomer(sales,{customerId:'customer-a',assignedStaffId:sales.title}),true);
+  assert.equal(policy.canQuoteManagedCustomer(sales,{customerId:'customer-b',assignedStaffId:'previous-employee'}),false);
   assert.equal(policy.canUseSalesManagementReport(sales,'previous-employee','NCT'),false);
 });
 
@@ -204,7 +208,7 @@ test('staff browsing and repeated permission changes create no Activity or growi
     employee=await f.updateManagedStaff({staffId:employee.staffId,revision:employee.revision,
       name:'New employee',email:employee.email,status:n%2?'ACTIVE':'DISABLED',
       requestId:require('node:crypto').randomUUID(),
-      access:{departmentAccess:{PURCHASE:n%2?'VIEW':'EDIT'},companyIds:['NCT','GHR']}});
+      access:{...employee.access,departmentAccess:{PURCHASE:n%2?'VIEW':'EDIT'},companyIds:['NCT','GHR']}});
     assert.equal(f.records.length,2,'one admin and one employee; no accumulated history');
   }
   assert.equal(f.updates.length,10);

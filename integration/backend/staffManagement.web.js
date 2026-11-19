@@ -26,12 +26,12 @@ async function directoryForManager() {
   return rows.filter(row => row.staffStatus !== 'CONTROL');
 }
 
-export const getManagedStaffSaveStatus = webMethod(Permissions.SiteMember, async () => {
+export const getManagedStaffSaveStatus = webMethod(Permissions.SiteMember, async requestId => {
   const member = await currentMember.getMember({ fieldsets: ['FULL'] });
   if (!member?._id) throw Error('Sign in with your approved staff account.');
   const identity = await wixData.query(collection).eq('description', member._id).limit(2).find(readOptions);
   requireStaffManager(member, identity.items);
-  return readStaffSaveStatus();
+  return readStaffSaveStatus(requestId, projectManagedStaff);
 });
 
 export const getManagedStaffDirectory = webMethod(Permissions.SiteMember, async () => {
@@ -58,11 +58,30 @@ export const updateManagedStaff = webMethod(Permissions.SiteMember, async input 
   const rows = await directoryForManager();
   const member = await currentMember.getMember({ fieldsets: ['FULL'] });
   const actor = requireStaffManager(member, rows);
+  let unchanged;
+  const current = rows.find(row => String(row.title ?? '').trim() === String(input?.staffId ?? '').trim());
+  if (current && projectManagedStaff(current).revision === input.revision) {
+    let proposed;
+    try { proposed = prepareStaffUpdate(input, rows, actor.title); }
+    catch { /* Keep existing validation and receipt ordering in the guarded writer. */ }
+    if (proposed && managedStaffFields(current) === managedStaffFields(proposed)) {
+      unchanged = projectManagedStaff(current);
+    }
+  }
   return writeStaffManagement({ requestId: input?.requestId, actorId: actor.title,
     fingerprint: createHash('sha256').update(JSON.stringify(['UPDATE', input])).digest('hex'),
+    unchanged,
     prepare: async () => ({ row: prepareStaffUpdate(input, await directoryForManager(), actor.title) }),
     project: projectManagedStaff });
 });
+
+function managedStaffFields(row) {
+  const { name, email, status, access } = projectManagedStaff(row);
+  const sortedEntries = record => Object.entries(record).sort(([left], [right]) => left.localeCompare(right));
+  return JSON.stringify([name, email, status, row.description, [...access.companyIds].sort(),
+    sortedEntries(access.departmentAccess), sortedEntries(access.customerAccess), access.supportViewAll,
+    access.salesRoom, access.salesFunction, access.customerWork, access.quotationAccess, access.performanceAccess]);
+}
 
 export const getManagedCustomerDirectory = webMethod(Permissions.SiteMember, async () => {
   const rows = await directoryForManager();

@@ -85,7 +85,7 @@ test('Stock action flags distinguish Finance viewing, Purchase decisions and War
     ...f,Permissions:{SiteMember:1},webMethod:(_,fn)=>fn,fulfilmentStore:{all:async()=>[]},PURCHASE_COLLECTIONS:{NCT:{}},
     readFulfilmentContext:async()=>({activity:[]}),projectPurchaseOrders:()=>[],projectStockWorkspace:(_,__,staff)=>staff,
     createStockExceptionOperations:()=>async({staff})=>{assert.equal(staff.canReportStockException,true);return {ok:true};},
-    createStockResolutionOperations:()=>async({staff})=>staff,projectDepartmentMessages:()=>({})
+    createStockResolutionOperations:()=>async({staff})=>staff,projectDepartmentMessages:()=>({}),createDepartmentMessageOperations:()=>async()=>({})
   },['getStockExceptions','saveStockException']);
   const view=await api.getStockExceptions('NCT');assert.equal(view.readStockFinancial,true);
   for(const key of ['canReportStockException','canPlanStockResolution','canApproveStockLoss','canCloseStockException'])assert.equal(view[key],false);
@@ -117,7 +117,7 @@ test('Support scopes every directory, document and invoice read to authorized cu
     createSupportDeskOperations:()=>save,createSupportBookingOperations:()=>save,
     readFulfilmentContext:async()=>({tasks:rows.map(row=>({...row,id:row.taskId}))}),
     readSupportInvoiceState:async()=>({lines:rows,deskLines:rows,version:'original-version'}),
-    createSupportInvoiceOperations:()=>save,createSupportInvoiceCancellation:()=>save,
+    createSupportInvoiceOperations:()=>save,createSupportInvoiceCancellation:()=>save,readSupportCustomerPaymentTerm:async()=>({}),
     saveCustomerFulfilment:save,readCurrentAdminFx:async()=>[],
     readSupportDocuments:()=>rows,supportCustomerFiles:()=>rows,supportDocumentVersion:()=> 'original-version',
     pendingSupportDocumentUploads:()=>rows.map(row=>({context:{customerId:row.customerId}})),

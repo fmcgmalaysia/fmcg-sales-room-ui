@@ -176,7 +176,7 @@ function contextFromCustomer(customer, actor) {
   return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, actorUserId: normalize(actor.userId), primaryUser: Boolean(actor.primaryUser), currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', assignedStaffId: upper(customer.assignedStaffId), quotationMode: 'WEB' };
 }
 
-async function resolveBuyerContext(assistCustomerId = '', staffAction = 'VIEW') {
+async function resolveBuyerContext(assistCustomerId = '', staffAction = 'BUYER_ROOM_VIEW') {
   const member = await signedInMember();
   if (!member?._id) throw new Error('Sign in is required.');
   const requestedId = normalize(assistCustomerId);

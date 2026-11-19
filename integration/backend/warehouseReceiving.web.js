@@ -1,14 +1,15 @@
+import { operationId } from 'backend/purchaseOperationJournal.js';
 import { PROCUREMENT_SAVE_PENDING } from 'backend/purchasePlan.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { getManagedDepartmentContext } from 'backend/staffManagementAccess.js';
 import wixData from 'wix-data';
-import { projectWarehouseOrders, createWarehouseOperations } from 'backend/warehouseReceiving.js';
+import { requireWarehouseStaff, projectWarehouseOrders, createWarehouseOperations } from 'backend/warehouseReceiving.js';
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { projectWarehouseCustomerReadiness } from 'backend/warehouseCustomerReadiness.js';
 import { projectPreparation, createPreparationOperations } from 'backend/warehousePreparation.js';
-import { warehouseCbm, createWarehouseCbmCapture } from 'backend/warehouseCbm.js';
+import { indexWarehouseCbm, warehouseCbm, createWarehouseCbmCapture } from 'backend/warehouseCbm.js';
 import { capturePointbaseCosts } from 'backend/pointbaseCostClient.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { projectWarehouseReceivingOrder } from 'backend/warehouseDeliveryView.js';
@@ -24,7 +25,8 @@ async function readWarehouseData(company,staff,includePreparation=true){
   const names=PURCHASE_COLLECTIONS[company];if(!names)throw Error('Select NCT or GHR.');
   const [orders,tasks,activity,suppliers,records]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers'),store.all('PurchaseOrders')]);
   const workspace=projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff});
-  return {orders:projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity}),customerLines:projectWarehouseCustomerReadiness(workspace),deliveryTasks:includePreparation?projectPreparation({...workspace,activity}).map(item=>{const task=workspace.tasks.find(t=>t.id===item.taskId);return {...item,sourceLineId:task?.sourceLineId,cbmPerCtn:task?warehouseCbm(company,task,activity):null};}):[]};
+  const cbmEvidence=includePreparation?indexWarehouseCbm(activity):null;
+  return {orders:projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity}),customerLines:projectWarehouseCustomerReadiness(workspace),deliveryTasks:includePreparation?projectPreparation({...workspace,activity}).map(item=>{const task=workspace.tasks.find(t=>t.id===item.taskId);return {...item,sourceLineId:task?.sourceLineId,cbmPerCtn:task?warehouseCbm(company,task,cbmEvidence):null};}):[]};
 }
 async function readOrders(company,staff){return (await readWarehouseData(company,staff)).orders;}
 const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders,documentService:requestPurchaseDocument});
@@ -54,3 +56,22 @@ export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(com
 
 const captureCbm=createWarehouseCbmCapture({store,names:PURCHASE_COLLECTIONS,readData:readWarehouseData,captureCosts:capturePointbaseCosts});
 export const captureWarehouseCbm=webMethod(Permissions.SiteMember,async(company,requestId,taskId)=>captureCbm({company,requestId,taskId,staff:await staffContext(company,'EDIT')}));
+
+// Proposed append to warehouseReceiving.web.js, using its existing private store and staffContext.
+export const getWarehouseReceiptStatus=webMethod(Permissions.SiteMember,async(company,requestId,poId)=>{
+ const names=PURCHASE_COLLECTIONS[company];
+ if(!names||!/^[a-f0-9-]{36}$/i.test(requestId||'')||typeof poId!=='string'||!poId||poId.length>160)throw Error('Invalid receiving identity.');
+ const staff=await staffContext(company);
+ if(!staff?.staffId||!staff.memberId)throw Error('Verified Warehouse employee is required.');
+ const key=operationId(company+'/PURCHASE',requestId,staff.memberId);
+ const receipt=await store.read(names.activity,operationId(key,'RESULT'));
+ const outcome=receipt?.details?.outcome;
+ const expectedReceipt=operationId(company,requestId,staff.memberId,'WAREHOUSE_RECEIPT');
+ if(receipt?.action==='PURCHASE_OPERATION_RESULT'&&receipt.details.actorMemberId===staff.memberId&&
+    receipt.details.actorStaffId===staff.staffId&&receipt.details.requestId===requestId&&
+    outcome?.ok===true&&outcome.company===company&&outcome.requestId===requestId&&
+    outcome.poId===poId&&outcome.receiptId===expectedReceipt){
+  return {ok:true,company,requestId,poId};
+ }
+ return {ok:false,pending:true,company,requestId};
+});
