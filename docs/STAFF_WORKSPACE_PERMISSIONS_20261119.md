@@ -1,4 +1,14 @@
-# Staff workspace authorization — candidate, not released
+# Staff workspace authorization — released, employee acceptance pending
+
+## Release outcome
+
+Code `e08dc6d8bd5472368f8700c2832a50b03ed7d25f` was deployed once with Law's exact approval, Pages run [44513195325](https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/44513195325). Both changed public files matched rehearsal hashes and the build marker. The temporary rule was removed and the original seven policies matched exactly. Both Wix sites confirmed published/live.
+
+LAW's formal acceptance showed eight staff, the new workspace controls, existing-session Sales Room entry, AVATA Entry → Buyer Room → Catalogue, and Quotations with 54 selections and the same three published prices. A formal Support custom-domain transport omission discovered during acceptance was corrected separately in `acb7ccfb`; see `MASTER_WORKROOM_DOMAIN_20261119.md` for its release and public department-read evidence.
+
+No real employee grant or pending-account activation has been saved. The KAVI/YEOYO proposal awaits a separate action-time answer. LIM still has first sign-in pending, YEOYO remains Pending, and KAVI's own-computer acceptance is not claimed. Fake-data tests cover revocation; this is not an actual ordinary-employee browser revocation test. No main merge or new verified tag.
+
+The sections below describe the preparation and test evidence; their candidate-time statements are historical, superseded by this release outcome.
 
 ## Approved objective
 
