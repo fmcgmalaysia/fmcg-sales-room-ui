@@ -106,8 +106,11 @@ export function canUseSalesRoomCustomer(staff, action, customerId) {
   if (upper(staff.role) === 'SUPER ADMIN') return true;
   const scope = staff.staffAccess;
   const level = customerActions.get(action);
+  // A Support viewer may select only for an explicitly editable customer.
+  // Sending requests, customer management and quotation rights stay separate.
+  const selectionOnly = action === 'ASSIST_SELECTION' && scope?.salesFunction === 'SUPPORT';
   if (!salesFunctions.has(scope?.salesFunction) || !levels.has(scope.salesRoom) ||
-      (level === 'EDIT' && scope.salesRoom !== 'EDIT')) return false;
+      (level === 'EDIT' && scope.salesRoom !== 'EDIT' && !selectionOnly)) return false;
   // A Support edit grant never includes either quotation operation.
   if (['EDIT_QUOTATION', 'PUBLISH_QUOTATION', 'MANAGE_CUSTOMER'].includes(action) && scope.salesFunction !== 'SALES') return false;
   return hasCustomerAccess(scope, customerId, level);

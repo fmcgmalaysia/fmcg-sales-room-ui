@@ -99,14 +99,15 @@ test('Support can assist an authorized customer but cannot edit or publish quota
   }
 });
 
-test('View access at either layer prevents all customer writes', () => {
+test('customer View prevents selection; Support room View permits only explicitly granted selection', () => {
   for (const scope of [
     {...active.staffAccess,salesRoom:'VIEW'},
     {...active.staffAccess,customerAccess:{'customer-a':'VIEW'}}
   ]) {
     const staff={...active,staffAccess:scope};
     assert.equal(policy.canUseSalesRoomCustomer(staff,'VIEW','customer-a'),true);
-    for (const action of ['ASSIST_SELECTION','SEND_ORDER_REQUEST','EDIT_REVIEW_QTY','SUBMIT_ORDER']) {
+    assert.equal(policy.canUseSalesRoomCustomer(staff,'ASSIST_SELECTION','customer-a'),scope.salesRoom === 'VIEW');
+    for (const action of ['SEND_ORDER_REQUEST','EDIT_REVIEW_QTY','SUBMIT_ORDER']) {
       assert.equal(policy.canUseSalesRoomCustomer(staff,action,'customer-a'),false);
     }
   }

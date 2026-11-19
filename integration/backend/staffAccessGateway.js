@@ -9,13 +9,13 @@ const salesAssigneeAction = 'SALES_CREATION_ASSIGNEES';
 const resolveSalesAssigneeAction = 'SALES_CREATION_ASSIGNEE';
 const grantSalesAssigneeAction = 'SALES_GRANT_INITIAL_ACCESS';
 const readOptions = { suppressAuth: true, consistentRead: true };
-const staffIdPattern = /^STF-[A-Z0-9]{5,20}$/;
+const staffIdPattern = /^(?:STF-[A-Z0-9]{5,20}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/;
 const grantRevision = row => createHash('sha256').update(staffManagementRevision(row)).digest('hex');
 
 function salesAssignee(staff, access) {
   const staffId = String(staff.title ?? '').trim();
   const staffName = String(staff.staffName ?? '').trim();
-  if (!staffIdPattern.test(staffId) || !staffName || !staff.description ||
+  if (!staffIdPattern.test(staffId) || !staffName ||
       access.salesFunction !== 'SALES' || access.salesRoom !== 'EDIT') return null;
   return { staffId, staffName };
 }
@@ -82,7 +82,7 @@ export async function checkFmcgStaffAccess(request) {
       if (grantRevision(owner.row) !== input.grantRevision || owner.access.customerAccess[customerId]) return reply(409);
       const fingerprint = createHash('sha256').update(JSON.stringify([action, customerId, targetStaffId, input.grantRevision])).digest('hex');
       const requestId = `${fingerprint.slice(0, 8)}-${fingerprint.slice(8, 12)}-${fingerprint.slice(12, 16)}-${fingerprint.slice(16, 20)}-${fingerprint.slice(20, 32)}`;
-      const confirmed = await writeStaffManagement({ requestId, fingerprint, actorId: staff.title, prepare: async () => {
+      const confirmed = await writeStaffManagement({ requestId, fingerprint, actorId: staff.title, unchanged: undefined, prepare: async () => {
         const currentActor = await wixData.query('StaffMasterAccess').eq('staffEmail', email).limit(2).find(readOptions);
         const actor = currentActor.items.length === 1 ? currentActor.items[0] : null;
         if (!actor?.description || actor.title !== staff.title || actor.staffStatus !== 'ACTIVE') throw Error('Sales assignment expired.');

@@ -73,6 +73,44 @@ const request = (input = {}, headers = {Authorization:'Bearer test-secret'}) => 
 const forNewCustomer = () => request({action:'SALES_CREATION_ASSIGNEES',customerId:undefined});
 const salesperson = {...staff,title:'STF-SALES1',staffName:'Sales One',staffAccess:{salesFunction:'SALES',salesRoom:'EDIT'}};
 
+test('a manager can assign an explicitly active salesperson before their first MASTER sign-in',async()=>{
+  const pendingLogin={...salesperson,title:'cac0e9d5-055c-46df-a67a-ba5b6ec7b54e',description:'',staffName:'Unlinked sales fixture'};
+  const f=fixture({rows:[{...staff,role:'SUPER ADMIN'}],assignmentRows:[pendingLogin,salesperson,
+    {...pendingLogin,title:'STF-PENDING',staffStatus:'PENDING'},
+    {...pendingLogin,title:'STF-VIEW01',staffAccess:{salesFunction:'SALES',salesRoom:'VIEW'}},
+    {...pendingLogin,title:'STF-SUPP01',staffAccess:{salesFunction:'SUPPORT',salesRoom:'EDIT'}}]});
+  const listed=await f.check(forNewCustomer());
+  assert.equal(listed.body.allowed,true);
+  assert.deepEqual(Array.from(listed.body.assignees,row=>row.staffId).sort(),[salesperson.title,pendingLogin.title].sort());
+  const resolved=await f.check(resolveOwner(pendingLogin.title));
+  assert.equal(resolved.body.owner.staffId,pendingLogin.title);
+  assert.equal(f.writes,0);
+  const unverified=fixture({rows:[pendingLogin],assignmentRows:[pendingLogin]});
+  assert.equal((await unverified.check(forNewCustomer())).body.allowed,false);
+  assert.equal((await unverified.check(request({action:'ENTER'}))).body.allowed,false);
+});
+
+test('Support selection-only authorization is customer-specific and never enables trading actions',async()=>{
+  const selectionStaff={...staff,staffAccess:{salesRoom:'VIEW',salesFunction:'SUPPORT',
+    customerAccess:{'customer-a':'EDIT','customer-view':'VIEW'},companyIds:['NCT','GHR'],
+    departmentAccess:{'SALES MANAGEMENT':'EDIT',SUPPORT:'VIEW'},supportViewAll:true}};
+  const f=fixture({rows:[selectionStaff]});
+  assert.equal((await f.check(request({action:'ENTER'}))).body.allowed,true);
+  assert.equal((await f.check(request({action:'ASSIST_SELECTION'}))).body.allowed,true);
+  for(const customerId of ['customer-view','customer-b'])
+    assert.equal((await f.check(request({action:'ASSIST_SELECTION',customerId}))).body.allowed,false);
+  for(const action of ['SEND_ORDER_REQUEST','EDIT_REVIEW_QTY','SUBMIT_ORDER','MANAGE_CUSTOMER','EDIT_QUOTATION','PUBLISH_QUOTATION'])
+    assert.equal((await f.check(request({action}))).body.allowed,false,action);
+  assert.equal((await f.check(forNewCustomer())).body.allowed,false);
+  assert.equal(f.writes,0);
+  for(const scope of [{...selectionStaff.staffAccess,salesRoom:''},
+    {...selectionStaff.staffAccess,salesRoom:'VIEW',salesFunction:'SALES'}]) {
+    // Malformed empty room is rejected; a Sales viewer still has no write permission.
+    const result=await fixture({rows:[{...selectionStaff,staffAccess:scope}]}).check(request({action:'ASSIST_SELECTION'}));
+    assert.notEqual(result.body.allowed,true);
+  }
+});
+
 test('only an active bound Sales Edit employee can obtain their own creation assignment', async()=>{
   const self = fixture({rows:[salesperson]});
   const result = await self.check(forNewCustomer());
@@ -159,10 +197,11 @@ test('central role and exact customer scope determine authorization without loca
     assert.equal((await f.check(request({action,customerId:'customer-b',role:'ADMIN'}))).body.allowed,false);
   }
 });
-test('View staff are denied every customer mutation even with editable customer scope',async()=>{
+test('Support View with a customer Edit grant allows selection but denies other mutations',async()=>{
   const f=fixture({rows:[{...staff,staffAccess:{...staff.staffAccess,salesRoom:'VIEW'}}]});
   assert.equal((await f.check(request())).body.allowed,true);
-  for(const action of ['ASSIST_SELECTION','SEND_ORDER_REQUEST','EDIT_REVIEW_QTY','SUBMIT_ORDER','EDIT_QUOTATION','PUBLISH_QUOTATION']) {
+  assert.equal((await f.check(request({action:'ASSIST_SELECTION'}))).body.allowed,true);
+  for(const action of ['SEND_ORDER_REQUEST','EDIT_REVIEW_QTY','SUBMIT_ORDER','EDIT_QUOTATION','PUBLISH_QUOTATION']) {
     assert.equal((await f.check(request({action}))).body.allowed,false);
   }
 });
