@@ -42,7 +42,7 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readC
 
     if (typeof customerId !== 'string' || !/^[A-Za-z0-9_-]{1,120}$/.test(customerId) ||
         !can(...ACTION_POLICY[action], customerId)) return { accessDenied: true };
-    const customer = await readCustomer(customerId);
+    const customer = await readCustomer(customerId, action);
     if (customer?.customerId !== customerId || !activeWebCustomer(customer)) return { accessDenied: true };
     const scope = { staffId, customer };
     if (action === 'quotes') {

@@ -38,9 +38,10 @@ const operate = createMasterQuotationActions({
     }
     return customers;
   },
-  async readCustomer(customerId) {
+  async readCustomer(customerId, action) {
     const { customer } = await read({ action: 'customer', customerId });
     if (!customer) return null;
+    if (action === 'cost' || action === 'cost-status') return customer;
     const [{ rateToMyr }] = await readCurrentAdminFx([customer.preferredCurrency]);
     return { ...customer, rateToMyr };
   },

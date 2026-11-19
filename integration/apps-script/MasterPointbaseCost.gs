@@ -187,6 +187,18 @@ function MPC_quoteBucket_(barcode) {
   var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, barcode);
   return 'MQC1_' + ((bytes[0] + 256) % 64);
 }
+function MPC_quoteRead_(barcodes) {
+  var costs = MPC_captureOrderCosts_(barcodes);
+  Object.keys(costs).forEach(function (barcode) {
+    var cost = costs[barcode];
+    // Missing carton volume remains unknown; it does not invalidate a price.
+    // The original Purchase endpoint still receives its strict source result.
+    if (cost.costIssues.length === 1 && cost.costIssues[0] === 'UNAVAILABLE_CBMPERCTN') {
+      cost.referenceIssues = cost.costIssues; cost.costIssues = []; cost.costStatus = 'CAPTURED';
+    }
+  });
+  return costs;
+}
 function MPC_quoteCached_(barcodes) {
   var keys = Array.from(new Set(barcodes.map(MPC_quoteBucket_)));
   var values = MPC_quoteCache_().getAll(keys), buckets = {}, result = {};
@@ -242,7 +254,7 @@ function MPC_quoteReference_(body) {
   if (body.mode === 'QUOTE_CURRENT') {
     var missing = barcodes.filter(function (b) { return !old[b]; });
     if (missing.length) {
-      var fetched = MPC_captureOrderCosts_(missing);
+      var fetched = MPC_quoteRead_(missing);
       MPC_quoteRemember_(fetched);
       Object.keys(fetched).forEach(function (b) { old[b] = fetched[b]; });
     }
@@ -250,7 +262,7 @@ function MPC_quoteReference_(body) {
   }
   cache.put(receiptKey, JSON.stringify({ requestKey: key, pending: true, startedAt: new Date().toISOString() }), 180);
   try {
-    costs = MPC_captureOrderCosts_(barcodes);
+    costs = MPC_quoteRead_(barcodes);
     MPC_quoteRemember_(costs);
   } catch (error) { cache.remove(receiptKey); throw error; }
   var counts = { requestKey: key, pending: false, updated: 0, unchanged: 0, failed: 0,

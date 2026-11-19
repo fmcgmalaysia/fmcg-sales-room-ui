@@ -74,6 +74,35 @@ test('an older slow result cannot replace newer shared references', () => {
   assert.equal(f.call('QUOTE_CURRENT').costs[barcode].lpCtn,99);
 });
 
+test('missing CBM does not block valid quotation cost; strict Purchase result and unknown volume remain intact', () => {
+  const f=fixture(1),barcode=f.rows[0][5];f.rows[0][19]='';
+  const strict=JSON.parse(JSON.stringify(f.ctx.MPC_captureOrderCosts_([barcode])))[barcode];
+  assert.equal(strict.costStatus,'ERROR');assert.deepEqual(strict.costIssues,['UNAVAILABLE_CBMPERCTN']);
+  const quote=f.call('QUOTE_CAPTURE');assert.equal(quote.updated,1);assert.equal(quote.failed,0);
+  assert.equal(quote.costs[barcode].cbmPerCtn,null);assert.deepEqual(quote.costs[barcode].referenceIssues,['UNAVAILABLE_CBMPERCTN']);
+  f.rows[0][10]='';
+  assert.equal(f.call('QUOTE_CAPTURE').failed,1,'Missing price must still fail');
+});
+
+test('cost and result reads retain customer checks while avoiding unused FX; price actions still require current FX', async () => {
+  const policy=load('integration/backend/staffManagementPolicy.js',['canEnterDepartment','canUseSalesRoomCustomer']);
+  const {createMasterQuotationActions}=load('integration/backend/masterQuotationAccess.js',['createMasterQuotationActions'],policy);
+  const record={title:'QA',staffStatus:'ACTIVE',staffAccess:{departmentAccess:{'SALES MANAGEMENT':'EDIT'},companyIds:['NCT'],salesRoom:'EDIT',salesFunction:'SALES',customerAccess:{'QA-CUSTOMER':'EDIT'}}};
+  let fx=0, customers=0;
+  const {runMasterQuotation}=load('integration/backend/masterQuotation.web.js',['runMasterQuotation'],{
+    webMethod:(_,fn)=>fn,Permissions:{SiteMember:'member'},wixData:{},getSecret:async()=>'',readManagedStaffIdentity:async()=>({record}),
+    projectFmcgStaffScope:()=>({allCustomers:true,customerActions:{VIEW:[]}}),createMasterQuoteSender:()=>async()=>{},
+    createMasterQuotationReader:()=>async()=>{customers++;return {customer:{customerId:'QA-CUSTOMER',quotationMode:'WEB',webQuotationStatus:'READY',preferredCurrency:'USD'}};},
+    createMasterQuotationActions,createMasterQuotationWixStore:()=>({}),createMasterQuotationService:()=>({catchCost:async()=>({pending:false}),costResult:async()=>({pending:true}),list:async()=>[]}),
+    captureQuotationCosts:()=>{},readQuotationCosts:()=>{},readQuotationCostResult:()=>{},createLastInvoicedPrices:()=>()=>{},
+    readCurrentAdminFx:async()=>{fx++;throw Error('FX unavailable');}
+  });
+  assert.equal((await runMasterQuotation('cost','QA-CUSTOMER',{})).pending,false);
+  assert.equal((await runMasterQuotation('cost-status','QA-CUSTOMER',{})).pending,true);
+  assert.equal(customers,2);assert.equal(fx,0);
+  await assert.rejects(runMasterQuotation('quotes','QA-CUSTOMER'),/FX unavailable/);assert.equal(fx,1);
+});
+
 test('50 fake customers × 500 selections share 500 references with zero CMS cost writes and unchanged publication snapshots', async () => {
   const f = fixture(500), published = {enabled:true,priceEa:1.05,priceCtn:25.2,currency:'USD',version:7,publishedAt:'2026-11-19T04:30:00Z'};
   let inserts=0, revisionReads=0, deliveries=0;
