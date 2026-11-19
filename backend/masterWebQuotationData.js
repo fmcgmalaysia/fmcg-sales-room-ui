@@ -141,6 +141,9 @@ export async function applyWebQuotations(customer, selections) {
     const result = presentMasterQuote({ ...base, selectionEpoch: selectionEpoch(row) }, quote);
     if (!result.quoteActive) return base;
     const { selectionEpoch: _epoch, ...released } = result;
-    return { ...released, quoteEffectiveAt: `WEB-${quote.version}` };
+    const createdAt = quote._createdDate instanceof Date ? quote._createdDate.getTime()
+      : typeof quote._createdDate === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(quote._createdDate) ? Date.parse(quote._createdDate) : NaN;
+    return { ...released, quoteEffectiveAt: `WEB-${quote.version}`,
+      quotePublishedAt: Number.isFinite(createdAt) ? new Date(createdAt).toISOString() : '' };
   });
 }
