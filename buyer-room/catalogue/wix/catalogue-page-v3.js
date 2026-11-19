@@ -16,7 +16,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261119-catalogue-first-fifty-v1';
+const CATALOGUE_BUILD_VERSION = '20261119-catalogue-mobile-buyer-entry-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -49,6 +49,7 @@ let catalogueBrowseRevision = 0;
 let catalogueBrowseSubIds = [];
 let catalogueBrowseKey = '';
 let catalogueBrowsePosition = null;
+let catalogueBuyerNavigationPending = false;
 
 function mobileSelectionFlightKey(productId) {
     return selectionContext?.mode === 'buyer' && catalogueBrowseKey
@@ -477,7 +478,7 @@ $w.onReady(() => {
                     throw new Error('Catalogue customer access could not be verified.');
                 }
                 session.setItem('catalogueAssistCustomerId', selection.customerId);
-                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId };
+                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
                 sidebarSelectionState(selection);
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
@@ -790,6 +791,7 @@ function setupCatalogueWorkspace() {
             if (catalogueWorkspaceFullReadComplete || catalogueWorkspaceProducts.length) sendCatalogueWorkspaceData();
             else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
             if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
+            if (catalogueBuyerNavigationPending) workspace.postMessage({ type: 'cataloguePrepareBuyerRoom' });
         } else if (message.type === 'catalogueWorkspaceBrowse') {
             const principle = typeof message.principle === 'string' ? message.principle.trim() : '';
             const main = typeof message.main === 'string' ? message.main.toUpperCase() : '';
@@ -819,7 +821,9 @@ function setupCatalogueWorkspace() {
         } else if (message.type === 'catalogueWorkspaceNavigate') {
             try { await wixWindowFrontend.scrollTo(0, 0); } catch (error) {}
         } else if (message.type === 'catalogueWorkspaceBuyerRoom') {
-            openBuyerRoomWindow();
+            if (!catalogueBuyerNavigationPending) return;
+            catalogueBuyerNavigationPending = false;
+            openBuyerRoom();
         } else if (message.type === 'catalogueWorkspaceSelect') {
             const productId = String(message.productId || '').trim();
             if (!productId || selectionBusyIds.has(productId)) return;
@@ -879,6 +883,12 @@ function openBuyerRoom() {
         return;
     }
     const assistCustomerId = String(selectionContext?.assistCustomerId || '').trim();
+    if (catalogueContextMessage?.mode !== 'buyer' && !assistCustomerId) return;
+    if (assistCustomerId && selectionContext?.staffId) {
+        try {
+            session.setItem('staffBuyerEntryV1', JSON.stringify({ customerId: assistCustomerId, staffId: selectionContext.staffId, expiresAt: Date.now() + 30000 }));
+        } catch (error) { /* The explicit URL still carries the authorized customer. */ }
+    }
     wixLocationFrontend.to(assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : '/buyer-room');
 }
 
@@ -892,7 +902,11 @@ function buyerRoomUrl(mode = catalogueContextMessage?.mode) {
 }
 
 function openBuyerRoomWindow() {
-    openBuyerRoom();
+    if (!catalogueContextMessage || catalogueBuyerNavigationPending) return;
+    if (catalogueContextMessage.mode === 'preview') { openBuyerRoom(); return; }
+    catalogueBuyerNavigationPending = true;
+    try { $w('#html3').postMessage({ type: 'catalogueBuyerRoomPending', pending: true }); } catch (error) {}
+    if (catalogueWorkspaceReady) $w('#html5').postMessage({ type: 'cataloguePrepareBuyerRoom' });
 }
 
 function setupFluidCatalogueLayout() {
