@@ -1,9 +1,12 @@
 /* Customer allocation UI uses the same pure planner and original save journal. */
 (() => {
  function allocationSummary(row,quote,esc,quantity,borrowed=0){
-  const total=quote.assigned+quote.useFree+borrowed,remaining=Math.max(0,quote.shortage-borrowed);
-  const card=(en,zh,value,kind)=>'<div class="alloc-source '+kind+'"><span>'+en+'<small>'+zh+'</small></span><strong>'+quantity(value)+' CTN</strong></div>';
-  return '<section class="alloc-summary"><div class="alloc-product"><b>'+esc(row?.name||'')+'</b><span>'+esc(row?.packing||'')+'</span></div><div class="alloc-demand"><span aria-label="Demand 需求">Customer demand<small>客户需求</small></span><strong>'+quantity(quote.demand)+' CTN</strong></div><div class="alloc-sources '+(borrowed?'with-borrow':'')+'">'+card('Covered','已覆盖',quote.assigned,'reserved')+card('Use stock','本次调用库存',quote.useFree,'free')+(borrowed?card('Borrow plan','本次拟借货',borrowed,'borrow'):'')+'</div><div class="alloc-total"><span>After change<small>调整后覆盖</small></span><strong>'+quantity(total)+' CTN</strong></div><div class="alloc-meter" role="img" aria-label="'+quantity(total)+' of '+quantity(quote.demand)+' CTN"><span class="reserved" style="flex:'+quote.assigned+'"></span><span class="free" style="flex:'+quote.useFree+'"></span><span class="borrow" style="flex:'+borrowed+'"></span><span class="remaining" style="flex:'+remaining+'"></span></div><details class="alloc-stock-details"><summary>Stock details 库存详情</summary><p>Incoming 待到货 <strong>'+quantity(quote.waiting||0)+' CTN</strong></p><p>Free stock 可调用库存 <strong>'+quantity(quote.freeQuantity)+' CTN</strong></p></details></section>';
+  const total=quote.assigned+quote.useFree+borrowed;
+  const stat=(en,zh,value)=>'<div class="alloc-source"><span>'+en+'<small>'+zh+'</small></span><strong>'+quantity(value)+' CTN</strong></div>';
+  return '<section class="alloc-summary"><div class="alloc-product"><b>'+esc(row?.name||'')+'</b><span>'+esc(row?.packing||'')+'</span></div>'+
+    '<div class="alloc-sources">'+stat('Customer demand','客户需求',quote.demand)+stat('Covered','已覆盖',quote.assigned)+'</div>'+
+    (total!==quote.assigned?'<div class="alloc-sources">'+(quote.useFree?stat('Use stock','本次调用库存',quote.useFree):'')+(borrowed?stat('Borrow','本次拟借货',borrowed):'')+stat('After change','调整后覆盖',total)+'</div>':'')+
+    '<details class="alloc-stock-details"><summary>Stock details 库存详情</summary><p>Incoming 待到货 <strong>'+quantity(quote.waiting||0)+' CTN</strong></p><p>Free stock 可调用库存 <strong>'+quantity(quote.freeQuantity)+' CTN</strong></p></details></section>';
  }
  function borrowQuote(context,taskId){
   if(!context||!window.customerAllocationPlan)return null;

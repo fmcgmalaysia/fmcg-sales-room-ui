@@ -52,6 +52,16 @@ export function customerCaseFeedback(cases){
  const state=unresolved.find(item=>!item.decision||item.decision.customerDecision==='PENDING')||unresolved[0]||cases.at(-1);
  return {customerDecision:unresolved.length?(unresolved.some(item=>!item.decision||item.decision.customerDecision==='PENDING')?'PENDING':'WAIT'):'STOP',customerMessage:state.decision?.customerMessage||'',expectedDate:state.decision?.expectedDate||null,at:state.decision?.at||null};
 }
+export function customerShortfallRoute(workspace,task){
+ const supply=task.supplyAllocation;
+ if(!supply||task.archived||task.procurementSource||task.specialPurchase)return null;
+ const receipts=workspace.tasks.flatMap(row=>(row.customerDemandTaskId||row.id)===task.id?(row.quantityCases||[]).filter(item=>item.kind==='RECEIPT'):[]);
+ const decision=receipts.map(item=>item.decision).filter(item=>item?.supplierDeliveryDecision==='STOP'&&item.customerShortfallRoute)
+  .sort((a,b)=>b.at.localeCompare(a.at)||b.revision.localeCompare(a.revision))[0];
+ if(!decision&&!receipts.some(item=>item.quantity>0))return null;
+ return {route:decision?.customerShortfallRoute||null,revision:decision?.revision||null,received:supply.received,
+  demand:task.requested??task.ord,waiting:supply.waiting,toArrange:supply.gap+supply.unplaced};
+}
 export function createQuantityCaseOperations({store,names,readWorkspace,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{
@@ -67,10 +77,12 @@ export function createQuantityCaseOperations({store,names,readWorkspace,now=()=>
    const supplierDecision=item.kind==='UNPLACED'?'NOT_APPLICABLE':input.supplierDecision;
    if(compact){if(supplierDeliveryDecision==='WAIT'?supplierDecision!=='PENDING':!['CN_PROMISED','FUTURE_DEDUCTION','SUPPLIER_REFUSED'].includes(supplierDecision))throw Error('Select exactly one supplier response.');}
    else if(item.kind==='RECEIPT'&&!['REPLENISH','REFUND','CREDIT','INTERNAL','PENDING'].includes(supplierDecision))throw Error('Select the supplier shortage resolution.');
+   const route=input.customerShortfallRoute;
+   if(route!==undefined&&(!compact||supplierDeliveryDecision!=='STOP'||!['ALLOCATE','SUPPORT_SPLIT'].includes(route)))throw Error('Select a valid customer shortage action.');
    const expectedDate=compact?item.decision?.expectedDate:input.expectedDate;
    if((customerDecision==='WAIT'||supplierDecision==='REPLENISH')&&(!/^\d{4}-\d{2}-\d{2}$/.test(expectedDate||'')||!Number.isFinite(Date.parse(expectedDate))||new Date(expectedDate).toISOString().slice(0,10)!==expectedDate))throw Error('Enter the expected replenishment date.');
    const id=operationId(company,requestId,staff.memberId,'QUANTITY_CASE_DECISION');
-   return {version:input.version,event:{_id:id,title:id,description:item.customerDemandTaskId,imageAltText:item.taskId,action:QUANTITY_CASE_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:now().toISOString(),message:reason,details:{caseId:item.id,kind:item.kind,quantity:item.quantity,signature:item.signature,beforeRevision:item.revision,customerDecision,supplierDecision,customerMessage,reason,expectedDate:expectedDate||null,...(compact?{supplierDeliveryDecision,company}:{})}}};
+   return {version:input.version,event:{_id:id,title:id,description:item.customerDemandTaskId,imageAltText:item.taskId,action:QUANTITY_CASE_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:now().toISOString(),message:reason,details:{caseId:item.id,kind:item.kind,quantity:item.quantity,signature:item.signature,beforeRevision:item.revision,customerDecision,supplierDecision,customerMessage,reason,expectedDate:expectedDate||null,...(compact?{supplierDeliveryDecision,company}:{}),...(route?{customerShortfallRoute:route}:{})}}};
   },apply:async plan=>{
    const saved=await store.read(collection,plan.event._id);
    if(!saved){const workspace=await readWorkspace(company,staff),activity=await store.all(collection);requireConfirmedProcurement(workspace,[plan.event.imageAltText,plan.event.description]);if(quantityCasesVersion(workspace,activity)!==plan.version)throw Error('Quantity case changed while saving.');await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}
