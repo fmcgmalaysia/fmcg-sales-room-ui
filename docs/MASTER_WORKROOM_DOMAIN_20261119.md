@@ -1,4 +1,17 @@
-# MASTER workroom custom-domain transport — candidate
+# MASTER workroom custom-domain transport — released, public reads verified
+
+## Release evidence
+
+- Code: `acb7ccfbeef2798190836881f928f777113c83de`, draft PR419. Law approved this exact one-use deployment. No main merge or user-verified tag was created.
+- GitHub Pages: run [44518607453](https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/44518607453) succeeded. Five public resource hashes and marker `20261119-master-workroom-domain-v1` match the rehearsal; 112 of 117 resources are unchanged.
+- Deployment protection: the temporary branch rule was removed immediately and all seven original IDs, names and types matched the saved original list.
+- Wix: MASTER confirmed published and live. FMCG retains its earlier completed permission release, with no extra domain-only change.
+- Public acceptance: LAW loaded Support and Purchase for NCT/GHR; Warehouse Incoming and Delivery Task reads returned normally, including Delivery Task for both companies. Finance NCT/GHR Stock List loaded, and standalone Stock Control NCT loaded quantity-only columns. Support retained the formal payment-term display. Staff Management showed eight employees; the earlier Sales Room → Buyer Room → Catalogue and Quotations checks retained the original selection count and three prices. No business records were changed during these public checks.
+- Scope limit: no ordinary employee was impersonated and no real employee permission was saved. KAVI's proposed all-customer profile/selection grant and YEOYO's proposed pending-account configuration await the separate action-time confirmation. Real employee-computer acceptance remains outstanding.
+
+Fresh cloud editor readback confirms `customerFulfilment.web.js` is the intended 4292-character candidate (fingerprint `98fe51ec`), without diagnostic logging. An old public tab initially retained the old parent-page iframe version. A fresh navigation loaded the new iframe version and returned the correct data; the verification query was used only to distinguish this fresh navigation, not as deployment evidence.
+
+## Implementation record
 
 Formal Staff Management release e08dc6d8 passed 150 affected tests, deployed as Pages run 44513195325, and both Wix sites confirmed live. Original seven branch policies were immediately restored. Public LAW acceptance loaded eight employees, Sales Room, AVATA Buyer Room and Catalogue, and Quotations with 54 items and the original three prices. Actual employee grants were not changed.
 
@@ -8,7 +21,7 @@ Support on https://www.ltpos.ai/support-department failed before any backend req
 
 The correction admits only the two exact HTTPS origins `https://www.ltpos.ai` and `https://ltpos.ai`, retains the existing Wix/editor origins and every source/type/company/request check, and changes no grant or business action. The shared module's other statements and Support's business statements are byte-identical after reversing the two documented checks and build markers. Three existing HTML script-version references are refreshed to avoid cached old scripts. The next package changes 5 of 117 files, with 112 unchanged, pinned to run 44513195325. Wix iframe URL version changes must use fresh formal page originals and preserve every handler.
 
-Temporary recovery of customerFulfilment.web.js to its captured formal original did not remove the error. Temporary diagnostic logs showed no backend arrival; the origin check and fake-parent reproduction explain this. The intended permission adapter is restored in draft, with all temporary diagnostics removed from that draft. The latest live temporary diagnostic version must be replaced by the exact accepted permission candidate at the next MASTER publish. No business repair was stacked on this diagnostic.
+Temporary recovery of customerFulfilment.web.js to its captured formal original did not remove the error. Temporary diagnostic logs showed no backend arrival; the origin check and fake-parent reproduction explain this. The intended permission adapter was restored and published without temporary diagnostics; fresh cloud readback confirmed the exact candidate. No business repair was stacked on this diagnostic.
 
 ## Tests and limits
 
@@ -18,4 +31,4 @@ A broader initial run produced 79 passes and one existing failure in `warehouse-
 
 The scoped run passed 73/73, and the added exact-source test for the three formal Wix iframe versions also passed (26/26 origin/source checks in the final targeted run). The 117-resource rehearsal changes exactly five files; 112 remain identical. Fresh public hashes for those five match the pinned production baseline. Three exact formal cache-version draft readbacks are complete, and their before/after sources are preserved in the prototype `wix` folder.
 
-Remaining: one-use authorization for the new domain-only branch, Pages marker/hash verification, immediate seven-rule restoration, MASTER publish, and real Support/Purchase/Warehouse verification. Do not report the whole permission task accepted until relevant public errors are clear. Ordinary employee configuration and KAVI's own-computer acceptance remain distinct from LAW and fake-data acceptance.
+The authorized Pages deployment, marker/hash verification, seven-rule restoration, MASTER publication and public department reads are complete. Ordinary employee configuration and KAVI's own-computer acceptance remain distinct from LAW and fake-data acceptance. The unchanged invoice/archive fixture above remains an open verification item.
