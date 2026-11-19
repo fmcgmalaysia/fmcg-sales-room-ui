@@ -354,10 +354,10 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     if(!Number.isSafeInteger(quantity)||quantity<0)return number(line.allocQty);
     const display=number(quantity);
     if(decision?.splitRequired&&!locked&&(!line.portionDesk||line.portionDesk===taskDesk(line.taskId))){
-      return '<button type="button" class="support-shortfall-split" style="background:#E51B2B;color:white;border:0;border-radius:999px;padding:3px 8px" data-desk-split="'+esc(line.taskId)+'" '+(!data.deskAvailable||deskBusy||deskPending()||invoiceBusy?'disabled':'')+'>'+display+' · Split</button>';
+      return '<button type="button" class="support-allocation-qty support-shortfall-split" data-desk-split="'+esc(line.taskId)+'" '+(!data.deskAvailable||deskBusy||deskPending()||invoiceBusy?'disabled':'')+'>'+display+' · Split</button>';
     }
     const complete=quantity>=line.orderQty||(decision?.arranged&&line.portionDesk!==0);
-    return '<span style="border-radius:999px;padding:3px 8px;background:'+(complete?'#E4EEFC':'#FFF0D9')+'">'+display+'</span>';
+    return '<span class="support-allocation-qty '+(complete?'support-allocation-covered':'support-allocation-waiting')+'">'+display+'</span>';
   }
   function taskDesk(taskId){return deskState().assignments.find(row=>row.taskId===taskId)?.desk||0;}
   function deskPending(){return deskAttempts.get(company+'|'+selectedCustomer);}
@@ -730,7 +730,7 @@ const currency=container.querySelector('#charge-currency');$('charge-document-id
     const read=(label,value,style='')=>'<div class="shipment-kv '+style+'"><span>'+label+'</span><strong>'+esc(value||'—')+'</strong></div>';
     const section=(title,key)=>'<div class="shipment-section-title"><h3>'+title+'</h3><button type="button" class="shipment-section-pencil" data-edit-details="'+key+'" aria-label="Edit '+title+'" '+(canEdit?'':'disabled')+'><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M8 16h4L21 7a2.8 2.8 0 0 0-4-4l-9 9zM15 5l4 4"/></svg></button></div>';
     const depositAmount=references.depositAmountCents===null||references.depositAmountCents===undefined?'—':references.depositCurrency+' '+number(references.depositAmountCents/100,2),invoiceLabel=invoice?.number||hold?.number||references.invoiceNoDraft||company+'-INV-';
-    const copyAction=activeDesk&&!hold&&!pendingDesk&&!attempt&&lines.length?'<button type="button" class="autocount-launch" data-autocount>Copy to AutoCount</button>':'';
+    const copyAction=activeDesk&&!hold&&!pendingDesk&&!attempt&&lines.length?'<div class="autocount-toolbar"><button type="button" class="autocount-launch" disabled>Create CIPL</button><button type="button" class="autocount-launch" data-autocount>Copy to AutoCount</button></div>':'';
     return '<article class="desk-header shipment-header shipment-compact">'+
       '<div class="desk-heading"><div class="shipment-customer-desk"><h2>'+esc(order.customerName)+'</h2><span class="desk-currency" aria-label="Invoice currency">'+esc(currencies.length===1?currency:currencies.length>1?'Mixed currencies':currency||'—')+'</span><div class="desk-switcher"><button type="button" data-desk-step="-1" aria-label="Previous Desk" '+(activeDesk===0?'disabled':'')+'>‹</button><b>'+(activeDesk?'Desk '+activeDesk:'All')+'</b><button type="button" data-desk-step="1" aria-label="Next Desk" '+(activeDesk===3?'disabled':'')+'>›</button></div></div><div class="shipment-delivery-actions"></div></div>'+
 
