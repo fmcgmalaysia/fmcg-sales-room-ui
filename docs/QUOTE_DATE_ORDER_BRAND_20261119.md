@@ -1,6 +1,6 @@
 # Quotation date, immediate switch, Order Form sort and portal mark
 
-Scope requested by Law on 19 November 2026: correct Buyer Room Last Quoted; turn the View Quote switch on immediately during publishing and revert on failure; make Order Form follow My Selection's Sort ID order; show the approved LTP mark beside the signed-in portal title. Catalogue optimization remains paused. This is a candidate, not a completed publication.
+Scope requested by Law on 19 November 2026: correct Buyer Room Last Quoted; turn the View Quote switch on immediately during publishing and revert on failure; make Order Form follow My Selection's Sort ID order; show the approved LTP mark beside the signed-in portal title. Catalogue optimization remains paused. Release statuses and remaining interaction acceptance are recorded below.
 
 ## Verified originals and minimum changes
 
@@ -29,3 +29,13 @@ Expected published hashes:
 - ltpos/managed.html: 0972ee9aa8e157977c34085d9fc357ec692aae652ad87eccf69ccc859825cb50
 
 Publication still requires exact scoped deployment permission, immediate restoration of the original seven policies, fresh Wix readback/minimal synchronization, new published/live receipts on both sites and public acceptance. Do not re-publish AVATA prices merely to correct a display date. Use its existing quotation timestamps read-only for date verification; publication/failure writes remain isolated unless Law explicitly authorizes a real row test.
+
+## Release evidence — 19 November 2026
+
+The scoped permission was subsequently granted and consumed once for runtime e5bbdaa18dc4142a2cdf6e8f9844e7c113a11e63. Pages run 44459595337 succeeded; all four published hashes above matched. The temporary branch policy was removed and original seven IDs, names and types matched. Do not execute another deployment under that permission.
+
+Four Wix readbacks matched exactly: FMCG module 7884/52a07de2, Buyer page 16498/e4cec85, MASTER portal page 2869/1ef172e7, Quotations html2 60754/13a89eb6. Both Studio sites returned new published/live receipts.
+
+Fresh public pages and an additional outer reload showed actual user publication dates Today 12:30 on three rows, identical 54-product order in My Selection and Order Form, loaded signed-in portal mark at 64x38, and the exact tested Quotations inline app under the new build marker. All three tabs had empty captured error logs. The user's latest 54 selections and prices were read only; do not restore an older 16-item snapshot or old price. No business writes were made by this release verification.
+
+Live View Quote mutation/failure acceptance remains for Law: actual re-publication would change the valid date and Law is actively editing real quotes. Immediate checked indication and failure rollback passed the exact-code isolated tests, but no production failure was injected. Physical Safari/idle-session diagnosis remains deferred, and main is not merged or frozen as user-accepted for these new behaviors.
