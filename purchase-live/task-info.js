@@ -52,7 +52,8 @@
   function receiptSummary(m){return receiptView(m).date;}
   function allocationView(m,data=context){
     const delivery=data?.deskDeliveries?.find(row=>row.taskId===m.task.id),outstanding=m.sources.some(row=>row.loans.some(loan=>loan.outstanding>0));
-    const displayed=m.supply?.planned??m.allocated,defaultZero=displayed==null&&m.sources.length===0;
+    const displayed=(m.task.customerShortfall&&!m.batchId?m.supply?.received:m.supply?.planned)??m.allocated;
+    const defaultZero=displayed==null&&m.sources.length===0;
     const awaiting=m.supply?.waiting>0&&m.supply.received===0&&!m.sources.length&&!(m.received>0);
     const physical=m.supply?.received??((m.received>0||m.sources.length)?m.allocated:0);
     const sourceMismatch=!awaiting&&!defaultZero&&physical>0&&(m.sources.reduce((sum,source)=>sum+source.quantity,0)!==physical||m.sources.some(source=>source.kind==='Source'));

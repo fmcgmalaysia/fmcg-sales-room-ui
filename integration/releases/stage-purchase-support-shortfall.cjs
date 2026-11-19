@@ -7,6 +7,7 @@ const hashes = {
   "purchase-live/index.html": "30865c02bc84cbaee67434a05e583d0f33cb0eae59fe243b9953a95cd2869c3f",
   "purchase-live/app.js": "1c72e96f605c1d004c5751afa4252a2cdaca22a457cec9fa2f45dda0275909ad",
   "purchase-live/customer-allocation.js": "e2d524af8eb0fc44d923c5a44518869396f98be11acb722d9f7417423313bc0e",
+  "purchase-live/task-info.js": "f876eb0e0a61679be0a6c03aa88b3080d958d4af0c700a104602c1cb73c86013",
   "purchase-live/task-grid.js": "ee764000d38c62e82f8cfbb42bb79d8aae6beb641ff41463bbf46836e69027cf",
   "support-room/workroom.html": "c64d8afcd41b0420fb83f8ae255ebfcd3cb47be31095f35294b5ab524be3c75a",
   "support-room/workroom-model.js": "60fe3898d5cbe3e3954f7db57125ef4b19f0aea4d662a83c716bbbe57ee91d72",
