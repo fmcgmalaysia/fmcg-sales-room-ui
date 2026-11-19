@@ -67,9 +67,11 @@ function checkShortfallSplit(context,input,parts){
  const task=context.tasks.find(row=>row.id===input.taskId&&row.customerId===input.customerId);
  const current=task&&customerShortfallRoute(context,task);
  const assigned=parts?.filter(part=>part.desk>0)||[];
+ const stored=readSupportDesks(context.activity,context.company).find(row=>row.customerId===input.customerId);
+ const originalDesk=supportDeskForTask(stored,input.taskId);
  if(current?.route!=='SUPPORT_SPLIT'||current.revision!==input.shortfallRevision||current.toArrange<=0||
     current.received<=0||current.received>=current.demand||assigned.length!==1||
-    assigned[0].quantity!==current.received||parts.find(part=>part.desk===0)?.quantity!==current.demand-current.received)
+    assigned[0].desk!==input.desk||originalDesk>0&&input.desk!==originalDesk||assigned[0].quantity!==current.received||parts.find(part=>part.desk===0)?.quantity!==current.demand-current.received)
   throw Error('Received quantities or the Purchase decision changed. Refresh before confirming the split.');
 }
 export function createSupportDeskOperations({store,names,readContext,now=()=>new Date()}){
@@ -187,8 +189,9 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
    }
    if(split&&input.shortfallRevision)checkShortfallSplit(context,input,requested);
    const shortfallRevision=input.shortfallRevision||previousAssignment?.shortfallRevision;
+   const splitOrigin=input.shortfallRevision?{desk:input.desk,at:now().toISOString()}:previousAssignment?.shortfallSplitOrigin;
    const dispositionRevision=readShortloadResolutions(context.activity).filter(row=>row.taskId===input.taskId&&row.customerId===input.customerId).at(-1)?.revision||'';
-   state.assignments=state.assignments.filter(row=>row.taskId!==input.taskId).concat({taskId:input.taskId,desk:input.desk,...(split||dispositionRevision?{parts:requested,dispositionRevision,...(shortfallRevision?{shortfallRevision}:{})}:{})}).sort((a,b)=>a.taskId.localeCompare(b.taskId));
+   state.assignments=state.assignments.filter(row=>row.taskId!==input.taskId).concat({taskId:input.taskId,desk:input.desk,...(split||dispositionRevision?{parts:requested,dispositionRevision,...(shortfallRevision?{shortfallRevision,...(splitOrigin?{shortfallSplitOrigin:splitOrigin}:{})}:{})}:{})}).sort((a,b)=>a.taskId.localeCompare(b.taskId));
   }
   else if(input.action==='DESK_SHIPMENT'){
    state.shipments=state.shipments.filter(row=>row.desk!==input.desk).concat({...previousShipment,desk:input.desk,transport:input.transport,date:input.date,arrival:input.arrival,...(normalized.details?{detailsVersion:3,lastGateIn:normalized.lastGateIn,departureDate:normalized.departureDate}:{}),...(changedShipmentFields.length?{bookedBy:staff.staffName}:{})}).sort((a,b)=>a.desk-b.desk);

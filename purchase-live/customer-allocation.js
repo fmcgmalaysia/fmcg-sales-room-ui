@@ -23,15 +23,19 @@
   let selection=null;
   const {workspace,dialog,esc,quantity,mutate,status,blocked}=hooks;
   const name=(context,id)=>{const task=context.tasks.find(row=>row.id===id);return workspace().customers.find(row=>row.id===task?.customerId)?.name||task?.customerId||id;};
-  function open(taskId,batchId='WHOLE',borrowing=false,fulfilNow=false){
+  function open(taskId,batchId='WHOLE',borrowing=false,fulfilNow=false,shortfallRemainderRevision=''){
    if(blocked()){status('请先完成或取消当前保存与编辑。',true);return;}
    const context=workspace().allocationContext,api=window.customerAllocationPlan;
    if(!context||!api){status('分配资料尚未就绪，请刷新后再试。',true);return;}
    try{
-    const input={action:'ALLOCATE',planMode:'CUSTOMER',version:context.version,taskId,batchId,fulfilNow},quote=api.quoteCustomerAllocation(context,input),row=workspace().tasks.find(row=>row.id===taskId);
+    const row=workspace().tasks.find(row=>row.id===taskId),handoff=row?.customerShortfall;
+    if(handoff?.route==='SUPPORT_SPLIT'&&(!handoff.arranged||!handoff.remainder||shortfallRemainderRevision!==handoff.revision||fulfilNow)){
+      status('Sent to Support for splitting. Arrange stock from the remainder row after confirmation. 已移交 Support，拆单后请从余量行处理。',true);return;
+    }
+    const input={action:'ALLOCATE',planMode:'CUSTOMER',version:context.version,taskId,batchId,fulfilNow,...(shortfallRemainderRevision?{shortfallRemainderRevision}:{})},quote=api.quoteCustomerAllocation(context,input);
     selection={input,context,quote};
     const debts=context.loans.filter(loan=>loan.outstanding>0&&(loan.borrowerTaskId===taskId||loan.lenderTaskId===taskId));
-    const early=quote.waiting>0?(fulfilNow?'<p>Use received stock now 提前配货；原采购仍待到货，借货需补回。</p>':'<p>Waiting for '+quantity(quote.waiting)+' CTN 等待到货 <button class="btn" id="chooseEarlyAllocation">Use stock now 提前配货</button></p>'):'';
+    const early=quote.waiting>0&&!shortfallRemainderRevision?(fulfilNow?'<p>Use received stock now 提前配货；原采购仍待到货，借货需补回。</p>':'<p>Waiting for '+quantity(quote.waiting)+' CTN 等待到货 <button class="btn" id="chooseEarlyAllocation">Use stock now 提前配货</button></p>'):'';
     const summary=allocationSummary(row,quote,esc,quantity)+early+debts.map(loan=>'<p>待补回 '+esc(name(context,loan.lenderTaskId))+'：<strong>'+quantity(loan.outstanding)+' CTN</strong> <button class="btn" data-repay-loan="'+esc(loan.id)+'">Repay 补回</button> <button class="btn" data-return-loan="'+esc(loan.id)+'">Return unshipped 退回未出货</button></p>').join('');
     if(borrowing){
      const donors=quote.shortage>0?quote.donors.filter(donor=>donor.quantity>=quote.shortage):[];
@@ -81,11 +85,11 @@
     correction(source.id);return true;
    }
    if(control.dataset.customerBorrow){open(control.dataset.customerBorrow,"WHOLE",true,true);return true;}
-   if(control.dataset.customerAllocate){open(control.dataset.customerAllocate,control.dataset.allocationBatch||'WHOLE');return true;}
+   if(control.dataset.customerAllocate){open(control.dataset.customerAllocate,control.dataset.allocationBatch||'WHOLE',false,false,control.dataset.shortfallRemainder||'');return true;}
    if(control.dataset.repayLoan){repayment(control.dataset.repayLoan);return true;}
    if(control.dataset.returnLoan){repayment(control.dataset.returnLoan,true);return true;}
    if(control.id==='chooseEarlyAllocation'&&selection){open(selection.input.taskId,selection.input.batchId,false,true);return true;}
-   if(control.id==='chooseCustomerBorrow'&&selection){open(selection.input.taskId,selection.input.batchId,true,selection.input.fulfilNow);return true;}
+   if(control.id==='chooseCustomerBorrow'&&selection){open(selection.input.taskId,selection.input.batchId,true,selection.input.fulfilNow,selection.input.shortfallRemainderRevision);return true;}
    if(!['confirmCustomerAllocation','confirmCustomerBorrow','confirmCustomerRepayment','confirmCustomerReconciliation'].includes(control.id))return false;
    if(!selection||blocked())return true;
    const input={...selection.input},api=window.customerAllocationPlan;

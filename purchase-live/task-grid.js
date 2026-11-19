@@ -136,7 +136,7 @@
       if(active&&shortfall?.arranged&&!remainder)return '';
       if(remainder){
         const id=escape(row.id);
-        const alloc='<button class="btn" data-customer-allocate="'+id+'" data-allocation-batch="WHOLE">ALLOC</button>';
+        const alloc='<button class="btn" data-customer-allocate="'+id+'" data-allocation-batch="WHOLE" data-shortfall-remainder="'+escape(shortfall.revision)+'">ALLOC</button>';
         const arrange='<button class="btn" data-sources="'+id+'">Arrange 安排</button>';
         return activeColumns('<tr class="source-row waiting-row" data-waiting-for="'+id+'"><td></td><td></td><td></td><td class="customer-child">'+childMarker+'</td><td class="product-stack"><span class="source-label">Remainder 余量</span><small>Covered 已覆盖 '+quantity(remainder.covered)+' · To arrange 尚缺 '+quantity(remainder.missing)+'</small></td><td class="order-quantity">'+quantity(remainder.quantity)+'</td><td class="received-quantity"></td><td class="supplier-cell">'+alloc+' '+arrange+'</td><td></td><td></td><td></td><td></td><td></td></tr>');
       }
@@ -189,8 +189,9 @@
       const supply=batchId?row.supplyAllocation?.batches?.find(batch=>escape(batch.id)===batchId):row.supplyAllocation;
       const allocated=(row.customerShortfall&&!batchId?supply?.received:supply?.planned)??(batchId?row.batchEntitlements?.find(batch=>escape(batch.id)===batchId)?.metrics?.received:row.inc);
       const intent=batchId?null:(row.requested??row.ord);
+      const handoff=row.customerShortfall?.route==='SUPPORT_SPLIT';
       let action='none';
-      if(!borrowOnly.has(row.id)&&allocationContext&&window.customerAllocationPlan&&physicalProducts.has(JSON.stringify([row.barcode,row.packing,row.ea]))){try{
+      if(!handoff&&!borrowOnly.has(row.id)&&allocationContext&&window.customerAllocationPlan&&physicalProducts.has(JSON.stringify([row.barcode,row.packing,row.ea]))){try{
         const input={taskId:row.id,batchId:batchId||'WHOLE',version:allocationContext.version,fulfilNow:true};
         const quote=window.customerAllocationPlan.quoteCustomerAllocation(allocationContext,input);
         const donor=quote.shortage>0&&quote.donors.find(donor=>donor.quantity>=quote.shortage);
@@ -199,7 +200,7 @@
       }catch{action='none';}}
 
       return '<tr'+attrs+(borrowOnly.has(row.id)&&!batchId?' data-layout-borrow-only="true"':'')+' data-layout-action="'+action+'"'+(Number.isSafeInteger(allocated)&&allocated>=0?' data-layout-allocation="'+allocated+'"':'')
-        +(supply?' data-layout-gap="'+Math.max(0,supply.gap??(supply.planned-supply.received-supply.waiting))+'" data-layout-waiting="'+supply.waiting+'"':'')
+        +(supply&&!handoff?' data-layout-gap="'+Math.max(0,supply.gap??(supply.planned-supply.received-supply.waiting))+'" data-layout-waiting="'+supply.waiting+'"':'')
         +(Number.isSafeInteger(intent)&&intent>=0?' data-layout-intent="'+intent+'"':'')+'>';
     });
     return active&&window.purchaseDisplayRows?window.purchaseDisplayRows.decorate(markup,{tasks,shipmentPlans,purchaseDisplayOrder,draft:displayDraft,selected:selectedDisplayRows,canMove,inquiry:Boolean(inquiry)}):markup;
