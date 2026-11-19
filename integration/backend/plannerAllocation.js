@@ -35,6 +35,12 @@ export function allocatedTo(taskId,activity,allocations=readAllocations(activity
 export function allocationVersion(workspace,activity){
   return packingGuardVersion({...workspace,activity},operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber,row.procurement,row.batchEntitlements,row.supplyAllocation]),readAllocations(activity),readCustomerShipments(activity),readStockExceptions(activity),readAllocationLoans(activity),readPhysicalOutflows(activity),activity.filter(row=>['CUSTOMER_SHIPMENT_PLAN_SAVED','SUPPORT_DESK_SAVED'].includes(row.action))));
 }
+function requireShortfallAllocation(workspace,input){
+ const handoff=workspace.tasks.find(row=>row.id===input.taskId)?.customerShortfall;
+ if(input.planMode!=='CUSTOMER'||handoff?.route!=='SUPPORT_SPLIT')return;
+ if(!handoff.arranged||!handoff.remainder||input.shortfallRemainderRevision!==handoff.revision||input.fulfilNow===true)
+  throw Error('This line was sent to Support for splitting. Arrange additional stock from its current remainder row.');
+}
 export function createPlannerAllocationOperations({store,names,readWorkspace,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return async({company,staff,requestId,input})=>{
@@ -48,6 +54,7 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
     };
     return journal({collection,scope:company+'/PURCHASE',requestId,staff,input:{allocation:input},recoverCompleted,prepare:async()=>{
       const workspace=await readWorkspace(company,staff),activity=await store.all(collection),version=allocationVersion(workspace,activity);
+      requireShortfallAllocation(workspace,input);
       if(input.version!==version)throw Error('Stock or allocations changed. Refresh before allocating.');
       if(input.planMode){
         if(!['CUSTOMER','REPAY','RETURN','RECONCILE'].includes(input.planMode))throw Error('Select a customer allocation action.');
@@ -67,6 +74,7 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
       if(!existing){
         const workspace=await readWorkspace(company,staff),activity=await store.all(collection);
         requireConfirmedProcurement(workspace,[plan.event.details.taskId,...plan.event.details.allocations.flatMap(change=>[change.sourceTaskId,...change.targets.map(target=>target.taskId)])]);
+        requireShortfallAllocation(workspace,input);
         if(allocationVersion(workspace,activity)!==plan.expectedVersion)return {ok:false,company,requestId,retryable:false,error:'Stock or allocations changed while saving. Review current stock before making a new allocation.'};
         await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});
       }else if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Allocation receipt conflict.');

@@ -29,3 +29,16 @@ test('fully invoiced or explicitly closed quantities leave the active list',()=>
  const c=ui([{lineId:'L',quantityCtn:200,committedQtyCtn:190,loadedInvoicedQtyCtn:190,closedUnfulfilledQtyCtn:10}]);
  assert.equal(c.allTrackingRows().length,0);
 });
+
+test('shortfall updates the same Buyer row and its quantity, value and CBM totals together',()=>{
+ const line={lineId:'L',quantityCtn:50,lockedPriceCtn:25.2,cbmPerCtn:.0169,committedQtyCtn:50,customerShipment:{currentQtyCtn:30,confirmedQtyCtn:0,pendingQtyCtn:20}};
+ const c=ui([line]),nodes=new Map();
+ Object.assign(c,{$:id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id)},document:{querySelectorAll:()=>[]},esc:String,money:value=>value.toFixed(2),cbmText:value=>value.toFixed(4),totalCbm:(rows,qty,cbm)=>rows.reduce((sum,row)=>sum+qty(row)*cbm(row),0),latestTrackShipment:()=>({date:'—'}),renderTrackingRail:()=>{},trackingLineHtml:()=>'',bindImagePreview:()=>{}});
+ vm.runInContext(html.split(/\r?\n/).find(row=>row.startsWith('function renderTrackOrders(')),c);
+ const totals=()=>['trackCommittedQty','trackCommittedValue','trackCommittedCbm'].map(id=>nodes.get(id).textContent);
+ assert.equal(c.allTrackingRows()[0].requested,50);
+ c.renderTrackOrders();assert.deepEqual(totals(),['0 Ctn','USD 0.00','0.0000 m³']);
+ line.committedQtyCtn=30;line.customerShipment.confirmedQtyCtn=30;
+ c.renderTrackOrders();assert.deepEqual(totals(),['30 Ctn','USD 756.00','0.5070 m³']);
+ assert.equal(c.allTrackingRows().length,1);
+});

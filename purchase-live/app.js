@@ -427,6 +427,7 @@ const stages=[
       return;
     }
     const decision=item.decision||{},current=decision.supplierDeliveryDecision||'WAIT';
+    const readOnly=decision.customerShortfallRoute==='SUPPORT_SPLIT';
     const root=row.procurementSource?data.tasks.find(task=>task.id===row.customerDemandTaskId):row;
     const demand=root?.requested??root?.ord,covered=root?.supplyAllocation?.received;
     const shortage=Number.isSafeInteger(demand)&&Number.isSafeInteger(covered)?Math.max(0,demand-covered):null;
@@ -434,11 +435,17 @@ const stages=[
     const originalFeedback=item.warehouseFeedback?.reason,feedback=originalFeedback==='Supplier short-shipped 供应商少发货'?'Short delivery 供应商少发货':originalFeedback||'Warehouse feedback not available 货仓反馈尚未提供';
     formDialog('Receiving Shortfall 收货差额',row.po,
       '<div class="receipt-feedback-summary"><div><small>Customer order 客户订货</small><strong>'+qtyDigits(demand)+' CTN</strong></div><div><small>Covered 已覆盖</small><strong>'+qtyDigits(covered)+' CTN</strong></div><div><small>Customer shortage 客户尚缺</small><strong>'+qtyDigits(shortage)+' CTN</strong></div></div><details><summary>Supplier details 供应商明细</summary><div class="receipt-feedback-summary"><div><small>P.O. Qty 采购数量</small><strong>'+qtyDigits(item.planned)+' CTN</strong></div><div><small>Received 已收</small><strong>'+qtyDigits(item.accepted)+' CTN</strong></div><div><small>Outstanding 待收</small><strong>'+qtyDigits(item.quantity)+' CTN</strong></div></div><div class="receipt-feedback-field"><label>Warehouse feedback 货仓反馈</label><div>'+esc(feedback)+'</div></div></details><div class="receipt-feedback-field"><label for="receiptSolution">Next step 处理方式</label><select id="receiptSolution"><option value="WAIT">Await full delivery 等待供应商全数发货</option><option value="STOP">Stop waiting 停止等待</option></select></div><div class="receipt-feedback-options" id="receiptStopOptions" hidden>'+[['CN_PROMISED','Supplier will issue a CN','供应商承诺提供 CN'],['FUTURE_DEDUCTION','Deduct the amount from the next payment','供应商同意下次扣账'],['SUPPLIER_REFUSED','Supplier declined responsibility','供应商不愿意负责']].map(([value,label,chinese])=>'<label><input type="checkbox" name="receiptSupplierDecision" value="'+value+'"'+(decision.supplierDecision===value?' checked':'')+'><span>'+label+'<small>'+chinese+'</small></span></label>').join('')+(shortage>0?'<label for="shortfallRoute">Customer shortage 客户余量</label><select id="shortfallRoute"><option value="">Choose the next step 请选择</option><option value="ALLOCATE">Allocate or borrow 调货或借货</option>'+(covered>0?'<option value="SUPPORT_SPLIT">Notify Support to split 通知 Support 不再等货</option>':'')+'</select>':'')+'</div>',
-      '<button class="btn primary" id="saveReceiptDecision">Confirm 确定</button>','task');
+      readOnly?'':'<button class="btn primary" id="saveReceiptDecision">Confirm 确定</button>','task');
     modal.classList.add('receipt-feedback-dialog');
     const solution=document.querySelector('#receiptSolution'),options=document.querySelector('#receiptStopOptions');solution.value=current;
     const route=document.querySelector('#shortfallRoute');if(route)route.value=decision.customerShortfallRoute||'';
     const show=()=>{options.hidden=solution.value!=='STOP';};solution.onchange=show;show();
+    if(readOnly){
+      solution.disabled=true;
+      if(route)route.disabled=true;
+      options.querySelectorAll('input').forEach(input=>input.disabled=true);
+      document.querySelector('#dialogError').insertAdjacentHTML('beforebegin','<p role="status">Sent to Support for splitting · Read only<br><small>已移交 Support 拆单 · 只读</small></p>');
+    }
     options.querySelectorAll('input').forEach(input=>input.onchange=()=>{if(input.checked)options.querySelectorAll('input').forEach(other=>{if(other!==input)other.checked=false;});});
   }
   function quantityCaseEditor(id){
@@ -1003,6 +1010,7 @@ const stages=[
     if(control.dataset.quantityCase){if(drafts.size||sequenceDraft){showStatus('请先保存或取消当前编辑。',true);return;}return quantityCaseEditor(control.dataset.quantityCase);}
     if(control.id==='saveReceiptDecision'){
       const row=data.tasks.find(row=>row.id===dialogContext.taskId),item=row?.quantityCases.find(item=>item.id===dialogContext.caseId),delivery=document.querySelector('#receiptSolution').value;
+      if(item?.decision?.customerShortfallRoute==='SUPPORT_SPLIT')return;
       const chosen=[...document.querySelectorAll('input[name="receiptSupplierDecision"]:checked')];
       if(!item||delivery==='STOP'&&chosen.length!==1){document.querySelector('#dialogError').textContent='Please select one supplier response 请选择一项供应商处理结果。';return;}
       const routeControl=document.querySelector('#shortfallRoute'),route=delivery==='STOP'?routeControl?.value:'';

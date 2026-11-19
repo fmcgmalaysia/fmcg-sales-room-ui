@@ -70,6 +70,7 @@ export function createQuantityCaseOperations({store,names,readWorkspace,now=()=>
   return journal({collection,scope:company+'/PURCHASE',requestId,staff,input:{quantityCase:input},prepare:async()=>{
    const workspace=await readWorkspace(company,staff),activity=await store.all(collection),item=projectQuantityCases(workspace,activity).find(row=>row.id===input.id);requireConfirmedProcurement(workspace,[item?.taskId,item?.customerDemandTaskId]);
    if(workspace.company!==company||input.version!==quantityCasesVersion(workspace,activity)||!item)throw Error('Quantity case changed. Refresh before saving.');
+   if(item.decision?.customerShortfallRoute==='SUPPORT_SPLIT')throw Error('This shortage was already sent to Support. The original decision is read-only.');
    const supplierDeliveryDecision=input.supplierDeliveryDecision,compact=supplierDeliveryDecision!==undefined;
    if(compact&&(item.kind!=='RECEIPT'||!['WAIT','STOP'].includes(supplierDeliveryDecision)))throw Error('Select whether to wait for the supplier delivery.');
    const reason=text(input.reason),customerMessage=text(compact?item.decision?.customerMessage:input.customerMessage),customerDecision=compact?(item.decision?.customerDecision||'PENDING'):input.customerDecision;

@@ -11,7 +11,7 @@ const at='2026-11-19T12:00:00Z';
 const staff={staffId:'TEST',staffName:'Test',memberId:'MEMBER',canDecideQuantityCase:true,packingDepartment:'SUPPORT'};
 const names={NCT:{activity:'NCT'}};
 const uuid=n=>String(n).padStart(8,'0')+'-1111-4111-8111-111111111111';
-function fixture(){
+function fixture({shortReceipt=true}={}){
   const order={title:'ORDER',sourceLineId:'LINE',submissionId:'SUB',customerId:'FAKE',customerCompanyName:'Fake',description:'FAKE-SKU',image:'Fake product',imageAltText:'280ML x 24',orderId:24,orderQtyInCtn:50,transactionCurrency:'USD',masterReceivedTime:at};
   const task={_id:'TASK',title:'TASK',description:'ORDER',imageAltText:'LINE',purchaseQtyInCtn:50,receivedQtyInCtn:0,supplierId:'SUPPLIER',ourPoNumber:'FAKE-PO',purchaseStage:'WAITING_FOR_GOODS',lpPc:1,lpCtn:24,disc1:0,disc2:0,disc3:0};
   const rows=new Map();
@@ -23,7 +23,7 @@ function fixture(){
   insert('',{title:'INTAKE',description:'ORDER',action:'ORDER_RECEIVED',result:'ACCEPTED',activityTime:at,details:{submissionId:'SUB',taskIds:['TASK']}});
   insert('',{title:'PLAN',description:'ORDER',image:'LINE',imageAltText:'TASK',action:'PURCHASE_PLAN_SAVED',result:'SAVED',activityTime:at,details:{beforeRevision:'',totalCtn:55,expectedExtra:5,customerCtn:50,transportMode:'SUPPLIER_DELIVER',draftPlan:true}});
   const receive=(title,accepted,beforeAccepted=0,beforeRevision='',issue=false)=>insert('',{title,description:'FAKE-PO',action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',activityTime:at,details:{beforeRevision,lines:[{taskId:'TASK',orderId:'ORDER',sourceLineId:'LINE',planned:55,beforeAccepted,beforeRejected:0,accepted,rejected:0,kind:issue?'SHORT':'PARTIAL',issue,reason:'Internal fake receipt'}]}});
-  receive('RECEIPT',30,0,'',true);
+  if(shortReceipt)receive('RECEIPT',30,0,'',true);
   const decide=createQuantityCaseOperations({store,names,readWorkspace:async()=>workspace()});
   const desk=createSupportDeskOperations({store,names,readContext:async()=>workspace()});
   const receipt=()=>workspace().tasks[0].quantityCases.find(row=>row.kind==='RECEIPT');
@@ -106,4 +106,75 @@ test('allocating 20 borrowed cartons uses a single stock movement and keeps the 
  assert.equal(f.receipt().accepted,30);
  assert.equal(f.activity().filter(row=>row.action==='PLANNER_ALLOCATION_SAVED').length,1);
  assert.equal(f.activity().filter(row=>row.action==='SUPPORT_DESK_SAVED').length,0);
+});
+
+test('an existing 50-carton authorization is excluded from Buyer commitment until Support confirms 30 + 20',async()=>{
+ const f=fixture({shortReceipt:false});
+ const {createPackingListOperations,packingVersion}=load('packingListOperations.js');
+ const {projectPackingContext}=load('packingListContext.js');
+ const assigned=await f.desk({company:'NCT',staff,requestId:uuid(11),input:{action:'DESK_ASSIGN',customerId:'FAKE',taskId:'TASK',desk:1,revision:''}});
+ const readContext=async()=>projectPackingContext(f.workspace());
+ const packing=createPackingListOperations({store:f.store,names,readContext,now:()=>new Date(at)});
+ const sent=await packing({company:'NCT',staff,requestId:uuid(12),input:{action:'DESK_SEND',customerId:'FAKE',desk:1,deskRevision:assigned.deskState.revision,version:packingVersion(await readContext()),lines:[{taskId:'TASK',quantity:50}]}});
+ assert.equal(sent.list.lines[0].quantity,50);
+ f.receive('RECEIPT',30,0,'',true);
+ const decision=f.request('SUPPORT_SPLIT');
+ const receipt=await f.decide(decision);
+ assert.deepEqual(await f.decide(decision),receipt);
+ await assert.rejects(f.decide({...f.request('ALLOCATE'),requestId:uuid(13)}),/already sent to Support/);
+ const query=()=>projectPurchaseQuantities({...f.inputs(),customerId:'FAKE',requests:[{orderId:'ORDER',submissionId:'SUB'}],workspace:f.workspace()});
+ const before=query().orders[0].lines[0],asData=value=>JSON.parse(JSON.stringify(value));
+ assert.equal(before.committedQtyCtn,50,'Existing operational authorization stays available to staff during review');
+ assert.deepEqual(asData(before.customerShipment),{currentQtyCtn:30,confirmedQtyCtn:0,pendingQtyCtn:20});
+ const handoff=f.workspace().tasks[0].customerShortfall;
+ const edit=f.split(14,30,handoff.revision);edit.input.revision=sent.deskState.revision;
+ const confirmed=await f.desk(edit);
+ assert.deepEqual(await f.desk(edit),confirmed);
+ const allocation=confirmed.deskState.assignments.find(row=>row.taskId==='TASK');
+ assert.deepEqual(asData(allocation.parts),[{desk:0,quantity:20},{desk:1,quantity:30}]);
+ assert.equal(allocation.shortfallSplitOrigin.desk,1);
+ assert.ok(Number.isFinite(Date.parse(allocation.shortfallSplitOrigin.at)));
+ const after=query().orders[0].lines[0];
+ assert.equal(after.committedQtyCtn,30);
+ assert.deepEqual(asData(after.customerShipment),{currentQtyCtn:30,confirmedQtyCtn:30,pendingQtyCtn:20});
+ const facts=f.activity().filter(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT');
+ assert.equal(facts.length,1);
+ assert.equal(facts[0].details.list.lines[0].quantity,50,'Prior authorization remains in history');
+ const livePacking=await readContext();
+ assert.equal(livePacking.lists[0].lines[0].quantity,30,'Warehouse uses the confirmed 30');
+ for(const mode of ['before','after']){
+   const result=mode==='before'?before:after;
+   const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+   const adapter=fs.readFileSync(path.join(__dirname,'../../backend/masterQuantityProjection.js'),'utf8').replace('export function','function');
+   const apply=vm.runInNewContext(adapter+';applyMasterQuantities');
+   const response=query();response.orders[0].lines[0]=result;
+   const [out]=apply('FAKE',[{orderId:'ORDER',masterReceipt:{submissionId:'SUB'},lines:[{lineId:'LINE',barcode:'FAKE-SKU',quantityCtn:50,lockedPriceCtn:25.2}]}],response);
+   const projected=out.lines[0];
+   assert.equal(projected.quantityCtn,50);
+   const buyer=fs.readFileSync(path.join(__dirname,'../../buyer-room.html'),'utf8');
+   const summary=buyer.slice(buyer.indexOf('function shortfallShipmentHtml('),buyer.indexOf('function customerFulfilmentHtml('));
+   const committed=buyer.match(/function trackingCommittedQty\(entry\)\{[^\n]+/)[0];
+   const view=vm.runInNewContext(summary+'\n'+committed+';({shortfallShipmentHtml,trackingCommittedQty})',{completedLineQty:()=>0});
+   assert.match(view.shortfallShipmentHtml(projected),mode==='before'?/30 CTN · Awaiting confirmation/:/30 CTN · Confirmed/);
+   assert.match(view.shortfallShipmentHtml(projected),/20 CTN awaiting arrangement/);
+   assert.equal(view.trackingCommittedQty({line:projected}),mode==='before'?0:30);
+   assert.doesNotMatch(view.shortfallShipmentHtml(projected),/Desk|Purchase|CN|borrow/i);
+ }
+});
+
+test('old Purchase actions cannot allocate against a handed-off line or the original line after splitting',async()=>{
+ const f=fixture();
+ await f.decide(f.request('SUPPORT_SPLIT'));
+ const {createPlannerAllocationOperations,allocationVersion}=load('plannerAllocation.js');
+ const save=createPlannerAllocationOperations({store:f.store,names,readWorkspace:async()=>f.workspace()});
+ const request=id=>({company:'NCT',staff,requestId:uuid(id),input:{action:'ALLOCATE',planMode:'CUSTOMER',taskId:'TASK',batchId:'WHOLE',version:allocationVersion(f.workspace(),f.activity())}});
+ await assert.rejects(save(request(16)),/sent to Support/);
+ const state=f.workspace().tasks[0].customerShortfall;
+ await f.desk(f.split(17,30,state.revision));
+ await assert.rejects(save(request(18)),/current remainder row/);
+ const forged=request(19);forged.input.shortfallRemainderRevision='stale';
+ await assert.rejects(save(forged),/current remainder row/);
+ const remainder=request(20);remainder.input.shortfallRemainderRevision=state.revision;
+ await save(remainder); // Existing own stock can be made explicit without assigning new cartons.
+ assert.equal(f.workspace().tasks[0].supplyAllocation.received,30);
 });
