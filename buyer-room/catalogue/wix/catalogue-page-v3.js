@@ -49,6 +49,7 @@ let catalogueBrowseRevision = 0;
 let catalogueBrowseSubIds = [];
 let catalogueBrowseKey = '';
 let catalogueBrowsePosition = null;
+let catalogueBuyerNavigationPending = false;
 
 function mobileSelectionFlightKey(productId) {
     return selectionContext?.mode === 'buyer' && catalogueBrowseKey
@@ -790,6 +791,7 @@ function setupCatalogueWorkspace() {
             if (catalogueWorkspaceFullReadComplete || catalogueWorkspaceProducts.length) sendCatalogueWorkspaceData();
             else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
             if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
+            if (catalogueBuyerNavigationPending) workspace.postMessage({ type: 'cataloguePrepareBuyerRoom' });
         } else if (message.type === 'catalogueWorkspaceBrowse') {
             const principle = typeof message.principle === 'string' ? message.principle.trim() : '';
             const main = typeof message.main === 'string' ? message.main.toUpperCase() : '';
@@ -819,7 +821,9 @@ function setupCatalogueWorkspace() {
         } else if (message.type === 'catalogueWorkspaceNavigate') {
             try { await wixWindowFrontend.scrollTo(0, 0); } catch (error) {}
         } else if (message.type === 'catalogueWorkspaceBuyerRoom') {
-            openBuyerRoomWindow();
+            if (!catalogueBuyerNavigationPending) return;
+            catalogueBuyerNavigationPending = false;
+            openBuyerRoom();
         } else if (message.type === 'catalogueWorkspaceSelect') {
             const productId = String(message.productId || '').trim();
             if (!productId || selectionBusyIds.has(productId)) return;
@@ -898,7 +902,11 @@ function buyerRoomUrl(mode = catalogueContextMessage?.mode) {
 }
 
 function openBuyerRoomWindow() {
-    openBuyerRoom();
+    if (!catalogueContextMessage || catalogueBuyerNavigationPending) return;
+    if (catalogueContextMessage.mode === 'preview') { openBuyerRoom(); return; }
+    catalogueBuyerNavigationPending = true;
+    try { $w('#html3').postMessage({ type: 'catalogueBuyerRoomPending', pending: true }); } catch (error) {}
+    if (catalogueWorkspaceReady) $w('#html5').postMessage({ type: 'cataloguePrepareBuyerRoom' });
 }
 
 function setupFluidCatalogueLayout() {
