@@ -3,6 +3,7 @@ import { canEnterDepartment, canUseSalesRoomCustomer } from 'backend/staffManage
 const ACTION_POLICY = Object.freeze({
   quotes: ['VIEW', 'VIEW'],
   cost: ['EDIT', 'EDIT_QUOTATION'],
+  'cost-status': ['EDIT', 'EDIT_QUOTATION'],
   draft: ['EDIT', 'EDIT_QUOTATION'],
   publish: ['EDIT', 'PUBLISH_QUOTATION']
 });
@@ -24,7 +25,7 @@ function activeWebCustomer(customer) {
 // authoritative customer directory; never pass customer records from Wix UI.
 export function createMasterQuotationActions({ readIdentity, readCustomer, readCustomers, quotation }) {
   return async function run(action, customerId, input) {
-    if (action !== 'customers' && !Object.hasOwn(ACTION_POLICY, action)) return { accessDenied: true };
+    if (action !== 'customers' && !Object.prototype.hasOwnProperty.call(ACTION_POLICY, action)) return { accessDenied: true };
     let record;
     try { ({ record } = await readIdentity()); }
     catch { return { accessDenied: true }; }
@@ -41,7 +42,7 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readC
 
     if (typeof customerId !== 'string' || !/^[A-Za-z0-9_-]{1,120}$/.test(customerId) ||
         !can(...ACTION_POLICY[action], customerId)) return { accessDenied: true };
-    const customer = await readCustomer(customerId);
+    const customer = await readCustomer(customerId, action);
     if (customer?.customerId !== customerId || !activeWebCustomer(customer)) return { accessDenied: true };
     const scope = { staffId, customer };
     if (action === 'quotes') {
@@ -50,7 +51,8 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readC
       return { staffId, customer: { customerId, preferredCurrency, rateToMyr, ...(fullName ? { fullName } : {}) }, rows,
         canEdit: can('EDIT', 'EDIT_QUOTATION', customerId), canPublish: can('EDIT', 'PUBLISH_QUOTATION', customerId) };
     }
-    if (action === 'cost') return quotation.catchCost(scope);
+    if (action === 'cost') return quotation.catchCost(scope, input);
+    if (action === 'cost-status') return quotation.costResult(scope, input);
     if (action === 'draft') return quotation.saveDraft(scope, input);
     return quotation.publish(scope, input);
   };

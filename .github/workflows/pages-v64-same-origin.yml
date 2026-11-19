@@ -1539,18 +1539,18 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 44453020525
+          run-id: 44459595337
           github-token: ${{ github.token }}
           path: ${{ format('{0}/quote-followup-baseline', runner.temp) }}
 
-      - name: Test and stage only approved quotation, order sorting and portal changes
+      - name: Test and stage only approved quotation cost recovery changes
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'quotation-buyer-followup-only'
         run: |
           site="$RUNNER_TEMP/quote-followup-site"
           mkdir "$site"
           tar --extract --file "$RUNNER_TEMP/quote-followup-baseline/artifact.tar" --directory "$site"
-          node --test integration/prototypes/quote-published-date-20261119/check.cjs integration/prototypes/web-quotations/wix-publication-data.test.cjs tests/buyer-visible-quotes-read.test.cjs integration/tests/ltpos-managed-workspaces.test.cjs integration/tests/ltpos-portal-origin.test.cjs
-          node integration/releases/stage-quote-date-order-brand.cjs "$site"
+          node --test integration/prototypes/quotation-cost-batch-20261119/cost-batch.test.cjs integration/prototypes/web-quotations/persistent-quotation.test.cjs integration/prototypes/web-quotations/quotation-cost-and-si.test.cjs integration/prototypes/web-quotations/wix-publication-data.test.cjs integration/tests/pointbase-cost.test.cjs integration/tests/pointbase-cost-client.test.cjs integration/tests/pointbase-brands.test.cjs tests/buyer-visible-quotes-read.test.cjs
+          node integration/releases/stage-quotation-cost-batch.cjs "$site"
 
       - name: Upload verified quotation and Buyer follow-up package
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'quotation-buyer-followup-only'

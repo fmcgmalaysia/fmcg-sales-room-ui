@@ -73,6 +73,7 @@ async function packSelections(selections) {
     const matches = product && text(product.barcode) === row.barcode;
     const ea = matches ? cartonQuantity(product.ea) ?? cartonQuantity(product.price) ?? fallbackEa : fallbackEa;
     return { ...row, ea,
+      ...(matches && Number.isFinite(Number(product.m3Ctn)) && Number(product.m3Ctn) > 0 ? { cbmPerCtn: Number(product.m3Ctn) } : {}),
       ...(matches && text(product.pointBaseSortId) ? { sortId: text(product.pointBaseSortId) } : {}) };
   });
 }

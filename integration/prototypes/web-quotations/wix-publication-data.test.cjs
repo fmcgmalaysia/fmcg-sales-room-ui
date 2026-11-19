@@ -40,6 +40,7 @@ test('normal Catalogue and Buyer handlers share signed web prices with the exist
   const read = await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-A', selectionId });
   assert.equal(read.selection.ea, 12);
   assert.equal(read.selection.sortId, 'FO-00002');
+  assert.equal(read.selection.cbmPerCtn, 0.025);
   assert.equal((await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-B', selectionId })).selection, null);
   const price = { customerId: 'QA-A', selectionId, barcode, requestId: randomUUID(), version: 1,
     currency: 'USD', enabled: true, priceEa: 1.6, priceCtn: 19.2 };

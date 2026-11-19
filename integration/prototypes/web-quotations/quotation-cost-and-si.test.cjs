@@ -19,17 +19,18 @@ test('all six carton-only prices refresh without altering published quotes', asy
   const service = createMasterQuotationService({
     revisions: { latest: async () => ({ revision: 1, snapshot: { published } }), append: async ({ snapshot }) => saved.push(snapshot) },
     readSelections: async () => rows,
-    readCosts: async () => Object.fromEntries(rows.map((row, i) => [row.barcode, {
+    readCosts: async () => ({ pending: false, updated: 6, unchanged: 0, failed: 0, costs: Object.fromEntries(rows.map((row, i) => [row.barcode, {
       unitBarcode: row.barcode, costCurrency: 'MYR', costStatus: 'CAPTURED', capturedAt: '2026-11-18T08:05:00Z',
       lpPc: null, lpCtn: cartons[i], eaPerCtn: 24, disc1: 0, disc2: 0, disc3: 0
-    }])),
+    }])) }),
     deliver: () => assert.fail('Cost refresh may not change published prices')
   });
-  const result = await service.catchCost({ staffId: 'QA-SALES', customer: { customerId } });
-  assert.deepEqual({ ...result }, { updated: 6, failed: 0 });
-  assert.deepEqual(saved.map(row => row.costMyr), cartons);
-  assert.deepEqual(saved.map(row => row.costDetails.lpEa), cartons.map(cost => cost / 24));
-  assert(saved.every(row => row.published === published));
+  const result = await service.catchCost({ staffId: 'QA-SALES', customer: { customerId } }, { requestId: randomUUID() });
+  assert.equal(result.updated, 6);
+  assert.equal(result.failed, 0);
+  assert.deepEqual(Array.from(result.rows, row => row.costMyr), cartons);
+  assert.deepEqual(Array.from(result.rows, row => row.costDetails.lpEa), cartons.map(cost => cost / 24));
+  assert.equal(saved.length, 0, 'Cost references must never append quotation revisions');
 });
 
 test('Last SP reads the matching customer and product from issued SI snapshots across both companies', async () => {
@@ -98,7 +99,8 @@ test('nightly costs deduplicate cross-customer barcodes and keep published price
   });
   const result = await run();
   assert.equal(result.updated, 2);
-  assert.equal(result.pending, 1);
+  assert.equal(result.pending, 0);
+  assert.equal(result.failed, 1);
   assert.deepEqual(Array.from(requests[0]), [firstBarcode, secondBarcode]);
   for (const command of append) {
     assert.equal(command.snapshot.costMyr, 48);
@@ -106,6 +108,7 @@ test('nightly costs deduplicate cross-customer barcodes and keep published price
     assert.deepEqual(command.snapshot.draft, draft);
   }
   const repeat = await run();
-  assert.equal(repeat.unchanged, 2);
-  assert.equal(append.length, 2);
+  assert.equal(repeat.updated, 2);
+  assert.equal(append.length, 0);
+  assert.equal(existing.get('SEL-B').snapshot.pending.requestId, 'IN-FLIGHT');
 });

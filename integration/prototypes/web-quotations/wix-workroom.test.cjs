@@ -108,6 +108,12 @@ test('the compact quotation grid renders and saves over the iframe message contr
   const asset = 'https://quote-ui.example.invalid';
   const parent = process.env.MASTER_QUOTATION_TEST_ORIGIN || 'https://www.ltpos.ai';
   buildWixWorkroom(destination);
+  // Exercise the current published client plus this isolated cost patch, rather
+  // than the pre-row-publication generator retained for older release fixtures.
+  const { patchPublishSwitch } = require('../quotation-publish-switch-20261119/patch.cjs');
+  const { patchCostRead } = require('../quotation-cost-batch-20261119/patch.cjs');
+  fs.writeFileSync(path.join(destination, 'app.js'), patchCostRead(patchPublishSwitch(fs.readFileSync(
+    path.join(__dirname, '../../releases/quote-buyer-sales-catalogue/master-quotations/app.js'), 'utf8').replace(/\r\n/g, '\n'))));
   const app = fs.readFileSync(path.join(destination, 'app.js'), 'utf8');
   assert.doesNotMatch(app, /qa-quote-order|#actor|\/api\//);
   const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe' });
@@ -137,7 +143,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
     rows[3].sortId = 'NF-00001';
     const requests = [];
     let compactFixture = false;
-    const costOutcomes = [{ updated: 4, failed: 6 }, null];
+    const costOutcomes = [{ pending: false, updated: 4, unchanged: 0, failed: 6 }, null];
     await page.exposeFunction('handleQuotation', (action, customerId, input) => {
       requests.push({ action, customerId, input });
       if (action === 'customers') return { staffId: 'STF-QA', staffName: 'Test staff', customers: [{ customerId: 'CUS-QA-001', name: 'QA Trading' }, { customerId: 'CUS-QA-002', name: 'Read only' }] };
@@ -156,11 +162,12 @@ test('the compact quotation grid renders and saves over the iframe message contr
         return { revision: ++row.revision };
       }
       if (action === 'cost') {
-        const outcome = costOutcomes.length ? costOutcomes.shift() : { updated: rows.length, failed: 0 };
+        const outcome = costOutcomes.length ? costOutcomes.shift() : { pending: false, updated: rows.length, unchanged: 0, failed: 0 };
         if (!outcome) throw Error('Point Base unavailable');
         for (const row of rows) row.costAt = '2026-11-17T08:00:00.000Z';
-        return outcome;
+        return { ...outcome, rows: rows.map(({id,costMyr,costAt,costDetails}) => ({id,costMyr,costAt,costDetails})) };
       }
+      if (action === 'cost-status') return { pending: false, updated: 0, unchanged: rows.length, failed: 0 };
       throw Error('Unexpected action');
     });
     await page.route(parent + '/quotations-test', route => route.fulfill({ contentType: 'text/html', body: `<style>body{margin:0}iframe{display:block;width:100%;height:100vh;border:0}</style><iframe id="workroom" src="${asset}/index.html"></iframe><script type="module">${bridge}
@@ -241,9 +248,10 @@ test('the compact quotation grid renders and saves over the iframe message contr
     assert.equal(await grid.locator('[data-row=item-1] .gp-risk').count(), 1);
     assert.equal(await grid.locator('#quote-risk-count').textContent(), '2');
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
-    await grid.locator('#notice.cost-warning').getByText('Catch Cost: 4 updated · 6 failed.').waitFor();
+    await grid.locator('#notice.cost-warning').getByText('Catch Cost: 4 updated · 0 unchanged · 6 unavailable.').waitFor();
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
-    await grid.locator('#notice.error').getByText('Catch Cost did not return a confirmed result. Check the refreshed rows before retrying.').waitFor();
+    await grid.locator('#notice').getByText('Catch Cost: 0 updated · 1000 unchanged · 0 unavailable.').waitFor();
+    assert.equal(await grid.locator('#notice').evaluate(e => e.classList.contains('error')), false);
     await first.locator('[data-calc=GP]').fill('25');
     await first.getByRole('button', { name: 'Apply calculator', exact: false }).click();
     assert.equal(await first.locator('[data-mode=EA]').inputValue(), '1.00');
@@ -354,7 +362,7 @@ test('the compact quotation grid renders and saves over the iframe message contr
       await page.screenshot({ path: path.join(process.env.QUOTATIONS_SCREENSHOTS, 'fixed-header-1024.png') });
     }
     await grid.getByRole('button', { name: 'Catch Cost' }).click();
-    await grid.getByText('Catch Cost: 1000 updated · 0 failed.').waitFor();
+    await grid.getByText('Catch Cost: 1000 updated · 0 unchanged · 0 unavailable.').waitFor();
     await workroom.waitForFunction(() => {
       const grid = document.querySelector('.quote-grid');
       return grid?.scrollTop === 1000 && grid.scrollLeft === 100;
