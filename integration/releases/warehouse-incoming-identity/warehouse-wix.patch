@@ -1,0 +1,23 @@
+diff --git a/warehouse-page.js b/warehouse-page.js
+index 18fa2271..3b23fde0 100644
+--- a/warehouse-page.js
++++ b/warehouse-page.js
+@@ -25,0 +26,8 @@ async function stockReadStatus(error) {
++async function warehouseOrdersReadStatus(error) {
++  const reason = String(error?.message || '');
++  if (reason === 'Sign in with your approved staff account.' || reason === 'Please sign in with your approved Master staff account.') return 'SIGN_IN_REQUIRED';
++  if (['Staff access is not authorized.', 'Sign in with your verified Google work email.', 'Staff identity changed. Sign in again.'].includes(reason)) return 'STAFF_UNVERIFIED';
++  if (reason === 'Staff permission does not allow this operation.') return 'ACCESS_DENIED';
++  const memberState = await stockReadStatus(error);
++  return memberState === 'SESSION_UNCONFIRMED' ? 'READ_UNAVAILABLE' : memberState;
++}
+@@ -86 +94,5 @@ $w.onReady(()=>{
+-    catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'});}
++    catch(error){
++      const response={type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'};
++      if(message.type==='WAREHOUSE_ORDERS_REQUEST')response.readStatus=await warehouseOrdersReadStatus(error);
++      room.postMessage(response);
++    }
+@@ -88 +100 @@ $w.onReady(()=>{
+-  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261119-master-workroom-domain-v1';
++  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261120-warehouse-incoming-identity-v1';
