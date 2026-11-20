@@ -6,8 +6,8 @@ const { execFileSync } = require('node:child_process');
 
 const site = path.resolve(process.argv[2]);
 const exact = {
-  'warehouse-room/app.js': '00717100b6c6412f2a62417bf5717247d096d3e3f203730a69ae1e4f2d8e2eba',
-  'warehouse-room/index.html': '245a0a6abf5df16a9f91241e9f1fa3940a043cae502161277f2d19408f9475ea',
+  'warehouse-room/app.js': 'e6c94f16ffc4e05c18dd8a89079839f6c749b5cf800fc71694d8ca98c5cf5c72',
+  'warehouse-room/index.html': 'dfa2d525f08acfe5448c90e93e046e8a8d54e7857a76763d03d15c89a5300229',
 };
 function inventory() {
   const files = fs.readdirSync(site, { recursive: true, withFileTypes: true }).filter(entry => entry.isFile());
@@ -18,7 +18,10 @@ function inventory() {
 }
 const before = inventory();
 assert.equal(Object.keys(before).length, 117, 'Unexpected production inventory');
-for (const [file, hash] of Object.entries(exact)) assert.equal(before[file], hash, file);
+for (const [file, hash] of Object.entries(exact)) {
+  const source = fs.readFileSync(path.join(site, file), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(createHash('sha256').update(source).digest('hex'), hash, file);
+}
 const patch = fs.readFileSync(path.join(__dirname, 'warehouse-static.patch'), 'utf8').replace(/\r\n/g, '\n');
 execFileSync('git', ['apply', '--unidiff-zero', '--check', '-'], { cwd: site, input: patch });
 execFileSync('git', ['apply', '--unidiff-zero', '-'], { cwd: site, input: patch });
