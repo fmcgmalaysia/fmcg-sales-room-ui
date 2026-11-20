@@ -9,7 +9,9 @@ const folder = path.join(__dirname, '../../prototypes/master-workroom-domain-202
 const wixOriginal = fs.readFileSync(path.join(folder, 'warehouse-page.after.js'), 'utf8').replace(/\r\n/g, '\n');
 const patch = fs.readFileSync(path.join(__dirname, 'warehouse-wix.patch'), 'utf8').replace(/\r\n/g, '\n');
 const lines = wixOriginal.split('\n');
-for (const hunk of patch.split(/^@@ -/m).slice(1).reverse()) {
+const followup = process.argv[3];
+const patches = followup ? [patch, fs.readFileSync(followup, 'utf8').replace(/\r\n/g, '\n')] : [patch];
+for (const hunk of patches.flatMap(item => item.split(/^@@ -/m).slice(1).reverse())) {
   const match = hunk.match(/^(\d+)(?:,(\d+))? \+[^\n]*\n/);
   assert(match);
   const count = Number(match[2] ?? 1);
@@ -23,7 +25,7 @@ for (const hunk of patch.split(/^@@ -/m).slice(1).reverse()) {
 const wix = lines.join('\n');
 const app = fs.readFileSync(path.join(site,'warehouse-room/app.js'), 'utf8');
 const index = fs.readFileSync(path.join(site,'warehouse-room/index.html'), 'utf8');
-const marker = '20261120-warehouse-incoming-identity-v1';
+const marker = followup ? '20261120-warehouse-incoming-receipt-review-v1' : '20261120-warehouse-incoming-identity-v1';
 
 function relay(getWarehouseOrders, member) {
   const replies = [];
@@ -115,4 +117,22 @@ test('an expired Wix session and an older bridge can both offer Sign in', async 
   assert.notEqual(front.sent.at(-1).requestId,request.requestId);
   front.emit({...wiring.replies[0],requestId:front.sent.at(-1).requestId,readStatus:undefined,error:'Sign in with your approved staff account.'});
   assert.equal(front.node('login').hidden,false);
+});
+
+if (followup) test('a partial read keeps the identity and names blocked P.O. numbers', async () => {
+  const front = surface();
+  const request = front.sent.find(item => item.type === 'WAREHOUSE_ORDERS_REQUEST');
+  const result = {
+    company: 'NCT',
+    staff: { staffName: 'Test Employee' },
+    orders: [{ id: 'PO1', number: 'NCT-PO-01', history: [], lines: [], status: 'WAITING' }],
+    receiptHistoryReview: ['NCT-PO-02'],
+  };
+  const wiring = relay(async () => result, async () => ({ _id: 'member' }));
+  await wiring.send(request);
+  front.emit(wiring.replies[0]);
+  assert.equal(front.node('staff').textContent, 'Test Employee');
+  assert.equal(front.node('login').hidden, true);
+  assert.match(front.node('notice').textContent, /NCT-PO-02.*locked/);
+  assert.equal(front.node('receivingProgressCount').textContent, 1);
 });

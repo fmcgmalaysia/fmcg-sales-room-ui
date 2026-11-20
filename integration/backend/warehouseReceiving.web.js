@@ -26,14 +26,16 @@ async function readWarehouseData(company,staff,includePreparation=true){
   const [orders,tasks,activity,suppliers,records]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers'),store.all('PurchaseOrders')]);
   const workspace=projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff});
   const cbmEvidence=includePreparation?indexWarehouseCbm(activity):null;
-  return {orders:projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity}),customerLines:projectWarehouseCustomerReadiness(workspace),deliveryTasks:includePreparation?projectPreparation({...workspace,activity}).map(item=>{const task=workspace.tasks.find(t=>t.id===item.taskId);return {...item,sourceLineId:task?.sourceLineId,cbmPerCtn:task?warehouseCbm(company,task,cbmEvidence):null};}):[]};
+  const receiptHistoryReview=[];
+  const projected=projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity,receiptHistoryReview});
+  return {orders:projected,receiptHistoryReview,customerLines:projectWarehouseCustomerReadiness(workspace),deliveryTasks:includePreparation?projectPreparation({...workspace,activity}).map(item=>{const task=workspace.tasks.find(t=>t.id===item.taskId);return {...item,sourceLineId:task?.sourceLineId,cbmPerCtn:task?warehouseCbm(company,task,cbmEvidence):null};}):[]};
 }
 async function readOrders(company,staff){return (await readWarehouseData(company,staff)).orders;}
 const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders,documentService:requestPurchaseDocument});
 export const getWarehouseOrders=webMethod(Permissions.SiteMember,async company=>{
-  const staff=await staffContext(company),{orders,customerLines}=await readWarehouseData(company,staff,false);let names=[];
+  const staff=await staffContext(company),{orders,customerLines,receiptHistoryReview}=await readWarehouseData(company,staff,false);let names=[];
   try{names=await readCustomerShortNames([...new Set([...orders.flatMap(row=>row.customerIds||[row.customerId]),...customerLines.map(row=>row.customerId)])]);}catch(_){}
-  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},deliveryTasks:[],customerLines:[],orders:orders.map(row=>projectWarehouseReceivingOrder({...row,fullCustomerName:row.customerName,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),readAt:new Date().toISOString()};
+  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},deliveryTasks:[],customerLines:[],receiptHistoryReview,orders:orders.map(row=>projectWarehouseReceivingOrder({...row,fullCustomerName:row.customerName,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),readAt:new Date().toISOString()};
 });
 export const saveWarehouseReceipt=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await staffContext(company,'EDIT');
