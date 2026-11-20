@@ -1,0 +1,67 @@
+diff --git a/catalogue-page.js b/catalogue-page.js
+index 804354c6..9cd06539 100644
+--- a/catalogue-page.js
++++ b/catalogue-page.js
+@@ -20 +20 @@ let selectionBusyIds = new Set();
+-const CATALOGUE_BUILD_VERSION = '20261120-selection-removal-requote-v1';
++const CATALOGUE_BUILD_VERSION = '20261120-catalogue-compact-navigation-v1';
+@@ -605,0 +606 @@ function setupNav() {
++    const workspace = $w('#html5');
+@@ -611,0 +613 @@ function setupNav() {
++    let menuAnchor = 12;
+@@ -621 +623 @@ function setupNav() {
+-    const showMenu = async (main = activeMain) => {
++    const showMenu = async (main = activeMain, anchor) => {
+@@ -623,0 +626 @@ function setupNav() {
++        menuAnchor = Number.isFinite(anchor) ? Math.max(12, Math.min(3000, anchor)) : 12;
+@@ -627 +630 @@ function setupNav() {
+-        mega.postMessage({ type: 'showMain', main: activeMain });
++        mega.postMessage({ type: 'showMain', main: activeMain, anchor: menuAnchor });
+@@ -631 +634 @@ function setupNav() {
+-            mega.postMessage({ type: 'showMain', main: activeMain });
++            mega.postMessage({ type: 'showMain', main: activeMain, anchor: menuAnchor });
+@@ -705 +708 @@ function setupNav() {
+-                message.open ? showMenu(message.main) : hideMenu();
++                message.open ? showMenu(message.main, message.anchor) : hideMenu();
+@@ -708,0 +712,2 @@ function setupNav() {
++        } else if (message.type === 'catalogueMobileCategories') {
++            workspace.postMessage({ type: 'catalogueMobileCategories', open: message.open === true });
+@@ -733 +738 @@ function setupNav() {
+-            if (isOpen) mega.postMessage({ type: 'showMain', main: activeMain });
++            if (isOpen) mega.postMessage({ type: 'showMain', main: activeMain, anchor: menuAnchor });
+@@ -741,0 +747,2 @@ function setupNav() {
++        } else if (message.type === 'catalogueMegaClose') {
++            await hideMenu();
+@@ -815,0 +823,2 @@ function setupCatalogueWorkspace() {
++        } else if (message.type === 'catalogueMobileCategoriesState') {
++            $w('#html3').postMessage({ type: 'catalogueMobileCategoriesState', open: message.open === true, returnFocus: message.returnFocus === true });
+@@ -947,0 +957 @@ function setupFluidCatalogueLayout() {
++        ['#html4', 'catalogue-compact-menu'],
+diff --git a/catalogue-global.css b/catalogue-global.css
+index 549ad962..6dba293f 100644
+--- a/catalogue-global.css
++++ b/catalogue-global.css
+@@ -50,2 +50,2 @@
+-    height: 144px !important;
+-    min-height: 144px !important;
++    height: 111px !important;
++    min-height: 111px !important;
+@@ -61,4 +61,14 @@
+-    height: max(300px, calc(100vh - 144px)) !important;
+-    min-height: max(300px, calc(100vh - 144px)) !important;
+-    height: max(300px, calc(100dvh - 144px)) !important;
+-    min-height: max(300px, calc(100dvh - 144px)) !important;
++    height: max(300px, calc(100vh - 111px)) !important;
++    min-height: max(300px, calc(100vh - 111px)) !important;
++    height: max(300px, calc(100dvh - 111px)) !important;
++    min-height: max(300px, calc(100dvh - 111px)) !important;
++  }
++}
++
++@media (min-width: 901px) {
++  .catalogue-compact-menu,
++  .catalogue-compact-menu wix-iframe,
++  .catalogue-compact-menu wix-iframe > div,
++  .catalogue-compact-menu iframe {
++    max-height: min(300px, 45dvh) !important;
++    min-height: 0 !important;
