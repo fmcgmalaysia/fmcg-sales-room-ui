@@ -116,7 +116,7 @@ index abfa4cac..43bb3202 100644
 +        if(!panel.classList.contains('show')||currentMain!==String(d.main||'FOOD'))renderMain(String(d.main||'FOOD'));
 +      }
 diff --git a/catalogue/catalogue-workspace-v1.html b/catalogue/catalogue-workspace-v1.html
-index 507420be..a9b79168 100644
+index 507420be..6fecdd56 100644
 --- a/catalogue/catalogue-workspace-v1.html
 +++ b/catalogue/catalogue-workspace-v1.html
 @@ -8 +8 @@
@@ -132,43 +132,45 @@ index 507420be..a9b79168 100644
 @@ -45 +41 @@
 -    .mobile-category-trigger,.category-modal,.detail-modal:not([open]){display:none}
 +    .category-modal,.detail-modal:not([open]){display:none}
-@@ -58,2 +54,2 @@
+@@ -51,0 +48 @@
++      body.mega-open::after{content:'';position:fixed;inset:0;z-index:40;background:rgba(16,42,74,.08);pointer-events:none}
+@@ -58,2 +55,2 @@
 -      .toolbar{grid-template-columns:auto minmax(0,1fr);gap:6px;padding:0 12px;position:relative}
 -      .summary{min-height:44px;justify-content:flex-end;flex-wrap:wrap}.metric{padding:0 7px}
 +      .toolbar{grid-template-columns:minmax(0,1fr);padding:0 12px;position:relative}
 +      .summary{min-height:44px;justify-content:flex-start;flex-wrap:wrap}.metric{padding:0 7px}
-@@ -63,2 +58,0 @@
+@@ -63,2 +59,0 @@
 -      .mobile-category-trigger{display:flex;align-items:center;gap:7px;min-height:44px;padding:0 3px;border:0;background:transparent;color:var(--navy);font-size:14px;font-weight:750;cursor:pointer}
 -      .mobile-category-trigger svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7}
-@@ -71 +65 @@
+@@ -71 +66 @@
 -      .category-shortcuts{display:grid;grid-template-columns:1fr 1fr}
 +      .category-shortcuts{display:grid;grid-template-columns:1fr}
-@@ -139 +132,0 @@
+@@ -139 +133,0 @@
 -      <button class="mobile-category-trigger" id="categoryTrigger" type="button" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>Categories</button>
-@@ -228,5 +220,0 @@
+@@ -228,5 +221,0 @@
 -    const categoryTrigger=document.getElementById('categoryTrigger');
 -    categoryTrigger.onclick=()=>{
 -      if(!mobile.matches||mobileMenu.open)return;
 -      mobileMenu.showModal();categoryTrigger.setAttribute('aria-expanded','true');
 -    };
-@@ -234,4 +222 @@
+@@ -234,4 +223 @@
 -    mobileMenu.addEventListener('close',()=>{
 -      categoryTrigger.setAttribute('aria-expanded','false');
 -      if(mobile.matches)categoryTrigger.focus({preventScroll:true});
 -    });
 +    mobileMenu.addEventListener('close',()=>post('catalogueMobileCategoriesState',{open:false,returnFocus:mobile.matches}));
-@@ -311 +296 @@
+@@ -311 +297 @@
 -      const names=[['FOOD','Food & Beverages','All Food'],['HOUSEHOLDS','Household & Cleaning','All Household'],['PERSONAL CARE','Personal Care & Health','All Personal Care'],['OTHERS','General Merchandise','All General Merchandise']];
 +      const names=[['FOOD','Food & Beverages','View All Food'],['HOUSEHOLDS','Household & Cleaning','View All Household & Cleaning'],['PERSONAL CARE','Personal Care & Health','View All Personal Care'],['OTHERS','General Merchandise','View All General Merchandise']];
-@@ -315 +300 @@
+@@ -315 +301 @@
 -      shortcuts.append(makeButton('All Products',{}),makeButton('All Non-Food',{scope:'NON_FOOD'}));
 +      shortcuts.append(makeButton('All Products',{}));
-@@ -397,0 +383,4 @@
+@@ -397,0 +384,4 @@
 +      if(d.type==='catalogueMobileCategories'&&e.source===parent&&mobile.matches){
 +        if(d.open&&!mobileMenu.open){mobileMenu.showModal();post('catalogueMobileCategoriesState',{open:true})}
 +        else if(!d.open&&mobileMenu.open)mobileMenu.close();
 +      }
-@@ -438,0 +428,3 @@
+@@ -438,0 +429,3 @@
 +    document.addEventListener('pointerdown',()=>{
 +      if(document.body.classList.contains('mega-open'))post('catalogueWorkspaceDismissMenu');
 +    });
