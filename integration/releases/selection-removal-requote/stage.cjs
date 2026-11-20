@@ -8,7 +8,8 @@ const baseline = {
   "buyer-room.html": "840a8aba0cbcfb2c06ab4604830a7c4ebf37e305913ca989990c62c6cd88ebee",
   "catalogue/catalogue-workspace-v1.html": "afee7745acc783e4db19166d018ef4fde52a3a8d756f73cbc6c9a0643720c270",
   "master-quotations/app.js": "d454e42e537b6d4a19ea791a8e46939f4c688403e5ece3f611571b60230bdc1f",
-  "master-quotations/index.html": "1aa9b1a0e2971656d4b9d290470115b70e057fde26aff09abbb7722facbc7e50"
+  "master-quotations/index.html": "1aa9b1a0e2971656d4b9d290470115b70e057fde26aff09abbb7722facbc7e50",
+  "master-quotations/style.css": "caf8b0eaa559a984074a6e3588f6ff043fc794788f41b5802061c627e538c40c"
 };
 const worktree = path.resolve(__dirname, '../../..');
 const directory = process.argv[2];

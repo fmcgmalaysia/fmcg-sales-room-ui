@@ -1,65 +1,143 @@
 diff --git a/master-quotations/app.js b/master-quotations/app.js
-index 1d38be21..66e28ec2 100644
+index 1d38be21..1a49d410 100644
 --- a/master-quotations/app.js
 +++ b/master-quotations/app.js
-@@ -26,0 +27 @@ const key = id => JSON.stringify([staffId, customerId(), id]);
+@@ -13,0 +14 @@ const publishingRows = new Set();
++const unlockedEas = new Map();
+@@ -26,0 +28 @@ const key = id => JSON.stringify([staffId, customerId(), id]);
 +const entryKey = row => row.selectionEpoch ? JSON.stringify([staffId, customerId(), row.id, row.selectionEpoch]) : key(row.id);
-@@ -110 +111 @@ function sellingPrice(row) {
+@@ -110 +112 @@ function sellingPrice(row) {
 -  const local = drafts[key(row.id)];
 +  const local = drafts[entryKey(row)];
-@@ -132,0 +134,4 @@ function rememberPublications() { writeStorage('publishes:' + staffId, [...publi
+@@ -114,0 +117,4 @@ function sellingPrice(row) {
++function eaLocked(row) {
++  return Boolean(row.published?.enabled && Number(sellingPrice(row)?.priceEa) > 0 && (!unlockedEas.has(entryKey(row)) || unlockedEas.get(entryKey(row)) !== row.revision));
++}
++
+@@ -120 +126 @@ function updateCalculatorApply(row, tr, price, suggestion) {
+-  button.disabled = applied || !suggestion || !current.canEdit || row.pending || busy;
++  button.disabled = applied || !suggestion || !current.canEdit || row.pending || busy || eaLocked(row);
+@@ -132,0 +139,4 @@ function rememberPublications() { writeStorage('publishes:' + staffId, [...publi
 +function currentPublicationAttempt(row) {
 +  const packet = publicationAttempts.get(key(row.id));
 +  return packet && (row.pending || (packet.selectionEpoch || '') === (row.selectionEpoch || '')) ? packet : null;
 +}
-@@ -134 +139 @@ function quoteResumeButton(row) {
+@@ -134 +144 @@ function quoteResumeButton(row) {
 -  return current.canEdit && current.canPublish !== false && !publishingRows.has(row.id) && publicationAttempts.has(key(row.id))
 +  return current.canEdit && current.canPublish !== false && !publishingRows.has(row.id) && currentPublicationAttempt(row)
-@@ -282 +287 @@ function hideChangedQuote(tr) {
+@@ -277 +287 @@ async function initialize() {
+-$('#customer').onchange = () => { message(); refresh(); };
++$('#customer').onchange = () => { unlockedEas.clear(); message(); refresh(); };
+@@ -282 +292 @@ function hideChangedQuote(tr) {
 -  const next = row && drafts[key(row.id)];
 +  const next = row && drafts[entryKey(row)];
-@@ -498 +503,2 @@ async function publishQuoteRow(row, action) {
+@@ -295 +305 @@ content.addEventListener('focusin', event => {
+-  if (event.target.matches(quotationEditFields)) event.target.dataset.replaceOnInput = '';
++  if (event.target.matches(quotationEditFields) && !event.target.readOnly) event.target.dataset.replaceOnInput = '';
+@@ -303 +313 @@ content.addEventListener('beforeinput', event => {
+-  if (event.target.dataset.replaceOnInput !== undefined && event.inputType.startsWith('insert')) {
++  if (!event.target.readOnly && event.target.dataset.replaceOnInput !== undefined && event.inputType.startsWith('insert')) {
+@@ -313 +323 @@ content.addEventListener('keydown', event => {
+-  if (field.dataset.mode === 'EA' && field.value && (event.key === 'Enter' || movesRow)) {
++  if (field.dataset.mode === 'EA' && !field.readOnly && field.value && (event.key === 'Enter' || movesRow)) {
+@@ -318 +328 @@ content.addEventListener('keydown', event => {
+-    hideChangedQuote(tr);
++    if (!field.readOnly) hideChangedQuote(tr);
+@@ -339 +349,12 @@ content.addEventListener('click', async event => {
+-  if (action === 'apply' && row) {
++  if (action === 'unlock-ea' && row?.published?.enabled && eaLocked(row)) {
++    unlockedEas.set(entryKey(row), row.revision);
++    const tr = button.closest('[data-row]');
++    const input = tr.querySelector('[data-mode=EA]');
++    input.readOnly = false;
++    input.focus();
++    refreshEaLock(row, tr, sellingPrice(row));
++    const target = calculatorInput(row);
++    updateCalculatorApply(row, tr, sellingPrice(row), target ? calculatorPrice(row, target) : null);
++    return;
++  }
++  if (action === 'apply' && row && !eaLocked(row)) {
+@@ -498 +519,3 @@ async function publishQuoteRow(row, action) {
 -  publicationIndicators.set(rowKey, publicationAttempts.get(rowKey)?.enabled ?? (action === 'publish' || !row.published?.enabled));
 +  let packet = currentPublicationAttempt(row);
 +  publicationIndicators.set(rowKey, packet?.enabled ?? (action === 'publish' || !row.published?.enabled));
-@@ -502 +507,0 @@ async function publishQuoteRow(row, action) {
++  if (publicationIndicators.get(rowKey)) unlockedEas.delete(entryKey(row));
+@@ -502 +524,0 @@ async function publishQuoteRow(row, action) {
 -    let packet = publicationAttempts.get(rowKey);
-@@ -507 +512 @@ async function publishQuoteRow(row, action) {
+@@ -507 +529 @@ async function publishQuoteRow(row, action) {
 -      packet = { selectionId: row.id, enabled, revision, requestId: requestId() };
 +      packet = { selectionId: row.id, enabled, revision, requestId: requestId(), selectionEpoch: row.selectionEpoch || '' };
-@@ -526 +531 @@ async function publishQuoteRow(row, action) {
+@@ -526 +548 @@ async function publishQuoteRow(row, action) {
 -    if (drafts[rowKey] && !dirty(row)) { delete drafts[rowKey]; remember(); }
 +    if (drafts[entryKey(row)] && !dirty(row)) { delete drafts[entryKey(row)]; remember(); }
-@@ -542 +547 @@ setTimeout(initialize, 0);
+@@ -542 +564 @@ setTimeout(initialize, 0);
 -function draftPrice(row, input = drafts[key(row.id)] || row.draft, roundEa = value => Number(value.toFixed(6))) {
 +function draftPrice(row, input = drafts[entryKey(row)] || row.draft, roundEa = value => Number(value.toFixed(6))) {
-@@ -565 +570 @@ function calculatorInput(row) {
+@@ -565 +587 @@ function calculatorInput(row) {
 -  return calculator.get(key(row.id)) || (row.draft?.mode === 'GP' ? row.draft : null);
 +  return calculator.get(entryKey(row)) || (row.draft?.mode === 'GP' ? row.draft : null);
-@@ -600 +605 @@ function dirty(row) {
+@@ -600 +622 @@ function dirty(row) {
 -  const input = drafts[key(row.id)];
 +  const input = drafts[entryKey(row)];
-@@ -658 +663 @@ async function saveDraft(row, context, keepLocal = false) {
+@@ -606,0 +629,12 @@ function quoteChanged(row) {
++function eaLockIcon(locked) {
++  return '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="'+(locked?'M7 9V6a3 3 0 0 1 6 0v3':'M7 9V6a3 3 0 0 1 5.5-1.6')+'"/></svg>';
++}
++function refreshEaLock(row, tr, price) {
++  const control = tr.querySelector('[data-action=unlock-ea]');
++  const locked = eaLocked(row);
++  control.hidden = !(Number(price?.priceEa) > 0);
++  control.disabled = !locked || !current.canEdit || row.pending || busy;
++  control.setAttribute('aria-label', locked ? 'Unlock unit price' : 'Unit price unlocked');
++  control.title = locked ? 'Unlock unit price' : 'Unit price unlocked';
++  control.innerHTML = eaLockIcon(locked);
++}
+@@ -612,0 +647 @@ function quoteRow(row, number) {
++  const lockedEa = eaLocked(row);
+@@ -625 +660 @@ function quoteRow(row, number) {
+-    <td><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><label class="quote-value quote-value-suffix"><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" placeholder="0.00" value="${price ? fixed(price.priceEa) : ''}" ${disabled ? 'disabled' : ''}><span class="quote-unit">EA</span></label>${quotationAmount(price?.priceCtn, 'CT', ' data-carton')}</td>
++    <td><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><div class="quote-value quote-value-suffix quote-ea"><button type="button" class="quote-ea-lock" data-action="unlock-ea" aria-label="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" title="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" ${Number(price?.priceEa) > 0 ? '' : 'hidden'} ${disabled || !lockedEa ? 'disabled' : ''}>${eaLockIcon(lockedEa)}</button><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" placeholder="0.00" value="${price ? fixed(price.priceEa) : ''}" ${disabled ? 'disabled' : lockedEa ? 'readonly' : ''}><span class="quote-unit">EA</span></div>${quotationAmount(price?.priceCtn, 'CT', ' data-carton')}</td>
+@@ -635 +670 @@ function quoteRow(row, number) {
+-    <td class="calc-cell"><button type="button" class="update primary" data-action="apply" aria-label="${calculatorMatchesPrice(price, suggestion) ? 'Calculator price applied to' : 'Apply calculator for'} ${desc}" ${calculatorMatchesPrice(price, suggestion) ? 'data-applied' : ''} ${disabled || !suggestion || calculatorMatchesPrice(price, suggestion) ? 'disabled' : ''}><span class="calc-apply-label">Apply</span><svg class="calc-applied-check" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 12c2 .4 3.6 1.8 5 4 2.3-4.7 5.9-8 11-10.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>
++    <td class="calc-cell"><button type="button" class="update primary" data-action="apply" aria-label="${calculatorMatchesPrice(price, suggestion) ? 'Calculator price applied to' : 'Apply calculator for'} ${desc}" ${calculatorMatchesPrice(price, suggestion) ? 'data-applied' : ''} ${disabled || lockedEa || !suggestion || calculatorMatchesPrice(price, suggestion) ? 'disabled' : ''}><span class="calc-apply-label">Apply</span><svg class="calc-applied-check" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 12c2 .4 3.6 1.8 5 4 2.3-4.7 5.9-8 11-10.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>
+@@ -658 +693 @@ async function saveDraft(row, context, keepLocal = false) {
 -  const draftKey = key(row.id);
 +  const draftKey = entryKey(row);
-@@ -662 +667 @@ async function saveDraft(row, context, keepLocal = false) {
+@@ -662 +697 @@ async function saveDraft(row, context, keepLocal = false) {
 -  const result = await api('draft', { selectionId: row.id, input, revision: row.revision, requestId: requestId() }, context);
 +  const result = await api('draft', { selectionId: row.id, input, revision: row.revision, requestId: requestId(), selectionEpoch: row.selectionEpoch || '' }, context);
-@@ -667,2 +672,2 @@ function editPrice(row, tr, next, updateEa = false) {
+@@ -667,2 +702,3 @@ function editPrice(row, tr, next, updateEa = false) {
 -  drafts[key(row.id)] = next;
 -  if (row.draft && next.mode === row.draft.mode && next.value === row.draft.value) delete drafts[key(row.id)];
++  if (eaLocked(row)) return;
 +  drafts[entryKey(row)] = next;
 +  if (row.draft && next.mode === row.draft.mode && next.value === row.draft.value) delete drafts[entryKey(row)];
-@@ -698 +703 @@ content.addEventListener('input', event => {
+@@ -671,0 +708 @@ function editPrice(row, tr, next, updateEa = false) {
++  refreshEaLock(row, tr, price);
+@@ -688 +725 @@ content.addEventListener('input', event => {
+-  if (!input || input.disabled || busy) return;
++  if (!input || input.disabled || input.readOnly || busy) return;
+@@ -698 +735 @@ content.addEventListener('input', event => {
 -  calculator.set(key(row.id), next);
 +  calculator.set(entryKey(row), next);
 diff --git a/master-quotations/index.html b/master-quotations/index.html
-index 08cdf428..58e1861e 100644
+index 08cdf428..3f3bb547 100644
 --- a/master-quotations/index.html
 +++ b/master-quotations/index.html
 @@ -6 +6 @@
 -  <meta name="build" content="20261119-quotation-cost-batch-v1">
 +  <meta name="build" content="20261120-selection-removal-requote-v1">
-@@ -9 +9 @@
+@@ -8,2 +8,2 @@
+-  <link rel="stylesheet" href="./style.css?v=20261118-master-quotation-grid-polish-v1">
 -  <script defer src="./app.js?v=20261119-quotation-cost-batch-v1"></script>
++  <link rel="stylesheet" href="./style.css?v=20261120-selection-removal-requote-v1">
 +  <script defer src="./app.js?v=20261120-selection-removal-requote-v1"></script>
+diff --git a/master-quotations/style.css b/master-quotations/style.css
+index d9bcf042..9f33a193 100644
+--- a/master-quotations/style.css
++++ b/master-quotations/style.css
+@@ -885 +885,2 @@
+-.product-thumb{width:100%;height:38px;object-fit:contain;display:block} .empty-thumb{color:#64748b}
+\ No newline at end of file
++.product-thumb{width:100%;height:38px;object-fit:contain;display:block} .empty-thumb{color:#64748b}
++.wix-quotation-workroom .quote-grid .quote-ea{grid-template-columns:16px minmax(0,1fr) 16px;column-gap:3px}.wix-quotation-workroom .quote-grid .quote-ea>input{grid-column:2;max-width:100%;min-width:0;box-sizing:border-box}.quote-ea>.quote-unit{grid-column:3}.quote-ea-lock{grid-column:1;display:grid;place-items:center;width:16px;height:24px;padding:1px;background:transparent;border:0;border-radius:4px;color:#315c82;cursor:pointer}.quote-ea-lock[hidden]{display:none}.quote-ea-lock:disabled{color:#708397;cursor:default}.quote-ea-lock:not(:disabled):hover,.quote-ea-lock:focus-visible{background:#e3edf7}.quote-ea-lock svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
