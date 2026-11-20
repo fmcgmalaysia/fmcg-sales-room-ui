@@ -1,0 +1,27 @@
+diff --git a/support-room/index.html b/support-room/index.html
+index e6b53600..91f81101 100644
+--- a/support-room/index.html
++++ b/support-room/index.html
+@@ -1 +1 @@
+-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="build" content="20261101-customer-loaded-records-v1"><title>MASTER Support</title></head><body><p>Open the current Desk workroom.</p><a id="desk-entry" href="workroom.html?live=1&amp;department=SUPPORT">Open MASTER Support</a><script>(()=>{const company=new URLSearchParams(location.search).get("company")==="GHR"?"GHR":"NCT";const target=parent===window?"https://fmcg999.wixstudio.com/master/support-department":"workroom.html?v=20261101-customer-loaded-records-v1&live=1&department=SUPPORT&company="+company;document.getElementById("desk-entry").href=target;location.replace(target);})();</script></body></html>
+\ No newline at end of file
++<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="build" content="20261101-customer-loaded-records-v1"><title>MASTER Support</title></head><body><p>Open the current Desk workroom.</p><a id="desk-entry" href="workroom.html?live=1&amp;department=SUPPORT">Open MASTER Support</a><script>(()=>{const company=new URLSearchParams(location.search).get("company")==="GHR"?"GHR":"NCT";const target=parent===window?"https://www.ltpos.ai/support-department":"workroom.html?v=20261101-customer-loaded-records-v1&live=1&department=SUPPORT&company="+company;document.getElementById("desk-entry").href=target;location.replace(target);})();</script></body></html>
+\ No newline at end of file
+diff --git a/support-room/draft.html b/support-room/draft.html
+index e6b53600..91f81101 100644
+--- a/support-room/draft.html
++++ b/support-room/draft.html
+@@ -1 +1 @@
+-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="build" content="20261101-customer-loaded-records-v1"><title>MASTER Support</title></head><body><p>Open the current Desk workroom.</p><a id="desk-entry" href="workroom.html?live=1&amp;department=SUPPORT">Open MASTER Support</a><script>(()=>{const company=new URLSearchParams(location.search).get("company")==="GHR"?"GHR":"NCT";const target=parent===window?"https://fmcg999.wixstudio.com/master/support-department":"workroom.html?v=20261101-customer-loaded-records-v1&live=1&department=SUPPORT&company="+company;document.getElementById("desk-entry").href=target;location.replace(target);})();</script></body></html>
+\ No newline at end of file
++<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="build" content="20261101-customer-loaded-records-v1"><title>MASTER Support</title></head><body><p>Open the current Desk workroom.</p><a id="desk-entry" href="workroom.html?live=1&amp;department=SUPPORT">Open MASTER Support</a><script>(()=>{const company=new URLSearchParams(location.search).get("company")==="GHR"?"GHR":"NCT";const target=parent===window?"https://www.ltpos.ai/support-department":"workroom.html?v=20261101-customer-loaded-records-v1&live=1&department=SUPPORT&company="+company;document.getElementById("desk-entry").href=target;location.replace(target);})();</script></body></html>
+\ No newline at end of file
+diff --git a/support-room/packing-workbench.html b/support-room/packing-workbench.html
+index e6b53600..91f81101 100644
+--- a/support-room/packing-workbench.html
++++ b/support-room/packing-workbench.html
+@@ -1 +1 @@
+-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="build" content="20261101-customer-loaded-records-v1"><title>MASTER Support</title></head><body><p>Open the current Desk workroom.</p><a id="desk-entry" href="workroom.html?live=1&amp;department=SUPPORT">Open MASTER Support</a><script>(()=>{const company=new URLSearchParams(location.search).get("company")==="GHR"?"GHR":"NCT";const target=parent===window?"https://fmcg999.wixstudio.com/master/support-department":"workroom.html?v=20261101-customer-loaded-records-v1&live=1&department=SUPPORT&company="+company;document.getElementById("desk-entry").href=target;location.replace(target);})();</script></body></html>
+\ No newline at end of file
++<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="build" content="20261101-customer-loaded-records-v1"><title>MASTER Support</title></head><body><p>Open the current Desk workroom.</p><a id="desk-entry" href="workroom.html?live=1&amp;department=SUPPORT">Open MASTER Support</a><script>(()=>{const company=new URLSearchParams(location.search).get("company")==="GHR"?"GHR":"NCT";const target=parent===window?"https://www.ltpos.ai/support-department":"workroom.html?v=20261101-customer-loaded-records-v1&live=1&department=SUPPORT&company="+company;document.getElementById("desk-entry").href=target;location.replace(target);})();</script></body></html>
+\ No newline at end of file

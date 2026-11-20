@@ -1,0 +1,7 @@
+diff --git a/ltpos-portal-page.js b/ltpos-portal-page.js
+index 4ab8bd43..3fbc3e7a 100644
+--- a/ltpos-portal-page.js
++++ b/ltpos-portal-page.js
+@@ -5 +5 @@ const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/managed.h
+-const SITE = 'https://fmcg999.wixstudio.com/master';
++const SITE = 'https://www.ltpos.ai';
