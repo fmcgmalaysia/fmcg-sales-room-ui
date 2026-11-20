@@ -1,0 +1,38 @@
+diff --git a/catalogue-global.css b/catalogue-global.css
+index f61460c8..a23eb25e 100644
+--- a/catalogue-global.css
++++ b/catalogue-global.css
+@@ -74,3 +74,4 @@
+-  .catalogue-navigation-stage [data-testid="responsive-container-content"]:has(.catalogue-compact-menu) {
+-    position: relative;
+-    overflow: visible !important;
++  #comp-mto7jwxf-pinned-layer #comp-mto7jwxf {
++    inset-inline-start: 0 !important;
++    width: max(100%, 901px) !important;
++    margin-inline: 0 !important;
+@@ -78,11 +79,4 @@
+-  .catalogue-compact-menu {
+-    position: absolute !important;
+-    inset: 100% 0 auto !important;
+-    width: 100% !important;
+-    margin: 0 !important;
+-    z-index: 1;
+-  }
+-  .catalogue-compact-menu,
+-  .catalogue-compact-menu wix-iframe,
+-  .catalogue-compact-menu wix-iframe > div,
+-  .catalogue-compact-menu iframe {
++  #comp-mto7jwxf,
++  #comp-mto7jwxf wix-iframe,
++  #comp-mto7jwxf wix-iframe > div,
++  #comp-mto7jwxf iframe {
+@@ -92,0 +87,9 @@
++
++@media (min-width: 901px) and (max-width: 1024px) {
++  .catalogue-results-stage > .comp-mt8ndgyv-container {
++    grid-template-rows: minmax(0, 1fr) !important;
++  }
++  .catalogue-results-stage #comp-mu3q8upt {
++    grid-row: 1 !important;
++  }
++}
