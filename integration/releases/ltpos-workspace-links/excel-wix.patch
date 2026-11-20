@@ -1,0 +1,10 @@
+diff --git a/catalogueAuth.web.js b/catalogueAuth.web.js
+index 174e3317..2b6e1ce4 100644
+--- a/catalogueAuth.web.js
++++ b/catalogueAuth.web.js
+@@ -509 +509 @@ export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, as
+-  return createBuyerSelectionMediaDownload(buyer.customerId, 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room');
++  return createBuyerSelectionMediaDownload(buyer.customerId, 'https://www.fmcgmalaysia.com/buyer-room');
+@@ -514 +514 @@ export const createBuyerOrderDownload = webMethod(Permissions.SiteMember, async
+-  const roomUrl = /^https:\/\//i.test(normalize(buyerRoomUrl)) ? normalize(buyerRoomUrl) : 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room';
++  const roomUrl = /^https:\/\//i.test(normalize(buyerRoomUrl)) ? normalize(buyerRoomUrl) : 'https://www.fmcgmalaysia.com/buyer-room';
