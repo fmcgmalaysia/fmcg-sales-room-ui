@@ -1,0 +1,7 @@
+diff --git a/warehouse-page.js b/warehouse-page.js
+index 3b23fde0..8682465e 100644
+--- a/warehouse-page.js
++++ b/warehouse-page.js
+@@ -100 +100 @@ $w.onReady(()=>{
+-  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261120-warehouse-incoming-identity-v1';
++  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261120-warehouse-incoming-receipt-review-v1';

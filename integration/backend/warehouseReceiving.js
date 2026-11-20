@@ -48,17 +48,25 @@ export function readWarehouseTask(task,activity,allocations){
   return {...line,stock,hasPhysicalReceipt:true,customerReceived:allocation.quantity,allocationAt:allocation.at,extraReceived:Math.max(0,stock.usableReceived-task.purchaseQtyInCtn)};
 }
 
-export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
+export function projectWarehouseOrders({company,purchaseOrders,tasks,activity,receiptHistoryReview}){
   const images=new Map(tasks.filter(task=>task.productImageUrl).map(task=>[task.id,task.productImageUrl]));
   return purchaseOrders.map(po=>{
     if(po.company!==company)throw Error('Warehouse purchase company mismatch.');
     const receipt=readWarehouseReceipts(po.id,activity);
     const receivingCases=(po.quantityCases||[]).filter(item=>item.kind==='RECEIPT');
     const stopped=line=>receivingCases.find(item=>item.taskId===line.taskId&&item.decision?.supplierDeliveryDecision==='STOP'&&['CN_PROMISED','FUTURE_DEDUCTION','SUPPLIER_REFUSED'].includes(item.decision.supplierDecision)&&Number.isFinite(Date.parse(item.decision.at)));
-    const lines=po.taskIds.map(id=>{
+    const poTasks=po.taskIds.map(id=>{
       const matches=tasks.filter(task=>task.id===id);if(matches.length!==1)throw Error('Warehouse purchase task is missing.');
-      const task=matches[0],saved=receipt.lines.find(line=>line.taskId===id),planned=task.procurement?.totalCtn;
-      if(!saved&&!task.warehouse&&Number.isFinite(task.inc)&&task.inc>0)throw Error('Existing warehouse quantity needs its receipt history before another delivery can be entered.');
+      return matches[0];
+    });
+    const requiresReceiptHistory=poTasks.some(task=>!task.warehouse&&Number.isFinite(task.inc)&&task.inc>0&&!receipt.lines.some(line=>line.taskId===task.id));
+    if(requiresReceiptHistory){
+      if(!receiptHistoryReview)throw Error('Existing warehouse quantity needs its receipt history before another delivery can be entered.');
+      receiptHistoryReview.push(po.number);
+      return null;
+    }
+    const lines=poTasks.map(task=>{
+      const id=task.id,saved=receipt.lines.find(line=>line.taskId===id),planned=task.procurement?.totalCtn;
       if(!quantity(planned)||planned===0||!quantity(task.ord))throw Error('Confirm supplier purchase quantities before receiving.');
       if(saved&&(saved.orderId!==task.orderId||saved.sourceLineId!==task.sourceLineId))throw Error('Warehouse purchase identity changed.');
       const accepted=saved?.accepted||0,rejected=saved?.rejected||0;
@@ -74,7 +82,7 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
       version:operationId(po.id,po.contentVersion||po.version,po.supplierId,po.selfCollect===true,po.invoiceChecked===true,po.supplierAccount?.closed===true,receipt.revision,lines),revision:receipt.revision,lines:lines.map(line=>images.has(line.taskId)?{...line,productImageUrl:images.get(line.taskId)}:line),history:receipt.history.map(event=>({id:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,lines:event.details.lines})),
       status:issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',itemCount:new Set(lines.map(line=>JSON.stringify([line.barcode,line.packing]))).size,pendingItems:new Set(lines.filter(line=>line.remaining>0||line.issue).map(line=>JSON.stringify([line.barcode,line.packing]))).size,
       completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,workroomCompletedAt:completionTimes.at(-1)||null,receivingStoppedWaiting:receivingTaskComplete&&lines.some(line=>Boolean(stopped(line))),workroomStatus:po.invoiceChecked&&po.finance?.receiptResolved||receivingTaskComplete?'COMPLETE':issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',approvedReceiptTarget:po.invoiceChecked&&po.finance?.receiptResolved?lines.reduce((n,line)=>n+line.accepted,0):null,documents:po.documents,documentState:po.documentStates?.DO?.state,stockCases:po.stockCases||[]};
-  });
+  }).filter(Boolean);
 }
 
 export function createWarehouseOperations({store,names,readOrders,documentService,now=()=>new Date()}){

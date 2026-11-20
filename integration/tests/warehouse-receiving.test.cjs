@@ -1,16 +1,31 @@
 const test=require('node:test'),assert=require('node:assert/strict'),{createHash}=require('node:crypto'),load=require('./load-master-module.cjs');
 const {projectWarehouseOrders,createWarehouseOperations,requireWarehouseStaff,readWarehouseReceipts}=load('warehouseReceiving.js');
 const clone=value=>JSON.parse(JSON.stringify(value));
-function fixture(documentService){
+function fixture(documentService,{receiptHistoryReview,additionalOrders=[]}={}){
  const records=new Map(),tasks=[{id:'T',orderId:'O',sourceLineId:'L',barcode:'001',name:'PRODUCT',packing:'12 x 1',ord:90,procurement:{totalCtn:100}}];
  const po={id:'PO',version:'V',taskIds:['T'],company:'NCT',number:'NCT-PO-01',customerId:'C',customerName:'CUSTOMER',documents:[]};let fail=false;
  const store={all:async c=>[...records].filter(([key])=>key.startsWith(c+'/')).map(([,v])=>clone(v)),read:async(c,id)=>clone(records.get(c+'/'+id)||null),insert:async(c,row)=>{if(records.has(c+'/'+row._id))throw Error('duplicate');records.set(c+'/'+row._id,clone(row));if(row.action==='WAREHOUSE_RECEIPT_SAVED'&&fail){fail=false;throw Error('response lost');}return clone(row);},remove:async(c,id)=>records.delete(c+'/'+id)};
- const readOrders=async company=>projectWarehouseOrders({company,purchaseOrders:company==='NCT'?[po]:[],tasks,activity:await store.all(company+'Activity')});
+ const readOrders=async company=>projectWarehouseOrders({company,purchaseOrders:company==='NCT'?[po,...additionalOrders]:[],tasks,activity:await store.all(company+'Activity'),receiptHistoryReview});
  const operations=createWarehouseOperations({store,names:{NCT:{activity:'NCTActivity'},GHR:{activity:'GHRActivity'}},readOrders,documentService,now:()=>new Date('2026-10-11T02:00:00Z')});
  const base={company:'NCT',staff:{memberId:'M',staffId:'S',staffName:'HIA'},requestId:'11111111-1111-4111-8111-111111111111'};
  const input=async(accepted,kind='PARTIAL')=>({id:'PO',version:(await readOrders('NCT'))[0].version,action:'RECEIVE',lines:[{taskId:'T',accepted,rejected:0,kind,reason:'Two deliveries agreed'}]});
  return {records,store,readOrders,operations,base,input,tasks,po,fail:()=>fail=true};
 }
+test('a legacy P.O. missing receipt evidence stays locked while another P.O. can receive',async()=>{
+ const issues=[];
+ const legacy={id:'LEGACY-PO',company:'NCT',number:'NCT-PO-02',taskIds:['OLD']};
+ const f=fixture(undefined,{receiptHistoryReview:issues,additionalOrders:[legacy]});
+ f.tasks.push({id:'OLD',orderId:'OLD-ORDER',sourceLineId:'OLD-LINE',inc:30,ord:50,procurement:{totalCtn:55}});
+ assert.throws(()=>projectWarehouseOrders({company:'NCT',purchaseOrders:[legacy],tasks:f.tasks,activity:[]}),/receipt history/);
+ assert.deepEqual((await f.readOrders('NCT')).map(row=>row.id),['PO']);
+ assert.deepEqual(issues,['NCT-PO-02']);
+ const input=await f.input(100,'DELIVERY');
+ await assert.rejects(f.operations.save({...f.base,input:{...input,id:'LEGACY-PO'}}),/changed/);
+ assert.equal([...f.records.values()].filter(row=>row.action==='WAREHOUSE_RECEIPT_SAVED').length,0);
+ await f.operations.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input});
+ assert.equal((await f.readOrders('NCT'))[0].lines[0].accepted,100);
+ assert.equal(f.tasks[1].inc,30);
+});
 test('receiving evidence retries the same file, then records the receipt once without image bytes in CMS',async()=>{
  const attempts=[];
  const f=fixture(async packet=>{
