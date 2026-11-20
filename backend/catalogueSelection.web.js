@@ -14,6 +14,12 @@ const PRODUCT_COLLECTION = 'FMCGMALAYSIA';
 const SELECTION_COLLECTION = 'WixBuyerListItems';
 const DEFAULT_SELECTION_LIMIT = 100;
 const SELECTION_LIMITS = new Set([100, 300, 500, 700]);
+function selectionProductIds_(items) {
+  return [...new Set(items.flatMap(item => {
+    const data = selectionPayload_(item);
+    return [data.productId, ...(Array.isArray(data.productAliases) ? data.productAliases : [])];
+  }).filter(Boolean))];
+}
 function selectionLimit_(customer) { const value = Number(customer?.selectionLimit); return SELECTION_LIMITS.has(value) ? value : DEFAULT_SELECTION_LIMIT; }
 
 export const getCatalogueSelectionState = webMethod(
@@ -35,10 +41,8 @@ export const getCatalogueSelectionState = webMethod(
       customerId: context.customerId,
       companyName: context.companyName,
       actorName: context.actorName,
-      selectedProductIds: [...new Set(selectedItems.flatMap((item) => {
-        const data = selectionPayload_(item);
-        return [data.productId, ...(Array.isArray(data.productAliases) ? data.productAliases : [])];
-      }).filter(Boolean))],
+      selectedProductIds: selectionProductIds_(selectedItems),
+      removedProductIds: selectionProductIds_(selectedItems.filter(item => selectionPayload_(item).removed)),
       activeSelectedProductIds: activeItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
       selectedBarcodes: [...new Set(selectedItems.flatMap((item) => {
         const data = selectionPayload_(item); return [data.unitBarcode, data.originalUnitBarcode];
@@ -86,6 +90,9 @@ export const addCatalogueSelection = webMethod(
 
     if (item) {
       const existing = selectionPayload_(item);
+      if (existing.removed && !removedSelectionExpired(existing)) {
+        throw new Error('Restore this product from Removed in Buyer Room to request a new quotation.');
+      }
       if (existing.removed && (customerItems || await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length >= context.selectionLimit) {
         throw new Error(`My Selection is at its ${context.selectionLimit}-product limit. Remove an item before restoring this one.`);
       }

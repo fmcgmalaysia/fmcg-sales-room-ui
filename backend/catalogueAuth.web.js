@@ -676,7 +676,8 @@ export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId,
   const buyer = await resolveBuyerContext(assistCustomerId, 'ASSIST_SELECTION');
   const row = await findOwnedItem(buyer, itemId);
   if (removedSelectionExpired(row.data)) throw new Error('This removal is over 30 days old. Select the product again in Catalogue.');
-  if (row.data.removed && (await activeBuyerSelectionCount(buyer.customerId, buyer.selectionLimit)) >= buyer.selectionLimit) throw new Error(`My Selection is at its ${buyer.selectionLimit}-product limit. Remove an item before restoring this one.`);
+  if (!row.data.removed) return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: row.data.quoteStatus };
+  if ((await activeBuyerSelectionCount(buyer.customerId, buyer.selectionLimit)) >= buyer.selectionLimit) throw new Error(`My Selection is at its ${buyer.selectionLimit}-product limit. Remove an item before restoring this one.`);
   const now = new Date().toISOString();
   const next = { ...row.data, removed: false, recoveredAt: now, requoteRequestedAt: now, quoteStatus: 'RFQ', quoteActive: false, quotePerPc: 0, quotePerCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, orderQtyCtn: 0, qtyEditedAt: '', qtyEditedBy: '', qdSyncStatus: '', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);

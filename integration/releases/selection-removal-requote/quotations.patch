@@ -1,0 +1,65 @@
+diff --git a/master-quotations/app.js b/master-quotations/app.js
+index 1d38be21..66e28ec2 100644
+--- a/master-quotations/app.js
++++ b/master-quotations/app.js
+@@ -26,0 +27 @@ const key = id => JSON.stringify([staffId, customerId(), id]);
++const entryKey = row => row.selectionEpoch ? JSON.stringify([staffId, customerId(), row.id, row.selectionEpoch]) : key(row.id);
+@@ -110 +111 @@ function sellingPrice(row) {
+-  const local = drafts[key(row.id)];
++  const local = drafts[entryKey(row)];
+@@ -132,0 +134,4 @@ function rememberPublications() { writeStorage('publishes:' + staffId, [...publi
++function currentPublicationAttempt(row) {
++  const packet = publicationAttempts.get(key(row.id));
++  return packet && (row.pending || (packet.selectionEpoch || '') === (row.selectionEpoch || '')) ? packet : null;
++}
+@@ -134 +139 @@ function quoteResumeButton(row) {
+-  return current.canEdit && current.canPublish !== false && !publishingRows.has(row.id) && publicationAttempts.has(key(row.id))
++  return current.canEdit && current.canPublish !== false && !publishingRows.has(row.id) && currentPublicationAttempt(row)
+@@ -282 +287 @@ function hideChangedQuote(tr) {
+-  const next = row && drafts[key(row.id)];
++  const next = row && drafts[entryKey(row)];
+@@ -498 +503,2 @@ async function publishQuoteRow(row, action) {
+-  publicationIndicators.set(rowKey, publicationAttempts.get(rowKey)?.enabled ?? (action === 'publish' || !row.published?.enabled));
++  let packet = currentPublicationAttempt(row);
++  publicationIndicators.set(rowKey, packet?.enabled ?? (action === 'publish' || !row.published?.enabled));
+@@ -502 +507,0 @@ async function publishQuoteRow(row, action) {
+-    let packet = publicationAttempts.get(rowKey);
+@@ -507 +512 @@ async function publishQuoteRow(row, action) {
+-      packet = { selectionId: row.id, enabled, revision, requestId: requestId() };
++      packet = { selectionId: row.id, enabled, revision, requestId: requestId(), selectionEpoch: row.selectionEpoch || '' };
+@@ -526 +531 @@ async function publishQuoteRow(row, action) {
+-    if (drafts[rowKey] && !dirty(row)) { delete drafts[rowKey]; remember(); }
++    if (drafts[entryKey(row)] && !dirty(row)) { delete drafts[entryKey(row)]; remember(); }
+@@ -542 +547 @@ setTimeout(initialize, 0);
+-function draftPrice(row, input = drafts[key(row.id)] || row.draft, roundEa = value => Number(value.toFixed(6))) {
++function draftPrice(row, input = drafts[entryKey(row)] || row.draft, roundEa = value => Number(value.toFixed(6))) {
+@@ -565 +570 @@ function calculatorInput(row) {
+-  return calculator.get(key(row.id)) || (row.draft?.mode === 'GP' ? row.draft : null);
++  return calculator.get(entryKey(row)) || (row.draft?.mode === 'GP' ? row.draft : null);
+@@ -600 +605 @@ function dirty(row) {
+-  const input = drafts[key(row.id)];
++  const input = drafts[entryKey(row)];
+@@ -658 +663 @@ async function saveDraft(row, context, keepLocal = false) {
+-  const draftKey = key(row.id);
++  const draftKey = entryKey(row);
+@@ -662 +667 @@ async function saveDraft(row, context, keepLocal = false) {
+-  const result = await api('draft', { selectionId: row.id, input, revision: row.revision, requestId: requestId() }, context);
++  const result = await api('draft', { selectionId: row.id, input, revision: row.revision, requestId: requestId(), selectionEpoch: row.selectionEpoch || '' }, context);
+@@ -667,2 +672,2 @@ function editPrice(row, tr, next, updateEa = false) {
+-  drafts[key(row.id)] = next;
+-  if (row.draft && next.mode === row.draft.mode && next.value === row.draft.value) delete drafts[key(row.id)];
++  drafts[entryKey(row)] = next;
++  if (row.draft && next.mode === row.draft.mode && next.value === row.draft.value) delete drafts[entryKey(row)];
+@@ -698 +703 @@ content.addEventListener('input', event => {
+-  calculator.set(key(row.id), next);
++  calculator.set(entryKey(row), next);
+diff --git a/master-quotations/index.html b/master-quotations/index.html
+index 08cdf428..58e1861e 100644
+--- a/master-quotations/index.html
++++ b/master-quotations/index.html
+@@ -6 +6 @@
+-  <meta name="build" content="20261119-quotation-cost-batch-v1">
++  <meta name="build" content="20261120-selection-removal-requote-v1">
+@@ -9 +9 @@
+-  <script defer src="./app.js?v=20261119-quotation-cost-batch-v1"></script>
++  <script defer src="./app.js?v=20261120-selection-removal-requote-v1"></script>
