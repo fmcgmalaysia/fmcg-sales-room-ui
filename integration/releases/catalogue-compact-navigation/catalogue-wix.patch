@@ -1,5 +1,5 @@
 diff --git a/catalogue-page.js b/catalogue-page.js
-index 804354c6..9cd06539 100644
+index 804354c6..a0cccc9e 100644
 --- a/catalogue-page.js
 +++ b/catalogue-page.js
 @@ -20 +20 @@ let selectionBusyIds = new Set();
@@ -32,13 +32,24 @@ index 804354c6..9cd06539 100644
 @@ -741,0 +747,2 @@ function setupNav() {
 +        } else if (message.type === 'catalogueMegaClose') {
 +            await hideMenu();
-@@ -815,0 +823,2 @@ function setupCatalogueWorkspace() {
+@@ -799,0 +807 @@ function setupNav() {
++    return hideMenu;
+@@ -802 +810 @@ function setupNav() {
+-function setupCatalogueWorkspace() {
++function setupCatalogueWorkspace(hideDesktopMenu) {
+@@ -815,0 +824,4 @@ function setupCatalogueWorkspace() {
++        } else if (message.type === 'catalogueWorkspaceDismissMenu') {
++            await hideDesktopMenu();
 +        } else if (message.type === 'catalogueMobileCategoriesState') {
 +            $w('#html3').postMessage({ type: 'catalogueMobileCategoriesState', open: message.open === true, returnFocus: message.returnFocus === true });
-@@ -947,0 +957 @@ function setupFluidCatalogueLayout() {
+@@ -947,0 +960 @@ function setupFluidCatalogueLayout() {
 +        ['#html4', 'catalogue-compact-menu'],
+@@ -966,2 +979 @@ $w.onReady(() => {
+-    setupNav();
+-    setupCatalogueWorkspace();
++    setupCatalogueWorkspace(setupNav());
 diff --git a/catalogue-global.css b/catalogue-global.css
-index 549ad962..6dba293f 100644
+index 549ad962..f61460c8 100644
 --- a/catalogue-global.css
 +++ b/catalogue-global.css
 @@ -50,2 +50,2 @@
@@ -46,7 +57,7 @@ index 549ad962..6dba293f 100644
 -    min-height: 144px !important;
 +    height: 111px !important;
 +    min-height: 111px !important;
-@@ -61,4 +61,14 @@
+@@ -61,4 +61,30 @@
 -    height: max(300px, calc(100vh - 144px)) !important;
 -    min-height: max(300px, calc(100vh - 144px)) !important;
 -    height: max(300px, calc(100dvh - 144px)) !important;
@@ -59,9 +70,25 @@ index 549ad962..6dba293f 100644
 +}
 +
 +@media (min-width: 901px) {
++  .catalogue-navigation-stage {
++    position: relative;
++    overflow: visible !important;
++    z-index: 52;
++  }
++  .catalogue-navigation-stage [data-testid="responsive-container-content"]:has(.catalogue-compact-menu) {
++    position: relative;
++    overflow: visible !important;
++  }
++  .catalogue-compact-menu {
++    position: absolute !important;
++    inset: 100% 0 auto !important;
++    width: 100% !important;
++    margin: 0 !important;
++    z-index: 1;
++  }
 +  .catalogue-compact-menu,
 +  .catalogue-compact-menu wix-iframe,
 +  .catalogue-compact-menu wix-iframe > div,
 +  .catalogue-compact-menu iframe {
-+    max-height: min(300px, 45dvh) !important;
++    height: min(300px, 45dvh) !important;
 +    min-height: 0 !important;

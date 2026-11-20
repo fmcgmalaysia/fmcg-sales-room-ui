@@ -63,38 +63,40 @@ index 17bd29db..3bf1f6cd 100644
 +        mobileCategory.setAttribute('aria-expanded',String(Boolean(data.open)));
 +        if(!data.open&&data.returnFocus&&matchMedia('(max-width:900px)').matches)mobileCategory.focus({preventScroll:true});
 diff --git a/catalogue/catalogue-mega-menu-v3.html b/catalogue/catalogue-mega-menu-v3.html
-index abfa4cac..398ff5ec 100644
+index abfa4cac..43bb3202 100644
 --- a/catalogue/catalogue-mega-menu-v3.html
 +++ b/catalogue/catalogue-mega-menu-v3.html
 @@ -6 +6 @@
 -  <meta name="catalogue-menu-build" content="20261118-catalogue-complete-v1">
 +  <meta name="catalogue-menu-build" content="20261120-catalogue-compact-navigation-v1">
-@@ -39,3 +39,3 @@
+@@ -39,3 +39,5 @@
 -      .panel{min-height:0}
 -      .panel.show{display:block}
 -      .left{height:100%;overflow:auto;border-right:0}
-+      .panel{--menu-width:min(590px,calc(100vw - 24px));width:var(--menu-width);height:auto;max-height:calc(100vh - 7px);min-height:0;margin:4px 0 0 clamp(12px,var(--menu-anchor,12px),calc(100vw - var(--menu-width) - 12px));border:1px solid #e8d8cf;border-radius:12px;box-shadow:0 8px 24px rgba(19,35,75,.18);background:#fff}
++      html,body{overflow:hidden}
++      body{display:flow-root}
++      .panel{--menu-width:min(590px,calc(100% - 24px));width:var(--menu-width);height:auto;max-height:calc(100% - 12px);min-height:0;margin:4px 0 0 clamp(12px,var(--menu-anchor,12px),calc(100% - var(--menu-width) - 12px));border:1px solid #e8d8cf;border-radius:12px;box-shadow:0 8px 24px rgba(19,35,75,.18);background:#fff}
 +      .panel.show{display:flex}
 +      .left{width:100%;padding:12px;overflow:auto;overscroll-behavior:contain;border-right:0}
-@@ -43,2 +43,2 @@
+@@ -43,2 +45,2 @@
 -      .groups{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
 -      .groups .sub{width:auto;min-height:36px;background:#fff3eb;color:#933713;padding:6px 12px}
 +      .groups{margin-bottom:8px}
 +      .groups .sub{justify-content:space-between;min-height:38px;border:1px solid #edc8b9;background:#fff3eb;color:#8c3517;padding:6px 12px}
-@@ -46 +46,2 @@
+@@ -46 +48,2 @@
 -      .sublist{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:none;grid-auto-flow:row;column-gap:16px}
 +      .sublist{grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-auto-flow:row;gap:2px 10px}
 +      .sublist.has-columns{grid-template-columns:repeat(2,minmax(0,1fr))}
-@@ -84,2 +85,2 @@
+@@ -84,2 +87,2 @@
 -      ['FOOD','All Food'],['HOUSEHOLDS','All Household'],
 -      ['PERSONAL CARE','All Personal Care'],['OTHERS','All General Merchandise']
 +      ['FOOD','View All Food'],['HOUSEHOLDS','View All Household & Cleaning'],
 +      ['PERSONAL CARE','View All Personal Care'],['OTHERS','View All General Merchandise']
-@@ -102 +103,2 @@
+@@ -102 +105,2 @@
 -      button.textContent=label;button.disabled=!ids.length;
 +      const arrow=document.createElement('span');arrow.setAttribute('aria-hidden','true');arrow.textContent='→';
 +      button.append(label,arrow);button.disabled=!ids.length;
-@@ -108,6 +110,2 @@
+@@ -108,6 +112,2 @@
 -      if(desktop.matches&&groupLabels.has(currentMain)){
 -        addGroup(groupLabels.get(currentMain),items);
 -        if(currentMain!=='FOOD'){
@@ -103,9 +105,10 @@ index abfa4cac..398ff5ec 100644
 -      }
 +      if(desktop.matches&&groupLabels.has(currentMain)&&items.length)addGroup(groupLabels.get(currentMain),items);
 +      sublist.classList.toggle('has-columns',items.length>6);
-@@ -122,0 +121 @@
+@@ -122,0 +123,2 @@
 +    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&panel.classList.contains('show'))post('catalogueMegaClose')});
-@@ -130 +129,5 @@
++    document.addEventListener('pointerdown',event=>{if(desktop.matches&&panel.classList.contains('show')&&!panel.contains(event.target))post('catalogueMegaClose')});
+@@ -130 +132,5 @@
 -      if(d.type==='showMain'&&(!panel.classList.contains('show')||currentMain!==String(d.main||'FOOD')))renderMain(String(d.main||'FOOD'));
 +      if(d.type==='showMain'&&e.source===parent){
 +        const anchor=Number(d.anchor);
@@ -113,48 +116,59 @@ index abfa4cac..398ff5ec 100644
 +        if(!panel.classList.contains('show')||currentMain!==String(d.main||'FOOD'))renderMain(String(d.main||'FOOD'));
 +      }
 diff --git a/catalogue/catalogue-workspace-v1.html b/catalogue/catalogue-workspace-v1.html
-index 507420be..4768a4e5 100644
+index 507420be..a9b79168 100644
 --- a/catalogue/catalogue-workspace-v1.html
 +++ b/catalogue/catalogue-workspace-v1.html
 @@ -8 +8 @@
 -<meta name="catalogue-workroom-build" content="20261120-selection-removal-requote-v1">
 +<meta name="catalogue-workroom-build" content="20261120-catalogue-compact-navigation-v1">
-@@ -45 +45 @@
+@@ -18 +17,0 @@
+-    body:after{content:'';position:fixed;inset:0;z-index:40;background:rgba(16,42,74,.13);opacity:0;pointer-events:none;transition:opacity .2s ease}
+@@ -20,2 +18,0 @@
+-    body.mega-open:after{opacity:1}
+-    body.mega-open .shell{pointer-events:none}
+@@ -33 +29,0 @@
+-      body.mega-open:after{opacity:1}body.mega-open .shell{pointer-events:none}
+@@ -45 +41 @@
 -    .mobile-category-trigger,.category-modal,.detail-modal:not([open]){display:none}
 +    .category-modal,.detail-modal:not([open]){display:none}
-@@ -58,2 +58,2 @@
+@@ -58,2 +54,2 @@
 -      .toolbar{grid-template-columns:auto minmax(0,1fr);gap:6px;padding:0 12px;position:relative}
 -      .summary{min-height:44px;justify-content:flex-end;flex-wrap:wrap}.metric{padding:0 7px}
 +      .toolbar{grid-template-columns:minmax(0,1fr);padding:0 12px;position:relative}
 +      .summary{min-height:44px;justify-content:flex-start;flex-wrap:wrap}.metric{padding:0 7px}
-@@ -63,2 +62,0 @@
+@@ -63,2 +58,0 @@
 -      .mobile-category-trigger{display:flex;align-items:center;gap:7px;min-height:44px;padding:0 3px;border:0;background:transparent;color:var(--navy);font-size:14px;font-weight:750;cursor:pointer}
 -      .mobile-category-trigger svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7}
-@@ -71 +69 @@
+@@ -71 +65 @@
 -      .category-shortcuts{display:grid;grid-template-columns:1fr 1fr}
 +      .category-shortcuts{display:grid;grid-template-columns:1fr}
-@@ -139 +136,0 @@
+@@ -139 +132,0 @@
 -      <button class="mobile-category-trigger" id="categoryTrigger" type="button" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>Categories</button>
-@@ -228,5 +224,0 @@
+@@ -228,5 +220,0 @@
 -    const categoryTrigger=document.getElementById('categoryTrigger');
 -    categoryTrigger.onclick=()=>{
 -      if(!mobile.matches||mobileMenu.open)return;
 -      mobileMenu.showModal();categoryTrigger.setAttribute('aria-expanded','true');
 -    };
-@@ -234,4 +226 @@
+@@ -234,4 +222 @@
 -    mobileMenu.addEventListener('close',()=>{
 -      categoryTrigger.setAttribute('aria-expanded','false');
 -      if(mobile.matches)categoryTrigger.focus({preventScroll:true});
 -    });
 +    mobileMenu.addEventListener('close',()=>post('catalogueMobileCategoriesState',{open:false,returnFocus:mobile.matches}));
-@@ -311 +300 @@
+@@ -311 +296 @@
 -      const names=[['FOOD','Food & Beverages','All Food'],['HOUSEHOLDS','Household & Cleaning','All Household'],['PERSONAL CARE','Personal Care & Health','All Personal Care'],['OTHERS','General Merchandise','All General Merchandise']];
 +      const names=[['FOOD','Food & Beverages','View All Food'],['HOUSEHOLDS','Household & Cleaning','View All Household & Cleaning'],['PERSONAL CARE','Personal Care & Health','View All Personal Care'],['OTHERS','General Merchandise','View All General Merchandise']];
-@@ -315 +304 @@
+@@ -315 +300 @@
 -      shortcuts.append(makeButton('All Products',{}),makeButton('All Non-Food',{scope:'NON_FOOD'}));
 +      shortcuts.append(makeButton('All Products',{}));
-@@ -397,0 +387,4 @@
+@@ -397,0 +383,4 @@
 +      if(d.type==='catalogueMobileCategories'&&e.source===parent&&mobile.matches){
 +        if(d.open&&!mobileMenu.open){mobileMenu.showModal();post('catalogueMobileCategoriesState',{open:true})}
 +        else if(!d.open&&mobileMenu.open)mobileMenu.close();
 +      }
+@@ -438,0 +428,3 @@
++    document.addEventListener('pointerdown',()=>{
++      if(document.body.classList.contains('mega-open'))post('catalogueWorkspaceDismissMenu');
++    });
