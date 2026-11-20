@@ -59,6 +59,7 @@ test('normal Catalogue and Buyer handlers share signed web prices with the exist
   const orderId = randomUUID();
   const firstOrder = await buyer.submitBuyerOrder([{ itemId: selectionId, quantityCtn: 2 }], '', orderId);
   await buyer.removeBuyerItem(selectionId);
+  await assert.rejects(addCatalogueSelection('product-1'), /Restore this product from Removed in Buyer Room/);
   await buyer.recoverBuyerItem(selectionId);
   await assert.rejects(buyer.saveBuyerQuantity(selectionId, 2), /price is released/);
   const latestContext = await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-A', selectionId });
@@ -70,11 +71,19 @@ test('normal Catalogue and Buyer handlers share signed web prices with the exist
     selectionEpoch: latestContext.selection.selectionEpoch, priceEa: 2, priceCtn: 24 });
   assert.equal((await buyer.submitBuyerOrder([{ itemId: selectionId, quantityCtn: 2 }], '', orderId)).orderId, firstOrder.orderId);
   assert.equal((await data.applyWebQuotations(latestContext.customer, [latestContext.selection]))[0].vipPriceCtn, 24);
+  await buyer.recoverBuyerItem(selectionId);
+  const acceptedAgain = await data.readMasterWebQuotationData({ action: 'selection', customerId: 'QA-A', selectionId });
+  assert.equal(acceptedAgain.selection.selectionEpoch, latestContext.selection.selectionEpoch, 'A duplicate Restore cannot invalidate a newer quote');
+  assert.equal((await data.applyWebQuotations(acceptedAgain.customer, [acceptedAgain.selection]))[0].vipPriceCtn, 24);
+  const storedOrderLine = wixData.rows('WixBuyerOrderLines')[0];
+  assert.equal(JSON.parse(storedOrderLine.payload).lockedUnitPrice, 19.2);
 
   await buyer.removeBuyerItem(selectionId);
   const selectedAtRemoval = await getCatalogueSelectionState();
   assert.equal(selectedAtRemoval.total, 0);
   assert(selectedAtRemoval.selectedProductIds.includes('product-1'));
+  assert.deepEqual(Array.from(selectedAtRemoval.removedProductIds), ['product-1']);
+  assert.equal(selectedAtRemoval.activeSelectedProductIds.length, 0);
   assert.equal((await buyer.getBuyerWorkspace()).removed.length, 1);
   assert.deepEqual(Array.from((await data.readMasterWebQuotationData({ action: 'selections', customerId: 'QA-A' })).selections), []);
   const record = await wixData.get('WixBuyerListItems', selectionId);
@@ -88,7 +97,9 @@ test('normal Catalogue and Buyer handlers share signed web prices with the exist
   await wixData.update('WixBuyerListItems', { ...record, payload: JSON.stringify({
     ...removed, removedTime: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString()
   }) });
-  assert.equal((await getCatalogueSelectionState()).selectedProductIds.includes('product-1'), false);
+  const expired = await getCatalogueSelectionState();
+  assert.equal(expired.selectedProductIds.includes('product-1'), false);
+  assert.equal(expired.removedProductIds.length, 0);
   assert.equal((await buyer.getBuyerWorkspace()).removed.length, 0);
   await assert.rejects(buyer.recoverBuyerItem(selectionId), /30 days old/);
   assert.equal((await addCatalogueSelection('product-1')).selection.id, selectionId);

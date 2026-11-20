@@ -5,7 +5,7 @@
 <meta name="catalogue-category-ready-build" content="20261117-catalogue-category-ready-v1">
 <meta name="catalogue-mobile-names-build" content="20261117-catalogue-mobile-names-v1">
 <meta name="catalogue-mobile-detail-build" content="20261118-catalogue-mobile-detail-v1">
-<meta name="catalogue-workroom-build" content="20261119-catalogue-mobile-buyer-entry-v1">
+<meta name="catalogue-workroom-build" content="20261120-selection-removal-requote-v1">
 <meta name="catalogue-selection-return-build" content="20261117-catalogue-selection-return-v1">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -130,7 +130,8 @@
       .detail-step:disabled{opacity:.4;cursor:default}
       .detail-position{grid-column:1/-1;text-align:center;color:#4f657d;font-size:12px;line-height:1}
     }
-  </style>
+  .pill.removed{background:#eef1f5;color:#50627d;border-color:#d2dbe8}
+</style>
 </head>
 <body>
   <main class="shell">
@@ -147,7 +148,7 @@
         <button class="detail-close" id="closeDetail" type="button" aria-label="Close product details">×</button>
         <div class="detail-head"><div class="detail-title"><h2 class="detail-name" id="detailName">Select a product</h2><button class="principle" id="detailPrinciple" type="button" disabled>Product information will appear here.</button></div></div>
         <div class="detail-scroll">
-          <div class="media-wrap"><div class="product-image" id="productImage"><span class="fallback">Select a product</span></div><button class="primary" id="selectButton" type="button" disabled>+ Select for Quote</button><p class="cta-note">Add this product to My Selection, then review your products and request a confirmed quote in Buyer Room.</p></div>
+          <div class="media-wrap"><div class="product-image" id="productImage"><span class="fallback">Select a product</span></div><button class="primary" id="selectButton" type="button" disabled>+ Select for Quote</button><p class="cta-note" id="selectionHint">Add this product to My Selection, then review your products and request a confirmed quote in Buyer Room.</p></div>
           <div class="facts-wrap"><div class="facts"><div class="fact"><label>Packing Size</label><span id="detailPack">—</span></div><div class="fact"><label>EA / CTN</label><span id="detailEa">—</span></div><div class="fact"><label>Unit Barcode</label><span id="detailBarcode">—</span></div><div class="fact" id="detailInnerFact" hidden><label class="title-case">Inner Box Barcode</label><span id="detailInnerBarcode">—</span></div><div class="fact"><label>Carton Barcode</label><span id="detailCartonBarcode">—</span></div><div class="fact"><label>CBM / CTN</label><span id="detailCbm">—</span></div><div class="fact"><label class="title-case">Made In</label><span id="detailOrigin">—</span></div><div class="fact"><label>Shelf Life</label><span id="detailShelf">—</span></div></div>
           <div class="price"><div class="price-label">Indicative unit price</div><div class="price-main"><strong id="detailPrice">QUOTE REQUIRED</strong><span id="priceUnit"></span></div></div></div>
           <section class="promo-carousel" id="promoCarousel" aria-label="Member benefits">
@@ -172,7 +173,7 @@
     <dialog class="detail-modal" id="detailModal" aria-labelledby="detailName"></dialog>
   </main>
   <script>
-    const state={products:[],selectionProducts:[],selectedIds:new Set(),activeSelectedIds:new Set(),pendingSelectionIds:new Set(),activeId:'',query:'',main:'',subIds:[],principle:'',selectionView:'',selectionLimit:100,selectionTotal:0,selectionFoodCount:0,selectionNonFoodCount:0,selectionCountsReady:false,selectionReady:false,busyId:'',selectionErrorIds:new Set(),optimisticProducts:new Map(),buyerRoomUrl:''};
+    const state={products:[],selectionProducts:[],selectedIds:new Set(),activeSelectedIds:new Set(),removedIds:new Set(),pendingSelectionIds:new Set(),activeId:'',query:'',main:'',subIds:[],principle:'',selectionView:'',selectionLimit:100,selectionTotal:0,selectionFoodCount:0,selectionNonFoodCount:0,selectionCountsReady:false,selectionReady:false,busyId:'',selectionErrorIds:new Set(),optimisticProducts:new Map(),buyerRoomUrl:''};
     let renderLimit=120;
     let buyerNavigationPending=false;
     function continueBuyerNavigation(){
@@ -219,6 +220,7 @@
     const text=v=>String(v??'').trim();
     const esc=v=>text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const selected=p=>state.selectedIds.has(text(p.id));
+    const removed=p=>state.removedIds.has(text(p.id))&&!state.activeSelectedIds.has(text(p.id));
     const isFood=p=>['FOOD','FOOD & BEVERAGES'].includes(text(p.mainCategory).toUpperCase());
 
     const detailPanel=document.getElementById('detailPanel'),detailModal=document.getElementById('detailModal'),detailPrinciple=document.getElementById('detailPrinciple');
@@ -239,6 +241,7 @@
     const selectButton=document.getElementById('selectButton'),selectHome=selectButton.parentElement,selectNext=selectButton.nextElementSibling;
     const previousProduct=document.getElementById('previousProduct'),nextProduct=document.getElementById('nextProduct');
     const detailPosition=document.getElementById('detailPosition');
+    const selectionHint=document.getElementById('selectionHint'),defaultSelectionHint=selectionHint.textContent;
     let detailTouch=null;
     function openProductDetail(){
       if(!mobile.matches||detailModal.open)return;
@@ -343,16 +346,16 @@
       document.body.classList.toggle('selection-view',Boolean(state.selectionView));
       if(!allItems.length){rows.innerHTML='<div class="empty">No products match the current filter.</div>';showDetail(null);updateDetailNavigation(allItems);return}
       if(!allItems.some(p=>p.id===state.activeId))state.activeId=allItems[0].id;
-      rows.replaceChildren(...items.map(p=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${selected(p)?'selected':''}">${selected(p)?'Selected':'Available'}</span></span>`;b.onclick=()=>{activate(p.id,true);openProductDetail()};return b}));
+      rows.replaceChildren(...items.map(p=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${removed(p)?'removed':selected(p)?'selected':''}">${removed(p)?'Removed':selected(p)?'Selected':'Available'}</span></span>`;b.onclick=()=>{activate(p.id,true);openProductDetail()};return b}));
       if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);updateDetailNavigation(allItems);}
     function activate(id,scroll){const items=filtered(),index=items.findIndex(p=>p.id===id);if(index>=renderLimit)renderLimit=index+40;state.activeId=id;render(true);if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);if(row){const rowBox=row.getBoundingClientRect(),listBox=rows.getBoundingClientRect();if(rowBox.top<listBox.top)rows.scrollTop-=listBox.top-rowBox.top;else if(rowBox.bottom>listBox.bottom)rows.scrollTop+=rowBox.bottom-listBox.bottom}}}
-    function showDetail(p){const button=document.getElementById('selectButton'),innerFact=document.getElementById('detailInnerFact');if(!p){innerFact.hidden=true;document.getElementById('productImage').innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';detailPrinciple.textContent='Product information will appear here.';detailPrinciple.disabled=true;['detailPack','detailEa','detailBarcode','detailInnerBarcode','detailCartonBarcode','detailCbm','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.textContent='+ Select for Quote';button.disabled=true;return}
+    function showDetail(p){const button=document.getElementById('selectButton'),innerFact=document.getElementById('detailInnerFact');selectionHint.textContent=p&&removed(p)?'Open Removed in Buyer Room and restore this product to request a new quote.':defaultSelectionHint;if(!p){innerFact.hidden=true;document.getElementById('productImage').innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';detailPrinciple.textContent='Product information will appear here.';detailPrinciple.disabled=true;['detailPack','detailEa','detailBarcode','detailInnerBarcode','detailCartonBarcode','detailCbm','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.textContent='+ Select for Quote';button.disabled=true;return}
       const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;document.getElementById('productImage').innerHTML=imageMarkup(p,true);document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
       const price=Number(p.unitPrice);document.getElementById('detailPrice').textContent=Number.isFinite(price)&&price>0?`${text(p.currency)||'USD'} ${price.toFixed(2)}`:'QUOTE REQUIRED';document.getElementById('priceUnit').textContent=Number.isFinite(price)&&price>0?'/ PC':'';
-      const isSelected=selected(p),hasError=state.selectionErrorIds.has(p.id);
+      const wasRemoved=removed(p),isSelected=selected(p)&&!wasRemoved,hasError=state.selectionErrorIds.has(p.id);
       button.disabled=isSelected||!state.selectionReady;button.classList.toggle('selected',isSelected);
-      button.textContent=isSelected?'✓ Selected':!state.selectionReady?'Loading account…':hasError?'Try Select for Quote Again':'+ Select for Quote';
-      button.onclick=()=>{if(!isSelected)selectProduct(p.id)}}
+      button.textContent=wasRemoved?'Restore in Buyer Room':isSelected?'✓ Selected':!state.selectionReady?'Loading account…':hasError?'Try Select for Quote Again':'+ Select for Quote';
+      button.onclick=()=>{if(wasRemoved)post('catalogueWorkspaceOpenRemoved',{productId:p.id});else if(!isSelected)selectProduct(p.id)}}
     function markSelected(product){
       if(state.activeSelectedIds.has(product.id))return;
       state.selectedIds.add(product.id);
@@ -398,6 +401,7 @@
         state.selectionProducts=Array.isArray(d.selectionProducts)?d.selectionProducts:[];
         state.selectedIds=new Set((d.selectedProductIds||[]).map(text));
         state.activeSelectedIds=new Set((d.activeSelectedProductIds||[]).map(text));
+        state.removedIds=new Set((d.removedProductIds||[]).map(text));
         state.selectionLimit=Number(d.selectionLimit)||100;
         state.selectionTotal=Number.isFinite(Number(d.selectionTotal))?Number(d.selectionTotal):state.activeSelectedIds.size;
         state.selectionFoodCount=Number(d.selectionFoodCount)||0;state.selectionNonFoodCount=Number(d.selectionNonFoodCount)||0;

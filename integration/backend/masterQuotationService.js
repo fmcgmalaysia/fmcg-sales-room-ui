@@ -13,6 +13,15 @@ function validateCommand(command) {
       typeof command.requestId !== 'string' || !requestKey.test(command.requestId)) throw Error('Invalid quotation command.');
 }
 
+function currentDraft(snapshot, epoch) {
+  if (!epoch || (snapshot.draftSelectionEpoch ?? snapshot.published?.selectionEpoch ?? '') === epoch) return snapshot.draft;
+  return null;
+}
+
+function requireSelectionEpoch(command, epoch) {
+  if ((command.selectionEpoch ?? '') !== epoch) throw Error('This selection was restored. Reload the quotation and enter a new price.');
+}
+
 function calculatePrice({ mode, value }, selection, customer, snapshot) {
   const { ea } = selection;
   const { rateToMyr, preferredCurrency: currency } = customer;
@@ -91,13 +100,15 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       return Promise.all(rows.map(async row => {
         const last = batched ? batched.get(row.id) : await revisions.latest(customerId, row.id);
         const { pending, ...snapshot } = last?.snapshot || blank;
-        if (snapshot.published && (snapshot.published.selectionEpoch || '') !== (row.selectionEpoch || '')) {
+        const selectionEpoch = row.selectionEpoch || '';
+        if (snapshot.published && (snapshot.published.selectionEpoch || '') !== selectionEpoch) {
           snapshot.published = { ...snapshot.published, enabled: false };
         }
         return { id: row.id, barcode: row.barcode, name: row.name, packing: row.packing, ea: row.ea, imageUrl: row.imageUrl,
           ...(row.sortId ? { sortId: row.sortId } : {}),
           ...(Number.isFinite(row.cbmPerCtn) ? { cbmPerCtn: row.cbmPerCtn } : {}),
-          ...snapshot, ...(currentCosts ? rowSnapshot(row, currentCosts[row.barcode]) : {}),
+          ...snapshot, selectionEpoch, draft: currentDraft(snapshot, selectionEpoch),
+          ...(currentCosts ? rowSnapshot(row, currentCosts[row.barcode]) : {}),
           ...(readLastInvoicedPrices ? { lastSale: lastSales.get(row.barcode) ?? null } : {}),
           pending: Boolean(pending), revision: last?.revision ?? 0 };
       }));
@@ -128,11 +139,14 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       const { customerId } = customer;
       const { selectionId, revision, requestId, input } = command;
       const row = await selection(customerId, selectionId);
+      const selectionEpoch = row.selectionEpoch || '';
+      requireSelectionEpoch(command, selectionEpoch);
       const previous = revision === 0 ? blank : (await revisions.at(customerId, selectionId, revision))?.snapshot;
       if (!previous || previous.pending) throw Error('The previous quotation needs confirmation.');
       const cost = readCurrentCosts ? rowSnapshot(row, (await readCurrentCosts([row.barcode]))[row.barcode]) : {};
       const draft = calculatePrice(input ?? {}, row, customer, { ...previous, ...cost });
-      const saved = await append(customerId, selectionId, revision, requestId, digest('draft', staffId, input.mode, input.value), { ...previous, ...cost, draft });
+      const saved = await append(customerId, selectionId, revision, requestId, digest('draft', staffId, input.mode, input.value, ...(selectionEpoch ? [selectionEpoch] : [])),
+        { ...previous, ...cost, draft, draftSelectionEpoch: selectionEpoch });
       return { revision: saved.revision };
     },
 
@@ -146,12 +160,15 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       const reserved = await revisions.at(customerId, selectionId, revision + 1);
       let intent = reserved;
       if (!intent) {
+        const selectionEpoch = row.selectionEpoch || '';
+        requireSelectionEpoch(command, selectionEpoch);
         let previous = revision === 0 ? blank : (await revisions.at(customerId, selectionId, revision))?.snapshot;
         if (previous && enabled && readCurrentCosts) previous = { ...previous, ...rowSnapshot(row, (await readCurrentCosts([row.barcode]))[row.barcode]) };
-        if (!previous || previous.pending || (enabled && (!previous.draft || !positive(previous.costMyr)))) {
+        const draft = previous && currentDraft(previous, selectionEpoch);
+        if (!previous || previous.pending || (enabled && (!draft || !positive(previous.costMyr)))) {
           throw Error('Save a draft with a confirmed cost first.');
         }
-        const price = enabled ? calculatePrice(previous.draft, row, customer, previous) : previous.published;
+        const price = enabled ? calculatePrice(draft, row, customer, previous) : previous.published;
         if (!price) throw Error('There is no customer quote to withdraw.');
         const version = (previous.published?.version ?? 0) + 1;
         const pending = { customerId, selectionId, barcode: row.barcode, requestId, version, enabled, currency: price.currency,

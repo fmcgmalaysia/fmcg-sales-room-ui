@@ -15,8 +15,9 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
+let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261119-catalogue-mobile-buyer-entry-v1';
+const CATALOGUE_BUILD_VERSION = '20261120-selection-removal-requote-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -186,9 +187,12 @@ function sameCatalogueIdSet(current, next) {
 function sidebarSelectionState(state) {
     const selected = new Set((state?.selectedProductIds || []).map(String));
     const active = new Set((state?.activeSelectedProductIds || state?.selectedProductIds || []).map(String));
+    const removed = new Set((state?.removedProductIds || []).map(String));
     const limit = Number(state?.selectionLimit) || 100;
     if (catalogueSelectionResolved && catalogueSelectionLimit === limit &&
-        sameCatalogueIdSet(selectedProductIds, selected) && sameCatalogueIdSet(activeSelectedProductIds, active)) return;
+        sameCatalogueIdSet(selectedProductIds, selected) && sameCatalogueIdSet(activeSelectedProductIds, active) &&
+        sameCatalogueIdSet(removedProductIds, removed)) return;
+    removedProductIds = removed;
     selectedProductIds = selected;
     activeSelectedProductIds = active;
     catalogueSelectionLimit = limit;
@@ -294,6 +298,7 @@ function sendCatalogueWorkspaceData() {
             })) } : {}),
             selectedProductIds: [...selectedProductIds],
             activeSelectedProductIds: [...activeSelectedProductIds],
+            removedProductIds: [...removedProductIds],
             selectionProducts: selection.products,
             selectionLimit: catalogueSelectionLimit,
             selectionTotal: selection.total,
@@ -543,6 +548,7 @@ $w.onReady(() => {
             selectionContext = null;
             selectedProductIds = new Set();
             activeSelectedProductIds = new Set();
+            removedProductIds = new Set();
             local.removeItem('catalogueAccess');
             session.removeItem('catalogueAccess');
             if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to(expiredAssistCustomerId ? '/sales-room' : '/buyer-room');
@@ -835,6 +841,8 @@ function setupCatalogueWorkspace() {
             rememberMobileCataloguePosition(message);
         } else if (message.type === 'catalogueWorkspaceNavigate') {
             try { await wixWindowFrontend.scrollTo(0, 0); } catch (error) {}
+        } else if (message.type === 'catalogueWorkspaceOpenRemoved') {
+            if (removedProductIds.has(String(message.productId || ''))) openBuyerRoomWindow();
         } else if (message.type === 'catalogueWorkspaceBuyerRoom') {
             if (!catalogueBuyerNavigationPending) return;
             catalogueBuyerNavigationPending = false;
@@ -848,7 +856,9 @@ function setupCatalogueWorkspace() {
                 return;
             }
             if (selectedProductIds.has(productId)) {
-                workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
+                const wasRemoved = removedProductIds.has(productId);
+                workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: !wasRemoved, productId });
+                if (wasRemoved) sendCatalogueWorkspaceData();
                 return;
             }
             selectionBusyIds.add(productId);
@@ -865,6 +875,7 @@ function setupCatalogueWorkspace() {
                 if (selectionContext !== context) return;
                 selectedProductIds.add(productId);
                 activeSelectedProductIds.add(productId);
+                removedProductIds.delete(productId);
                 catalogueSelectionTotal = activeSelectedProductIds.size;
                 workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
                 sendCatalogueWorkspaceData();
@@ -874,6 +885,11 @@ function setupCatalogueWorkspace() {
                 try {
                     const state = await getCatalogueSelectionState(assistCustomerId);
                     if (selectionContext !== context) return;
+                    if (state?.ok && (state.removedProductIds || []).includes(productId)) {
+                        workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: false, productId });
+                        sidebarSelectionState(state);
+                        return;
+                    }
                     if (state?.ok && (state.activeSelectedProductIds || []).includes(productId)) {
                         sidebarSelectionState(state);
                         workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
