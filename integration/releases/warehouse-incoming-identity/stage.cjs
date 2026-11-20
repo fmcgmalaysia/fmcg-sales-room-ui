@@ -19,9 +19,9 @@ function inventory() {
 const before = inventory();
 assert.equal(Object.keys(before).length, 117, 'Unexpected production inventory');
 for (const [file, hash] of Object.entries(exact)) assert.equal(before[file], hash, file);
-const patch = path.join(__dirname, 'warehouse-static.patch');
-execFileSync('git', ['apply', '--unidiff-zero', '--check', patch], { cwd: site });
-execFileSync('git', ['apply', '--unidiff-zero', patch], { cwd: site });
+const patch = fs.readFileSync(path.join(__dirname, 'warehouse-static.patch'), 'utf8').replace(/\r\n/g, '\n');
+execFileSync('git', ['apply', '--unidiff-zero', '--check', '-'], { cwd: site, input: patch });
+execFileSync('git', ['apply', '--unidiff-zero', '-'], { cwd: site, input: patch });
 const after = inventory();
 assert.deepEqual(Object.keys(after).sort(), Object.keys(before).sort());
 const changed = Object.keys(after).filter(file => before[file] !== after[file]).sort();
