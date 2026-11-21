@@ -1666,7 +1666,7 @@ jobs:
           site="$RUNNER_TEMP/buyer-first-time-login-site"
           node integration/releases/buyer-first-time-login/restore-production-assets.cjs "$site"
           node integration/releases/buyer-first-time-login/stage.cjs "$site"
-          node --test tests/buyer-first-time-login.test.cjs tests/catalogue-mobile-buyer-entry.test.cjs
+          node --test tests/buyer-first-time-login.test.cjs tests/buyer-member-setup.test.cjs tests/catalogue-mobile-buyer-entry.test.cjs
 
       - name: Upload the scoped Buyer first-time login
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'buyer-first-time-login-only'

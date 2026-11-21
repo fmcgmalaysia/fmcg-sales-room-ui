@@ -133,12 +133,28 @@ function qdFixture() {
 }
 
 function registration({ actor = salesperson, additionalOwners = [], loseFirstQdResponse = false,
-  failFirstAccessInsert = false, webRegistrationEnabled = false, interruptGrant = '', failReadySave = false } = {}) {
+  failFirstAccessInsert = false, webRegistrationEnabled = false, interruptGrant = '', failReadySave = false,
+  initialMemberStatus = '', failFirstMemberCreate = false } = {}) {
   const masterWrites = [], fmcgWrites = [], qdRequests = [];
   const qd = qdFixture();
   const employees = actor === salesperson ? [actor] : [actor, salesperson];
   const master = wixStore({ StaffMasterAccess: [...employees, ...additionalOwners] }, masterWrites);
-  const fmcg = wixStore({}, fmcgWrites);
+  const memberCollection = 'Members/FullData';
+  const startingMembers = initialMemberStatus ? [{ _id: 'existing-member', loginEmail: payload.picEmail, status: initialMemberStatus }] : [];
+  const fmcg = wixStore({ [memberCollection]: startingMembers }, fmcgWrites);
+  let memberCreateAttempts = 0;
+  const members = {
+    async createMember({ member }) {
+      memberCreateAttempts += 1;
+      assert.deepEqual(Object.keys(member).sort(), ['loginEmail', 'privacyStatus']);
+      assert.equal(member.privacyStatus, 'PRIVATE');
+      assert.equal(fmcg.rows('WixCustomers').find(row => row.primaryEmail === member.loginEmail).webQuotationStatus, 'READY');
+      assert.equal(fmcg.rows('WixCustomerUsers').find(row => row.email === member.loginEmail).status, 'ACTIVE');
+      if (failFirstMemberCreate && memberCreateAttempts === 1) throw Error('Fixture Wix member service unavailable');
+      return fmcg.insert(memberCollection, { ...member, _id: `member-${member.loginEmail}`, status: 'APPROVED' });
+    },
+    getMember: id => fmcg.get(memberCollection, id)
+  };
   if (failReadySave) {
     const update = fmcg.update;
     let rejected = false;
@@ -215,11 +231,15 @@ function registration({ actor = salesperson, additionalOwners = [], loseFirstQdR
     return request;
   }
   const webCustomer = evaluate('backend/webQuotationCustomer.js', ['isWebQuotationCustomer', 'isWebQuotationReady'], {});
+  const memberProvisioning = evaluate('backend/buyerMemberProvisioning.js', ['prepareActivatedBuyerMember'], {
+    ...webCustomer, wixData: fmcg, elevate: method => method, members, setTimeout
+  });
   const webRegistration = evaluate('backend/webQuotationRegistration.js', ['webQuotationRegistrationEnabled', 'reserveWebQuotationCustomer',
     'reserveWebQuotationPrimaryUser', 'activateWebQuotationCustomer'], {
-    ...webCustomer, ...client, wixData: fmcg, createHash, getSecret: async () => webRegistrationEnabled ? 'ENABLED' : ''
+    ...webCustomer, ...client, ...memberProvisioning, wixData: fmcg, createHash, getSecret: async () => webRegistrationEnabled ? 'ENABLED' : ''
   });
-  const api = evaluate('sales-room/wix/onboarding.web.js', ['createSalesRoomCustomer', 'verifySalesRoomCustomerQd'], {
+  const methods = webRegistrationEnabled ? ['createSalesRoomCustomer'] : ['createSalesRoomCustomer', 'verifySalesRoomCustomerQd'];
+  const api = evaluate('sales-room/wix/onboarding.web.js', methods, {
     ...client, wixData: fmcg, webMethod: (_, handler) => handler, Permissions: { SiteMember: 'member' },
     getCurrentStaffContext: readStaff, getSecret: async () => 'fixture-qd', httpsRequest,
     ...webCustomer, ...webRegistration
@@ -238,6 +258,34 @@ function registeredQuotationFixture(flow) {
   return { qa: createIsolation({ state }), actor };
 }
 
+test('temporary Wix failure can retry the same active registration without creating duplicate members', async () => {
+  const flow = registration({ webRegistrationEnabled: true, failFirstMemberCreate: true });
+  const first = await flow.api.createSalesRoomCustomer(payload);
+  assert.equal(first.ok, false);
+  assert.equal(first.retryable, true);
+  assert.equal(first.result.webQuotationStatus, 'READY');
+  const second = await flow.api.createSalesRoomCustomer(payload);
+  const third = await flow.api.createSalesRoomCustomer(payload);
+  assert.equal(second.ok, true);
+  assert.equal(third.ok, true);
+  assert.equal(second.result.customerId, first.result.customerId);
+  assert.equal(third.result.customerId, first.result.customerId);
+  assert.equal(flow.fmcg.rows('WixCustomers').length, 1);
+  assert.equal(flow.fmcg.rows('WixCustomerUsers').length, 1);
+  assert.equal(flow.fmcg.rows('Members/FullData').length, 1);
+});
+
+test('approved members are reused and blocked or pending member access is preserved', async () => {
+  for (const status of ['APPROVED', 'BLOCKED', 'PENDING']) {
+    const flow = registration({ webRegistrationEnabled: true, initialMemberStatus: status });
+    const result = await flow.api.createSalesRoomCustomer(payload);
+    assert.equal(result.ok, status === 'APPROVED');
+    assert.equal(flow.fmcg.rows('Members/FullData').length, 1);
+    assert.equal(flow.fmcg.rows('Members/FullData')[0].status, status);
+    assert.equal(flow.fmcgWrites.filter(write => write.name === 'Members/FullData').length, 0);
+  }
+});
+
 for (const failure of ['BEFORE', 'AFTER', 'READY_WRITE']) {
   test(`web registration recovers the same customer after ${failure} and blocks premature access`, async () => {
     const flow = registration({ webRegistrationEnabled: true, interruptGrant: failure, failReadySave: failure === 'READY_WRITE' });
@@ -247,6 +295,7 @@ for (const failure of ['BEFORE', 'AFTER', 'READY_WRITE']) {
     assert.equal(first.result.webQuotationStatus, 'PENDING');
     const { customerId } = first.result;
     assert.ok(customerId);
+    assert.equal(flow.fmcg.rows('Members/FullData').length, 0);
     const pending = registeredQuotationFixture(flow);
     await assert.rejects(pending.qa.buyerApi(customerId, payload.picEmail).addCatalogueSelection('product-1'), /not active|not ready/);
     await assert.rejects(pending.qa.buyerApi(customerId, payload.picEmail).getBuyerWorkspace(), /not active|not ready/);
@@ -255,6 +304,7 @@ for (const failure of ['BEFORE', 'AFTER', 'READY_WRITE']) {
     const next = await flow.api.createSalesRoomCustomer(payload);
     assert.equal(next.ok, true);
     assert.equal(next.result.customerId, customerId);
+    assert.equal(flow.fmcg.rows('Members/FullData').length, 1);
     assert.equal(next.result.webQuotationStatus, 'READY');
     assert.equal((await flow.api.createSalesRoomCustomer(payload)).result.customerId, customerId);
     assert.equal(flow.fmcg.rows('WixCustomers').length, 1);

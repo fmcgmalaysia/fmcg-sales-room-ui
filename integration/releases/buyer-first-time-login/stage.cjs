@@ -2,10 +2,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
+const productionAssets = require('./production-assets.json');
 
 const site = path.resolve(process.argv[2]);
-const candidate = 'buyer-login-20261121.html';
-const current = 'buyer-login-20261113.html';
+const candidate = 'buyer-login-20261121-member-setup.html';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
 function inventory() {
@@ -17,13 +17,11 @@ function inventory() {
 }
 
 const before = inventory();
-assert.equal(Object.keys(before).length, 117);
-const login = fs.readFileSync(path.join(site, current), 'utf8').replace(/\r\n/g, '\n');
-assert.equal(hash(login), '612de849fbbcc67d7c9ca51bffaae89aa83da075f7fd23aefa6c18812d16211e');
+assert.deepEqual(before, productionAssets);
 const source = path.resolve(__dirname, '../../..', candidate);
 fs.copyFileSync(source, path.join(site, candidate), fs.constants.COPYFILE_EXCL);
 const after = inventory();
 assert.equal(after[candidate], hash(fs.readFileSync(source)));
 delete after[candidate];
 assert.deepEqual(after, before);
-console.log('First Time Login candidate added. All 117 existing production resources match.');
+console.log(`Member setup candidate added. All ${Object.keys(before).length} existing production resources match.`);

@@ -3,6 +3,7 @@ import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import { confirmMasterInitialSalesAccess } from 'backend/masterStaffAccessClient.js';
 import { isWebQuotationReady } from 'backend/webQuotationCustomer.js';
+import { prepareActivatedBuyerMember } from 'backend/buyerMemberProvisioning.js';
 
 const write = { suppressAuth: true };
 const read = { ...write, consistentRead: true };
@@ -42,9 +43,17 @@ export async function reserveWebQuotationPrimaryUser(user) {
 
 export async function activateWebQuotationCustomer({ customerRecord, userRecord, staff }) {
   const { customerId, assignedStaffId, customerShortName, title, salesInitialGrantRevision } = customerRecord;
-  const result = (customer, user) => ({ ok: true, result: { customerId, assignedStaffId, customerShortName,
-    companyName: title, quotationMode: 'WEB', webQuotationStatus: customer.webQuotationStatus, customerStatus: customer.customerStatus,
-    wixCustomerRecordId: customer._id, wixCustomerUserRecordId: user._id, accessCreated: user.status === 'ACTIVE' } });
+  const result = async (customer, user) => {
+    const membership = await prepareActivatedBuyerMember(customer, user);
+    const details = { customerId, assignedStaffId, customerShortName, companyName: title, quotationMode: 'WEB',
+      webQuotationStatus: customer.webQuotationStatus, customerStatus: customer.customerStatus,
+      wixCustomerRecordId: customer._id, wixCustomerUserRecordId: user._id, accessCreated: user.status === 'ACTIVE' };
+    if (membership === 'READY') return { ok: true, result: details };
+    const retryable = membership === 'RETRY';
+    return { ok: false, retryable, result: details, error: retryable
+      ? 'Customer access is active. The company login is pending. Retry the same registration to finish opening it.'
+      : 'Customer access is active. The company login needs review. Please contact your administrator.' };
+  };
   if (userRecord.customerId !== customerId || !userRecord.primaryUser || userRecord.email !== customerRecord.primaryEmail ||
       assignedStaffId !== staff.staffId || !['ACTIVE', 'PENDING'].includes(userRecord.status)) {
     throw Error('This customer registration requires admin review.');

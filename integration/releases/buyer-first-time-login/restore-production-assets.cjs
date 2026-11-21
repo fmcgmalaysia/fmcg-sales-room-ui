@@ -9,7 +9,7 @@ const entries = Object.entries(hashes);
 const batchSize = 8;
 
 async function restoreAssets(destination) {
-  assert.equal(entries.length, 117);
+  assert.equal(entries.length, 118);
   await fs.mkdir(destination);
   for (let offset = 0; offset < entries.length; offset += batchSize) {
     await Promise.all(entries.slice(offset, offset + batchSize).map(async ([name, expectedHash]) => {
