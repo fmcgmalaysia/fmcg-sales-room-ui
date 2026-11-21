@@ -1660,21 +1660,11 @@ jobs:
         with:
           path: ${{ format('{0}/buyer-quotations-site', runner.temp) }}
 
-      - name: Download the verified Buyer login release base
-        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'buyer-first-time-login-only'
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: github-pages
-          run-id: 44693654577
-          github-token: ${{ github.token }}
-          path: ${{ format('{0}/buyer-first-time-login-base', runner.temp) }}
-
       - name: Test and stage the scoped Buyer first-time login
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'buyer-first-time-login-only'
         run: |
           site="$RUNNER_TEMP/buyer-first-time-login-site"
-          mkdir "$site"
-          tar --extract --file "$RUNNER_TEMP/buyer-first-time-login-base/artifact.tar" --directory "$site"
+          node integration/releases/buyer-first-time-login/restore-production-assets.cjs "$site"
           node integration/releases/buyer-first-time-login/stage.cjs "$site"
           node --test tests/buyer-first-time-login.test.cjs tests/catalogue-mobile-buyer-entry.test.cjs
 
