@@ -1683,6 +1683,7 @@ jobs:
           node integration/releases/buyer-first-time-login/restore-production-assets.cjs "$site"
           node integration/releases/buyer-first-time-login/stage.cjs "$site"
           cp sales-room-20261123-mobile-buyer-entry.html "$site/"
+          cp sales-room-20261123-workspace-entry.html "$site/"
 
       - name: Upload the scoped Sales Room mobile Buyer Room entry
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'sales-mobile-buyer-entry-only'

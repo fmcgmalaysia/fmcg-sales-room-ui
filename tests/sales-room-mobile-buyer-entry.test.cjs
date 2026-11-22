@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const test = require('node:test');
 const vm = require('node:vm');
 
-const html = fs.readFileSync('sales-room-20261123-mobile-buyer-entry.html', 'utf8');
+const html = fs.readFileSync('sales-room-20261123-workspace-entry.html', 'utf8');
 const wix = fs.readFileSync('sales-room/wix/sales-room-page.js', 'utf8');
 const origin = 'https://www.fmcgmalaysia.com';
 const customerId = 'CUS-FAKE';
@@ -74,6 +74,7 @@ function modal({ compact = true, active = true } = {}) {
   render();
   return {
     render, requests, catalogue, catalogueOpens, close,
+    markup: () => area.markup,
     buyer: () => buyer,
     reply: (data, overrides = {}) => listeners.get('message')({ data, origin, source: parent, ...overrides }),
     returnToPage: () => listeners.get('pageshow')({ persisted: true })
@@ -180,4 +181,18 @@ test('desktop Buyer Room and mobile Open Catalogue keep their existing interacti
   const mobile = modal();
   mobile.catalogue.onclick();
   assert.deepEqual(mobile.catalogueOpens, [[origin + catalogueUrl, '_blank', 'noopener']]);
+});
+
+test('the workspace drawer only shows the customer and entries, with an explanation when unavailable', () => {
+  for (const compact of [true, false]) {
+    const markup = modal({ compact }).markup();
+    assert.match(markup, /Fake Customer/);
+    assert.match(markup, /ENTER BUYER ROOM/);
+    assert.match(markup, /OPEN CATALOGUE/);
+    assert.match(markup, /Close Customer Workspace/);
+    assert.doesNotMatch(markup, /已发布商品|等待发布报价|最近发布|LTPOS Quotations|客户权限|CUSTOMER WORKSPACE|CUS-FAKE|客户入口暂不可用/);
+  }
+  const unavailable = modal({ active: false }).markup();
+  assert.match(unavailable, /Customer access unavailable/);
+  assert.equal((unavailable.match(/ disabled>/g) || []).length, 2);
 });
