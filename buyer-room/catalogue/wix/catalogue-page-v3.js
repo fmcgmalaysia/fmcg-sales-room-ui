@@ -474,11 +474,22 @@ async function loadSelectionState(assistCustomerId = '') {
     return state;
 }
 
+function getCatalogueAssistCustomerId() {
+    const fromQuery = String(wixLocationFrontend.query?.assist || '').trim();
+    if (fromQuery) return fromQuery;
+    try { return (new URL(wixLocationFrontend.url).searchParams.get('assist') || '').trim(); }
+    catch (_) { return ''; }
+}
+
+function goToCatalogueStaffLogin(customerId) {
+    const next = '/catalogue?assist=' + encodeURIComponent(customerId);
+    wixLocationFrontend.to('/sales-room-login?next=' + encodeURIComponent(next));
+}
+
 $w.onReady(() => {
     if (wixWindowFrontend.rendering?.env === 'backend') return;
     void (async () => {
-    const hasBuyerAccess = local.getItem('catalogueAccess') === 'granted' || session.getItem('catalogueAccess') === 'granted';
-    const assistCustomerId = String(wixLocationFrontend.query?.assist || '').trim();
+    const assistCustomerId = getCatalogueAssistCustomerId();
     const assistedSelection = assistCustomerId ? getCatalogueSelectionState(assistCustomerId).catch(() => null) : null;
     let staff;
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
@@ -491,7 +502,7 @@ $w.onReady(() => {
                 if (!selection?.ok || selection.customerId !== assistCustomerId) {
                     throw new Error('Catalogue customer access could not be verified.');
                 }
-                session.setItem('catalogueAssistCustomerId', selection.customerId);
+                try { session.setItem('catalogueAssistCustomerId', selection.customerId); } catch (_) {}
                 selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
                 sidebarSelectionState(selection);
                 sendCatalogueContext({
@@ -500,8 +511,8 @@ $w.onReady(() => {
                     signedInName: String(staff.staffName || staff.staffId || '').trim()
                 });
             } catch (error) {
-                session.removeItem('catalogueAssistCustomerId');
-                if (!authentication.loggedIn()) wixLocationFrontend.to('/sales-room-login?next='+encodeURIComponent('/catalogue?assist='+assistCustomerId));
+                try { session.removeItem('catalogueAssistCustomerId'); } catch (_) {}
+                if (!authentication.loggedIn()) goToCatalogueStaffLogin(assistCustomerId);
                 else reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
                 return;
             }
@@ -514,7 +525,17 @@ $w.onReady(() => {
         return;
     }
 
-    if (!hasBuyerAccess && wixWindowFrontend.viewMode === 'Site') { if(authentication.loggedIn()) reportCatalogueAccess('This account has no customer Catalogue access. Contact your administrator.'); else wixLocationFrontend.to(assistCustomerId?'/sales-room-login?next='+encodeURIComponent('/catalogue?assist='+assistCustomerId):'/'); return; }
+    if (assistCustomerId) {
+        if (wixWindowFrontend.viewMode === 'Site' && (!authentication.loggedIn() || staff?.reason === 'NOT_LOGGED_IN')) {
+            goToCatalogueStaffLogin(assistCustomerId);
+        } else {
+            reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
+        }
+        return;
+    }
+
+    const hasBuyerAccess = local.getItem('catalogueAccess') === 'granted' || session.getItem('catalogueAccess') === 'granted';
+    if (!hasBuyerAccess && wixWindowFrontend.viewMode === 'Site') { if(authentication.loggedIn()) reportCatalogueAccess('This account has no customer Catalogue access. Contact your administrator.'); else wixLocationFrontend.to('/'); return; }
     if (hasBuyerAccess) {
         try {
             selectionContext = { mode: 'buyer', assistCustomerId: '' };

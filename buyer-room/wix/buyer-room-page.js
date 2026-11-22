@@ -19,7 +19,12 @@ function getAssistCustomerId() {
     return '';
   }
 }
-async function resolveEntryCustomerId() {
+function goToBuyerRoomStaffLogin(customerId) {
+  const next = '/buyer-room?assist=' + encodeURIComponent(customerId);
+  wixLocationFrontend.to('/sales-room-login?next=' + encodeURIComponent(next));
+}
+
+async function resolveEntryCustomerId(onExpiredStaffEntry) {
   const explicitCustomerId = getAssistCustomerId();
   let entry;
   try {
@@ -28,19 +33,27 @@ async function resolveEntryCustomerId() {
     if (!explicitCustomerId && saved) entry = JSON.parse(saved);
   } catch (error) { return explicitCustomerId; }
   if (!entry?.staffId || !/^CUS-[A-Za-z0-9-]+$/.test(entry.customerId || '') || !(entry.expiresAt > Date.now())) return explicitCustomerId;
+  let signInRequired = false;
   try {
     const access = await getCurrentBuyerContext(entry.customerId);
     const buyer = access?.buyer;
     if (access?.ok && buyer?.status === 'ACTIVE' && ['ADMIN', 'STAFF'].includes(buyer.actorType) &&
         buyer.actorStaffId === entry.staffId && buyer.customerId === entry.customerId) return buyer.customerId;
-  } catch (error) { /* Use the ordinary buyer route if assisted access cannot be verified. */ }
+    signInRequired = access?.reason === 'Sign in is required.';
+  } catch (error) { signInRequired = error?.message === 'Sign in is required.'; }
+  if (onExpiredStaffEntry && (signInRequired || !authentication.loggedIn())) onExpiredStaffEntry(entry.customerId);
   return '';
 }
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
+  let redirectingToStaffLogin = false;
+  assistCustomerId = await resolveEntryCustomerId(customerId => {
+    redirectingToStaffLogin = true;
+    goToBuyerRoomStaffLogin(customerId);
+  });
+  if (redirectingToStaffLogin) return;
   const frame = $w('#html1');
   const downloadButton = $w('#downloadExcelButton');
-  assistCustomerId = await resolveEntryCustomerId();
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
   function openHistoryFile(message) {
@@ -119,7 +132,7 @@ $w.onReady(async function () {
     catch (error) {
       if (readEpoch !== workspaceReadEpoch) return;
       if (assistCustomerId) {
-        if (!authentication.loggedIn()) { wixLocationFrontend.to('/sales-room-login?next='+encodeURIComponent('/buyer-room?assist='+assistCustomerId)); return; }
+        if (!authentication.loggedIn() || error?.message === 'Sign in is required.') { goToBuyerRoomStaffLogin(assistCustomerId); return; }
         frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Staff Management could not authorize this Buyer Room. ' + (error?.message || String(error)) });
         throw error;
       }
@@ -128,6 +141,7 @@ $w.onReady(async function () {
     if (readEpoch !== workspaceReadEpoch) return;
     if (!result?.ok || !result?.context?.customerId || result.context.status !== 'ACTIVE') {
       if (assistCustomerId) {
+        if (!authentication.loggedIn()) { goToBuyerRoomStaffLogin(assistCustomerId); return; }
         frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Assisted Access Could Not Be Verified.' });
       } else wixLocationFrontend.to('/buyer-room-login');
       return;
