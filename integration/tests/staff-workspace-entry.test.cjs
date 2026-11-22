@@ -30,23 +30,55 @@ test('the existing OAuth state validation cannot be skipped by a return target o
   const f=loginFixture({query:{oauth:'success',state:'wrong',token:'fake-token',next:'/sales-room'}});
   await f.ready();assert.equal(f.tokens,0);assert.equal(f.lookups,0);assert.deepEqual(f.opened,[]);assert.match(f.nodes.button1.label,/SECURITY CHECK FAILED/);
 });
-test('Sales Room Entry rereads current staff scope; Catalogue-only customer work opens Catalogue directly',async()=>{
+test('Sales Room Entry navigates with its loaded scope and performs no new access request on click',async()=>{
   const source=read('sales-room/wix/sales-room-page.js'),begin=source.indexOf("    if (message.type === 'SALES_ROOM_OPEN_BUYER_ROOM')"),end=source.indexOf("    if (message.type === 'SALES_ROOM_FX_RATES_REQUEST')",begin),block=source.slice(begin,end);
-  for(const [authorized,scope,customerId,expected] of [
-    [true,{allCustomers:true},'CUS-FAKE','/buyer-room?assist=CUS-FAKE'],
-    [true,{allCustomerActions:['CATALOGUE_VIEW']},'CUS-FAKE','/catalogue?assist=CUS-FAKE'],
-    [true,{customerActions:{BUYER_ROOM_VIEW:['CUS-FAKE']}},'CUS-FAKE','/buyer-room?assist=CUS-FAKE'],
-    [true,{customerActions:{BUYER_ROOM_VIEW:['CUS-OTHER']}},'CUS-FAKE',undefined],
-    [false,{allCustomers:true},'CUS-FAKE',undefined],
-    [true,{allCustomers:true},'https://evil.invalid',undefined]
+  for(const [authorized,signedIn,scope,customerId,expected] of [
+    [true,true,{allCustomers:true},'CUS-FAKE','/buyer-room?assist=CUS-FAKE'],
+    [true,true,{allCustomerActions:['CATALOGUE_VIEW']},'CUS-FAKE','/catalogue?assist=CUS-FAKE'],
+    [true,true,{customerActions:{BUYER_ROOM_VIEW:['CUS-FAKE']}},'CUS-FAKE','/buyer-room?assist=CUS-FAKE'],
+    [true,false,{allCustomers:true},'CUS-FAKE','/sales-room-login?next=%2Fbuyer-room%3Fassist%3DCUS-FAKE'],
+    [true,false,{allCustomerActions:['CATALOGUE_VIEW']},'CUS-FAKE','/sales-room-login?next=%2Fcatalogue%3Fassist%3DCUS-FAKE'],
+    [true,true,{customerActions:{BUYER_ROOM_VIEW:['CUS-OTHER']}},'CUS-FAKE',undefined],
+    [false,true,{allCustomers:true},'CUS-FAKE',undefined],
+    [true,true,{allCustomers:true},'https://evil.invalid',undefined]
   ]){
-    let reads=0;const opened=[];
+    const opened=[],handoffs=[];
     await vm.runInNewContext('(async()=>{'+block+'})()',{
-      message:{type:'SALES_ROOM_OPEN_BUYER_ROOM',customerId},loadCurrentStaff:async()=>{reads++;return {authorized,staffId:'fake',customerScope:scope};},
-      showStaffAccessIssue(){},wixLocationFrontend:{to:url=>opened.push(url)},session:{setItem(){}}
+      message:{type:'SALES_ROOM_OPEN_BUYER_ROOM',customerId},
+      staffPromise:Promise.resolve({authorized,staffId:'fake',customerScope:scope}),
+      loadCurrentStaff:()=>assert.fail('The click should not start a new access request.'),
+      authentication:{loggedIn:()=>signedIn}, STAFF_LOGIN_URL:'/sales-room-login',
+      showStaffAccessIssue(){},wixLocationFrontend:{to:url=>opened.push(url)},session:{setItem:(name,value)=>handoffs.push([name,JSON.parse(value)])}
     });
-    assert.equal(reads,1);assert.deepEqual(opened,expected?[expected]:[]);
+    assert.deepEqual(opened,expected?[expected]:[]);
+    assert.equal(handoffs.length,expected?.startsWith('/buyer-room?')?1:0);
+    if(handoffs.length)assert.equal(handoffs[0][1].customerId,customerId);
   }
+});
+test('Buyer Room checks the current customer grant before loading selections, even after Sales Room chose the route',async()=>{
+  const source = read('backend/catalogueAuth.web.js');
+  const resolve = source.slice(source.indexOf('async function resolveBuyerContext('), source.indexOf('async function workspaceItems('));
+  const start = source.indexOf('export const getBuyerWorkspace =');
+  const end = source.indexOf('\nexport const ', start + 1);
+  const workspace = source.slice(start, end).replace(/^export /, '');
+  let selectionReads = 0;
+  const getBuyerWorkspace = vm.runInNewContext(`${resolve}\n${workspace}\ngetBuyerWorkspace`, {
+    webMethod: (_permission, handler) => handler,
+    Permissions: { SiteMember: 'SiteMember' },
+    signedInMember: async () => ({ _id: 'qa-staff-member' }),
+    normalize: value => String(value || '').trim(),
+    requireStaff: async () => ({ staffId: 'qa-staff' }),
+    customerById: async id => ({ customerId: id }),
+    requireStaffCustomerAccess: (staff, action, customerId) => {
+      assert.equal(staff.staffId, 'qa-staff');
+      assert.equal(action, 'BUYER_ROOM_VIEW');
+      assert.equal(customerId, 'CUS-FAKE');
+      throw new Error('Customer access was revoked');
+    },
+    workspaceItems: async () => { selectionReads++; }
+  });
+  await assert.rejects(getBuyerWorkspace('CUS-FAKE'), /Customer access was revoked/);
+  assert.equal(selectionReads, 0);
 });
 test('all-customer browsing does not replace administrator-only lifecycle, FX or assignment checks',()=>{
   const source=read('sales-room/wix/onboarding.web.js');

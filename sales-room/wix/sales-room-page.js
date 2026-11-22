@@ -130,20 +130,25 @@ $w.onReady(function () {
 
 
     if (message.type === 'SALES_ROOM_OPEN_BUYER_ROOM') {
-      const staff = await loadCurrentStaff();
       const customerId = String(message.customerId || '').trim();
-      if (!staff.authorized) { showStaffAccessIssue(staff); return; }
       if (!/^CUS-[A-Za-z0-9-]+$/.test(customerId)) return;
+      // Use the loaded Sales Room scope for navigation only. The destination checks current access before returning customer data.
+      const staff = await staffPromise;
+      if (!staff.authorized) { showStaffAccessIssue(staff); return; }
       const can=action=>staff.customerScope?.allCustomers===true || staff.customerScope?.allCustomerActions?.includes(action) || staff.customerScope?.customerActions?.[action]?.includes(customerId);
-      if (!can('BUYER_ROOM_VIEW')) {
-        if (can('CATALOGUE_VIEW')) wixLocationFrontend.to('/catalogue?assist='+encodeURIComponent(customerId));
-        else showStaffAccessIssue({reason:'CUSTOMER_ACTION_DENIED'});
+      const buyerRoom = can('BUYER_ROOM_VIEW');
+      if (!buyerRoom && !can('CATALOGUE_VIEW')) { showStaffAccessIssue({reason:'CUSTOMER_ACTION_DENIED'}); return; }
+      const target = (buyerRoom ? '/buyer-room' : '/catalogue') + '?assist=' + encodeURIComponent(customerId);
+      if (!authentication.loggedIn()) {
+        wixLocationFrontend.to(STAFF_LOGIN_URL + '?next=' + encodeURIComponent(target));
         return;
       }
-      try {
-        session.setItem('staffBuyerEntryV1', JSON.stringify({ customerId, staffId: staff.staffId, expiresAt: Date.now() + 30000 }));
-      } catch (error) { /* The explicit URL still carries the requested customer. */ }
-      wixLocationFrontend.to('/buyer-room?assist=' + encodeURIComponent(customerId));
+      if (buyerRoom) {
+        try {
+          session.setItem('staffBuyerEntryV1', JSON.stringify({ customerId, staffId: staff.staffId, expiresAt: Date.now() + 30000 }));
+        } catch (error) { /* The explicit URL still carries the requested customer. */ }
+      }
+      wixLocationFrontend.to(target);
       return;
     }
 

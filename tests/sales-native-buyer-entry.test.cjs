@@ -11,7 +11,10 @@ function modal(customer){
 }
 async function route(message,authorized=true){
  const start=outer.indexOf("    if (message.type === 'SALES_ROOM_OPEN_BUYER_ROOM')"),end=outer.indexOf('\n    if (',start+8);assert(start>=0&&end>start);
- const paths=[];await vm.runInNewContext('(async()=>{'+outer.slice(start,end)+'})()',{message,staffPromise:Promise.resolve({authorized}),wixLocationFrontend:{to:p=>paths.push(p)},encodeURIComponent});return paths;
+ const paths=[];await vm.runInNewContext('(async()=>{'+outer.slice(start,end)+'})()',{
+   message,staffPromise:Promise.resolve({authorized,staffId:'qa-staff',customerScope:{allCustomers:true}}),
+   authentication:{loggedIn:()=>true},showStaffAccessIssue(){},session:{setItem(){}},wixLocationFrontend:{to:p=>paths.push(p)}
+ });return paths;
 }
 test('two customers route once through outer page in current tab',async()=>{
  for(const id of ['CUS-261103-43C587','CUS-261103-CF0D88']){
