@@ -44,7 +44,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261119-staff-workspace-permissions-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/sales-room-20261123-mobile-buyer-entry.html';
   const staffPromise = loadCurrentStaff();
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
@@ -132,15 +132,30 @@ $w.onReady(function () {
     if (message.type === 'SALES_ROOM_OPEN_BUYER_ROOM') {
       const customerId = String(message.customerId || '').trim();
       if (!/^CUS-[A-Za-z0-9-]+$/.test(customerId)) return;
+      const preparing = message.prepare === true;
       // Use the loaded Sales Room scope for navigation only. The destination checks current access before returning customer data.
       const staff = await staffPromise;
-      if (!staff.authorized) { showStaffAccessIssue(staff); return; }
+      if (!staff.authorized) {
+        if (!preparing) showStaffAccessIssue(staff);
+        return;
+      }
       const can=action=>staff.customerScope?.allCustomers===true || staff.customerScope?.allCustomerActions?.includes(action) || staff.customerScope?.customerActions?.[action]?.includes(customerId);
       const buyerRoom = can('BUYER_ROOM_VIEW');
-      if (!buyerRoom && !can('CATALOGUE_VIEW')) { showStaffAccessIssue({reason:'CUSTOMER_ACTION_DENIED'}); return; }
+      if (!buyerRoom && !can('CATALOGUE_VIEW')) {
+        if (!preparing) showStaffAccessIssue({reason:'CUSTOMER_ACTION_DENIED'});
+        return;
+      }
       const target = (buyerRoom ? '/buyer-room' : '/catalogue') + '?assist=' + encodeURIComponent(customerId);
-      if (!authentication.loggedIn()) {
-        wixLocationFrontend.to(STAFF_LOGIN_URL + '?next=' + encodeURIComponent(target));
+      const signedIn = authentication.loggedIn();
+      const entryUrl = signedIn ? target : STAFF_LOGIN_URL + '?next=' + encodeURIComponent(target);
+      if (preparing) {
+        salesRoom.postMessage({
+          type: 'SALES_ROOM_BUYER_ENTRY_LINK', customerId, requestId: message.requestId, entryUrl
+        });
+        return;
+      }
+      if (!signedIn) {
+        wixLocationFrontend.to(entryUrl);
         return;
       }
       if (buyerRoom) {
