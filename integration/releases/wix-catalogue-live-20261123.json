@@ -1,0 +1,38 @@
+{
+  "site": "FMCG Malaysia",
+  "route": "https://www.fmcgmalaysia.com/catalogue",
+  "date": "2026-11-23",
+  "normalizedSource": "UTF-8 text, LF line endings, trailing whitespace removed for hashing",
+  "githubPages": {
+    "status": "Existing verified deployment retained for these Wix-only changes",
+    "commit": "3576a64e",
+    "run": "45123566660"
+  },
+  "wixStudio": {
+    "status": "Published and live",
+    "cataloguePage": {
+      "file": "buyer-room/catalogue/wix/catalogue-access-20261123.page.js",
+      "beforeSha256": "212d1edb265105885503d5a309555644fcb14d0015dbcc32fee488f8f60c80bd",
+      "sha256": "a1f0f80668763be4ae0b0237a70139c81ff7c434e2d0176fad2936bbd19a1e6e"
+    },
+    "inlineComponent": {
+      "id": "#html5",
+      "file": "buyer-room/catalogue/wix/catalogue-mobile-columns-v3.inline.html",
+      "beforeSha256": "27d4227674a25744ca1b0e30fb04f23a47c5ef4f0a909d8318b3095b6f50d873",
+      "sha256": "19c1d95bd6d8c64dc06350b4b28e014607e3ba4808a146f33a12b0955aceea65",
+      "marker": "20261123-catalogue-mobile-columns-v3"
+    }
+  },
+  "publicVerification": {
+    "authorizedCustomer": {
+      "approvedMember": true,
+      "independentChrome": true,
+      "foundProductRows": true,
+      "selectionControlVisible": true,
+      "readOnly": true
+    },
+    "mobileStatusHeaderDeltaPx": 0,
+    "viewportInsideEmbedPx": 374,
+    "wixInlineAsset": "https://www-fmcgmalaysia-com.filesusr.com/html/4ecd18_c2cc0dc1968302d741ead5d5a8a4c6a7.html"
+  }
+}
