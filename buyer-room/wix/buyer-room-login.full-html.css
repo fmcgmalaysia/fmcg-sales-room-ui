@@ -1,0 +1,30 @@
+/* Scope the layout to the new login frame; Wix rewrites ID and class selectors. */
+[data-testid="responsive-container-content"]:has(> main > section iframe[src$="/buyer-login-20261123-full-html.html"]) > :is(header, footer),
+section > [data-testid="responsive-container-content"]:has(iframe[src$="/buyer-login-20261123-full-html.html"]) > div:not(:has(iframe[src$="/buyer-login-20261123-full-html.html"])) {
+  display: none !important;
+}
+
+section > [data-testid="responsive-container-content"]:has(iframe[src$="/buyer-login-20261123-full-html.html"]) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+section > [data-testid="responsive-container-content"] > div:has(iframe[src$="/buyer-login-20261123-full-html.html"]) {
+  grid-area: 1 / 1 / 2 / 2 !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+div:has(> wix-iframe iframe[src$="/buyer-login-20261123-full-html.html"]),
+wix-iframe:has(iframe[src$="/buyer-login-20261123-full-html.html"]),
+wix-iframe > div:has(> iframe[src$="/buyer-login-20261123-full-html.html"]),
+iframe[src$="/buyer-login-20261123-full-html.html"] {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}

@@ -5,7 +5,7 @@ import { local, session } from 'wix-storage-frontend';
 import { getCurrentBuyerContext } from 'backend/catalogueAuth.web';
 
 const FRAME_ID = '#html1';
-const LOGIN_FRAME_URL = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-login-20261121-member-setup.html';
+const LOGIN_FRAME_URL = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-login-20261123-full-html.html';
 const SITE_BASE = 'https://www.fmcgmalaysia.com';
 const GOOGLE_START_URL = SITE_BASE + '/_functions/googleBuyerAuthStart';
 const BUYER_DESTINATION = '/catalogue';
