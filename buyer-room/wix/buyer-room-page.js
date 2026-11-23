@@ -1,7 +1,7 @@
 import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
-import { session } from 'wix-storage-frontend';
+import { local, session } from 'wix-storage-frontend';
 import { authentication } from 'wix-members-frontend';
 import wixRealtimeFrontend from 'wix-realtime-frontend';
 import { getCurrentBuyerContext } from 'backend/catalogueAuth.web';
@@ -65,6 +65,8 @@ $w.onReady(async function () {
   }
   let historyCustomerId = '';
   let frameReady = false;
+  const campaignStorageKey = 'buyerWaitingCampaignLastV1';
+  let waitingCampaignIndex;
   let activeBuyerRoomView = 'my';
   let selectionImageOpen = false;
   let selectionDownloadUrl = '';
@@ -220,7 +222,22 @@ $w.onReady(async function () {
       updateDownloadButtonVisibility();
       return;
     }
+    if (message.type === 'BUYER_ROOM_LOADING_CAMPAIGN_SHOWN' && waitingCampaignIndex !== undefined && message.index === waitingCampaignIndex) {
+      try { local.setItem(campaignStorageKey, String(waitingCampaignIndex)); }
+      catch { /* The rotation is optional when storage is unavailable. */ }
+      return;
+    }
     if (message.type === 'BUYER_ROOM_READY' || message.type === 'BUYER_ROOM_REQUEST_DATA') {
+      if (!frameReady) {
+        waitingCampaignIndex = 0;
+        try {
+          const previous = local.getItem(campaignStorageKey);
+          if (['0', '1', '2'].includes(previous)) waitingCampaignIndex = (Number(previous) + 1) % 3;
+        } catch { waitingCampaignIndex = Math.floor(Math.random() * 3); }
+      }
+      if (!frameReady || message.type === 'BUYER_ROOM_READY') {
+        frame.postMessage({ type: 'BUYER_ROOM_LOADING_CAMPAIGN', index: waitingCampaignIndex });
+      }
       frameReady = true;
       try { await refreshWorkspace(); }
       catch (error) { console.error('Buyer Room data failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
@@ -314,11 +331,14 @@ $w.onReady(async function () {
 
   // When Wix has already started the fixed HTML embed, keep that frame and request a fresh handshake.
   // If the embed was not configured with its website address, retain the existing dynamic load.
-  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261123-early-embed.html';
+  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261123-waiting-campaign.html';
   if (frame.src !== buyerRoomEmbedUrl) frame.src = buyerRoomEmbedUrl;
   else frame.postMessage({ type: 'BUYER_ROOM_HOST_READY' });
-  try { await refreshWorkspace(); }
-  catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
+  // The shell can render while the authorized data request is in flight.
+  void refreshWorkspace().catch(error => {
+    console.error('Buyer Room authorization failed', error);
+    if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login');
+  });
   // Visible-frame polling is the only periodic workspace refresh authority.
   setInterval(() => { if (activeDownloadExpiresAt && activeDownloadExpiresAt < Date.now() + 60000) { downloadButton.disable(); downloadButton.link = ''; prepareSelectionDownload(true); } }, 30000);
 });
