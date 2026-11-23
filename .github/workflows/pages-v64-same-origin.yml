@@ -1714,12 +1714,18 @@ jobs:
           node --test tests/buyer-first-time-login.test.cjs tests/buyer-member-setup.test.cjs
           cp buyer-room.html "$site/mobile-buyer-room.html"
           cp buyer-login-20261123-full-html.html "$site/"
+          cp assets/buyer-login-worldwide-ocean.webp "$site/assets/"
 
       - name: Upload the scoped Sales Room mobile Buyer Room entry
         if: github.event_name == 'workflow_dispatch' && (inputs.static_ui == 'sales-mobile-buyer-entry-only' || inputs.static_ui == 'sales-workspace-entry-cleanup-only' || inputs.static_ui == 'catalogue-buyer-mobile-layout-only' || inputs.static_ui == 'buyer-mobile-prepare-order-only' || inputs.static_ui == 'buyer-room-full-html-login-only')
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/sales-mobile-buyer-entry-site', runner.temp) }}
+
+      - name: Allow the scoped Pages artifact metadata to settle
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'buyer-room-full-html-login-only'
+        # The previous upload was finalized, but its metadata appeared after the immediate deploy lookup.
+        run: sleep 8
 
       - name: Deploy to GitHub Pages
         id: deployment
