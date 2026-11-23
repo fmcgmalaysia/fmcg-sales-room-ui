@@ -40,10 +40,13 @@ let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' 
 let catalogueSubCategoryMainMap = new Map();
 let catalogueFoodProductIds = new Set();
 let catalogueFoodPrinciples = new Set();
+let catalogueFoodMembershipSubCategoryIds = null;
+let catalogueHomeSnapshot = null;
 let catalogueProductsLoaded = false;
 let catalogueWorkspaceRead = null;
 let catalogueFirstDisplayRead = null;
 let catalogueWorkspaceFullReadComplete = false;
+let catalogueWorkspaceSnapshotComplete = false;
 let catalogueCategoriesLoaded = false;
 let catalogueSelectionResolved = false;
 let catalogueWorkspaceQueryVersion = 0;
@@ -377,6 +380,7 @@ async function readCatalogueWorkspaceProducts(queryVersion, firstPageRead = null
             }
         }
         catalogueWorkspaceAllProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
+        catalogueWorkspaceSnapshotComplete = Number.isSafeInteger(firstPage.totalCount) && products.length >= firstPage.totalCount;
         catalogueWorkspaceFullReadComplete = true;
         if (queryVersion === catalogueWorkspaceQueryVersion) catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
     } catch (error) {
@@ -607,6 +611,7 @@ async function loadMenuData() {
             .filter(Boolean);
         catalogueFoodProductIds = new Set();
         catalogueFoodPrinciples = new Set();
+        catalogueFoodMembershipSubCategoryIds = null;
         if (foodSubCategoryIds.length) {
             // The menu is already available. Give the first visible products priority over this background scan.
             if (catalogueFirstDisplayRead) await catalogueFirstDisplayRead;
@@ -624,6 +629,7 @@ async function loadMenuData() {
                     if (principle) catalogueFoodPrinciples.add(principle);
                 });
             }
+            if (!foodResult.hasNext()) catalogueFoodMembershipSubCategoryIds = foodSubCategoryIds;
         }
         sendCatalogueWorkspaceData();
     } catch (error) {
@@ -738,12 +744,48 @@ function setupNav() {
         clearTimeout(searchTimer);
         const resetVersion = ++catalogueWorkspaceQueryVersion;
         if (nativeSearch) nativeSearch.value = '';
-        await hideMenu();
-        if (!catalogueMenuMessage) await menuReady;
-        if (catalogueWorkspaceQueryVersion !== resetVersion) return;
         header.postMessage({ type: 'catalogueHeaderFilter', query: '' });
-        try { await wixWindowFrontend.scrollTo(0, 0); } catch (error) {}
-        if (catalogueWorkspaceQueryVersion === resetVersion) await applyMainCategory('FOOD', true);
+        void hideMenu().catch(error => console.error('Catalogue menu could not close', error));
+        void wixWindowFrontend.scrollTo(0, 0).catch(() => {});
+
+        const setHomeView = (ids, products, homeState = '') => {
+            catalogueWorkspaceProducts = products;
+            catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '', resetActive: true, homeState };
+            recordCatalogueBrowse(ids);
+            sendCatalogueWorkspaceData();
+        };
+        if (!catalogueMenuMessage) {
+            setHomeView([], [], 'loading');
+            await menuReady;
+        }
+        if (catalogueWorkspaceQueryVersion !== resetVersion) return;
+        const ids = (catalogueMenuMessage?.items || [])
+            .filter(item => item.mainCategory === 'FOOD').map(item => item.id).filter(Boolean);
+        if (!ids.length) {
+            setHomeView([], [], 'failed');
+            return;
+        }
+        const scope = new Set(ids);
+        const key = JSON.stringify([...scope].sort());
+        const sameMembership = catalogueFoodMembershipSubCategoryIds?.length === scope.size &&
+            catalogueFoodMembershipSubCategoryIds.every(id => scope.has(id));
+        const cachedProducts = catalogueHomeSnapshot?.key === key ? catalogueHomeSnapshot.products :
+            catalogueWorkspaceSnapshotComplete && sameMembership
+                ? catalogueWorkspaceAllProducts.filter(product => catalogueFoodProductIds.has(product.id)) : null;
+        if (cachedProducts) {
+            setHomeView(ids, cachedProducts);
+            void dataset.setFilter(wixData.filter().hasSome('subCategories', ids))
+                .catch(error => console.error('Catalogue dataset filter failed', error));
+            return;
+        }
+        setHomeView(ids, [], 'loading');
+        try { await applyMainCategory('FOOD', true); }
+        finally {
+            if (catalogueWorkspaceQueryVersion === resetVersion + 1) {
+                if (catalogueWorkspaceFilter.homeState === 'loading') setHomeView(ids, [], 'failed');
+                else catalogueHomeSnapshot = { key, products: catalogueWorkspaceProducts };
+            }
+        }
     };
     $w('#imageX38').onClick(() => {
         resetCatalogueHome().catch(error => console.error('Catalogue home could not be opened', error));
