@@ -419,7 +419,7 @@ async function readCataloguePagesInParallel(makeQuery, firstPage) {
     return products;
 }
 
-async function showCatalogueWorkspaceQuery(query, resumeSubIds = null, position = null) {
+async function showCatalogueWorkspaceQuery(query, resumeSubIds = null, position = null, resetActive = false) {
     const queryVersion = ++catalogueWorkspaceQueryVersion;
     const products = [];
     try {
@@ -432,6 +432,7 @@ async function showCatalogueWorkspaceQuery(query, resumeSubIds = null, position 
         if (queryVersion !== catalogueWorkspaceQueryVersion) return;
         catalogueWorkspaceProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
         catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
+        if (resetActive) catalogueWorkspaceFilter.resetActive = true;
         recordCatalogueBrowse(resumeSubIds, position);
         sendCatalogueWorkspaceData();
     } catch (error) {
@@ -712,7 +713,7 @@ function setupNav() {
         });
     }
 
-    const applyMainCategory = async (main) => {
+    const applyMainCategory = async (main, resetActive = false) => {
         const items = catalogueMenuMessage && Array.isArray(catalogueMenuMessage.items)
             ? catalogueMenuMessage.items
             : [];
@@ -723,10 +724,30 @@ function setupNav() {
         if (ids.length) {
             await Promise.all([
                 dataset.setFilter(wixData.filter().hasSome('subCategories', ids)),
-                showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids))
+                showCatalogueWorkspaceQuery(
+                    wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids),
+                    resetActive ? ids : null,
+                    null,
+                    resetActive
+                )
             ]);
         }
     };
+
+    const resetCatalogueHome = async () => {
+        clearTimeout(searchTimer);
+        const resetVersion = ++catalogueWorkspaceQueryVersion;
+        if (nativeSearch) nativeSearch.value = '';
+        await hideMenu();
+        if (!catalogueMenuMessage) await menuReady;
+        if (catalogueWorkspaceQueryVersion !== resetVersion) return;
+        header.postMessage({ type: 'catalogueHeaderFilter', query: '' });
+        try { await wixWindowFrontend.scrollTo(0, 0); } catch (error) {}
+        if (catalogueWorkspaceQueryVersion === resetVersion) await applyMainCategory('FOOD', true);
+    };
+    $w('#imageX38').onClick(() => {
+        resetCatalogueHome().catch(error => console.error('Catalogue home could not be opened', error));
+    });
 
     header.onMessage(async (event) => {
         const message = event.data || {};
@@ -747,6 +768,8 @@ function setupNav() {
             workspace.postMessage({ type: 'catalogueMobileCategories', open: message.open === true });
         } else if (message.type === 'catalogueSearch') {
             await applySearch(message.query);
+        } else if (message.type === 'catalogueHome') {
+            await resetCatalogueHome();
         } else if (message.type === 'catalogueAll') {
             await hideMenu();
             if (nativeSearch) nativeSearch.value = '';
@@ -827,7 +850,7 @@ function setupNav() {
     setWorkspaceMenuState(false);
     mega.collapse();
     try { dataset.setPageSize(30); } catch (error) {}
-    loadMenuData();
+    const menuReady = loadMenuData();
     setInterval(async () => {
         if (!isOpen) { lastScrollY = null; return; }
         if (scrollCheckPending) return;
@@ -990,6 +1013,7 @@ function openBuyerRoomWindow() {
 function setupFluidCatalogueLayout() {
     const classMap = [
         ['#section12', 'catalogue-native-masthead'],
+        ['#imageX38', 'catalogue-home-logo'],
         ['#section7', 'catalogue-navigation-stage'],
         ['#html4', 'catalogue-compact-menu'],
         ['#section6', 'catalogue-results-stage']
