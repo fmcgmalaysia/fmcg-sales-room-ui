@@ -5,6 +5,7 @@
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
 <meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v6">
+<meta name="buyer-track-progress-build" content="20261123-buyer-track-progress-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -274,14 +275,16 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 #trackView #trackCurrentPanel .buyer-planning-fact:last-child{border-bottom:0}
 #trackView #trackCurrentPanel .buyer-planning-fact span{color:#6a7e96}
 #trackView #trackCurrentPanel .buyer-planning-fact b{font-size:12px;font-weight:700;color:#203047;white-space:nowrap}
-#trackView #trackCurrentPanel .tracking-rail{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));padding:0 12px;margin-top:0;position:relative}
-#trackView #trackCurrentPanel .tracking-rail:before{left:8.5%;right:8.5%;top:27px;height:4px;background:#e7eef4}
+#trackView #trackCurrentPanel .tracking-rail{--tracking-ring-size:46px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));padding:5px 0 10px;margin-top:0;position:relative}
+#trackView #trackCurrentPanel .tracking-rail:before{display:none}
 #trackView #trackCurrentPanel .tracking-stage{padding:0 6px!important;text-align:center;border:0}
-#trackView #trackCurrentPanel .tracking-ring{width:58px;height:58px;margin:0 auto;box-shadow:none;background:conic-gradient(#12883e calc(var(--progress)*1%),#e7eef4 0)}
-#trackView #trackCurrentPanel .tracking-ring:before{inset:6px;background:#fff}#trackView #trackCurrentPanel .tracking-stage.complete .tracking-ring:before{background:#12883e}
-#trackView #trackCurrentPanel .tracking-ring span{font-size:24px;font-weight:750;color:#203047}#trackView #trackCurrentPanel .tracking-stage.complete .tracking-ring span{color:#fff}
+#trackView #trackCurrentPanel .tracking-stage:not(:last-child):after{content:"";position:absolute;top:calc(var(--tracking-ring-size) / 2 - 2px);left:calc(50% + var(--tracking-ring-size) / 2 + 1px);right:calc(-50% + var(--tracking-ring-size) / 2 + 1px);height:4px;border-radius:4px;background:#e7eef4}
+#trackView #trackCurrentPanel .tracking-stage.complete:not(:last-child):after{background:#2b6cb0}
+#trackView #trackCurrentPanel .tracking-ring{width:var(--tracking-ring-size);height:var(--tracking-ring-size);margin:0 auto;box-shadow:none;background:conic-gradient(#2b6cb0 calc(var(--progress)*1%),#e7eef4 0)}
+#trackView #trackCurrentPanel .tracking-ring:before{inset:6px;background:#fff}#trackView #trackCurrentPanel .tracking-stage.complete .tracking-ring:before{background:#2b6cb0}
+#trackView #trackCurrentPanel .tracking-ring span{font-size:22px;font-weight:600;line-height:1;color:#17466f}#trackView #trackCurrentPanel .tracking-stage.complete .tracking-ring span{color:#fff}
 #trackView #trackCurrentPanel .tracking-stage.active .tracking-ring{box-shadow:none}#trackView #trackCurrentPanel .tracking-stage.active .tracking-ring:after{display:none}
-#trackView #trackCurrentPanel .tracking-stage-label{display:block;font-size:11px;font-weight:800;line-height:15.95px;margin-top:8px;color:#173557;white-space:nowrap;overflow:visible}
+#trackView #trackCurrentPanel .tracking-stage-label{display:block;font-size:11px;font-weight:600;line-height:1.4;margin-top:8px;color:#173557;white-space:normal;overflow:visible}
 #trackView #trackCurrentPanel .tracking-stage-zh{display:block;font-size:10px;font-weight:500;line-height:14px;margin-top:3px;color:#627a93}
 #trackView #trackCurrentPanel .tracking-section-title{height:47px;padding-bottom:9px}#trackView #trackCurrentPanel .tracking-section-title strong{font-size:13px;font-weight:700}
 #trackView #trackCurrentPanel .tracking-table-wrap{overflow-x:auto;padding:2px;border:1px solid #d8e2eb;border-radius:9px;background:#fff;box-shadow:none}
@@ -306,8 +309,8 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 #trackView #trackCurrentPanel .tracking-dot{flex:0 0 18px;width:18px;height:18px;font:700 9px/1 Inter,"Segoe UI",Arial,sans-serif;background:#dce4ed;color:#687e96}
 #trackView #trackCurrentPanel .tracking-dot.complete{background:#12883e;color:#fff}#trackView #trackCurrentPanel .tracking-dot.partial{background:linear-gradient(90deg,#12883e 50%,#dce4ed 50%);color:#183b62}
 #trackRows .tracking-row:hover{background:#f5f8fa!important;transform:none;box-shadow:none}
-@media(max-width:1050px){#trackView #trackCurrentPanel .buyer-progress-split{grid-template-columns:minmax(0,1fr) 235px}#trackView #trackCurrentPanel .buyer-progress-facts{padding:8px 10px}#trackView #trackCurrentPanel .tracking-stage-label{font-size:9px;white-space:normal}}
-@media(max-width:780px){:root{--side:174px}#trackView #trackCurrentPanel .buyer-progress-split{grid-template-columns:1fr}#trackView #trackCurrentPanel .buyer-progress-facts{border-left:0;border-top:1px solid #dce5ee}#trackView #trackCurrentPanel .tracking-rail{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:18px}#trackView #trackCurrentPanel .tracking-rail:before{display:none}}
+@media(max-width:1050px){#trackView #trackCurrentPanel .buyer-progress-split{grid-template-columns:minmax(0,1fr) 235px}#trackView #trackCurrentPanel .buyer-progress-facts{padding:8px 10px}#trackView #trackCurrentPanel .tracking-rail{--tracking-ring-size:clamp(28px,9vw,38px)}#trackView #trackCurrentPanel .tracking-stage{padding:0 1px!important}#trackView #trackCurrentPanel .tracking-ring:before{inset:4px}#trackView #trackCurrentPanel .tracking-ring span{font-size:16px}#trackView #trackCurrentPanel .tracking-stage-label{font-size:9px}}
+@media(max-width:780px){:root{--side:174px}#trackView #trackCurrentPanel .buyer-progress-split{grid-template-columns:1fr}#trackView #trackCurrentPanel .buyer-progress-facts{border-left:0;border-top:1px solid #dce5ee}}
 </style>
 <style>
 /* Buyer visual details: preserve original data, handlers and saving feedback. */
@@ -332,7 +335,6 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 #trackView .top .sub{line-height:18.85px;color:#6b7c92}
 #trackView #trackCurrentPanel .tracking-progress-title strong{font-weight:700;color:#0c2e55}
 #trackView #trackCurrentPanel .tracking-section-title strong{line-height:18.85px;color:#0c2e55}
-#trackView #trackCurrentPanel .tracking-ring span{line-height:34.8px}
 #trackView #trackCurrentPanel .buyer-planning-fact b{line-height:17.4px}
 #trackView #trackCurrentPanel .tracking-row{font-weight:600}
 #trackView #trackCurrentPanel .tracking-row>.track-order-on,#trackView #trackCurrentPanel .tracking-row>.tracking-amount{font-weight:600}
