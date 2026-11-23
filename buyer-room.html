@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
-<meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v3">
+<meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v4">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -428,10 +428,20 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 }
 @media(prefers-reduced-motion:reduce){#currentPanel .selection-row > div,#currentPanel .selection-remove{transition:none!important}}
 .mobile-order-only,#mobileQtySheet:not([open]){display:none}
-#prepareMobileOrder{flex:0 0 auto;min-height:36px;padding:0 14px;border:1px solid #bdcddd;border-radius:7px;background:#f4f8fc;color:#233e60;font:inherit;font-weight:750;cursor:pointer}
-#prepareMobileOrder:hover,#prepareMobileOrder:focus-visible{border-color:#6e8dad;background:#eaf2fa}
+#prepareMobileOrder{flex:0 0 auto;min-height:40px;padding:0 14px;border:1px solid #184b78;border-radius:7px;background:#184b78;color:#fff;font:inherit;font-weight:750;cursor:pointer}
+#prepareMobileOrder:hover{border-color:#123a61;background:#123a61}
+#prepareMobileOrder:focus-visible{outline:2px solid #184b78;outline-offset:2px}
 :is(#currentPanel,#removedPanel,#orderView) .row:not(.mobile-order-row,.order-mobile-head)>div:nth-child(2){justify-content:center;text-align:center}
 #currentPanel .grid .row>div:is(:nth-child(4),:nth-child(5)),#orderView .order-grid .row:not(.mobile-order-row,.order-mobile-head)>div:nth-child(4){text-align:right}
+#currentPanel .grid .row>div:is(:nth-child(4),:nth-child(5)){justify-content:flex-end}
+#selectionRemoveDialog{width:min(calc(100% - 24px),390px);max-width:none;margin:auto;padding:20px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+#selectionRemoveDialog::backdrop{background:#102a4a99}
+#selectionRemoveDialog h2{margin:0 0 8px;font-size:18px}
+#selectionRemoveDialog p{margin:8px 0;color:#53657b;line-height:1.45}
+#selectionRemoveProduct{display:block;overflow-wrap:anywhere}
+.selection-remove-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.selection-remove-actions .btn{min-height:44px}
+@media(max-width:880px){.touch-buyer .prepare-order-desktop{display:none}}
 #mobileOrderBack{display:block;margin:0 0 4px;padding:4px 0;border:0;background:none;color:#285689;font-size:12px;cursor:pointer}
 #mobileQtySheet{width:min(100%,520px);max-width:none;max-height:90dvh;overflow:auto;position:fixed;inset:auto 0 0;margin:0 auto;padding:15px 16px max(16px,env(safe-area-inset-bottom));border:0;border-radius:16px 16px 0 0;background:#fff;color:var(--ink)}
 #mobileQtySheet::backdrop{background:#102a4a99}
@@ -455,8 +465,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .touch-buyer #myView #browse{grid-column:1;white-space:nowrap;gap:4px;padding:0 6px}
   .touch-buyer #myView #prepareMobileOrder{grid-column:2;justify-self:start;white-space:nowrap;padding:0 6px;min-height:44px;font-size:11px;font-weight:750;color:#fff;border:1px solid #184b78;border-radius:7px;background:#184b78}
   .touch-buyer #myView #prepareMobileOrder:focus-visible{outline:2px solid #184b78;outline-offset:2px}
-  .touch-buyer #myView{padding-bottom:56px}
-  .touch-buyer #myView #prepareMobileOrder.is-floating{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));z-index:19;margin:0;padding-inline:12px;box-shadow:0 3px 12px #172b4d33}
+  .touch-buyer #myView #prepareMobileOrder.is-floating{position:fixed;top:calc(var(--top) + 8px);right:max(12px,env(safe-area-inset-right));z-index:19;margin:0;padding-inline:12px;box-shadow:0 3px 12px #172b4d33}
   #orderView>.top{min-height:0;margin:0 0 8px}
   #orderFormHeading{font-size:23px;margin:0}
   #orderView .order-selection-hint{margin:4px 0 0;color:#53657b;font-size:11px;line-height:1.4}
@@ -544,7 +553,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
     
     <section id="myView" class="view active">
       <div class="page-head">
-        <div class="page-title"><h1>My Selection</h1><div class="inline-stats"><div class="inline-stat product-count" hidden><b id="myCount">0</b><span>Products</span></div><div class="inline-stat awaiting"><span class="awaiting-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="hourglass-disc" cx="12" cy="12" r="10"/><path class="hourglass-mark" d="M8.2 6.5h7.6M8.2 17.5h7.6M9 6.5c0 2.7 1.3 3.6 3 5.5-1.7 1.8-3 2.8-3 5.5M15 6.5c0 2.7-1.3 3.6-3 5.5 1.7 1.8 3 2.8 3 5.5"/></svg></span><b id="awaitingCount">0</b><span class="selection-awaiting-desktop">Awaiting Quotation</span><span class="selection-awaiting-mobile">Awaiting quote</span></div><div class="inline-stat currency"><span>Transaction Currency</span><b id="listCurrency">USD</b></div></div></div><a class="browse" id="browse" href="#" target="_blank" rel="noopener" aria-disabled="true" aria-label="Open Catalogue in a new tab"><span class="plus" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="default-label">Add More Items</span><span class="hover-label">VIEW CATALOGUE</span><span class="mobile-order-only">Add Items</span></a><button type="button" id="prepareMobileOrder">Prepare Order</button>
+        <div class="page-title"><h1>My Selection</h1><div class="inline-stats"><div class="inline-stat product-count" hidden><b id="myCount">0</b><span>Products</span></div><div class="inline-stat awaiting"><span class="awaiting-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="hourglass-disc" cx="12" cy="12" r="10"/><path class="hourglass-mark" d="M8.2 6.5h7.6M8.2 17.5h7.6M9 6.5c0 2.7 1.3 3.6 3 5.5-1.7 1.8-3 2.8-3 5.5M15 6.5c0 2.7-1.3 3.6-3 5.5 1.7 1.8 3 2.8 3 5.5"/></svg></span><b id="awaitingCount">0</b><span class="selection-awaiting-desktop">Awaiting Quotation</span><span class="selection-awaiting-mobile">Awaiting quote</span></div><div class="inline-stat currency"><span>Transaction Currency</span><b id="listCurrency">USD</b></div></div></div><a class="browse" id="browse" href="#" target="_blank" rel="noopener" aria-disabled="true" aria-label="Open Catalogue in a new tab"><span class="plus" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="default-label">Add More Items</span><span class="hover-label">VIEW CATALOGUE</span><span class="mobile-order-only">Add Items</span></a><button type="button" id="prepareMobileOrder"><span class="prepare-order-desktop">Start Order Request</span><span class="mobile-order-only">Prepare Order</span></button>
       </div>
       <div class="list-tabs-bar selection-toolbar"><div class="selection-filters" role="tablist" aria-label="Filter My Selection"><button class="selection-filter active" id="currentTab" type="button" data-list-mode="current" data-selection-filter="all" role="tab" aria-selected="true" aria-pressed="true">All <b id="currentCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="food" role="tab" aria-selected="false" aria-pressed="false">Food <b id="foodCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="nonfood" role="tab" aria-selected="false" aria-pressed="false">Non-food <b id="nonFoodCount">0</b></button><button class="selection-filter removed-filter" id="removedTab" type="button" data-list-mode="removed" role="tab" aria-selected="false">Removed <b id="removedCount">0</b></button></div><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="mySearch" type="search" aria-label="Search selection by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label></div>
       <div class="selection-limit-row"><div class="showing" id="myShowing" aria-live="polite">Loading your company workspace…</div><span class="limit-note"><button class="limit-lock" id="limitInfoButton" type="button" aria-label="How selection limits and V.I.P quotations work" aria-expanded="false" aria-controls="limitInfo"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg></button><b id="selectionSummaryCount">0</b> of <b id="selectionLimit">100</b> <span class="limit-unit">selected</span><span class="limit-popover" id="limitInfo" role="dialog" aria-label="Selection limit information" hidden><strong>How V.I.P quotations and selection limits work</strong><p>After you select products, we will provide V.I.P prices within 24 hours. You can then download the product details and current quotation.</p><ul class="limit-tiers"><li><span>New account</span><b>100 SKUs</b></li><li><span>Contact Customer Service</span><b>Up to 300 SKUs</b></li><li><span>After your first completed transaction</span><b>500 SKUs automatically</b></li><li><span>Highest account access</span><b>700 SKUs</b></li></ul></span></span><span class="selection-progress" aria-hidden="true"><i id="selectionProgress"></i></span></div>
@@ -577,6 +586,15 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <dialog id="selectionImageDialog" aria-label="Product image">
   <form method="dialog"><button type="submit" aria-label="Close product image">×</button></form>
   <img id="selectionImage" alt="">
+</dialog>
+<dialog id="selectionRemoveDialog" aria-labelledby="selectionRemoveTitle" aria-describedby="selectionRemoveNotice">
+  <h2 id="selectionRemoveTitle">Remove this item?</h2>
+  <strong id="selectionRemoveProduct"></strong>
+  <p id="selectionRemoveNotice">This item will move to Removed. Restoring it will request a new quote.</p>
+  <div class="selection-remove-actions">
+    <button id="cancelSelectionRemove" class="btn secondary" type="button" autofocus>Cancel</button>
+    <button id="confirmSelectionRemove" class="btn danger" type="button">Remove Item</button>
+  </div>
 </dialog>
 <dialog id="mobileQtySheet" aria-labelledby="mobileQtyTitle">
   <form id="mobileQtyForm">
@@ -866,11 +884,13 @@ function renderOrderTracking(){renderTrackOrders();renderCompletedOrders();rende
 $('trackCurrentTab').onclick=()=>setTrackHistoryTab(false);$('trackHistoryTab').onclick=()=>setTrackHistoryTab(true);
 function summary(){const ordered=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0),ctn=ordered.reduce((s,x)=>s+num(x.orderQtyCtn),0),cbm=totalCbm(ordered,x=>num(x.orderQtyCtn),x=>x.cbmPerCtn),amount=ordered.reduce((s,x)=>s+num(x.orderQtyCtn)*ctnPrice(x),0);$('sumProducts').textContent=ordered.length;$('sumCtn').textContent=`${ctn} CTN`;$('sumCbm').textContent=cbmText(cbm);$('sumAmount').textContent=`${state.currency} ${money(amount)}`;const mobile=mobileSelection.matches,waiting=mobile&&state.pendingQuantities.size>0;$('submitOrder').disabled=!ordered.length||waiting||Boolean(state.quantityReviewRequested)||[...state.quantityDrafts.values()].some(draft=>draft.error);$('submitOrder').textContent=waiting||state.quantityReviewRequested?'Saving quantities…':'Review Request';$('submitOrder').ariaDescription=quantityEditsBlocked()?(mobile?'Finish saving or retry failed quantities before reviewing.':'Quantities will be saved before the order preview opens.'):'';const visibleIds=new Set([...document.querySelectorAll(mobile?'#orderRows [data-mobile-order-id]':'#orderRows [data-qty]')].map(x=>x.dataset.mobileOrderId||x.dataset.qty)),hidden=ordered.filter(x=>!visibleIds.has(String(x.id))).length;$('hiddenOrdered').textContent=hidden?`${hidden} ordered item${hidden===1?' is':'s are'} currently hidden by this search.`:''}
 const selectionImageDialog=$('selectionImageDialog'),selectionImage=$('selectionImage');
+const selectionRemoveDialog=$('selectionRemoveDialog');
 const mobileSelection=matchMedia('(max-width:880px)');
 const mobileQtySheet=$('mobileQtySheet'),mobileQtyInput=$('mobileQtyInput');
 const selectionRows=$('myRows');
 let mobileQtyItemId='',mobileQtyCustomer='';
 let selectionSwipe=null,openSelectionRemove=null,skipSelectionClick=false;
+let selectionRemoveTarget=null;
 function refreshSelectionRemove(id){
   const key=String(id);
   const button=selectionRows.querySelector(`[data-id="${CSS.escape(key)}"] [data-remove]`);
@@ -962,7 +982,7 @@ selectionRows.addEventListener('pointerup',event=>{
     const bounds=removeButton.getBoundingClientRect();
     const inside=event.clientX>=bounds.left&&event.clientX<=bounds.right&&event.clientY>=bounds.top&&event.clientY<=bounds.bottom;
     if(row===openSelectionRemove&&!removeButton.disabled&&inside&&!moved&&Math.hypot(dx,dy)<10&&event.timeStamp-startedAt<600){
-      requestRemove(removeButton.dataset.remove);
+      confirmSelectionRemoval(removeButton.dataset.remove);
       return;
     }
   }
@@ -1014,7 +1034,30 @@ mobileSelection.addEventListener('change',event=>{
 });
 function hideImagePreview(){const preview=$('imagePreview');preview.classList.remove('show');preview.setAttribute('aria-hidden','true');$('imagePreviewImg').removeAttribute('src')}
 function bindImagePreview(){const preview=$('imagePreview'),previewImg=$('imagePreviewImg');document.querySelectorAll('.my-thumb[data-preview-src]').forEach(img=>{img.onmouseenter=()=>{if(mobileSelection.matches&&img.closest('#myRows'))return;previewImg.src=img.dataset.previewSrc;preview.classList.add('show');preview.setAttribute('aria-hidden','false')};img.onmousemove=e=>{const gap=14,edge=10,box=preview.getBoundingClientRect(),width=box.width||220,height=box.height||220;let left=e.clientX+gap,top=e.clientY+gap;if(left+width>innerWidth-edge)left=e.clientX-width-gap;if(top+height>innerHeight-edge)top=e.clientY-height-gap;preview.style.left=`${Math.max(edge,Math.min(left,innerWidth-width-edge))}px`;preview.style.top=`${Math.max(edge,Math.min(top,innerHeight-height-edge))}px`};img.onmouseleave=hideImagePreview})}
-function bindRows(){document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=e=>{e.stopPropagation();requestRemove(b.dataset.remove)});document.querySelectorAll('[data-recover]').forEach(b=>b.onclick=()=>requestRestore(b.dataset.recover));bindImagePreview()}
+function confirmSelectionRemoval(id){
+  if(selectionRemoveDialog.open||state.pendingQuantities.has(id))return;
+  const item=state.my.find(product=>String(product.id)===id);
+  if(!item)return;
+  selectionRemoveTarget={id,customerId:state.customerId};
+  $('selectionRemoveProduct').textContent=item.itemName||item.barcode||'Selected item';
+  hideImagePreview();
+  selectionRemoveDialog.showModal();
+  $('cancelSelectionRemove').focus({preventScroll:true});
+  post('BUYER_ROOM_SELECTION_IMAGE_STATE',{open:true});
+}
+$('cancelSelectionRemove').onclick=()=>selectionRemoveDialog.close();
+$('confirmSelectionRemove').onclick=()=>{
+  const target=selectionRemoveTarget;
+  if(!selectionRemoveDialog.open||!target)return;
+  selectionRemoveDialog.close();
+  if(target.customerId===state.customerId&&!state.pendingQuantities.has(target.id))requestRemove(target.id);
+};
+selectionRemoveDialog.addEventListener('close',()=>{
+  if(selectionRemoveDialog.open)return;
+  selectionRemoveTarget=null;
+  post('BUYER_ROOM_SELECTION_IMAGE_STATE',{open:false});
+});
+function bindRows(){document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=e=>{e.stopPropagation();confirmSelectionRemoval(b.dataset.remove)});document.querySelectorAll('[data-recover]').forEach(b=>b.onclick=()=>requestRestore(b.dataset.recover));bindImagePreview()}
 function requestRemove(id){const key=String(id),index=state.my.findIndex(item=>String(item.id)===key);if(index<0||state.pendingRemovals.has(key)||state.pendingRestores.has(key))return;const item=state.my[index],optimistic={...item,removed:true,removedTime:new Date().toISOString(),orderQtyCtn:0,quoteStatus:'REMOVED',quoteActive:false};state.pendingRemovals.set(key,{item,index});state.my.splice(index,1);state.removed.unshift(optimistic);renderMy();renderRemoved();renderOrder();toast('Moving item to Removed History…');post('BUYER_ROOM_REMOVE',{itemId:key})}
 function requestRestore(id){const key=String(id),index=state.removed.findIndex(item=>String(item.id)===key);if(index<0||state.pendingRestores.has(key)||state.pendingRemovals.has(key))return;const item=state.removed[index],optimistic={...item,removed:false,quoteStatus:'RFQ',quoteActive:false,vipPriceEa:0,vipPriceCtn:0,quotePerPc:0,quotePerCtn:0,orderQtyCtn:0};state.pendingRestores.set(key,{item,index,optimistic});state.removed.splice(index,1);state.my.unshift(optimistic);renderMy();renderRemoved();renderOrder();toast('Restoring to My Selection and requesting a new quote…');post('BUYER_ROOM_RECOVER',{itemId:key})}
 function finishRemove(result){const key=String(result.itemId||''),pending=state.pendingRemovals.get(key);if(!pending){if(result.message||result.warning)toast(result.warning||result.message);return}state.pendingRemovals.delete(key);if(result.ok){state.quantityDrafts.delete(key);state.lastRemoved=key;renderRemoved();toast(result.warning||'Item moved to Removed History.',true)}else{state.removed=state.removed.filter(item=>String(item.id)!==key);state.my.splice(Math.min(pending.index,state.my.length),0,pending.item);renderMy();renderRemoved();renderOrder();toast(result.message||'The item could not be removed. Please try again.')}}
