@@ -312,10 +312,11 @@ $w.onReady(async function () {
     refreshWorkspace().catch(error => console.error('Buyer order realtime refresh failed', error));
   }).catch(error => console.error('Buyer order realtime subscription failed', error));
 
-    // Attach the message listener before loading the embed. A cached HTML frame
-  // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
-  // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261123-polish.html';
+  // When Wix has already started the fixed HTML embed, keep that frame and request a fresh handshake.
+  // If the embed was not configured with its website address, retain the existing dynamic load.
+  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261123-early-embed.html';
+  if (frame.src !== buyerRoomEmbedUrl) frame.src = buyerRoomEmbedUrl;
+  else frame.postMessage({ type: 'BUYER_ROOM_HOST_READY' });
   try { await refreshWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   // Visible-frame polling is the only periodic workspace refresh authority.

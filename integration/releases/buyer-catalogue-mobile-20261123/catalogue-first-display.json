@@ -1,0 +1,18 @@
+{
+  "beforeSha256": "b21e5514338989ad988df121cbcb0ce3c8bd6ef731a0bb27f8deec5fd7e339e5",
+  "afterSha256": "212d1edb265105885503d5a309555644fcb14d0015dbcc32fee488f8f60c80bd",
+  "replacements": [
+    {
+      "before": "let catalogueFoodPrinciples = new Set();\nlet catalogueProductsLoaded = false;\nlet catalogueWorkspaceRead = null;\nlet catalogueWorkspaceFullReadComplete = false;\nlet catalogueCategoriesLoaded = false;\nlet catalogueSelectionResolved = false;",
+      "after": "let catalogueFoodPrinciples = new Set();\nlet catalogueProductsLoaded = false;\nlet catalogueWorkspaceRead = null;\nlet catalogueFirstDisplayRead = null;\nlet catalogueWorkspaceFullReadComplete = false;\nlet catalogueCategoriesLoaded = false;\nlet catalogueSelectionResolved = false;"
+    },
+    {
+      "before": "            .fields(...CATALOGUE_PRODUCT_FIELDS).limit(1000).find();\n        catalogueWorkspaceRead = readCatalogueWorkspaceProducts(catalogueWorkspaceQueryVersion, firstPageRead)\n            .finally(() => { catalogueWorkspaceRead = null; });\n        void readCatalogueFirstProducts(catalogueWorkspaceQueryVersion, firstPageRead);\n    }\n    return catalogueWorkspaceRead;\n}",
+      "after": "            .fields(...CATALOGUE_PRODUCT_FIELDS).limit(1000).find();\n        catalogueWorkspaceRead = readCatalogueWorkspaceProducts(catalogueWorkspaceQueryVersion, firstPageRead)\n            .finally(() => { catalogueWorkspaceRead = null; });\n        const fullRead = catalogueWorkspaceRead;\n        catalogueFirstDisplayRead = Promise.race([\n            fullRead,\n            readCatalogueFirstProducts(catalogueWorkspaceQueryVersion, firstPageRead)\n                .then(() => catalogueWorkspaceProducts.length ? undefined : fullRead)\n        ]);\n    }\n    return catalogueWorkspaceRead;\n}"
+    },
+    {
+      "before": "        catalogueFoodProductIds = new Set();\n        catalogueFoodPrinciples = new Set();\n        if (foodSubCategoryIds.length) {\n            let foodResult = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').hasSome('subCategories', foodSubCategoryIds).fields('_id', 'principle').limit(1000).find();\n            foodResult.items.forEach(item => {\n                catalogueFoodProductIds.add(String(item._id || ''));",
+      "after": "        catalogueFoodProductIds = new Set();\n        catalogueFoodPrinciples = new Set();\n        if (foodSubCategoryIds.length) {\n            // The menu is already available. Give the first visible products priority over this background scan.\n            if (catalogueFirstDisplayRead) await catalogueFirstDisplayRead;\n            let foodResult = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').hasSome('subCategories', foodSubCategoryIds).fields('_id', 'principle').limit(1000).find();\n            foodResult.items.forEach(item => {\n                catalogueFoodProductIds.add(String(item._id || ''));"
+    }
+  ]
+}

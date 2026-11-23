@@ -7,6 +7,7 @@
 <meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v6">
 <meta name="buyer-track-progress-build" content="20261123-buyer-track-progress-v1">
 <meta name="buyer-mobile-quantity-build" content="20261123-buyer-mobile-quantity-visible-v1">
+<meta name="buyer-entry-build" content="20261123-buyer-early-embed-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -1255,6 +1256,7 @@ function downloadOrderExcel(payload){
 window.addEventListener('message',e=>{
   const m=e.data||{};
   if(m.type==='BUYER_ROOM_DOWNLOAD_ORDER_EXCEL'){downloadOrderExcel(m);return;}
+  if(m.type==='BUYER_ROOM_HOST_READY'&&e.source===window.parent&&!state.customerId){post('BUYER_ROOM_READY',{view:'my'});return;}
   if(m.type==='BUYER_ROOM_DATA')applyData(m.data||{});
   if(m.type==='BUYER_ROOM_USER_RESULT'){
     const status=$('accountUserFormStatus');
