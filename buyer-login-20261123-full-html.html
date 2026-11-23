@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="build" content="20261123-buyer-html-login-v1">
+  <title>Buyer Room Sign In | FMCG Malaysia</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #102820;
+      --muted: #53655d;
+      --line: #dce5de;
+      --paper: #fff;
+      --canvas: #f4f6f2;
+      --green: #126246;
+      --dark: #092d22;
+      --orange: #b83713;
+      --focus: #006d85;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; color: var(--ink); background: var(--canvas); }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .65; }
+    button:focus-visible, a:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+    .site-header { background: var(--dark); color: #fff; }
+    .site-header-inner, .site-footer-inner {
+      max-width: 1330px; margin: auto; padding: 0 clamp(20px, 4vw, 48px);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .site-header-inner { min-height: 68px; }
+    .site-logo { display: block; width: 174px; height: auto; }
+    .workspace-label { color: #e0ebe3; font-size: 13px; font-weight: 650; }
+    .login-shell {
+      width: min(1234px, calc(100% - 72px)); margin: auto; padding: 28px 0;
+      display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+    }
+    .brand-visual { min-height: 625px; position: relative; overflow: hidden; background: var(--dark); border-radius: 16px 0 0 16px; }
+    .brand-visual img { position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: 28% center; }
+    .card {
+      background: var(--paper); border: 1px solid var(--line); border-left: 0; border-radius: 0 16px 16px 0;
+      padding: clamp(28px, 4vw, 64px); display: flex; flex-direction: column; justify-content: center; min-width: 0;
+    }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: clamp(29px, 3.25vw, 44px); line-height: 1.08; letter-spacing: -.04em; font-weight: 760; }
+    h2 { font-size: 23px; line-height: 1.22; letter-spacing: -.02em; }
+    .intro { margin: 10px 0 24px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .google, .signin, .first-time-login {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; min-height: 46px; border: 1px solid; border-radius: 8px;
+      padding: 8px 12px; font-size: 14px; font-weight: 700;
+    }
+    .google { background: var(--paper); color: var(--ink); border-color: #c6d3ca; }
+    .google:hover, .google:focus-visible { background: #f2f7f2; border-color: var(--green); }
+    .google-mark { width: 20px; height: 20px; flex: 0 0 auto; }
+    .or { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: var(--muted); font-size: 12px; }
+    .or::before, .or::after { content: ""; height: 1px; background: var(--line); flex: 1; }
+    .field-label { display: block; margin: 0 0 5px; font-size: 13px; font-weight: 700; }
+    .field { position: relative; display: block; margin-bottom: 12px; }
+    .field input {
+      width: 100%; min-height: 46px; margin: 0; border: 1px solid #c6d3ca; border-radius: 8px;
+      padding: 7px 12px 7px 42px; background: var(--paper); color: var(--ink); font-size: 16px;
+    }
+    .field input::placeholder { color: #63736b; }
+    .field input:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+    .field #password { padding-right: 46px; }
+    .ico { position: absolute; left: 13px; top: 13px; color: #51665a; pointer-events: none; }
+    .ico svg, .toggle svg, .actions svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linejoin: round; stroke-linecap: round; }
+    .toggle { position: absolute; right: 3px; top: 2px; display: grid; place-items: center; min-width: 42px; min-height: 42px; background: none; border: 0; color: #415a4e; border-radius: 7px; }
+    .toggle:hover { background: #edf4ee; }
+    .forgot-row { display: flex; justify-content: flex-end; margin: -10px 0 4px; }
+    .link, .forgot { border: 0; padding: 4px 0; min-height: 36px; background: none; color: var(--green); font-weight: 700; font-size: 13px; text-align: left; }
+    .link:hover, .forgot:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .signin { border-color: var(--orange); background: var(--orange); color: white; }
+    .signin:not(:disabled):hover { background: #962c0e; border-color: #962c0e; }
+    .first-time-login { justify-content: space-between; margin-top: 9px; border-color: #b7cabd; background: #f2f7f2; color: var(--green); text-align: left; }
+    .first-time-login:hover { border-color: var(--green); background: #e7f1e8; }
+    .first-time-login span { font-size: 21px; line-height: 1; }
+    .status { display: none; margin-top: 12px; padding: 10px 12px; border-radius: 7px; background: #eef6ef; color: var(--dark); font-size: 13px; line-height: 1.45; }
+    .status.show { display: block; }
+    .status.err { background: #fff0eb; color: #8f290d; }
+    #password-reset { padding-top: 16px; border-top: 1px solid var(--line); }
+    #password-reset p { margin: 8px 0 15px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    #reset-email { padding-left: 12px; }
+    #reset-send { width: auto; }
+    .reset-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+    .actions { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 8px; }
+    .actions .link { display: inline-flex; align-items: center; gap: 7px; }
+    .actions i { display: none; }
+    .note { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .site-footer-inner { align-items: flex-start; padding-top: 14px; padding-bottom: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+    .site-footer a { color: var(--green); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    @media (max-width: 820px) {
+      .site-header-inner { min-height: 58px; }
+      .site-logo { width: 145px; }
+      .login-shell { width: min(490px, calc(100% - 32px)); padding: 18px 0 20px; grid-template-columns: minmax(0, 1fr); }
+      .brand-visual { display: none; }
+      .card { padding: 22px; border: 1px solid var(--line); border-radius: 13px; }
+      .intro { margin-bottom: 16px; }
+      .actions { margin-top: 15px; }
+    }
+    @media (max-width: 370px) {
+      .login-shell { width: calc(100% - 24px); }
+      .card { padding: 17px; }
+      .actions .link, .forgot { font-size: 12px; }
+      .actions svg { width: 15px; height: 15px; }
+      .site-header-inner, .site-footer-inner { padding-inline: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <img class="site-logo" src="https://static.wixstatic.com/media/4ecd18_f449ef27f24e4480be27bde49d6212eb~mv2.png/v1/fit/w_440,h_160,q_86,enc_webp/fmcg-malaysia.webp" width="174" height="56" alt="FMCG Malaysia">
+      <span class="workspace-label">Buyer Room</span>
+    </div>
+  </header>
+  <main class="login-shell">
+    <div class="brand-visual">
+      <picture>
+        <source media="(max-width: 820px)" srcset="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+        <img src="https://static.wixstatic.com/media/4ecd18_b4f29d23873e4143ad906320fae55e8e~mv2.png/v1/fit/w_1140,h_1040,q_84,enc_webp/buyer-room.webp" alt="Malaysian FMCG sourcing specialists reviewing products for export" fetchpriority="high">
+      </picture>
+    </div>
+    <section class="card" aria-labelledby="login-title">
+      <h1 id="login-title">Sign in to Buyer Room</h1>
+      <p class="intro">Use the company email registered with FMCG Malaysia.</p>
+      <button id="google" class="google" type="button" aria-label="Continue with Google"><svg class="google-mark" aria-hidden="true" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.35 11.1h-9.18v3.71h5.29c-.23 1.19-.9 2.2-1.91 2.88v2.39h3.09c1.81-1.67 2.85-4.13 2.85-7.04 0-.67-.06-1.32-.14-1.94Z"/><path fill="#34A853" d="M12.17 21.5c2.59 0 4.77-.86 6.36-2.33l-3.09-2.39c-.86.58-1.96.92-3.27.92-2.5 0-4.61-1.69-5.37-3.96H3.61v2.47a9.6 9.6 0 0 0 8.56 5.29Z"/><path fill="#FBBC05" d="M6.8 13.74a5.77 5.77 0 0 1 0-3.68V7.59H3.61a9.6 9.6 0 0 0 0 8.62l3.19-2.47Z"/><path fill="#EA4335" d="M12.17 6.1c1.41 0 2.68.49 3.67 1.44l2.75-2.75C16.93 3.24 14.76 2.3 12.17 2.3a9.6 9.6 0 0 0-8.56 5.29L6.8 10.06c.76-2.27 2.87-3.96 5.37-3.96Z"/></svg><span>Continue with Google</span></button><div class="or">or use your company email</div>
+      <form id="form">
+        <label for="email" class="field-label">Company email</label><label class="field"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><input id="email" type="email" autocomplete="email" placeholder="Business Email" required aria-label="Business Email"></label>
+        <label for="password" class="field-label">Password</label>
+        <div class="field"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><input id="password" type="password" autocomplete="current-password" placeholder="Password" required aria-label="Password"><button id="toggle" class="toggle" type="button" aria-label="Show password"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.7-6 10-6 10 6 10 6-3.7 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></div><button id="signin" class="signin" type="submit">Sign In</button>
+        <button id="first-time-login" class="first-time-login" type="button">First Time Login <span aria-hidden="true">›</span></button>
+      </form>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <form id="password-reset" hidden>
+  <h2 id="reset-title">Reset password</h2>
+  <p id="reset-help">Enter the email you use for Buyer Room.</p>
+  <label class="field"><input id="reset-email" type="email" autocomplete="email" maxlength="254" placeholder="Email" aria-label="Email" required></label>
+  <div class="reset-actions">
+    <button id="reset-cancel" class="link" type="button">Back to sign in</button>
+    <button id="reset-send" class="signin" type="submit">Send reset link</button>
+  </div>
+  <div id="reset-status" class="status" role="status" aria-live="polite"></div>
+</form>
+      <div class="actions"><button id="apply" class="link" type="button"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20v-2a5 5 0 0 1 10 0v2M14 20v-1.5a4 4 0 0 1 7 0V20"/></svg><span>Apply for Buyer Access</span></button><i aria-hidden="true"></i><button id="contact" class="link" type="button"><svg viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M4 12H2v5h4v-5H4Zm16 0h2v5h-4v-5h2ZM18 19c-1 2-3 2-5 2"/></svg><span>Contact Our Team</span></button></div>
+      <p class="note">Buyer access is limited to approved business customers.</p>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <span>© FMCG Malaysia</span>
+      <a href="https://www.fmcgmalaysia.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>
+    </div>
+  </footer>
+  <script>window.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('email');if(e){e.placeholder='Email';e.setAttribute('aria-label','Email')}var p=document.getElementById('password');if(p&&!document.getElementById('forgot')){var r=document.createElement('div');r.className='forgot-row';r.innerHTML='<button id="forgot" class="forgot" type="button">Forgot password?</button>';p.closest('.field').after(r);document.getElementById('first-time-login').onclick=()=>openPasswordReset('setup');document.getElementById('forgot').onclick=()=>openPasswordReset('reset')}})</script>
+  <script>
+const $=id=>document.getElementById(id),status=$('status'),signin=$('signin'),google=$('google');function post(type,payload={}){window.parent.postMessage({type,...payload},'*')}function setStatus(text,kind='wait'){status.textContent=text||'';status.className=text?'status show '+kind:'status'}google.onclick=()=>{setStatus('Opening secure Google sign-in…');post('BUYER_LOGIN_GOOGLE')};$('form').onsubmit=e=>{e.preventDefault();signin.disabled=true;setStatus('Signing in securely…');post('BUYER_LOGIN_EMAIL',{email:$('email').value.trim(),password:$('password').value})};$('toggle').onclick=()=>{const p=$('password'),show=p.type==='password';p.type=show?'text':'password';$('toggle').setAttribute('aria-label',show?'Hide password':'Show password')};$('apply').onclick=()=>post('BUYER_APPLY_ACCESS');$('contact').onclick=()=>post('BUYER_CONTACT');window.addEventListener('message',e=>{const m=e.data||{};if(m.type==='BUYER_LOGIN_STATUS'){signin.disabled=false;google.disabled=false;setStatus(m.message,m.kind||'wait')}if(m.type==='BUYER_LOGIN_BUSY'){signin.disabled=true;google.disabled=true;setStatus(m.message||'Checking your buyer access…','wait')}});post('BUYER_LOGIN_READY');
+const resetForm = $('password-reset');
+const resetEmail = $('reset-email');
+const resetStatus = $('reset-status');
+const resetSend = $('reset-send');
+const resetCancel = $('reset-cancel');
+const loginControls = [google, document.querySelector('.or'), $('form'), status];
+let resetPending = false;
+let resetMode = 'reset';
+let resetTrigger;
+let resendTimer;
+
+function beginResendCountdown(seconds) {
+  clearInterval(resendTimer);
+  const until = Date.now() + seconds * 1000;
+  const updateButton = () => {
+    const remaining = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+    resetSend.disabled = remaining > 0;
+    resetSend.textContent = remaining ? `Resend in ${remaining}s` : 'Resend setup link';
+    if (!remaining) clearInterval(resendTimer);
+  };
+  updateButton();
+  resendTimer = setInterval(updateButton, 1000);
+}
+
+function openPasswordReset(mode) {
+  clearInterval(resendTimer);
+  resetMode = mode;
+  const firstTime = mode === 'setup';
+  resetTrigger = $(firstTime ? 'first-time-login' : 'forgot');
+  $('reset-title').textContent = firstTime ? 'Set your password' : 'Reset password';
+  $('reset-help').textContent = firstTime
+    ? 'Enter the company email registered with FMCG Malaysia.'
+    : 'Enter the email you use for Buyer Room.';
+  resetEmail.placeholder = firstTime ? 'Company email' : 'Email';
+  resetEmail.setAttribute('aria-label', resetEmail.placeholder);
+  resetSend.textContent = firstTime ? 'Email me a setup link' : 'Send reset link';
+  loginControls.forEach(element => { element.hidden = true; });
+  resetEmail.value = $('email').value.trim();
+  resetEmail.readOnly = false;
+  resetStatus.textContent = '';
+  resetStatus.className = 'status';
+  resetSend.disabled = false;
+  resetForm.hidden = false;
+  resetEmail.focus();
+}
+
+function closePasswordReset() {
+  if (resetPending) return;
+  clearInterval(resendTimer);
+  resetForm.hidden = true;
+  loginControls.forEach(element => { element.hidden = false; });
+  resetTrigger.focus();
+}
+
+resetCancel.onclick = closePasswordReset;
+resetForm.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closePasswordReset();
+});
+resetForm.onsubmit = event => {
+  event.preventDefault();
+  if (resetPending || resetSend.disabled || !resetForm.reportValidity()) return;
+  resetPending = true;
+  resetCancel.disabled = true;
+  resetSend.disabled = true;
+  resetEmail.readOnly = true;
+  resetStatus.textContent = resetMode === 'setup' ? 'Sending setup link…' : 'Sending reset link…';
+  resetStatus.className = 'status show wait';
+  post('BUYER_FORGOT_PASSWORD', { email: resetEmail.value.trim(), firstTime: resetMode === 'setup' });
+};
+window.addEventListener('message', event => {
+  const message = event.data || {};
+  if (event.source !== window.parent || message.type !== 'BUYER_PASSWORD_RESET_RESULT' || !resetPending) return;
+  resetPending = false;
+  resetCancel.disabled = false;
+  resetSend.disabled = Boolean(message.ok);
+  resetEmail.readOnly = Boolean(message.ok);
+  resetStatus.textContent = message.ok
+    ? (resetMode === 'setup'
+      ? 'If your account is ready, check your company inbox for a link to set your password. If you don’t receive it, contact our team.'
+      : 'If this email is registered, you’ll receive a password reset link.')
+    : 'We couldn’t send a reset link right now. Please try again.';
+  resetStatus.className = message.ok ? 'status show ok' : 'status show err';
+  if (resetMode === 'setup' && message.ok && Number.isInteger(message.retryAfter) && message.retryAfter > 0) {
+    beginResendCountdown(message.retryAfter);
+  }
+});
+</script>
+</body>
+</html>
