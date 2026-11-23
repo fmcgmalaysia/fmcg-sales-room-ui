@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
-<meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v2">
+<meta name="buyer-mobile-order-build" content="20261123-buyer-selection-swipe-qty-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -164,7 +164,10 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .browse{border-color:var(--orange);background:var(--orange);color:#fff}.browse:hover,.browse:focus-visible{border-color:var(--orange-dark);background:var(--orange-dark);color:#fff}.browse .plus{background:rgba(255,255,255,.2);color:#fff}
 .inline-stat.currency b,#listCurrency,#quoteCurrency,.order-currency{color:var(--orange)}
 .page-head>.browse{flex:0 0 auto;margin-left:auto}.showing-row .showing,.selection-limit-row .showing{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.selection-filters{display:flex;align-items:center;gap:0;min-height:38px;flex:0 0 auto;white-space:nowrap}.selection-filter{position:relative;height:38px;padding:0 16px;border:0;border-radius:0;background:transparent;color:#55677d;font-size:11px;font-weight:800;letter-spacing:.02em;cursor:pointer}.selection-filter:first-child{padding-left:4px}.selection-filter:before{content:"";position:absolute;left:14px;right:14px;bottom:-6px;height:2px;background:transparent}.selection-filter:first-child:before{left:4px}.selection-filter b{margin-left:7px;color:var(--orange);font-size:14px;line-height:1;font-weight:800;letter-spacing:0}.selection-filter.removed-filter b{color:#7f8da0}.selection-filter:hover{color:var(--ink)}.selection-filter[aria-pressed="true"],.selection-filter.active{color:#0b294e;background:transparent;box-shadow:none}.selection-filter[aria-pressed="true"]:before,.selection-filter.active:before{background:var(--orange)}.selection-filter[aria-pressed="true"] b,.selection-filter.active b{color:var(--orange)}.selection-limit-row{display:flex;align-items:center;min-height:30px;padding:2px 4px;color:#53657b;font-size:11px;line-height:1.25}.selection-limit-row .limit-note{color:#53657b}.selection-limit-row .limit-note b{color:var(--ink);font-size:11px}.selection-progress{width:150px;height:4px;margin-left:9px;overflow:hidden;border-radius:999px;background:#e3e9f0}.selection-progress>i{display:block;width:0;height:100%;border-radius:inherit;background:var(--orange)}
-.remove-head{display:flex!important;align-items:center;justify-content:center}.remove-head svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.remove-head{display:flex!important;align-items:center;justify-content:center}
+.selection-qty,.selection-qty-head{display:none}
+.small-action.selection-remove::after{display:none}
+.selection-remove svg{width:16px;height:16px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .limit-note{position:relative;display:inline-flex;align-items:center;gap:5px}.limit-lock{width:20px;height:20px;flex:0 0 20px;display:grid;place-items:center;padding:0;border:1px solid #d8a516;border-radius:50%;background:#ffd452;color:#624500;cursor:pointer}.limit-lock:hover,.limit-lock:focus-visible{background:#ffc928;outline:none;box-shadow:0 0 0 3px rgba(255,212,82,.28)}.limit-lock svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.limit-popover[hidden]{display:none}.limit-popover{position:absolute;left:0;top:calc(100% + 9px);z-index:70;width:min(390px,calc(100vw - 72px));padding:15px 16px;border:1px solid #d8dee7;border-radius:9px;background:#fff;color:#425064;box-shadow:0 16px 38px rgba(32,48,71,.16);font-size:11px;line-height:1.48}.limit-popover:before{content:"";position:absolute;left:5px;top:-6px;width:10px;height:10px;border-left:1px solid #d8dee7;border-top:1px solid #d8dee7;background:#fff;transform:rotate(45deg)}.limit-popover strong{display:block;margin-bottom:5px;color:var(--ink);font-size:12px}.limit-popover p{margin:0 0 9px}.limit-tiers{display:grid;gap:4px;margin:0;padding:0;list-style:none}.limit-tiers li{display:flex;justify-content:space-between;gap:16px;padding-top:4px;border-top:1px solid #edf0f3}.limit-tiers b{color:var(--ink);white-space:nowrap}
 @media(max-width:1100px){.page-head>.browse{margin-left:0}.selection-progress{width:110px}}
 @media(max-width:760px){.limit-popover{left:-120px}.limit-popover:before{left:125px}}
@@ -312,7 +315,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 /* Buyer visual details: preserve original data, handlers and saving feedback. */
 #currentPanel .grid,#orderView .order-grid{min-width:1080px}
 #currentPanel .row:not(.head)>div:first-child,#orderView .row:not(.head)>div:first-child{font:540 11px/normal Inter,"Segoe UI",Arial,sans-serif;color:#4e6075}
-#currentPanel .grid .row{grid-template-columns:108px 48px minmax(280px,1fr) 110px 160px 175px 130px 44px}
+#currentPanel .grid .row{grid-template-columns:108px 48px minmax(280px,1fr) 110px 160px 175px 130px 58px}
 #orderView .order-grid .row{grid-template-columns:108px 48px minmax(280px,1fr) 160px 110px 110px 82px 175px}
 #orderView .order-action-bar{border:0;border-radius:0;box-shadow:none}
 #orderView .order-filters span.order-filter{cursor:default}
@@ -402,7 +405,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .touch-buyer #myView .limit-popover{left:auto;right:0;white-space:normal}
   .touch-buyer #myView .limit-popover:before{left:auto;right:6px}
   .touch-buyer #currentPanel .grid,.touch-buyer #currentPanel .table-wrap{min-width:0;max-width:100%}
-  .touch-buyer #currentPanel .grid .row{grid-template-columns:48px minmax(0,1fr) minmax(61px,20%) 43px;min-width:0;min-height:62px}
+  .touch-buyer #currentPanel .grid .row{grid-template-columns:48px minmax(0,1fr) minmax(61px,20%) 54px;min-width:0;min-height:62px}
   .touch-buyer #currentPanel .grid .row.head{min-height:34px}
   .touch-buyer #currentPanel .grid .row>div{padding:4px;min-width:0}
   .touch-buyer #currentPanel .grid .row.head>div{font-size:9px}
@@ -417,9 +420,26 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .touch-buyer #currentPanel .quote-state{font-size:9px;padding-inline:3px;white-space:nowrap}
   .touch-buyer #currentPanel .selection-image-cell{position:relative}
   .touch-buyer #currentPanel .selection-image-open{display:block;position:absolute;inset:0;width:100%;height:100%;min-height:44px;border:0;background:transparent;cursor:zoom-in}
-  .touch-buyer #currentPanel .small-action[data-remove]{width:39px;min-height:44px}
-  .touch-buyer #currentPanel .small-action[data-remove]:after{font-size:17px}
+  .touch-buyer #currentPanel .selection-remove-head{display:none}
+  .touch-buyer #currentPanel .selection-qty-head{display:inline}
+  .touch-buyer #currentPanel .selection-row{position:relative;overflow:hidden;touch-action:pan-y pinch-zoom;--selection-shift:0px}
+  .touch-buyer #currentPanel .selection-row.swipe-open{--selection-shift:-65px}
+  .touch-buyer #currentPanel .selection-row > :not(:last-child),
+  .touch-buyer #currentPanel .selection-qty{transform:translateX(var(--selection-shift));transition:transform 160ms ease-out}
+  .touch-buyer #currentPanel .selection-qty{display:grid;justify-items:center;gap:1px;padding:3px 2px}
+  .touch-buyer #currentPanel .selection-qty-button{width:44px;min-height:44px;padding:2px;border:1px solid #c5d4e1;border-radius:7px;color:#203f60;background:#f8fbfd;font:inherit;font-size:13px;font-weight:750;line-height:1.05;overflow-wrap:anywhere;cursor:pointer}
+  .touch-buyer #currentPanel .selection-qty-button.is-empty{color:#245485;font-size:20px}
+  .touch-buyer #currentPanel .selection-qty-unavailable{color:#61738a}
+  .touch-buyer #currentPanel .selection-qty-status{color:#53657b;font-size:9px;white-space:nowrap}
+  .touch-buyer #currentPanel .selection-qty-status.failed{color:#a92a1e}
+  .touch-buyer #currentPanel .small-action.selection-remove{position:absolute;inset:0 0 0 auto;width:65px;height:100%;border:0;border-radius:0;background:#c23b13;color:#fff;opacity:0;pointer-events:none;transition:opacity 160ms ease-out}
+  .touch-buyer #currentPanel .small-action.selection-remove svg{width:20px;height:20px}
+  .touch-buyer #currentPanel .selection-row.swipe-open .selection-remove,
+  .touch-buyer #currentPanel .selection-remove:focus-visible{opacity:1;pointer-events:auto}
+  .touch-buyer #currentPanel .selection-remove:disabled{opacity:.64;cursor:wait}
+  .touch-buyer #currentPanel .selection-row:not(.swipe-open) .selection-remove:disabled{opacity:0}
 }
+@media(prefers-reduced-motion:reduce){#currentPanel .selection-row > div,#currentPanel .selection-qty,#currentPanel .selection-remove{transition:none!important}}
 .mobile-order-only,#mobileQtySheet:not([open]){display:none}
 #prepareMobileOrder{flex:0 0 auto;min-height:36px;padding:0 14px;border:1px solid #bdcddd;border-radius:7px;background:#f4f8fc;color:#233e60;font:inherit;font-weight:750;cursor:pointer}
 #prepareMobileOrder:hover,#prepareMobileOrder:focus-visible{border-color:#6e8dad;background:#eaf2fa}
@@ -537,7 +557,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
       </div>
       <div class="list-tabs-bar selection-toolbar"><div class="selection-filters" role="tablist" aria-label="Filter My Selection"><button class="selection-filter active" id="currentTab" type="button" data-list-mode="current" data-selection-filter="all" role="tab" aria-selected="true" aria-pressed="true">All <b id="currentCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="food" role="tab" aria-selected="false" aria-pressed="false">Food <b id="foodCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="nonfood" role="tab" aria-selected="false" aria-pressed="false">Non-food <b id="nonFoodCount">0</b></button><button class="selection-filter removed-filter" id="removedTab" type="button" data-list-mode="removed" role="tab" aria-selected="false">Removed <b id="removedCount">0</b></button></div><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="mySearch" type="search" aria-label="Search selection by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label></div>
       <div class="selection-limit-row"><div class="showing" id="myShowing" aria-live="polite">Loading your company workspace…</div><span class="limit-note"><button class="limit-lock" id="limitInfoButton" type="button" aria-label="How selection limits and V.I.P quotations work" aria-expanded="false" aria-controls="limitInfo"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg></button><b id="selectionSummaryCount">0</b> of <b id="selectionLimit">100</b> <span class="limit-unit">selected</span><span class="limit-popover" id="limitInfo" role="dialog" aria-label="Selection limit information" hidden><strong>How V.I.P quotations and selection limits work</strong><p>After you select products, we will provide V.I.P prices within 24 hours. You can then download the product details and current quotation.</p><ul class="limit-tiers"><li><span>New account</span><b>100 SKUs</b></li><li><span>Contact Customer Service</span><b>Up to 300 SKUs</b></li><li><span>After your first completed transaction</span><b>500 SKUs automatically</b></li><li><span>Highest account access</span><b>700 SKUs</b></li></ul></span></span><span class="selection-progress" aria-hidden="true"><i id="selectionProgress"></i></span></div>
-      <div class="list-panel active" id="currentPanel"><div class="table-wrap"><div class="grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Descriptions</div><div>Normal Price</div><div>V.I.P Price</div><div>Added Time</div><div>Last Quoted</div><div class="remove-head" aria-label="Remove"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></div></div><div id="myRows" class="empty"><strong>Loading My Selection…</strong>Please wait.</div></div></div></div>
+      <div class="list-panel active" id="currentPanel"><div class="table-wrap"><div class="grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Descriptions</div><div>Normal Price</div><div>V.I.P Price</div><div>Added Time</div><div>Last Quoted</div><div class="remove-head"><span class="selection-remove-head">Remove</span><span class="selection-qty-head" title="Order quantity in cartons">Qty</span></div></div><div id="myRows" class="empty"><strong>Loading My Selection…</strong>Please wait.</div></div></div></div>
       <div class="list-panel" id="removedPanel"><div class="showing" id="removedShowing"></div><div class="table-wrap"><div class="grid removed-grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Item Name / Packing Size</div><div>M³ / CTN</div><div>Removed Time</div><div>Edited By</div><div></div></div><div id="removedRows"></div></div></div></div>
     </section>
     <section id="orderView" class="view">
@@ -599,7 +619,7 @@ function thumbnail(item,preview=false){const src=imageUrl(item);if(!src)return '
 function priceCell(item,type){const normal=type==='normal';if(normal)return '<span class="price-pair normal">- NIL -</span>';const ea=num(item.vipPriceEa),ctn=num(item.vipPriceCtn)||(ea*num(item.ea)),status=String(item.quoteStatus||'').toUpperCase(),currency=esc(item.vipCurrency||state.currency||'USD');if(status==='HOLD VIEW'||status==='HOLD')return '<span class="quote-state hold">On Hold</span>';if(status==='WAITING'||(!ea&&!ctn))return '<span class="quote-state waiting">Waiting</span>';return `<span class="price-pair vip"><span>${currency} ${money(ea)}</span> <i aria-hidden="true">|</i> <span>${money(ctn)}</span></span>`}
 function matches(item,q){const hay=[item.barcode,item.itemName,item.brand,item.packingSize,item.category].join(' ').toLowerCase();return !q||hay.includes(q.toLowerCase())}
 function byItemName(items){return [...items].sort((a,b)=>{const left=String(a.itemName||'').trim(),right=String(b.itemName||'').trim();if(!left)return right?1:0;if(!right)return -1;return left.localeCompare(right,'en',{sensitivity:'base',numeric:true})||String(a.barcode||'').localeCompare(String(b.barcode||''),'en',{numeric:true})})}
-function row(item,removed=false){const key=String(item.id),removing=removed&&state.pendingRemovals.has(key),restoring=!removed&&state.pendingRestores.has(key);if(removed)return `<div class="row" data-id="${esc(item.id)}"><div class="mono">${esc(item.barcode)}</div><div>${thumbnail(item,true)}</div><div><div class="name">${esc(item.itemName)}</div><div class="packing-meta">${esc(item.packingSize)}</div></div><div class="mono">${num(item.cbmPerCtn).toFixed(4)}</div><div class="time">${timeCell(item.removedTime,true)}</div><div class="time">${esc(item.lastEditedBy||'—')}</div><div><button class="small-action recover" data-recover="${esc(item.id)}" aria-description="Restore to My Selection and request a new quote" ${restoring?'disabled aria-label="Operation in progress"':''}>${restoring?'Restoring…':'Restore'}</button></div></div>`;const updated=item.quoteActive?(item.quotePublishedAt||(!/^WEB-\d+$/.test(String(item.quoteEffectiveAt||''))&&item.quoteEffectiveAt)||item.quoteSyncedAt||''):'';return `<div class="row" data-id="${esc(item.id)}"><div class="mono">${esc(item.barcode)}</div><div class="selection-image-cell">${thumbnail(item,true)}${imageUrl(item)?'<button type="button" class="selection-image-open" aria-label="Open product image"></button>':''}</div><div><div class="mono selection-barcode">${esc(item.barcode)}</div><div class="name">${esc(item.itemName)}</div><div class="packing-meta">${esc(item.packingSize)}</div></div><div>${priceCell(item,'normal')}</div><div>${priceCell(item,'vip')}</div><div class="time">${esc(compactTime(item.addedTime))}${item.addedTime&&item.selectedByName?` <span class="audit-author">by ${esc(item.selectedByName)}</span>`:''}</div><div class="time quote-updated">${updated?esc(compactTime(updated)):item.quoteActive?'':'Waiting'}</div><div><button class="small-action" data-remove="${esc(item.id)}" ${removing?'disabled aria-label="Operation in progress"':''}>${removing?'Removing…':'Remove'}</button></div></div>`}
+function row(item,removed=false){const key=String(item.id),restoring=!removed&&state.pendingRestores.has(key);if(removed)return `<div class="row" data-id="${esc(item.id)}"><div class="mono">${esc(item.barcode)}</div><div>${thumbnail(item,true)}</div><div><div class="name">${esc(item.itemName)}</div><div class="packing-meta">${esc(item.packingSize)}</div></div><div class="mono">${num(item.cbmPerCtn).toFixed(4)}</div><div class="time">${timeCell(item.removedTime,true)}</div><div class="time">${esc(item.lastEditedBy||'—')}</div><div><button class="small-action recover" data-recover="${esc(item.id)}" aria-description="Restore to My Selection and request a new quote" ${restoring?'disabled aria-label="Operation in progress"':''}>${restoring?'Restoring…':'Restore'}</button></div></div>`;const updated=item.quoteActive?(item.quotePublishedAt||(!/^WEB-\d+$/.test(String(item.quoteEffectiveAt||''))&&item.quoteEffectiveAt)||item.quoteSyncedAt||''):'';return `<div class="row selection-row" data-id="${esc(item.id)}"><div class="mono">${esc(item.barcode)}</div><div class="selection-image-cell">${thumbnail(item,true)}${imageUrl(item)?'<button type="button" class="selection-image-open" aria-label="Open product image"></button>':''}</div><div><div class="mono selection-barcode">${esc(item.barcode)}</div><div class="name">${esc(item.itemName)}</div><div class="packing-meta">${esc(item.packingSize)}</div></div><div>${priceCell(item,'normal')}</div><div>${priceCell(item,'vip')}</div><div class="time">${esc(compactTime(item.addedTime))}${item.addedTime&&item.selectedByName?` <span class="audit-author">by ${esc(item.selectedByName)}</span>`:''}</div><div class="time quote-updated">${updated?esc(compactTime(updated)):item.quoteActive?'':'Waiting'}</div><div><div class="selection-qty">${selectionQuantityControls(item)}</div><button type="button" class="small-action selection-remove" data-remove="${esc(key)}" aria-label="Remove ${esc(item.itemName)}" title="Remove" ${state.pendingQuantities.has(key)?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></button></div></div>`}
 
 function isAwaiting(item){const status=String(item.quoteStatus||'').toUpperCase();return status==='WAITING'||(!num(item.vipPriceEa)&&!num(item.vipPriceCtn)&&status!=='HOLD'&&status!=='HOLD VIEW')}
 function isFoodItem(item){const category=String(item.category||item.mainCategory||'').trim().toUpperCase();return category==='FOOD'||category==='FOOD & BEVERAGES'||category.startsWith('FOOD ')}
@@ -613,7 +633,7 @@ function byPointBaseSortId(items) {
     return pointBaseSortCollator.compare(left, right);
   });
 }
-function renderMy(){const q=$('mySearch').value.trim(),foodCount=state.my.filter(isFoodItem).length,nonFoodCount=state.my.length-foodCount,categoryItems=state.selectionFilter==='food'?state.my.filter(isFoodItem):state.selectionFilter==='nonfood'?state.my.filter(item=>!isFoodItem(item)):state.my,items=byPointBaseSortId(categoryItems.filter(x=>matches(x,q)));$('myCount').textContent=state.my.length;$('currentCount').textContent=state.my.length;$('selectionSummaryCount').textContent=state.my.length;$('selectionProgress').style.width=`${Math.min(100,state.selectionLimit?state.my.length/state.selectionLimit*100:0)}%`;$('awaitingCount').textContent=state.my.filter(isAwaiting).length;$('foodCount').textContent=foodCount;$('nonFoodCount').textContent=nonFoodCount;document.querySelectorAll('[data-selection-filter]').forEach(button=>{const active=state.listMode==='current'&&button.dataset.selectionFilter===state.selectionFilter;button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-selected',String(active));button.classList.toggle('active',active)});const label=state.selectionFilter==='food'?'FOOD':state.selectionFilter==='nonfood'?'NON-FOOD':'';$('myShowing').textContent=label?`Showing ${items.length} ${label} products`:`Showing ${items.length} of ${state.my.length} products`;$('myRows').className=items.length?'':'empty';$('myRows').innerHTML=items.length?items.map(x=>row(x)).join(''):'<strong>No Matching Products</strong>Try another Item Name, brand or barcode.';$('removedCount').textContent=state.removed.length;bindRows();markDisplayedQuotesSeen('my',items)}
+function renderMy(){const q=$('mySearch').value.trim(),foodCount=state.my.filter(isFoodItem).length,nonFoodCount=state.my.length-foodCount,categoryItems=state.selectionFilter==='food'?state.my.filter(isFoodItem):state.selectionFilter==='nonfood'?state.my.filter(item=>!isFoodItem(item)):state.my,items=byPointBaseSortId(categoryItems.filter(x=>matches(x,q)));$('myCount').textContent=state.my.length;$('currentCount').textContent=state.my.length;$('selectionSummaryCount').textContent=state.my.length;$('selectionProgress').style.width=`${Math.min(100,state.selectionLimit?state.my.length/state.selectionLimit*100:0)}%`;$('awaitingCount').textContent=state.my.filter(isAwaiting).length;$('foodCount').textContent=foodCount;$('nonFoodCount').textContent=nonFoodCount;document.querySelectorAll('[data-selection-filter]').forEach(button=>{const active=state.listMode==='current'&&button.dataset.selectionFilter===state.selectionFilter;button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-selected',String(active));button.classList.toggle('active',active)});const label=state.selectionFilter==='food'?'FOOD':state.selectionFilter==='nonfood'?'NON-FOOD':'';$('myShowing').textContent=label?`Showing ${items.length} ${label} products`:`Showing ${items.length} of ${state.my.length} products`;$('myRows').className=items.length?'':'empty';closeSelectionRemove();$('myRows').innerHTML=items.length?items.map(x=>row(x)).join(''):'<strong>No Matching Products</strong>Try another Item Name, brand or barcode.';$('removedCount').textContent=state.removed.length;bindRows();markDisplayedQuotesSeen('my',items)}
 function renderRemoved(){const q=$('mySearch').value.trim(),items=byItemName(state.removed.filter(x=>matches(x,q)));$('removedShowing').textContent=`Showing ${items.length} of ${state.removed.length} removed products · retained for 30 days`;$('removedRows').className=items.length?'':'empty';$('removedRows').innerHTML=items.length?items.map(x=>row(x,true)).join(''):'<strong>No Removed Products</strong>Removed items will remain here for 30 days.';bindRows()}
 function showListMode(mode){state.listMode=mode==='removed'?'removed':'current';document.body.classList.toggle('removed-history-active',state.listMode==='removed');$('currentPanel').classList.toggle('active',state.listMode==='current');$('removedPanel').classList.toggle('active',state.listMode==='removed');document.querySelectorAll('[data-list-mode]').forEach(x=>{const active=x.dataset.listMode===state.listMode;x.classList.toggle('active',active);x.setAttribute('aria-selected',String(active))});if(state.listMode==='removed')document.querySelectorAll('[data-selection-filter]').forEach(x=>{x.classList.remove('active');x.setAttribute('aria-selected','false');x.setAttribute('aria-pressed','false')});updateSelectionSearchPlaceholder();if(state.listMode==='removed')closeExportMenus();state.listMode==='current'?renderMy():renderRemoved()}
 function ctnPrice(x){return num(x.vipPriceCtn)||(num(x.vipPriceEa)*num(x.ea))}
@@ -848,7 +868,33 @@ function summary(){const ordered=state.my.filter(x=>isOrderable(x)&&num(x.orderQ
 const selectionImageDialog=$('selectionImageDialog'),selectionImage=$('selectionImage');
 const mobileSelection=matchMedia('(max-width:880px)');
 const mobileQtySheet=$('mobileQtySheet'),mobileQtyInput=$('mobileQtyInput');
+const selectionRows=$('myRows');
 let mobileQtyItemId='',mobileQtyCustomer='';
+let mobileQtyFromSelection=false;
+let selectionSwipe=null,openSelectionRemove=null,skipSelectionClick=false;
+function selectionQuantityControls(item){
+  if(!isOrderable(item))return '<span class="selection-qty-unavailable" aria-label="Waiting for a quotation">—</span>';
+  const key=String(item.id),qty=num(item.orderQtyCtn),pending=state.pendingQuantities.has(key),failed=Boolean(state.quantityDrafts.get(key)?.error);
+  const label=failed?'Retry order quantity for ':qty?'Edit order quantity for ':'Add order quantity for ';
+  return `<button type="button" class="selection-qty-button${qty?'':' is-empty'}" data-selection-qty aria-label="${label}${esc(item.itemName)}">${qty?qty.toLocaleString('en-US'):'+'}</button>${failed||pending?`<span class="selection-qty-status${failed?' failed':''}" role="status">${failed?'Retry':'Saving…'}</span>`:''}`;
+}
+function refreshSelectionQuantity(id){
+  const key=String(id),item=state.my.find(product=>String(product.id)===key);
+  const row=selectionRows.querySelector(`[data-id="${CSS.escape(key)}"]`);
+  if(!row||!item)return;
+  const cell=row.querySelector('.selection-qty'),restoreFocus=cell.contains(document.activeElement);
+  cell.innerHTML=selectionQuantityControls(item);
+  if(restoreFocus)cell.querySelector('[data-selection-qty]')?.focus({preventScroll:true});
+  row.querySelector('[data-remove]').disabled=state.pendingQuantities.has(key);
+}
+function closeSelectionRemove(){
+  openSelectionRemove?.classList.remove('swipe-open');
+  openSelectionRemove=null;
+}
+function updateSelectionOverlay(){
+  // The existing Wix message controls the native Excel overlay.
+  post('BUYER_ROOM_SELECTION_IMAGE_STATE',{open:selectionImageDialog.open||(mobileQtySheet.open&&$('myView').classList.contains('active'))});
+}
 function mobileQtyItem(){
   return mobileQtyCustomer===state.customerId?state.my.find(item=>String(item.id)===mobileQtyItemId&&isOrderable(item)):undefined;
 }
@@ -869,7 +915,9 @@ function openMobileQty(item){
   $('mobileQtyAudit').textContent=item.qtyEditedAt?'Last edited '+compactTime(item.qtyEditedAt):'';
   $('mobileQtyClear').hidden=!num(item.orderQtyCtn);
   updateMobileQtyTotal();
+  mobileQtyFromSelection=$('myView').classList.contains('active');
   mobileQtySheet.showModal();
+  if(mobileQtyFromSelection)updateSelectionOverlay();
 }
 function saveMobileQty(){
   const item=mobileQtyItem();
@@ -882,6 +930,7 @@ function saveMobileQty(){
   const next=state.quantityDrafts.get(key);
   next.editing=false;next.value=String(num(mobileQtyInput.value));
   queueQuantitySave(item,mobileQtyInput,true);
+  refreshSelectionQuantity(key);
   renderOrder(key);
 }
 $('orderRows').addEventListener('click',event=>{
@@ -892,6 +941,11 @@ $('orderRows').addEventListener('click',event=>{
 $('mobileQtyForm').onsubmit=event=>{event.preventDefault();saveMobileQty()};
 $('mobileQtyClear').onclick=()=>{mobileQtyInput.value='';saveMobileQty()};
 $('mobileQtyClose').onclick=()=>mobileQtySheet.close();
+mobileQtySheet.addEventListener('close',()=>{
+  if(!mobileQtyFromSelection)return;
+  mobileQtyFromSelection=false;
+  updateSelectionOverlay();
+});
 mobileQtyInput.oninput=updateMobileQtyTotal;
 $('prepareMobileOrder').onclick=()=>{showView('order');$('orderFormHeading').focus({preventScroll:true})};
 $('mobileOrderBack').onclick=()=>{showView('my');$('prepareMobileOrder').focus({preventScroll:true})};
@@ -900,24 +954,85 @@ function updateSelectionSearchPlaceholder(){
     mobileSelection.matches?'Search products':'Search products, brands or barcodes';
 }
 updateSelectionSearchPlaceholder();
-$('myRows').addEventListener('click',event=>{
+selectionRows.addEventListener('pointerdown',event=>{
+  if(!mobileSelection.matches||!event.isPrimary)return;
+  skipSelectionClick=false;
+  if(openSelectionRemove&&!openSelectionRemove.contains(event.target))closeSelectionRemove();
+  const row=event.target.closest('.selection-row');
+  if(event.pointerType==='touch'&&row){
+    const removeButton=row===openSelectionRemove?event.target.closest('[data-remove]'):null;
+    selectionSwipe={row,removeButton,id:event.pointerId,x:event.clientX,y:event.clientY,startedAt:event.timeStamp,moved:false};
+  }
+});
+selectionRows.addEventListener('pointermove',event=>{
+  const press=selectionSwipe;
+  if(press?.removeButton&&press.id===event.pointerId&&Math.hypot(event.clientX-press.x,event.clientY-press.y)>=10)press.moved=true;
+});
+selectionRows.addEventListener('pointercancel',()=>{selectionSwipe=null});
+selectionRows.addEventListener('pointerup',event=>{
+  if(!selectionSwipe||selectionSwipe.id!==event.pointerId)return;
+  const {row,removeButton,x,y,startedAt,moved}=selectionSwipe;
+  selectionSwipe=null;
+  const dx=event.clientX-x,dy=event.clientY-y;
+  if(!row.isConnected)return;
+  if(removeButton){
+    skipSelectionClick=true;
+    const bounds=removeButton.getBoundingClientRect();
+    const inside=event.clientX>=bounds.left&&event.clientX<=bounds.right&&event.clientY>=bounds.top&&event.clientY<=bounds.bottom;
+    if(row===openSelectionRemove&&!removeButton.disabled&&inside&&!moved&&Math.hypot(dx,dy)<10&&event.timeStamp-startedAt<600){
+      requestRemove(removeButton.dataset.remove);
+      return;
+    }
+  }
+  if(Math.abs(dx)<36||Math.abs(dx)<Math.abs(dy)*1.5)return;
+  skipSelectionClick=true;
+  closeSelectionRemove();
+  if(dx<0){openSelectionRemove=row;row.classList.add('swipe-open')}
+});
+selectionRows.addEventListener('click',event=>{
+  if(!skipSelectionClick||event.detail===0)return;
+  skipSelectionClick=false;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+},true);
+document.addEventListener('click',event=>{
+  if(openSelectionRemove&&!selectionRows.contains(event.target))closeSelectionRemove();
+});
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape')closeSelectionRemove();
+});
+selectionRows.addEventListener('click',event=>{
   if(!mobileSelection.matches||event.target.closest('[data-remove]'))return;
-  const image=event.target.closest('.row')?.querySelector('[data-preview-src]');
+  const row=event.target.closest('.selection-row');
+  if(!row)return;
+  if(row===openSelectionRemove){closeSelectionRemove();return;}
+  if(!event.target.closest('.selection-image-open')){
+    const item=state.my.find(product=>String(product.id)===row.dataset.id);
+    if(!item)return;
+    if(!isOrderable(item)){toast('You can enter a quantity after a quote is available.');return;}
+    openMobileQty(item);
+    mobileQtyInput.focus({preventScroll:true});
+    return;
+  }
+  const image=row.querySelector('[data-preview-src]');
   if(!image||image.parentElement.classList.contains('broken')||selectionImageDialog.open)return;
   hideImagePreview();
   selectionImage.alt=image.alt;
   selectionImage.src=image.dataset.previewSrc;
   selectionImageDialog.showModal();
-  post('BUYER_ROOM_SELECTION_IMAGE_STATE',{open:true});
+  updateSelectionOverlay();
 });
 selectionImageDialog.addEventListener('click',event=>{
   if(event.target===selectionImageDialog)selectionImageDialog.close();
 });
 selectionImageDialog.addEventListener('close',()=>{
   selectionImage.removeAttribute('src');
-  post('BUYER_ROOM_SELECTION_IMAGE_STATE',{open:false});
+  updateSelectionOverlay();
 });
 mobileSelection.addEventListener('change',event=>{
+  closeSelectionRemove();
+  selectionSwipe=null;
+  skipSelectionClick=false;
   updateSelectionSearchPlaceholder();
   if(!event.matches&&selectionImageDialog.open)selectionImageDialog.close();
   if(!event.matches&&mobileQtySheet.open)mobileQtySheet.close();
@@ -928,7 +1043,7 @@ function bindImagePreview(){const preview=$('imagePreview'),previewImg=$('imageP
 function bindRows(){document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=e=>{e.stopPropagation();requestRemove(b.dataset.remove)});document.querySelectorAll('[data-recover]').forEach(b=>b.onclick=()=>requestRestore(b.dataset.recover));bindImagePreview()}
 function requestRemove(id){const key=String(id),index=state.my.findIndex(item=>String(item.id)===key);if(index<0||state.pendingRemovals.has(key)||state.pendingRestores.has(key))return;const item=state.my[index],optimistic={...item,removed:true,removedTime:new Date().toISOString(),orderQtyCtn:0,quoteStatus:'REMOVED',quoteActive:false};state.pendingRemovals.set(key,{item,index});state.my.splice(index,1);state.removed.unshift(optimistic);renderMy();renderRemoved();renderOrder();toast('Moving item to Removed History…');post('BUYER_ROOM_REMOVE',{itemId:key})}
 function requestRestore(id){const key=String(id),index=state.removed.findIndex(item=>String(item.id)===key);if(index<0||state.pendingRestores.has(key)||state.pendingRemovals.has(key))return;const item=state.removed[index],optimistic={...item,removed:false,quoteStatus:'RFQ',quoteActive:false,vipPriceEa:0,vipPriceCtn:0,quotePerPc:0,quotePerCtn:0,orderQtyCtn:0};state.pendingRestores.set(key,{item,index,optimistic});state.removed.splice(index,1);state.my.unshift(optimistic);renderMy();renderRemoved();renderOrder();toast('Restoring to My Selection and requesting a new quote…');post('BUYER_ROOM_RECOVER',{itemId:key})}
-function finishRemove(result){const key=String(result.itemId||''),pending=state.pendingRemovals.get(key);if(!pending){if(result.message||result.warning)toast(result.warning||result.message);return}state.pendingRemovals.delete(key);if(result.ok){state.lastRemoved=key;renderRemoved();toast(result.warning||'Item moved to Removed History.',true)}else{state.removed=state.removed.filter(item=>String(item.id)!==key);state.my.splice(Math.min(pending.index,state.my.length),0,pending.item);renderMy();renderRemoved();renderOrder();toast(result.message||'The item could not be removed. Please try again.')}}
+function finishRemove(result){const key=String(result.itemId||''),pending=state.pendingRemovals.get(key);if(!pending){if(result.message||result.warning)toast(result.warning||result.message);return}state.pendingRemovals.delete(key);if(result.ok){state.quantityDrafts.delete(key);state.lastRemoved=key;renderRemoved();toast(result.warning||'Item moved to Removed History.',true)}else{state.removed=state.removed.filter(item=>String(item.id)!==key);state.my.splice(Math.min(pending.index,state.my.length),0,pending.item);renderMy();renderRemoved();renderOrder();toast(result.message||'The item could not be removed. Please try again.')}}
 function finishRestore(result){const key=String(result.itemId||''),pending=state.pendingRestores.get(key);if(!pending){if(result.message||result.warning)toast(result.warning||result.message);return}state.pendingRestores.delete(key);if(result.ok){renderMy();renderRemoved();toast(result.warning||result.message||'Restored to My Selection. A new quote has been requested.')}else{state.my=state.my.filter(item=>String(item.id)!==key);state.removed.splice(Math.min(pending.index,state.removed.length),0,pending.item);renderMy();renderRemoved();renderOrder();toast(result.message||'The item could not be restored. Please try again.')}}
 function accountValue(id,value){const node=$(id),text=String(value??'').trim();node.textContent=text||'—';node.classList.toggle('empty-value',!text)}
 function accountWebsite(value){const node=$('accountWebsite'),raw=String(value??'').trim();node.textContent=raw||'—';node.classList.toggle('empty-value',!raw);if(!raw)return;try{const url=new URL(/^https?:\/\//i.test(raw)?raw:'https://'+raw);if(!['http:','https:'].includes(url.protocol))return;const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent=raw;node.replaceChildren(link)}catch{}}
@@ -1064,7 +1179,7 @@ window.addEventListener('message',e=>{
   }
   if(m.type==='BUYER_ROOM_ACTION_RESULT'){
     if(m.data)applyData(m.data);
-    if(m.action==='remove')finishRemove(m);else if(m.action==='recover')finishRestore(m);else if(m.action==='quantity')finishQuantity(m);else if(m.message)toast(m.message);
+    if(m.action==='remove')finishRemove(m);else if(m.action==='recover')finishRestore(m);else if(m.action==='quantity'){finishQuantity(m);refreshSelectionQuantity(m.itemId);}else if(m.message)toast(m.message);
   }
   if(m.type==='BUYER_ROOM_ORDER_PAGE_RESULT'){
     state.historyLoading=false;
