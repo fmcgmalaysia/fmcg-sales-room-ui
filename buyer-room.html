@@ -561,6 +561,34 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .selection-loading-copy b{display:block;font-size:clamp(.98rem,3.4vw,1.28rem);line-height:1.2}
   .selection-loading-copy p{margin:5px 0 0;color:#dce7f1;font-size:.78rem;line-height:1.35}
   .selection-loading-retry{margin-top:10px}
+  @media(min-width:1161px){
+    #myView.active:not(:has(#buyerSelectionLoading)){
+      display:grid;grid-template-columns:max-content minmax(0,1fr) max-content max-content;
+      align-items:center;gap:8px 12px
+    }
+    #myView.active:not(:has(#buyerSelectionLoading))>.page-head{display:contents}
+    #myView .page-title{grid-area:1/1;display:flex;align-items:center;gap:12px}
+    #myView .page-title h1{white-space:nowrap}
+    #myView .inline-stats{margin:0;gap:8px}
+    #myView .inline-stat{margin:0;padding:0;border:0;white-space:nowrap}
+    #myView .awaiting:has([data-empty]),#myView .awaiting-icon{display:none}
+    #myView .currency span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+    #myView .currency b{padding:4px 6px;border-radius:4px;background:#f1f5f8;color:#35516a}
+    #myView>.selection-limit-row{grid-area:1/2;justify-self:start;margin:0;padding:0;border:0;min-height:0;white-space:nowrap}
+    #myView .selection-progress{display:none}
+    #myView>.page-head>#browse{grid-area:1/3;margin:0;width:auto;min-width:118px}
+    #myView>.page-head>#browse[aria-disabled="false"]{border-color:#efb6a3;background:#fff5ef;color:#943515}
+    #myView>.page-head>#browse[aria-disabled="false"] .plus{background:#f9dfd1;color:inherit}
+    #myView>.page-head>#browse[aria-disabled="false"]:is(:hover,:focus-visible){border-color:#db7c5d;background:#ffebe0;color:#943515}
+    #myView>.page-head>#prepareMobileOrder{grid-area:1/4;width:auto;min-width:161px}
+    #myView.active:not(:has(#buyerSelectionLoading))>.selection-toolbar{
+      grid-area:2/1/3/-1;grid-template-columns:max-content minmax(180px,1fr);gap:18px;
+      align-items:center;min-height:50px;margin:0;padding:0 166px 0 0
+    }
+    .removed-history-active #myView.active:not(:has(#buyerSelectionLoading))>.selection-toolbar{padding-right:0}
+    #myView .selection-toolbar .toolbar-search{width:100%;max-width:480px}
+    #myView>.list-panel{grid-area:3/1/4/-1;min-width:0}
+  }
 </style>
 <link rel="stylesheet" href="master-shared/mobile-menu.css?v=20261117-mobile-menu-icon-v1"><script defer src="master-shared/mobile-menu.js?v=20261117-mobile-menu-icon-v1"></script></head>
 <body class="touch-buyer">
@@ -747,7 +775,7 @@ function byPointBaseSortId(items) {
     return pointBaseSortCollator.compare(left, right);
   });
 }
-function renderMy(){if(!state.customerId&&$('buyerSelectionLoading'))return;const q=$('mySearch').value.trim(),foodCount=state.my.filter(isFoodItem).length,nonFoodCount=state.my.length-foodCount,categoryItems=state.selectionFilter==='food'?state.my.filter(isFoodItem):state.selectionFilter==='nonfood'?state.my.filter(item=>!isFoodItem(item)):state.my,items=byPointBaseSortId(categoryItems.filter(x=>matches(x,q)));$('myCount').textContent=state.my.length;$('currentCount').textContent=state.my.length;$('selectionSummaryCount').textContent=state.my.length;$('selectionProgress').style.width=`${Math.min(100,state.selectionLimit?state.my.length/state.selectionLimit*100:0)}%`;$('awaitingCount').textContent=state.my.filter(isAwaiting).length;$('foodCount').textContent=foodCount;$('nonFoodCount').textContent=nonFoodCount;document.querySelectorAll('[data-selection-filter]').forEach(button=>{const active=state.listMode==='current'&&button.dataset.selectionFilter===state.selectionFilter;button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-selected',String(active));button.classList.toggle('active',active)});const label=state.selectionFilter==='food'?'FOOD':state.selectionFilter==='nonfood'?'NON-FOOD':'';$('myShowing').textContent=label?`Showing ${items.length} ${label} products`:`Showing ${items.length} of ${state.my.length} products`;$('myRows').className=items.length?'':'empty';closeSelectionRemove();$('myRows').innerHTML=items.length?items.map(x=>row(x)).join(''):'<strong>No Matching Products</strong>Try another Item Name, brand or barcode.';$('removedCount').textContent=state.removed.length;bindRows();markDisplayedQuotesSeen('my',items)}
+function renderMy(){if(!state.customerId&&$('buyerSelectionLoading'))return;const q=$('mySearch').value.trim(),foodCount=state.my.filter(isFoodItem).length,nonFoodCount=state.my.length-foodCount,categoryItems=state.selectionFilter==='food'?state.my.filter(isFoodItem):state.selectionFilter==='nonfood'?state.my.filter(item=>!isFoodItem(item)):state.my,items=byPointBaseSortId(categoryItems.filter(x=>matches(x,q)));$('myCount').textContent=state.my.length;$('currentCount').textContent=state.my.length;$('selectionSummaryCount').textContent=state.my.length;$('selectionProgress').style.width=`${Math.min(100,state.selectionLimit?state.my.length/state.selectionLimit*100:0)}%`;const awaitingCount=state.my.filter(isAwaiting).length;$('awaitingCount').textContent=awaitingCount;$('awaitingCount').toggleAttribute('data-empty',awaitingCount===0);$('foodCount').textContent=foodCount;$('nonFoodCount').textContent=nonFoodCount;document.querySelectorAll('[data-selection-filter]').forEach(button=>{const active=state.listMode==='current'&&button.dataset.selectionFilter===state.selectionFilter;button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-selected',String(active));button.classList.toggle('active',active)});const label=state.selectionFilter==='food'?'FOOD':state.selectionFilter==='nonfood'?'NON-FOOD':'';$('myShowing').textContent=label?`Showing ${items.length} ${label} products`:`Showing ${items.length} of ${state.my.length} products`;$('myRows').className=items.length?'':'empty';closeSelectionRemove();$('myRows').innerHTML=items.length?items.map(x=>row(x)).join(''):'<strong>No Matching Products</strong>Try another Item Name, brand or barcode.';$('removedCount').textContent=state.removed.length;bindRows();markDisplayedQuotesSeen('my',items)}
 function renderRemoved(){const q=$('mySearch').value.trim(),items=byItemName(state.removed.filter(x=>matches(x,q)));$('removedShowing').textContent=`Showing ${items.length} of ${state.removed.length} removed products · retained for 30 days`;$('removedRows').className=items.length?'':'empty';$('removedRows').innerHTML=items.length?items.map(x=>row(x,true)).join(''):'<strong>No Removed Products</strong>Removed items will remain here for 30 days.';bindRows()}
 function showListMode(mode){state.listMode=mode==='removed'?'removed':'current';document.body.classList.toggle('removed-history-active',state.listMode==='removed');$('currentPanel').classList.toggle('active',state.listMode==='current');$('removedPanel').classList.toggle('active',state.listMode==='removed');document.querySelectorAll('[data-list-mode]').forEach(x=>{const active=x.dataset.listMode===state.listMode;x.classList.toggle('active',active);x.setAttribute('aria-selected',String(active))});if(state.listMode==='removed')document.querySelectorAll('[data-selection-filter]').forEach(x=>{x.classList.remove('active');x.setAttribute('aria-selected','false');x.setAttribute('aria-pressed','false')});updateSelectionSearchPlaceholder();if(state.listMode==='removed')closeExportMenus();state.listMode==='current'?renderMy():renderRemoved()}
 function ctnPrice(x){return num(x.vipPriceCtn)||(num(x.vipPriceEa)*num(x.ea))}
