@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
-<meta name="buyer-mobile-order-build" content="20261123-buyer-selection-swipe-v2">
+<meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v3">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -430,6 +430,8 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .mobile-order-only,#mobileQtySheet:not([open]){display:none}
 #prepareMobileOrder{flex:0 0 auto;min-height:36px;padding:0 14px;border:1px solid #bdcddd;border-radius:7px;background:#f4f8fc;color:#233e60;font:inherit;font-weight:750;cursor:pointer}
 #prepareMobileOrder:hover,#prepareMobileOrder:focus-visible{border-color:#6e8dad;background:#eaf2fa}
+:is(#currentPanel,#removedPanel,#orderView) .row:not(.mobile-order-row,.order-mobile-head)>div:nth-child(2){justify-content:center;text-align:center}
+#currentPanel .grid .row>div:is(:nth-child(4),:nth-child(5)),#orderView .order-grid .row:not(.mobile-order-row,.order-mobile-head)>div:nth-child(4){text-align:right}
 #mobileOrderBack{display:block;margin:0 0 4px;padding:4px 0;border:0;background:none;color:#285689;font-size:12px;cursor:pointer}
 #mobileQtySheet{width:min(100%,520px);max-width:none;max-height:90dvh;overflow:auto;position:fixed;inset:auto 0 0;margin:0 auto;padding:15px 16px max(16px,env(safe-area-inset-bottom));border:0;border-radius:16px 16px 0 0;background:#fff;color:var(--ink)}
 #mobileQtySheet::backdrop{background:#102a4a99}
@@ -453,6 +455,8 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .touch-buyer #myView #browse{grid-column:1;white-space:nowrap;gap:4px;padding:0 6px}
   .touch-buyer #myView #prepareMobileOrder{grid-column:2;justify-self:start;white-space:nowrap;padding:0 6px;min-height:44px;font-size:11px;font-weight:750;color:#fff;border:1px solid #184b78;border-radius:7px;background:#184b78}
   .touch-buyer #myView #prepareMobileOrder:focus-visible{outline:2px solid #184b78;outline-offset:2px}
+  .touch-buyer #myView{padding-bottom:56px}
+  .touch-buyer #myView #prepareMobileOrder.is-floating{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));z-index:19;margin:0;padding-inline:12px;box-shadow:0 3px 12px #172b4d33}
   #orderView>.top{min-height:0;margin:0 0 8px}
   #orderFormHeading{font-size:23px;margin:0}
   #orderView .order-selection-hint{margin:4px 0 0;color:#53657b;font-size:11px;line-height:1.4}
@@ -920,6 +924,11 @@ $('mobileQtyForm').onsubmit=event=>{event.preventDefault();saveMobileQty()};
 $('mobileQtyClear').onclick=()=>{mobileQtyInput.value='';saveMobileQty()};
 $('mobileQtyClose').onclick=()=>mobileQtySheet.close();
 mobileQtyInput.oninput=updateMobileQtyTotal;
+function updatePrepareOrderPosition(){
+  const isVisible=mobileSelection.matches&&$('myView').classList.contains('active');
+  const scrolledPast=isVisible&&$('browse').getBoundingClientRect().bottom<=document.querySelector('.global-header').getBoundingClientRect().bottom;
+  $('prepareMobileOrder').classList.toggle('is-floating',scrolledPast);
+}
 $('prepareMobileOrder').onclick=()=>{showView('order');$('orderFormHeading').focus({preventScroll:true})};
 $('mobileOrderBack').onclick=()=>{showView('my');$('prepareMobileOrder').focus({preventScroll:true})};
 function updateSelectionSearchPlaceholder(){
@@ -1021,7 +1030,7 @@ function renderAccount(){
 }
 let toastTimer;function toast(text,undo=false){clearTimeout(toastTimer);$('toast').innerHTML=esc(text)+(undo?' <button id="undo">Undo</button>':'');$('toast').classList.add('show');if(undo)$('undo').onclick=()=>state.lastRemoved&&requestRestore(state.lastRemoved);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),7000)}
 function placeAdminBanner(name){const side=document.querySelector('.side'),banner=$('adminAccessBanner');if(side&&banner&&banner.parentElement!==side)side.appendChild(banner)}
-function showView(name){hideImagePreview();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));$(`${name}View`).classList.add('active');placeAdminBanner(name);window.scrollTo(0,0);updateOrderBackToTop();if(name==='my')renderMy();if(name==='order')renderOrder();if(name==='track'||name==='completed')renderOrderTracking();if(name==='account')renderAccount();post('BUYER_ROOM_VIEW_CHANGED',{view:name})}
+function showView(name){hideImagePreview();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));$(`${name}View`).classList.add('active');placeAdminBanner(name);window.scrollTo(0,0);updateOrderBackToTop();updatePrepareOrderPosition();if(name==='my')renderMy();if(name==='order')renderOrder();if(name==='track'||name==='completed')renderOrderTracking();if(name==='account')renderAccount();post('BUYER_ROOM_VIEW_CHANGED',{view:name})}
 function setCatalogueLinks(value){
   let url='';try{const parsed=new URL(String(value||''));if(parsed.protocol==='https:'&&parsed.pathname.endsWith('/catalogue'))url=parsed.href}catch{}
   state.catalogueUrl=url;
@@ -1054,7 +1063,8 @@ document.querySelectorAll('[data-selection-filter]').forEach(button=>button.oncl
 function updateOrderBackToTop(){
   $('orderBackToTop').hidden=!$('orderView').classList.contains('active')||window.scrollY<240;
 }
-window.addEventListener('scroll',updateOrderBackToTop,{passive:true});
+window.addEventListener('scroll',()=>{updateOrderBackToTop();updatePrepareOrderPosition()},{passive:true});
+window.addEventListener('resize',updatePrepareOrderPosition);
 $('orderBackToTop').onclick=()=>{
   $('orderFormHeading').focus({preventScroll:true});
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
