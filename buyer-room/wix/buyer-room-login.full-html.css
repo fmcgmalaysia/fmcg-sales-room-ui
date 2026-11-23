@@ -1,23 +1,23 @@
-/* Buyer Room Login only. The HTML component renders this page's chrome. */
-#mxagc #comp-mty5kg3j,
-#mxagc #comp-mty5kg4k,
-#mxagc #comp-mty5zgzg {
+/* Attribute selectors keep the published Wix wrapper IDs intact. */
+[id="mxagc"] [id="comp-mty5kg3j"],
+[id="mxagc"] [id="comp-mty5kg4k"],
+[id="mxagc"] [id="comp-mty5zgzg"] {
   display: none !important;
 }
 
-#mxagc .comp-mty5zgz4-container {
+[id="mxagc"] [class~="comp-mty5zgz4-container"] {
   grid-template-columns: minmax(0, 1fr) !important;
 }
 
-#mxagc #comp-mty68cz7 {
+[id="mxagc"] [id="comp-mty68cz7"] {
   grid-area: 1 / 1 / 2 / 2 !important;
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
 }
 
-#mxagc #comp-mtylccya,
-#mxagc #comp-mtylccya :is(wix-iframe, wix-iframe > div, iframe) {
+[id="mxagc"] [id="comp-mtylccya"],
+[id="mxagc"] [id="comp-mtylccya"] :is(wix-iframe, wix-iframe > div, iframe) {
   display: block !important;
   width: 100% !important;
   max-width: none !important;
