@@ -1,23 +1,24 @@
-/* Attribute selectors keep the published Wix wrapper IDs intact. */
-[id="mxagc"] [id="comp-mty5kg3j"],
-[id="mxagc"] [id="comp-mty5kg4k"],
-[id="mxagc"] [id="comp-mty5zgzg"] {
+/* Scope the layout to the new login frame; Wix rewrites ID and class selectors. */
+[data-testid="responsive-container-content"]:has(> main > section iframe[src$="/buyer-login-20261123-full-html.html"]) > :is(header, footer),
+section > [data-testid="responsive-container-content"]:has(iframe[src$="/buyer-login-20261123-full-html.html"]) > div:not(:has(iframe[src$="/buyer-login-20261123-full-html.html"])) {
   display: none !important;
 }
 
-[id="mxagc"] [class~="comp-mty5zgz4-container"] {
+section > [data-testid="responsive-container-content"]:has(iframe[src$="/buyer-login-20261123-full-html.html"]) {
   grid-template-columns: minmax(0, 1fr) !important;
 }
 
-[id="mxagc"] [id="comp-mty68cz7"] {
+section > [data-testid="responsive-container-content"] > div:has(iframe[src$="/buyer-login-20261123-full-html.html"]) {
   grid-area: 1 / 1 / 2 / 2 !important;
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
 }
 
-[id="mxagc"] [id="comp-mtylccya"],
-[id="mxagc"] [id="comp-mtylccya"] :is(wix-iframe, wix-iframe > div, iframe) {
+div:has(> wix-iframe iframe[src$="/buyer-login-20261123-full-html.html"]),
+wix-iframe:has(iframe[src$="/buyer-login-20261123-full-html.html"]),
+wix-iframe > div:has(> iframe[src$="/buyer-login-20261123-full-html.html"]),
+iframe[src$="/buyer-login-20261123-full-html.html"] {
   display: block !important;
   width: 100% !important;
   max-width: none !important;
