@@ -8,7 +8,7 @@ const workspaces = new Map([
   ['support', ['Support 后勤', SITE + '/support-department']],
   ['warehouse', ['Warehouse 货仓', SITE + '/warehouse-department']],
   ['stock-control', ['Stock Control 库存管理', 'https://www.ltpos.ai/stock-control']],
-  ['finance', ['Finance 财务', SITE + '/account-department']], ['sales-management', ['Sales Management 销售管理', 'https://www.ltpos.ai/quotations']],
+  ['finance', ['Finance 财务', SITE + '/account-department']], ['sales-management', ['Quotations 报价', 'https://www.ltpos.ai/quotations']],
   ['staff-management', ['Staff Management 员工管理', SITE + '/staff-management']],
   ['sales-room', ['Sales Room 销售工作室', 'https://www.fmcgmalaysia.com/sales-room-login']]
 ]);
