@@ -290,7 +290,10 @@ async function readWebQuoteCounters(customers, listRows) {
         const product = products.get(normalize(data.productId));
         const barcode = normalize(data.barcode || data.unitBarcode);
         if (!product || normalize(product.barcode) !== barcode) throw Error('Product packing requires reconciliation.');
-        return { ...data, id:record._id, catalogueEa:Number(product.ea), barcode };
+        // Match Buyer Room packing when Catalogue still uses the legacy price field.
+        const hasCatalogueEa = product.ea != null && String(product.ea).trim() !== '';
+        return { ...data, id:record._id, barcode, ea:money(data.ea || product.ea || product.price),
+          catalogueEa:hasCatalogueEa ? money(product.ea) : null };
       });
       const projected = await applyWebQuotations(customer, selections);
       const quoted = projected.filter(row => row.quoteActive === true).length;

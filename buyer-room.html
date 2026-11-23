@@ -6,6 +6,8 @@
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
 <meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v6">
 <meta name="buyer-track-progress-build" content="20261123-buyer-track-progress-v1">
+<meta name="buyer-mobile-quantity-build" content="20261123-buyer-mobile-quantity-visible-v1">
+<meta name="buyer-entry-build" content="20261123-buyer-early-embed-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -453,7 +455,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .selection-remove-actions .btn{min-height:44px}
 @media(max-width:880px){.touch-buyer .prepare-order-desktop{display:none}}
 #mobileOrderBack{display:block;margin:0 0 4px;padding:4px 0;border:0;background:none;color:#285689;font-size:12px;cursor:pointer}
-#mobileQtySheet{width:min(100%,520px);max-width:none;max-height:90dvh;overflow:auto;position:fixed;inset:auto 0 0;margin:0 auto;padding:15px 16px max(16px,env(safe-area-inset-bottom));border:0;border-radius:16px 16px 0 0;background:#fff;color:var(--ink)}
+#mobileQtySheet{--qty-dialog-top:max(12px,env(safe-area-inset-top));width:min(calc(100% - 24px),520px);max-width:none;max-height:calc(100vh - var(--qty-dialog-top) - 12px);max-height:calc(100dvh - var(--qty-dialog-top) - 12px);overflow:auto;overscroll-behavior:contain;position:fixed;inset:var(--qty-dialog-top) 0 auto;margin:0 auto;padding:12px 14px 14px;border:0;border-radius:16px;background:#fff;color:var(--ink)}
 #mobileQtySheet::backdrop{background:#102a4a99}
 .mobile-qty-head,.mobile-qty-product,.mobile-qty-fact,.mobile-qty-input{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .mobile-qty-head h2{font-size:21px;margin:0}
@@ -464,15 +466,17 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .mobile-qty-product #mobileQtyImage .thumb{object-fit:contain}
 .mobile-qty-product>div{min-width:0;overflow-wrap:anywhere}
 .mobile-qty-product strong,.mobile-qty-product small{display:block}
-.mobile-qty-fact,.mobile-qty-input{min-height:43px;border-top:1px solid var(--line);padding:7px 0}
-.mobile-qty-input input{width:106px;min-height:44px;padding:0 8px;border:1px solid #49698b;border-radius:7px;background:#f7fbff;text-align:right;font-size:18px;font-weight:750}
+.mobile-qty-fact{min-height:43px;border-top:1px solid var(--line);padding:7px 0}
+.mobile-qty-editor{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px;margin:8px 0 12px}
+.mobile-qty-input{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 6px;min-width:0;font-size:12px;font-weight:700}
+.mobile-qty-input>span:first-child{grid-column:1/-1}
+.mobile-qty-input input{width:100%;min-width:0;min-height:44px;padding:0 8px;border:1px solid #49698b;border-radius:7px;background:#f7fbff;text-align:right;font-size:18px;font-weight:750}
 .mobile-qty-input input:focus,#orderView .qty-editor input.qty:not([readonly]):focus{outline:2px solid #1d5eaa;outline-offset:1px}
 #orderView .qty-editor input.qty:not([readonly]){border-color:#49698b;background:#f7fbff;cursor:text}
-.mobile-qty-input input{margin-left:auto}
 .mobile-qty-audit{margin:8px 0 0;font-size:12px;color:#5d7088}
-.mobile-qty-actions{display:flex;gap:9px;margin-top:14px}
-.mobile-qty-actions button{min-height:44px;padding:0 12px;border:1px solid #c9d7e5;border-radius:8px;background:#fff;color:var(--ink);font-weight:750}
-.mobile-qty-actions .mobile-qty-save{flex:1;border-color:#c23b13;background:#c23b13;color:#fff}
+#mobileQtyForm button.mobile-qty-save,#mobileQtyClear{min-height:44px;padding:0 12px;border:1px solid #c9d7e5;border-radius:8px;background:#fff;color:var(--ink);font-weight:750}
+#mobileQtyForm button.mobile-qty-save{min-width:72px;border-color:#c23b13;background:#c23b13;color:#fff}
+#mobileQtyClear{margin-top:10px}
 @media(max-width:880px){
   .touch-buyer .mobile-order-only{display:revert}
   .touch-buyer #myView>.page-head{grid-template-columns:max-content minmax(0,1fr) min(37%,140px);column-gap:5px}
@@ -616,12 +620,15 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <dialog id="mobileQtySheet" aria-labelledby="mobileQtyTitle">
   <form id="mobileQtyForm">
     <header class="mobile-qty-head"><h2 id="mobileQtyTitle">Edit Quantity</h2><button id="mobileQtyClose" type="button" aria-label="Close quantity editor">×</button></header>
+    <div class="mobile-qty-editor">
+      <label class="mobile-qty-input" for="mobileQtyInput"><span>Order Qty</span><input id="mobileQtyInput" type="number" min="0" step="1" inputmode="numeric"><span>CTN</span></label>
+      <button class="mobile-qty-save" type="submit">Save</button>
+    </div>
     <div class="mobile-qty-product"><span id="mobileQtyImage"></span><div><strong id="mobileQtyProduct"></strong><small id="mobileQtyPack"></small></div></div>
     <div class="mobile-qty-fact"><span>Price / CTN</span><strong id="mobileQtyPrice">—</strong></div>
-    <label class="mobile-qty-input" for="mobileQtyInput">Order Qty<input id="mobileQtyInput" type="number" min="0" step="1" inputmode="numeric"><span>CTN</span></label>
     <div class="mobile-qty-fact"><span>Line Total</span><strong id="mobileQtyTotal">—</strong></div>
     <p id="mobileQtyAudit" class="mobile-qty-audit" hidden></p>
-    <div class="mobile-qty-actions"><button id="mobileQtyClear" type="button" hidden>Clear Qty</button><button class="mobile-qty-save" type="submit">Save</button></div>
+    <button id="mobileQtyClear" type="button" hidden>Clear Qty</button>
   </form>
 </dialog>
 <div id="reductionModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="reductionTitle"><div class="reduction-dialog"><header class="reduction-head"><div><h3 id="reductionTitle">Reduce / Cancel Requested Qty</h3><p>Available only before this order is submitted to NCT / GHR.</p></div><button class="reduction-close" id="closeReduction" type="button" aria-label="Close reduction request">×</button></header><div class="reduction-body"><div class="reduction-product"><strong id="reductionItemName">—</strong><span id="reductionItemMeta">—</span></div><div class="reduction-fields"><div class="reduction-field"><label>Current Requested Qty</label><div class="reduction-value" id="reductionCurrentQty">0 CTN</div></div><div class="reduction-field"><label for="reductionNewQty">New Requested Qty</label><input id="reductionNewQty" type="number" min="0" step="1" value="0"></div><div class="reduction-field"><label>Reduction</label><div class="reduction-value" id="reductionDelta">0 CTN</div></div></div><p class="reduction-note">This creates a reduction record. The original request remains in Order History. Enter 0 to cancel this item.</p></div><footer class="reduction-footer"><small>After NCT / GHR submission, Requested Qty is permanently locked.</small><div class="reduction-actions"><button class="btn danger" id="submitReduction" type="button">Submit Reduction</button></div></footer></div></div>
@@ -1249,6 +1256,7 @@ function downloadOrderExcel(payload){
 window.addEventListener('message',e=>{
   const m=e.data||{};
   if(m.type==='BUYER_ROOM_DOWNLOAD_ORDER_EXCEL'){downloadOrderExcel(m);return;}
+  if(m.type==='BUYER_ROOM_HOST_READY'&&e.source===window.parent&&!state.customerId){post('BUYER_ROOM_READY',{view:'my'});return;}
   if(m.type==='BUYER_ROOM_DATA')applyData(m.data||{});
   if(m.type==='BUYER_ROOM_USER_RESULT'){
     const status=$('accountUserFormStatus');
