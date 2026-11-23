@@ -1,0 +1,29 @@
+/* Buyer Room Login only. The HTML component renders this page's chrome. */
+#mxagc #comp-mty5kg3j,
+#mxagc #comp-mty5kg4k,
+#mxagc #comp-mty5zgzg {
+  display: none !important;
+}
+
+#mxagc .comp-mty5zgz4-container {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#mxagc #comp-mty68cz7 {
+  grid-area: 1 / 1 / 2 / 2 !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+#mxagc #comp-mtylccya,
+#mxagc #comp-mtylccya :is(wix-iframe, wix-iframe > div, iframe) {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
