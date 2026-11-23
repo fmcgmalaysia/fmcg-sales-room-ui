@@ -36,6 +36,16 @@
 }
 
 @media (max-width: 900px) {
+  .catalogue-navigation-stage,
+  .catalogue-results-stage {
+    --catalogue-mobile-nav-height: 111px;
+  }
+
+  .catalogue-navigation-stage.catalogue-compact-browse,
+  .catalogue-results-stage.catalogue-compact-browse {
+    --catalogue-mobile-nav-height: 55px;
+  }
+
   /* The existing desktop masthead remains the desktop authority. */
   .catalogue-native-masthead {
     display: none !important;
@@ -47,8 +57,8 @@
   .catalogue-navigation-stage wix-iframe,
   .catalogue-navigation-stage wix-iframe > div,
   .catalogue-navigation-stage iframe {
-    height: 144px !important;
-    min-height: 144px !important;
+    height: var(--catalogue-mobile-nav-height) !important;
+    min-height: var(--catalogue-mobile-nav-height) !important;
   }
 
   /* Keep the list and its bottom sheet inside the visible workroom. */
@@ -58,9 +68,47 @@
   .catalogue-results-stage wix-iframe,
   .catalogue-results-stage wix-iframe > div,
   .catalogue-results-stage iframe {
-    height: max(300px, calc(100vh - 144px)) !important;
-    min-height: max(300px, calc(100vh - 144px)) !important;
-    height: max(300px, calc(100dvh - 144px)) !important;
-    min-height: max(300px, calc(100dvh - 144px)) !important;
+    height: max(300px, calc(100vh - var(--catalogue-mobile-nav-height))) !important;
+    min-height: max(300px, calc(100vh - var(--catalogue-mobile-nav-height))) !important;
+    height: max(300px, calc(100dvh - var(--catalogue-mobile-nav-height))) !important;
+    min-height: max(300px, calc(100dvh - var(--catalogue-mobile-nav-height))) !important;
+  }
+}
+
+@media (max-width: 880px) {
+  section:has(iframe[src*="mobile-buyer-room.html"]) #comp-muoufasq {
+    left: auto !important;
+    right: 18px !important;
+    margin: 94px 0 0 !important;
+    width: 140px !important;
+    min-width: 0 !important;
+    height: 44px !important;
+  }
+}
+
+@media (min-width: 901px) {
+  .catalogue-navigation-stage {
+    position: relative;
+    overflow: visible !important;
+    z-index: 52;
+  }
+  div:has(> main > .catalogue-navigation-stage) > div > div:has(> wix-iframe) {
+    inset-inline-start: 0 !important;
+    width: max(100%, 901px) !important;
+    margin-inline: 0 !important;
+  }
+  div:has(> main > .catalogue-navigation-stage) > div > div:has(> wix-iframe),
+  div:has(> main > .catalogue-navigation-stage) > div > div:has(> wix-iframe) :is(wix-iframe, wix-iframe > div, iframe) {
+    height: min(300px, 45dvh) !important;
+    min-height: 0 !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1024px) {
+  .catalogue-results-stage > div:nth-child(2) {
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+  .catalogue-results-stage > div:nth-child(2) > div {
+    grid-row: 1 !important;
   }
 }

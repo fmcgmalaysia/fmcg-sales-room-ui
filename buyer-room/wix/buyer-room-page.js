@@ -66,6 +66,7 @@ $w.onReady(async function () {
   let historyCustomerId = '';
   let frameReady = false;
   let activeBuyerRoomView = 'my';
+  let selectionImageOpen = false;
   let selectionDownloadUrl = '';
   let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
@@ -76,7 +77,7 @@ $w.onReady(async function () {
   downloadButton.link = '';
 
   function updateDownloadButtonVisibility() {
-    if (activeBuyerRoomView === 'my' && selectionDownloadUrl) {
+    if (activeBuyerRoomView === 'my' && selectionDownloadUrl && !selectionImageOpen) {
       downloadButton.enable();
       downloadButton.show();
     } else downloadButton.hide();
@@ -198,6 +199,11 @@ $w.onReady(async function () {
 
   frame.onMessage(async (event) => {
     const message = event.data || {};
+    if (message.type === 'BUYER_ROOM_SELECTION_IMAGE_STATE' && typeof message.open === 'boolean') {
+      selectionImageOpen = message.open;
+      updateDownloadButtonVisibility();
+      return;
+    }
     if (message.type === 'CUSTOMER_HISTORY_FILE_OPEN') { openHistoryFile(message); return; }
     if (message.type === 'BUYER_TRANSACTION_HISTORY_REQUEST') {
       if (!['NCT','GHR'].includes(message.company) || typeof message.requestId !== 'string' || message.requestId.length > 100) return;
@@ -309,7 +315,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261119-buyer-quote-date-order-v1';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/mobile-buyer-room.html?v=20261123-buyer-mobile-layout-v1';
   try { await refreshWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   // Visible-frame polling is the only periodic workspace refresh authority.

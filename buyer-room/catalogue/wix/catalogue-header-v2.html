@@ -5,7 +5,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="catalogue-header-build-version" content="2026-09-30-catalogue-buyer-room-link-v52">
-  <meta name="catalogue-mobile-header-build" content="20261119-catalogue-mobile-buyer-entry-v1">
+  <meta name="catalogue-mobile-layout" content="20261123-catalogue-mobile-layout-v1">
+  <meta name="catalogue-mobile-header-build" content="20261120-catalogue-compact-navigation-v1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,23 +21,28 @@
     @media(max-width:750px){.header,.navrow{height:52px}.page-id{height:36px;margin-left:7px;padding:0 10px;gap:6px;font-size:10px;letter-spacing:.03em}.page-id svg{width:16px;height:16px}.nav{gap:2px;padding:0 5px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.navbtn{flex:0 0 auto;padding:0 9px;font-size:11px}.navbtn:after{left:9px;right:9px;height:2px}.nav-actions{padding:0 7px 0 4px}.buyer-room{width:40px;height:38px;padding:0;border-radius:9px}.buyer-room .label,.buyer-room .arrow{display:none}.buyer-room svg{width:19px;height:19px}}
 
     .buyer-room[aria-disabled="true"]{opacity:.58;cursor:default}
-    .mobile-brand,.mobile-search{display:none}
+    .mobile-brand,.mobile-tools{display:none}
     @media(max-width:900px){
       .header{height:auto}.nav{display:none}
-      .navrow{height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 8px}
-      .mobile-brand{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:center;gap:10px;height:54px;padding:0 12px;background:#f4511e;color:#fff}
+      .navrow{height:auto;display:grid;grid-template-columns:minmax(0,1fr) 56px;grid-template-rows:54px auto}
+      .mobile-brand{grid-area:1/1/2/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:center;gap:10px;height:54px;padding:0 64px 0 12px;background:#f4511e;color:#fff}
       .mobile-brand img{display:block;width:min(100%,178px);height:auto}
       .mobile-identity{min-width:0;text-align:right;line-height:1.15}
       .mobile-identity strong,.mobile-identity span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .mobile-identity strong{font-size:12px}.mobile-identity span{margin-top:3px;font-size:11px}
-      .page-id{grid-column:1/-1;height:34px;margin:0 12px;padding:0;background:none;border:none;border-radius:0;gap:7px;letter-spacing:0;font-size:17px;text-transform:none;color:var(--navy)}
-      .page-id svg{color:var(--orange);width:18px;height:18px}.page-id span{text-transform:lowercase}.page-id span::first-letter{text-transform:uppercase}
-      .mobile-search{display:flex;align-items:center;min-width:0;gap:8px;height:46px;margin:0 0 9px 12px;padding:0 10px;border:1px solid #c8d3df;border-radius:8px;color:#576b82}
-      .mobile-search:focus-within{outline:2px solid #244b73;outline-offset:1px}
-      .mobile-search svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8}
+      .page-id{display:none}
+      .mobile-tools{grid-area:2/1/3/-1;display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;padding:6px 12px}
+      .mobile-category{display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid #c8d3df;border-radius:8px;background:#fff;color:var(--navy);cursor:pointer}
+      .mobile-category:focus-visible,.mobile-search:focus-within{outline:2px solid #244b73;outline-offset:1px}
+      .mobile-category svg,.mobile-search svg{width:19px;height:19px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
+      .mobile-search{display:flex;align-items:center;min-width:0;gap:8px;height:44px;padding:0 10px;border:1px solid #c8d3df;border-radius:8px;color:#576b82}
       .mobile-search input{width:100%;min-width:0;padding:0;border:0;outline:0;background:transparent;color:var(--navy);font:inherit;font-size:16px}
-      .nav-actions{padding:0;margin:0 12px 9px 0}
-      .buyer-room{width:auto;height:46px;padding:0 10px;font-size:13px;gap:7px}.buyer-room .label{display:inline}.buyer-room .arrow{display:none}
+      .nav-actions{grid-area:1/2/2/3;z-index:1;padding:0;margin-right:12px;background:transparent}
+      .buyer-room{width:44px;height:44px;padding:0;gap:0}.buyer-room .label,.buyer-room .arrow{display:none}
+    }
+    @media(max-width:900px) and (max-height:55px){
+      .navrow{grid-template-rows:54px}
+      .mobile-tools{display:none}
     }
   </style>
 </head>
@@ -48,10 +54,13 @@
     </div>
     <div class="page-id" aria-label="Current page: Catalogue"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M15.2 7.1C11.7 4.5 8.3 3.5 3 3.6v21.1c5.1-.2 8.7.7 12.2 3.4V7.1Zm1.6 0c3.5-2.6 6.9-3.6 12.2-3.5v21.1c-5.1-.2-8.7.7-12.2 3.4V7.1Z"/><path d="M1 7.6h1v19.3c5.4-.5 9.6.4 14 3 4.4-2.6 8.6-3.5 14-3V7.6h1v21.1c-6.2-.7-10.8.2-15 3.3-4.2-3.1-8.8-4-15-3.3V7.6Z"/></svg><span>CATALOGUE</span></div>
     <nav class="nav" aria-label="Catalogue categories"><button class="navbtn" data-key="FOOD" type="button"><span>Food &amp; Beverages</span></button><button class="navbtn" data-key="HOUSEHOLDS" type="button"><span>Household &amp; Cleaning</span></button><button class="navbtn" data-key="PERSONAL CARE" type="button"><span>Personal Care &amp; Health</span></button><button class="navbtn" data-key="OTHERS" type="button"><span>General Merchandise</span></button></nav>
-    <label class="mobile-search">
+    <div class="mobile-tools">
+      <button id="mobileCategory" type="button" class="mobile-category" aria-label="Browse product categories" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <label class="mobile-search">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
       <input id="mobileSearch" type="search" aria-label="Search products, brands or categories" placeholder="Search products" autocomplete="off">
-    </label>
+      </label>
+    </div>
     <div class="nav-actions"><a class="buyer-room" id="buyerRoom" target="fmcgBuyerRoom" aria-disabled="true" aria-label="Open Buyer Room"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 5h2l1.5 9.1h10.4l2.1-6.3H6.1M9.2 18.5a1.2 1.2 0 1 0 0 .1M17 18.5a1.2 1.2 0 1 0 0 .1"/></svg></span><span class="label">Buyer Room</span><span class="arrow" aria-hidden="true">→</span></a></div>
   </div></header>
   <script>
@@ -61,9 +70,21 @@
       if(!buyerRoom.hasAttribute('href')||buyerRoomPending){event.preventDefault();return}
       if(staffPreview||matchMedia('(max-width:900px)').matches){event.preventDefault();post('catalogueBuyerRoom')}
     });
-    function paint(){buttons.forEach(button=>button.classList.toggle('active',button.dataset.key===active))}
-    function openMenu(key){active=key;paint();post('catalogueMain',{main:key,open:true})}
-    buttons.forEach(button=>{button.addEventListener('mouseenter',()=>{clearTimeout(hoverTimer);hoverTimer=setTimeout(()=>openMenu(button.dataset.key),220)});button.addEventListener('mouseleave',()=>clearTimeout(hoverTimer));button.addEventListener('click',()=>{clearTimeout(hoverTimer);const same=active===button.dataset.key;active=same?'':button.dataset.key;paint();post('catalogueMain',{main:button.dataset.key,open:!same})})});
+    function paint(){buttons.forEach(button=>{const open=button.dataset.key===active;button.classList.toggle('active',open);button.setAttribute('aria-expanded',String(open))})}
+    function openMenu(button){active=button.dataset.key;paint();post('catalogueMain',{main:active,anchor:button.getBoundingClientRect().left,open:true})}
+    buttons.forEach(button=>{
+      button.setAttribute('aria-expanded','false');
+      button.addEventListener('mouseenter',()=>{clearTimeout(hoverTimer);hoverTimer=setTimeout(()=>openMenu(button),220)});
+      button.addEventListener('mouseleave',()=>clearTimeout(hoverTimer));
+      button.addEventListener('click',()=>{
+        clearTimeout(hoverTimer);
+        if(active===button.dataset.key){const main=active;active='';paint();post('catalogueMain',{main,open:false})}
+        else openMenu(button);
+      });
+      button.addEventListener('keydown',event=>{if(event.key==='Escape'&&active){event.preventDefault();clearTimeout(hoverTimer);const main=active;active='';paint();post('catalogueMain',{main,open:false})}});
+    });
+    const mobileCategory=document.getElementById('mobileCategory');
+    mobileCategory.onclick=()=>post('catalogueMobileCategories',{open:mobileCategory.getAttribute('aria-expanded')!=='true'});
     document.querySelector('.nav').addEventListener('mouseleave',()=>post('catalogueMegaLeave'));
     const mobileSearch=document.getElementById('mobileSearch');
     let mobileSearchTimer;
@@ -88,6 +109,9 @@
         buyerRoomPending=Boolean(data.pending);buyerRoom.setAttribute('aria-disabled',String(buyerRoomPending));
         buyerRoom.setAttribute('aria-busy',String(buyerRoomPending));
         buyerRoom.querySelector('.label').textContent=buyerRoomPending?'Opening…':staffPreview?'Choose customer':'Buyer Room';
+      }else if(data.type==='catalogueMobileCategoriesState'&&event.source===parent){
+        mobileCategory.setAttribute('aria-expanded',String(Boolean(data.open)));
+        if(!data.open&&data.returnFocus&&matchMedia('(max-width:900px)').matches)mobileCategory.focus({preventScroll:true});
       }else if(data.type==='catalogueHeaderFilter'){
         clearTimeout(mobileSearchTimer);
         mobileSearch.value=String(data.query||'');
