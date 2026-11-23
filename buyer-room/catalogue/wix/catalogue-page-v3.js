@@ -17,7 +17,7 @@ let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261120-selection-removal-requote-v1';
+const CATALOGUE_BUILD_VERSION = '20261120-catalogue-compact-navigation-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -624,12 +624,14 @@ async function loadMenuData() {
 function setupNav() {
     const header = $w('#html3');
     const mega = $w('#html4');
+    const workspace = $w('#html5');
     const dataset = $w('#dataset1');
     let nativeSearch;
     try { nativeSearch = $w('#input2'); } catch (error) {
         try { nativeSearch = $w('#input1'); } catch (fallbackError) { nativeSearch = null; }
     }
     let activeMain = 'FOOD';
+    let menuAnchor = 12;
     let isOpen = false;
     let lastScrollY = null;
     let scrollCheckPending = false;
@@ -639,17 +641,18 @@ function setupNav() {
         try { $w('#html5').postMessage({ type: 'catalogueWorkspaceMenuState', open: Boolean(open) }); } catch (error) {}
     };
 
-    const showMenu = async (main = activeMain) => {
+    const showMenu = async (main = activeMain, anchor) => {
         clearTimeout(leaveTimer);
         activeMain = main;
+        menuAnchor = Number.isFinite(anchor) ? Math.max(12, Math.min(3000, anchor)) : 12;
         if (!isOpen) await mega.expand();
         isOpen = true;
         setWorkspaceMenuState(true);
-        mega.postMessage({ type: 'showMain', main: activeMain });
+        mega.postMessage({ type: 'showMain', main: activeMain, anchor: menuAnchor });
         setTimeout(() => {
             if (!isOpen) return;
             if (catalogueMenuMessage) mega.postMessage(catalogueMenuMessage);
-            mega.postMessage({ type: 'showMain', main: activeMain });
+            mega.postMessage({ type: 'showMain', main: activeMain, anchor: menuAnchor });
         }, 250);
         header.postMessage({ type: 'megaState', open: true, main: activeMain });
     };
@@ -723,10 +726,12 @@ function setupNav() {
                 await applyMainCategory(message.main);
                 header.postMessage({ type: 'megaState', open: false, main: message.main });
             } else {
-                message.open ? showMenu(message.main) : hideMenu();
+                message.open ? showMenu(message.main, message.anchor) : hideMenu();
             }
         } else if (message.type === 'catalogueMegaLeave') {
             leaveTimer = setTimeout(hideMenu, 420);
+        } else if (message.type === 'catalogueMobileCategories') {
+            workspace.postMessage({ type: 'catalogueMobileCategories', open: message.open === true });
         } else if (message.type === 'catalogueSearch') {
             await applySearch(message.query);
         } else if (message.type === 'catalogueAll') {
@@ -751,7 +756,7 @@ function setupNav() {
         const message = event.data || {};
         if (message.type === 'catalogueMegaReady') {
             if (catalogueMenuMessage) mega.postMessage(catalogueMenuMessage);
-            if (isOpen) mega.postMessage({ type: 'showMain', main: activeMain });
+            if (isOpen) mega.postMessage({ type: 'showMain', main: activeMain, anchor: menuAnchor });
         } else if (message.type === 'catalogueRequestPrinciples') {
             try {
                 const items = await getPrinciplesForSub(message.id);
@@ -760,6 +765,8 @@ function setupNav() {
                 console.error('Catalogue principle lookup failed', error);
                 mega.postMessage({ type: 'cataloguePrinciples', id: message.id, requestId: message.requestId, items: [] });
             }
+        } else if (message.type === 'catalogueMegaClose') {
+            await hideMenu();
         } else if (message.type === 'catalogueMegaEnter') {
             clearTimeout(leaveTimer);
         } else if (message.type === 'catalogueMegaLeave') {
@@ -818,9 +825,10 @@ function setupNav() {
             lastScrollY = currentY;
         } finally { scrollCheckPending = false; }
     }, 180);
+    return hideMenu;
 }
 
-function setupCatalogueWorkspace() {
+function setupCatalogueWorkspace(hideDesktopMenu) {
     const workspace = $w('#html5');
     workspace.onMessage(async (event) => {
         const message = event.data || {};
@@ -834,6 +842,18 @@ function setupCatalogueWorkspace() {
             else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
             if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
             if (catalogueBuyerNavigationPending) workspace.postMessage({ type: 'cataloguePrepareBuyerRoom' });
+        } else if (message.type === 'catalogueMobileBrowseState' && typeof message.compact === 'boolean') {
+            const browseClass = 'catalogue-compact-browse';
+            for (const selector of ['#section7', '#section6']) {
+                // @ts-ignore - the fixed selectors are the navigation and results sections.
+                const classes = $w(selector).customClassList;
+                if (message.compact) classes.add(browseClass);
+                else classes.remove(browseClass);
+            }
+        } else if (message.type === 'catalogueWorkspaceDismissMenu') {
+            await hideDesktopMenu();
+        } else if (message.type === 'catalogueMobileCategoriesState') {
+            $w('#html3').postMessage({ type: 'catalogueMobileCategoriesState', open: message.open === true, returnFocus: message.returnFocus === true });
         } else if (message.type === 'catalogueWorkspaceBrowse') {
             const principle = typeof message.principle === 'string' ? message.principle.trim() : '';
             const main = typeof message.main === 'string' ? message.main.toUpperCase() : '';
@@ -966,6 +986,7 @@ function setupFluidCatalogueLayout() {
     const classMap = [
         ['#section12', 'catalogue-native-masthead'],
         ['#section7', 'catalogue-navigation-stage'],
+        ['#html4', 'catalogue-compact-menu'],
         ['#section6', 'catalogue-results-stage']
     ];
 
@@ -984,6 +1005,5 @@ function setupFluidCatalogueLayout() {
 $w.onReady(() => {
     setupFluidCatalogueLayout();
     if (wixWindowFrontend.rendering?.env === 'backend') return;
-    setupNav();
-    setupCatalogueWorkspace();
+    setupCatalogueWorkspace(setupNav());
 });
