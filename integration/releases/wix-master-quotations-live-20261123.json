@@ -1,0 +1,33 @@
+{
+  "site": "LTPOS MASTER",
+  "route": "https://www.ltpos.ai/quotations",
+  "date": "2026-11-23",
+  "normalizedSource": "UTF-8 text, LF line endings, trailing whitespace removed for hashing",
+  "githubPages": {
+    "status": "Existing verified deployment retained for these Wix-only changes",
+    "commit": "3576a64e",
+    "run": "45123566660"
+  },
+  "wixStudio": {
+    "status": "Published and live",
+    "bridge": {
+      "file": "integration/wix/master-quotations-bridge.js",
+      "commit": "2b62798e",
+      "sha256": "10d71b82de49cfc042382a6daefe89f6990a08486913ccb9ab69d81218211058"
+    },
+    "inlineComponent": {
+      "id": "#html2",
+      "file": "integration/wix/master-quotations-20261123.inline.html",
+      "sha256": "d518ab3f24cb708ea0c3b05b19cae05e25488b458d3dfa5e44092d97a5216007"
+    }
+  },
+  "publicVerification": {
+    "productCount": 306,
+    "search": "INDO",
+    "matchedRow": 172,
+    "otherRowsRetained": true,
+    "dismissControlPresent": true,
+    "liveQuoteMutation": false,
+    "wixInlineAsset": "https://www-ltpos-ai.filesusr.com/html/4ecd18_a6a50af0a4ddbfb3e3bd21f3a794d686.html"
+  }
+}
