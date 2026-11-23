@@ -8,6 +8,12 @@ function editInput(action, input) {
       typeof input.requestId !== 'string' || !UUID.test(input.requestId)) return null;
 
   const write = { selectionId: input.selectionId, revision: input.revision, requestId: input.requestId };
+  const { selectionEpoch } = input;
+  if (selectionEpoch !== undefined) {
+    if (typeof selectionEpoch !== 'string' || selectionEpoch.length > 30 ||
+        (selectionEpoch && !Number.isFinite(Date.parse(selectionEpoch)))) return null;
+    write.selectionEpoch = selectionEpoch;
+  }
   if (action === 'publish') return typeof input.enabled === 'boolean' ? { ...write, enabled: input.enabled } : null;
   const fields = input.input;
   if (!fields || !['EA', 'GP'].includes(fields.mode) || !Number.isFinite(fields.value)) return null;

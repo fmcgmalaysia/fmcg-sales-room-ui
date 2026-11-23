@@ -1,6 +1,9 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 const load = require('./load-master-module.cjs');
 
 const { createMasterQuotationService } = load('masterQuotationService.js');
@@ -29,6 +32,42 @@ function fixture(onDeliver = pending => ({ ...pending, ok: true })) {
   return { service, selection, sent, saved };
 }
 const command = (revision, fields = {}) => ({ selectionId, revision, requestId: randomUUID(), ...fields });
+
+test('the Wix bridge preserves the restored selection epoch through draft and publish', async () => {
+  const { service, selection, sent, saved } = fixture();
+  selection.selectionEpoch = epoch;
+  const bridgeSource = fs.readFileSync(path.join(__dirname, '../wix/master-quotations-bridge.js'), 'utf8');
+  const connect = vm.runInNewContext(bridgeSource.replace('export function ', 'function ') + '\nconnectMasterQuotationFrame');
+  const responses = [];
+  let receive;
+  connect({
+    onMessage(handler) { receive = handler; },
+    postMessage(message) { responses.push(message); }
+  }, (action, customerId, input) => {
+    assert.equal(customerId, scope.customer.customerId);
+    return action === 'draft' ? service.saveDraft(scope, input) : service.publish(scope, input);
+  });
+  const submit = async (action, input) => {
+    await receive({ data: {
+      type: 'MASTER_QUOTATION_REQUEST', requestId: randomUUID(), action,
+      customerId: scope.customer.customerId, input
+    } });
+    return responses.at(-1);
+  };
+  const invalid = await submit('draft', command(0, { selectionEpoch: 'invalid-date', input: { mode: 'EA', value: 3 } }));
+  assert.equal(invalid.ok, false);
+  assert.equal(saved.size, 0);
+  const stale = await submit('draft', command(0, { input: { mode: 'EA', value: 3 } }));
+  assert.equal(stale.ok, false);
+  assert.equal(saved.size, 0);
+  const draft = await submit('draft', command(0, { selectionEpoch: epoch, input: { mode: 'EA', value: 3 } }));
+  assert.equal(draft.ok, true);
+  const publish = await submit('publish', command(draft.result.revision, { selectionEpoch: epoch, enabled: true }));
+  assert.equal(publish.ok, true);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].selectionEpoch, epoch);
+  assert.equal(sent[0].priceCtn, 36);
+});
 
 test('remove hides a published selection; restore protects against stale draft and publish until a new EA is entered', async () => {
   const { service, selection, sent, saved } = fixture();
