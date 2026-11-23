@@ -120,7 +120,8 @@ test('pointer-down review survives later blur, synthesized click and replies wit
  f.context.rememberQuantityDraft(f.item('b'),b);
  const button={disabled:false};f.context.$=id=>id==='submitOrder'?button:{classList:{contains:()=>false}};
  // Use the production pointer handler, then the fixture's real review implementation.
- const handler=html.match(/\$\('submitOrder'\)\.onpointerdown=([^\n]+)/)[1].replace(/;$/,'');
+ f.context.mobileSelection={matches:false};
+ const handler=html.match(/\$\('submitOrder'\)\.onpointerdown=([^\n]+)/)[1].trimEnd().replace(/;$/,'');
  const pointer=vm.runInContext('('+handler+')',f.context);
  f.context.$=id=>id==='submitOrder'?button:{classList:{contains:name=>id==='orderView'||f.shown.has(id),add:()=>f.shown.add(id),remove:()=>f.shown.delete(id)},setAttribute(){}};
  let prevented=0;pointer({button:0,preventDefault(){prevented++}});
