@@ -75,22 +75,69 @@
     overflow: visible !important;
     z-index: 52;
   }
-  .catalogue-navigation-stage [data-testid="responsive-container-content"]:has(.catalogue-compact-menu) {
-    position: relative;
-    overflow: visible !important;
+  div:has(> main > .catalogue-navigation-stage) > div > div:has(> wix-iframe) {
+    inset-inline-start: 0 !important;
+    width: max(100%, 901px) !important;
+    margin-inline: 0 !important;
   }
-  .catalogue-compact-menu {
-    position: absolute !important;
-    inset: 100% 0 auto !important;
-    width: 100% !important;
-    margin: 0 !important;
-    z-index: 1;
-  }
-  .catalogue-compact-menu,
-  .catalogue-compact-menu wix-iframe,
-  .catalogue-compact-menu wix-iframe > div,
-  .catalogue-compact-menu iframe {
+  div:has(> main > .catalogue-navigation-stage) > div > div:has(> wix-iframe),
+  div:has(> main > .catalogue-navigation-stage) > div > div:has(> wix-iframe) :is(wix-iframe, wix-iframe > div, iframe) {
     height: 456px !important;
     min-height: 0 !important;
   }
+}
+
+@media (min-width: 901px) and (max-width: 1024px) {
+  .catalogue-results-stage > div:nth-child(2) {
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+  .catalogue-results-stage > div:nth-child(2) > div {
+    grid-row: 1 !important;
+  }
+}
+
+
+@media (max-width: 880px) {
+  section:has(iframe[src*="mobile-buyer-room.html"]) #comp-muoufasq {
+    left: auto !important;
+    right: 18px !important;
+    margin: 94px 0 0 !important;
+    width: clamp(106px,34vw,140px) !important;
+    min-width: 0 !important;
+    height: 44px !important;
+  }
+}
+
+
+
+
+/* Scope the layout to the new login frame; Wix rewrites ID and class selectors. */
+[data-testid="responsive-container-content"]:has(> main > section iframe[src$="/buyer-login-20261123-full-html.html"]) > :is(header, footer),
+section > [data-testid="responsive-container-content"]:has(iframe[src$="/buyer-login-20261123-full-html.html"]) > div:not(:has(iframe[src$="/buyer-login-20261123-full-html.html"])) {
+  display: none !important;
+}
+
+section > [data-testid="responsive-container-content"]:has(iframe[src$="/buyer-login-20261123-full-html.html"]) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+section > [data-testid="responsive-container-content"] > div:has(iframe[src$="/buyer-login-20261123-full-html.html"]) {
+  grid-area: 1 / 1 / 2 / 2 !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+div:has(> wix-iframe iframe[src$="/buyer-login-20261123-full-html.html"]),
+wix-iframe:has(iframe[src$="/buyer-login-20261123-full-html.html"]),
+wix-iframe > div:has(> iframe[src$="/buyer-login-20261123-full-html.html"]),
+iframe[src$="/buyer-login-20261123-full-html.html"] {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
 }
