@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
-<meta name="buyer-mobile-order-build" content="20261123-buyer-selection-swipe-qty-v1">
+<meta name="buyer-mobile-order-build" content="20261123-buyer-selection-swipe-v2">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -165,7 +165,6 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .inline-stat.currency b,#listCurrency,#quoteCurrency,.order-currency{color:var(--orange)}
 .page-head>.browse{flex:0 0 auto;margin-left:auto}.showing-row .showing,.selection-limit-row .showing{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.selection-filters{display:flex;align-items:center;gap:0;min-height:38px;flex:0 0 auto;white-space:nowrap}.selection-filter{position:relative;height:38px;padding:0 16px;border:0;border-radius:0;background:transparent;color:#55677d;font-size:11px;font-weight:800;letter-spacing:.02em;cursor:pointer}.selection-filter:first-child{padding-left:4px}.selection-filter:before{content:"";position:absolute;left:14px;right:14px;bottom:-6px;height:2px;background:transparent}.selection-filter:first-child:before{left:4px}.selection-filter b{margin-left:7px;color:var(--orange);font-size:14px;line-height:1;font-weight:800;letter-spacing:0}.selection-filter.removed-filter b{color:#7f8da0}.selection-filter:hover{color:var(--ink)}.selection-filter[aria-pressed="true"],.selection-filter.active{color:#0b294e;background:transparent;box-shadow:none}.selection-filter[aria-pressed="true"]:before,.selection-filter.active:before{background:var(--orange)}.selection-filter[aria-pressed="true"] b,.selection-filter.active b{color:var(--orange)}.selection-limit-row{display:flex;align-items:center;min-height:30px;padding:2px 4px;color:#53657b;font-size:11px;line-height:1.25}.selection-limit-row .limit-note{color:#53657b}.selection-limit-row .limit-note b{color:var(--ink);font-size:11px}.selection-progress{width:150px;height:4px;margin-left:9px;overflow:hidden;border-radius:999px;background:#e3e9f0}.selection-progress>i{display:block;width:0;height:100%;border-radius:inherit;background:var(--orange)}
 .remove-head{display:flex!important;align-items:center;justify-content:center}
-.selection-qty,.selection-qty-head{display:none}
 .small-action.selection-remove::after{display:none}
 .selection-remove svg{width:16px;height:16px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .limit-note{position:relative;display:inline-flex;align-items:center;gap:5px}.limit-lock{width:20px;height:20px;flex:0 0 20px;display:grid;place-items:center;padding:0;border:1px solid #d8a516;border-radius:50%;background:#ffd452;color:#624500;cursor:pointer}.limit-lock:hover,.limit-lock:focus-visible{background:#ffc928;outline:none;box-shadow:0 0 0 3px rgba(255,212,82,.28)}.limit-lock svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.limit-popover[hidden]{display:none}.limit-popover{position:absolute;left:0;top:calc(100% + 9px);z-index:70;width:min(390px,calc(100vw - 72px));padding:15px 16px;border:1px solid #d8dee7;border-radius:9px;background:#fff;color:#425064;box-shadow:0 16px 38px rgba(32,48,71,.16);font-size:11px;line-height:1.48}.limit-popover:before{content:"";position:absolute;left:5px;top:-6px;width:10px;height:10px;border-left:1px solid #d8dee7;border-top:1px solid #d8dee7;background:#fff;transform:rotate(45deg)}.limit-popover strong{display:block;margin-bottom:5px;color:var(--ink);font-size:12px}.limit-popover p{margin:0 0 9px}.limit-tiers{display:grid;gap:4px;margin:0;padding:0;list-style:none}.limit-tiers li{display:flex;justify-content:space-between;gap:16px;padding-top:4px;border-top:1px solid #edf0f3}.limit-tiers b{color:var(--ink);white-space:nowrap}
@@ -405,7 +404,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .touch-buyer #myView .limit-popover{left:auto;right:0;white-space:normal}
   .touch-buyer #myView .limit-popover:before{left:auto;right:6px}
   .touch-buyer #currentPanel .grid,.touch-buyer #currentPanel .table-wrap{min-width:0;max-width:100%}
-  .touch-buyer #currentPanel .grid .row{grid-template-columns:48px minmax(0,1fr) minmax(61px,20%) 54px;min-width:0;min-height:62px}
+  .touch-buyer #currentPanel .grid .row{grid-template-columns:48px minmax(0,1fr) minmax(78px,23%);min-width:0;min-height:62px}
   .touch-buyer #currentPanel .grid .row.head{min-height:34px}
   .touch-buyer #currentPanel .grid .row>div{padding:4px;min-width:0}
   .touch-buyer #currentPanel .grid .row.head>div{font-size:9px}
@@ -420,18 +419,11 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .touch-buyer #currentPanel .quote-state{font-size:9px;padding-inline:3px;white-space:nowrap}
   .touch-buyer #currentPanel .selection-image-cell{position:relative}
   .touch-buyer #currentPanel .selection-image-open{display:block;position:absolute;inset:0;width:100%;height:100%;min-height:44px;border:0;background:transparent;cursor:zoom-in}
-  .touch-buyer #currentPanel .selection-remove-head{display:none}
-  .touch-buyer #currentPanel .selection-qty-head{display:inline}
+  .touch-buyer #currentPanel .remove-head{display:none!important}
+  .touch-buyer #currentPanel .selection-actions{display:contents}
   .touch-buyer #currentPanel .selection-row{position:relative;overflow:hidden;touch-action:pan-y pinch-zoom;--selection-shift:0px}
   .touch-buyer #currentPanel .selection-row.swipe-open{--selection-shift:-65px}
-  .touch-buyer #currentPanel .selection-row > :not(:last-child),
-  .touch-buyer #currentPanel .selection-qty{transform:translateX(var(--selection-shift));transition:transform 160ms ease-out}
-  .touch-buyer #currentPanel .selection-qty{display:grid;justify-items:center;gap:1px;padding:3px 2px}
-  .touch-buyer #currentPanel .selection-qty-button{width:44px;min-height:44px;padding:2px;border:1px solid #c5d4e1;border-radius:7px;color:#203f60;background:#f8fbfd;font:inherit;font-size:13px;font-weight:750;line-height:1.05;overflow-wrap:anywhere;cursor:pointer}
-  .touch-buyer #currentPanel .selection-qty-button.is-empty{color:#245485;font-size:20px}
-  .touch-buyer #currentPanel .selection-qty-unavailable{color:#61738a}
-  .touch-buyer #currentPanel .selection-qty-status{color:#53657b;font-size:9px;white-space:nowrap}
-  .touch-buyer #currentPanel .selection-qty-status.failed{color:#a92a1e}
+  .touch-buyer #currentPanel .selection-row > :not(.selection-actions){transform:translateX(var(--selection-shift));transition:transform 160ms ease-out}
   .touch-buyer #currentPanel .small-action.selection-remove{position:absolute;inset:0 0 0 auto;width:65px;height:100%;border:0;border-radius:0;background:#c23b13;color:#fff;opacity:0;pointer-events:none;transition:opacity 160ms ease-out}
   .touch-buyer #currentPanel .small-action.selection-remove svg{width:20px;height:20px}
   .touch-buyer #currentPanel .selection-row.swipe-open .selection-remove,
@@ -439,7 +431,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .touch-buyer #currentPanel .selection-remove:disabled{opacity:.64;cursor:wait}
   .touch-buyer #currentPanel .selection-row:not(.swipe-open) .selection-remove:disabled{opacity:0}
 }
-@media(prefers-reduced-motion:reduce){#currentPanel .selection-row > div,#currentPanel .selection-qty,#currentPanel .selection-remove{transition:none!important}}
+@media(prefers-reduced-motion:reduce){#currentPanel .selection-row > div,#currentPanel .selection-remove{transition:none!important}}
 .mobile-order-only,#mobileQtySheet:not([open]){display:none}
 #prepareMobileOrder{flex:0 0 auto;min-height:36px;padding:0 14px;border:1px solid #bdcddd;border-radius:7px;background:#f4f8fc;color:#233e60;font:inherit;font-weight:750;cursor:pointer}
 #prepareMobileOrder:hover,#prepareMobileOrder:focus-visible{border-color:#6e8dad;background:#eaf2fa}
@@ -465,9 +457,11 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .touch-buyer #myView .page-title{grid-column:1/-1}
   .touch-buyer #myView #browse .default-label,.touch-buyer #myView #browse .hover-label{display:none!important}
   .touch-buyer #myView #browse{grid-column:1;white-space:nowrap;gap:4px;padding:0 6px}
-  .touch-buyer #myView #prepareMobileOrder{grid-column:2;justify-self:start;white-space:nowrap;padding:0 6px;min-height:44px;font-size:11px;font-weight:750;color:#233e60;border:1px solid #bdcddd;border-radius:7px;background:#f4f8fc}
+  .touch-buyer #myView #prepareMobileOrder{grid-column:2;justify-self:start;white-space:nowrap;padding:0 6px;min-height:44px;font-size:11px;font-weight:750;color:#fff;border:1px solid #184b78;border-radius:7px;background:#184b78}
+  .touch-buyer #myView #prepareMobileOrder:focus-visible{outline:2px solid #184b78;outline-offset:2px}
   #orderView>.top{min-height:0;margin:0 0 8px}
   #orderFormHeading{font-size:23px;margin:0}
+  #orderView .order-selection-hint{margin:4px 0 0;color:#53657b;font-size:11px;line-height:1.4}
   #orderView .order-intro,#orderView .order-summary .metric:is(:nth-child(1),:nth-child(3)),#orderView .order-filters,#orderView #orderBackToTop,#orderView .order-desktop-head{display:none}
   #orderView .order-summary{position:sticky;top:var(--top);z-index:18;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:2px 8px;min-height:62px;margin:0 0 8px;padding:8px 10px;background:#fff;box-shadow:0 2px 5px #193a551a}
   #orderView .order-summary .metric{padding:0;border:0}
@@ -557,11 +551,11 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
       </div>
       <div class="list-tabs-bar selection-toolbar"><div class="selection-filters" role="tablist" aria-label="Filter My Selection"><button class="selection-filter active" id="currentTab" type="button" data-list-mode="current" data-selection-filter="all" role="tab" aria-selected="true" aria-pressed="true">All <b id="currentCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="food" role="tab" aria-selected="false" aria-pressed="false">Food <b id="foodCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="nonfood" role="tab" aria-selected="false" aria-pressed="false">Non-food <b id="nonFoodCount">0</b></button><button class="selection-filter removed-filter" id="removedTab" type="button" data-list-mode="removed" role="tab" aria-selected="false">Removed <b id="removedCount">0</b></button></div><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="mySearch" type="search" aria-label="Search selection by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label></div>
       <div class="selection-limit-row"><div class="showing" id="myShowing" aria-live="polite">Loading your company workspace…</div><span class="limit-note"><button class="limit-lock" id="limitInfoButton" type="button" aria-label="How selection limits and V.I.P quotations work" aria-expanded="false" aria-controls="limitInfo"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg></button><b id="selectionSummaryCount">0</b> of <b id="selectionLimit">100</b> <span class="limit-unit">selected</span><span class="limit-popover" id="limitInfo" role="dialog" aria-label="Selection limit information" hidden><strong>How V.I.P quotations and selection limits work</strong><p>After you select products, we will provide V.I.P prices within 24 hours. You can then download the product details and current quotation.</p><ul class="limit-tiers"><li><span>New account</span><b>100 SKUs</b></li><li><span>Contact Customer Service</span><b>Up to 300 SKUs</b></li><li><span>After your first completed transaction</span><b>500 SKUs automatically</b></li><li><span>Highest account access</span><b>700 SKUs</b></li></ul></span></span><span class="selection-progress" aria-hidden="true"><i id="selectionProgress"></i></span></div>
-      <div class="list-panel active" id="currentPanel"><div class="table-wrap"><div class="grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Descriptions</div><div>Normal Price</div><div>V.I.P Price</div><div>Added Time</div><div>Last Quoted</div><div class="remove-head"><span class="selection-remove-head">Remove</span><span class="selection-qty-head" title="Order quantity in cartons">Qty</span></div></div><div id="myRows" class="empty"><strong>Loading My Selection…</strong>Please wait.</div></div></div></div>
+      <div class="list-panel active" id="currentPanel"><div class="table-wrap"><div class="grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Descriptions</div><div>Normal Price</div><div>V.I.P Price</div><div>Added Time</div><div>Last Quoted</div><div class="remove-head">Remove</div></div><div id="myRows" class="empty"><strong>Loading My Selection…</strong>Please wait.</div></div></div></div>
       <div class="list-panel" id="removedPanel"><div class="showing" id="removedShowing"></div><div class="table-wrap"><div class="grid removed-grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Item Name / Packing Size</div><div>M³ / CTN</div><div>Removed Time</div><div>Edited By</div><div></div></div><div id="removedRows"></div></div></div></div>
     </section>
     <section id="orderView" class="view">
-      <header class="top"><div><button id="mobileOrderBack" type="button">‹ My Selection</button><h1 id="orderFormHeading" tabindex="-1">Prepare Order</h1><p class="sub order-intro">1. Enter Qty → 2. Click Send Order Request → 3. Review your order → 4. Enter your P.O. No. (if any) → 5. Click Send Request</p></div></header>
+      <header class="top"><div><button id="mobileOrderBack" type="button">‹ My Selection</button><h1 id="orderFormHeading" tabindex="-1">Prepare Order</h1><p class="sub order-intro">1. Enter Qty → 2. Click Send Order Request → 3. Review your order → 4. Enter your P.O. No. (if any) → 5. Click Send Request</p><p class="mobile-order-only order-selection-hint">Only products with a quantity are included in this request.</p></div></header>
       <div class="summary order-summary"><div class="metric"><label>Products</label><strong id="sumProducts">0</strong></div><div class="metric"><label>Total Cartons</label><strong id="sumCtn">0 CTN</strong></div><div class="metric"><label>Total CBM</label><strong id="sumCbm">0.0000</strong></div><div class="metric"><label>Estimated Order Total</label><strong id="sumAmount">—</strong></div><div class="order-submit"><button class="btn primary" id="submitOrder">Send Order Request</button></div></div>
       <div class="list-tabs-bar order-action-bar"><div class="order-filters"><span class="order-filter">All Items <b id="orderAllCount">0</b></span></div><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="orderSearch" type="search" aria-label="Search order form by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label></div>
       <div class="showing" id="orderShowing"></div><p class="order-note" id="hiddenOrdered"></p>
@@ -619,7 +613,7 @@ function thumbnail(item,preview=false){const src=imageUrl(item);if(!src)return '
 function priceCell(item,type){const normal=type==='normal';if(normal)return '<span class="price-pair normal">- NIL -</span>';const ea=num(item.vipPriceEa),ctn=num(item.vipPriceCtn)||(ea*num(item.ea)),status=String(item.quoteStatus||'').toUpperCase(),currency=esc(item.vipCurrency||state.currency||'USD');if(status==='HOLD VIEW'||status==='HOLD')return '<span class="quote-state hold">On Hold</span>';if(status==='WAITING'||(!ea&&!ctn))return '<span class="quote-state waiting">Waiting</span>';return `<span class="price-pair vip"><span>${currency} ${money(ea)}</span> <i aria-hidden="true">|</i> <span>${money(ctn)}</span></span>`}
 function matches(item,q){const hay=[item.barcode,item.itemName,item.brand,item.packingSize,item.category].join(' ').toLowerCase();return !q||hay.includes(q.toLowerCase())}
 function byItemName(items){return [...items].sort((a,b)=>{const left=String(a.itemName||'').trim(),right=String(b.itemName||'').trim();if(!left)return right?1:0;if(!right)return -1;return left.localeCompare(right,'en',{sensitivity:'base',numeric:true})||String(a.barcode||'').localeCompare(String(b.barcode||''),'en',{numeric:true})})}
-function row(item,removed=false){const key=String(item.id),restoring=!removed&&state.pendingRestores.has(key);if(removed)return `<div class="row" data-id="${esc(item.id)}"><div class="mono">${esc(item.barcode)}</div><div>${thumbnail(item,true)}</div><div><div class="name">${esc(item.itemName)}</div><div class="packing-meta">${esc(item.packingSize)}</div></div><div class="mono">${num(item.cbmPerCtn).toFixed(4)}</div><div class="time">${timeCell(item.removedTime,true)}</div><div class="time">${esc(item.lastEditedBy||'—')}</div><div><button class="small-action recover" data-recover="${esc(item.id)}" aria-description="Restore to My Selection and request a new quote" ${restoring?'disabled aria-label="Operation in progress"':''}>${restoring?'Restoring…':'Restore'}</button></div></div>`;const updated=item.quoteActive?(item.quotePublishedAt||(!/^WEB-\d+$/.test(String(item.quoteEffectiveAt||''))&&item.quoteEffectiveAt)||item.quoteSyncedAt||''):'';return `<div class="row selection-row" data-id="${esc(item.id)}"><div class="mono">${esc(item.barcode)}</div><div class="selection-image-cell">${thumbnail(item,true)}${imageUrl(item)?'<button type="button" class="selection-image-open" aria-label="Open product image"></button>':''}</div><div><div class="mono selection-barcode">${esc(item.barcode)}</div><div class="name">${esc(item.itemName)}</div><div class="packing-meta">${esc(item.packingSize)}</div></div><div>${priceCell(item,'normal')}</div><div>${priceCell(item,'vip')}</div><div class="time">${esc(compactTime(item.addedTime))}${item.addedTime&&item.selectedByName?` <span class="audit-author">by ${esc(item.selectedByName)}</span>`:''}</div><div class="time quote-updated">${updated?esc(compactTime(updated)):item.quoteActive?'':'Waiting'}</div><div><div class="selection-qty">${selectionQuantityControls(item)}</div><button type="button" class="small-action selection-remove" data-remove="${esc(key)}" aria-label="Remove ${esc(item.itemName)}" title="Remove" ${state.pendingQuantities.has(key)?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></button></div></div>`}
+function row(item,removed=false){const key=String(item.id),restoring=!removed&&state.pendingRestores.has(key);if(removed)return `<div class="row" data-id="${esc(item.id)}"><div class="mono">${esc(item.barcode)}</div><div>${thumbnail(item,true)}</div><div><div class="name">${esc(item.itemName)}</div><div class="packing-meta">${esc(item.packingSize)}</div></div><div class="mono">${num(item.cbmPerCtn).toFixed(4)}</div><div class="time">${timeCell(item.removedTime,true)}</div><div class="time">${esc(item.lastEditedBy||'—')}</div><div><button class="small-action recover" data-recover="${esc(item.id)}" aria-description="Restore to My Selection and request a new quote" ${restoring?'disabled aria-label="Operation in progress"':''}>${restoring?'Restoring…':'Restore'}</button></div></div>`;const updated=item.quoteActive?(item.quotePublishedAt||(!/^WEB-\d+$/.test(String(item.quoteEffectiveAt||''))&&item.quoteEffectiveAt)||item.quoteSyncedAt||''):'';return `<div class="row selection-row" data-id="${esc(item.id)}"><div class="mono">${esc(item.barcode)}</div><div class="selection-image-cell">${thumbnail(item,true)}${imageUrl(item)?'<button type="button" class="selection-image-open" aria-label="Open product image"></button>':''}</div><div><div class="mono selection-barcode">${esc(item.barcode)}</div><div class="name">${esc(item.itemName)}</div><div class="packing-meta">${esc(item.packingSize)}</div></div><div>${priceCell(item,'normal')}</div><div>${priceCell(item,'vip')}</div><div class="time">${esc(compactTime(item.addedTime))}${item.addedTime&&item.selectedByName?` <span class="audit-author">by ${esc(item.selectedByName)}</span>`:''}</div><div class="time quote-updated">${updated?esc(compactTime(updated)):item.quoteActive?'':'Waiting'}</div><div class="selection-actions"><button type="button" class="small-action selection-remove" data-remove="${esc(key)}" aria-label="Remove ${esc(item.itemName)}" title="Remove" ${state.pendingQuantities.has(key)?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></button></div></div>`}
 
 function isAwaiting(item){const status=String(item.quoteStatus||'').toUpperCase();return status==='WAITING'||(!num(item.vipPriceEa)&&!num(item.vipPriceCtn)&&status!=='HOLD'&&status!=='HOLD VIEW')}
 function isFoodItem(item){const category=String(item.category||item.mainCategory||'').trim().toUpperCase();return category==='FOOD'||category==='FOOD & BEVERAGES'||category.startsWith('FOOD ')}
@@ -870,30 +864,15 @@ const mobileSelection=matchMedia('(max-width:880px)');
 const mobileQtySheet=$('mobileQtySheet'),mobileQtyInput=$('mobileQtyInput');
 const selectionRows=$('myRows');
 let mobileQtyItemId='',mobileQtyCustomer='';
-let mobileQtyFromSelection=false;
 let selectionSwipe=null,openSelectionRemove=null,skipSelectionClick=false;
-function selectionQuantityControls(item){
-  if(!isOrderable(item))return '<span class="selection-qty-unavailable" aria-label="Waiting for a quotation">—</span>';
-  const key=String(item.id),qty=num(item.orderQtyCtn),pending=state.pendingQuantities.has(key),failed=Boolean(state.quantityDrafts.get(key)?.error);
-  const label=failed?'Retry order quantity for ':qty?'Edit order quantity for ':'Add order quantity for ';
-  return `<button type="button" class="selection-qty-button${qty?'':' is-empty'}" data-selection-qty aria-label="${label}${esc(item.itemName)}">${qty?qty.toLocaleString('en-US'):'+'}</button>${failed||pending?`<span class="selection-qty-status${failed?' failed':''}" role="status">${failed?'Retry':'Saving…'}</span>`:''}`;
-}
-function refreshSelectionQuantity(id){
-  const key=String(id),item=state.my.find(product=>String(product.id)===key);
-  const row=selectionRows.querySelector(`[data-id="${CSS.escape(key)}"]`);
-  if(!row||!item)return;
-  const cell=row.querySelector('.selection-qty'),restoreFocus=cell.contains(document.activeElement);
-  cell.innerHTML=selectionQuantityControls(item);
-  if(restoreFocus)cell.querySelector('[data-selection-qty]')?.focus({preventScroll:true});
-  row.querySelector('[data-remove]').disabled=state.pendingQuantities.has(key);
+function refreshSelectionRemove(id){
+  const key=String(id);
+  const button=selectionRows.querySelector(`[data-id="${CSS.escape(key)}"] [data-remove]`);
+  if(button)button.disabled=state.pendingQuantities.has(key);
 }
 function closeSelectionRemove(){
   openSelectionRemove?.classList.remove('swipe-open');
   openSelectionRemove=null;
-}
-function updateSelectionOverlay(){
-  // The existing Wix message controls the native Excel overlay.
-  post('BUYER_ROOM_SELECTION_IMAGE_STATE',{open:selectionImageDialog.open||(mobileQtySheet.open&&$('myView').classList.contains('active'))});
 }
 function mobileQtyItem(){
   return mobileQtyCustomer===state.customerId?state.my.find(item=>String(item.id)===mobileQtyItemId&&isOrderable(item)):undefined;
@@ -915,9 +894,7 @@ function openMobileQty(item){
   $('mobileQtyAudit').textContent=item.qtyEditedAt?'Last edited '+compactTime(item.qtyEditedAt):'';
   $('mobileQtyClear').hidden=!num(item.orderQtyCtn);
   updateMobileQtyTotal();
-  mobileQtyFromSelection=$('myView').classList.contains('active');
   mobileQtySheet.showModal();
-  if(mobileQtyFromSelection)updateSelectionOverlay();
 }
 function saveMobileQty(){
   const item=mobileQtyItem();
@@ -930,7 +907,6 @@ function saveMobileQty(){
   const next=state.quantityDrafts.get(key);
   next.editing=false;next.value=String(num(mobileQtyInput.value));
   queueQuantitySave(item,mobileQtyInput,true);
-  refreshSelectionQuantity(key);
   renderOrder(key);
 }
 $('orderRows').addEventListener('click',event=>{
@@ -941,11 +917,6 @@ $('orderRows').addEventListener('click',event=>{
 $('mobileQtyForm').onsubmit=event=>{event.preventDefault();saveMobileQty()};
 $('mobileQtyClear').onclick=()=>{mobileQtyInput.value='';saveMobileQty()};
 $('mobileQtyClose').onclick=()=>mobileQtySheet.close();
-mobileQtySheet.addEventListener('close',()=>{
-  if(!mobileQtyFromSelection)return;
-  mobileQtyFromSelection=false;
-  updateSelectionOverlay();
-});
 mobileQtyInput.oninput=updateMobileQtyTotal;
 $('prepareMobileOrder').onclick=()=>{showView('order');$('orderFormHeading').focus({preventScroll:true})};
 $('mobileOrderBack').onclick=()=>{showView('my');$('prepareMobileOrder').focus({preventScroll:true})};
@@ -1006,28 +977,20 @@ selectionRows.addEventListener('click',event=>{
   const row=event.target.closest('.selection-row');
   if(!row)return;
   if(row===openSelectionRemove){closeSelectionRemove();return;}
-  if(!event.target.closest('.selection-image-open')){
-    const item=state.my.find(product=>String(product.id)===row.dataset.id);
-    if(!item)return;
-    if(!isOrderable(item)){toast('You can enter a quantity after a quote is available.');return;}
-    openMobileQty(item);
-    mobileQtyInput.focus({preventScroll:true});
-    return;
-  }
   const image=row.querySelector('[data-preview-src]');
   if(!image||image.parentElement.classList.contains('broken')||selectionImageDialog.open)return;
   hideImagePreview();
   selectionImage.alt=image.alt;
   selectionImage.src=image.dataset.previewSrc;
   selectionImageDialog.showModal();
-  updateSelectionOverlay();
+  post('BUYER_ROOM_SELECTION_IMAGE_STATE',{open:true});
 });
 selectionImageDialog.addEventListener('click',event=>{
   if(event.target===selectionImageDialog)selectionImageDialog.close();
 });
 selectionImageDialog.addEventListener('close',()=>{
   selectionImage.removeAttribute('src');
-  updateSelectionOverlay();
+  post('BUYER_ROOM_SELECTION_IMAGE_STATE',{open:false});
 });
 mobileSelection.addEventListener('change',event=>{
   closeSelectionRemove();
@@ -1179,7 +1142,7 @@ window.addEventListener('message',e=>{
   }
   if(m.type==='BUYER_ROOM_ACTION_RESULT'){
     if(m.data)applyData(m.data);
-    if(m.action==='remove')finishRemove(m);else if(m.action==='recover')finishRestore(m);else if(m.action==='quantity'){finishQuantity(m);refreshSelectionQuantity(m.itemId);}else if(m.message)toast(m.message);
+    if(m.action==='remove')finishRemove(m);else if(m.action==='recover')finishRestore(m);else if(m.action==='quantity'){finishQuantity(m);refreshSelectionRemove(m.itemId);}else if(m.message)toast(m.message);
   }
   if(m.type==='BUYER_ROOM_ORDER_PAGE_RESULT'){
     state.historyLoading=false;
