@@ -4,7 +4,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
-<meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v5">
+<meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v6">
+<meta name="buyer-track-progress-build" content="20261123-buyer-track-progress-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -274,14 +275,16 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 #trackView #trackCurrentPanel .buyer-planning-fact:last-child{border-bottom:0}
 #trackView #trackCurrentPanel .buyer-planning-fact span{color:#6a7e96}
 #trackView #trackCurrentPanel .buyer-planning-fact b{font-size:12px;font-weight:700;color:#203047;white-space:nowrap}
-#trackView #trackCurrentPanel .tracking-rail{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));padding:0 12px;margin-top:0;position:relative}
-#trackView #trackCurrentPanel .tracking-rail:before{left:8.5%;right:8.5%;top:27px;height:4px;background:#e7eef4}
+#trackView #trackCurrentPanel .tracking-rail{--tracking-ring-size:46px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));padding:5px 0 10px;margin-top:0;position:relative}
+#trackView #trackCurrentPanel .tracking-rail:before{display:none}
 #trackView #trackCurrentPanel .tracking-stage{padding:0 6px!important;text-align:center;border:0}
-#trackView #trackCurrentPanel .tracking-ring{width:58px;height:58px;margin:0 auto;box-shadow:none;background:conic-gradient(#12883e calc(var(--progress)*1%),#e7eef4 0)}
-#trackView #trackCurrentPanel .tracking-ring:before{inset:6px;background:#fff}#trackView #trackCurrentPanel .tracking-stage.complete .tracking-ring:before{background:#12883e}
-#trackView #trackCurrentPanel .tracking-ring span{font-size:24px;font-weight:750;color:#203047}#trackView #trackCurrentPanel .tracking-stage.complete .tracking-ring span{color:#fff}
+#trackView #trackCurrentPanel .tracking-stage:not(:last-child):after{content:"";position:absolute;top:calc(var(--tracking-ring-size) / 2 - 2px);left:calc(50% + var(--tracking-ring-size) / 2 + 1px);right:calc(-50% + var(--tracking-ring-size) / 2 + 1px);height:4px;border-radius:4px;background:#e7eef4}
+#trackView #trackCurrentPanel .tracking-stage.complete:not(:last-child):after{background:#2b6cb0}
+#trackView #trackCurrentPanel .tracking-ring{width:var(--tracking-ring-size);height:var(--tracking-ring-size);margin:0 auto;box-shadow:none;background:conic-gradient(#2b6cb0 calc(var(--progress)*1%),#e7eef4 0)}
+#trackView #trackCurrentPanel .tracking-ring:before{inset:6px;background:#fff}#trackView #trackCurrentPanel .tracking-stage.complete .tracking-ring:before{background:#2b6cb0}
+#trackView #trackCurrentPanel .tracking-ring span{font-size:22px;font-weight:600;line-height:1;color:#17466f}#trackView #trackCurrentPanel .tracking-stage.complete .tracking-ring span{color:#fff}
 #trackView #trackCurrentPanel .tracking-stage.active .tracking-ring{box-shadow:none}#trackView #trackCurrentPanel .tracking-stage.active .tracking-ring:after{display:none}
-#trackView #trackCurrentPanel .tracking-stage-label{display:block;font-size:11px;font-weight:800;line-height:15.95px;margin-top:8px;color:#173557;white-space:nowrap;overflow:visible}
+#trackView #trackCurrentPanel .tracking-stage-label{display:block;font-size:11px;font-weight:600;line-height:1.4;margin-top:8px;color:#173557;white-space:normal;overflow:visible}
 #trackView #trackCurrentPanel .tracking-stage-zh{display:block;font-size:10px;font-weight:500;line-height:14px;margin-top:3px;color:#627a93}
 #trackView #trackCurrentPanel .tracking-section-title{height:47px;padding-bottom:9px}#trackView #trackCurrentPanel .tracking-section-title strong{font-size:13px;font-weight:700}
 #trackView #trackCurrentPanel .tracking-table-wrap{overflow-x:auto;padding:2px;border:1px solid #d8e2eb;border-radius:9px;background:#fff;box-shadow:none}
@@ -306,8 +309,8 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 #trackView #trackCurrentPanel .tracking-dot{flex:0 0 18px;width:18px;height:18px;font:700 9px/1 Inter,"Segoe UI",Arial,sans-serif;background:#dce4ed;color:#687e96}
 #trackView #trackCurrentPanel .tracking-dot.complete{background:#12883e;color:#fff}#trackView #trackCurrentPanel .tracking-dot.partial{background:linear-gradient(90deg,#12883e 50%,#dce4ed 50%);color:#183b62}
 #trackRows .tracking-row:hover{background:#f5f8fa!important;transform:none;box-shadow:none}
-@media(max-width:1050px){#trackView #trackCurrentPanel .buyer-progress-split{grid-template-columns:minmax(0,1fr) 235px}#trackView #trackCurrentPanel .buyer-progress-facts{padding:8px 10px}#trackView #trackCurrentPanel .tracking-stage-label{font-size:9px;white-space:normal}}
-@media(max-width:780px){:root{--side:174px}#trackView #trackCurrentPanel .buyer-progress-split{grid-template-columns:1fr}#trackView #trackCurrentPanel .buyer-progress-facts{border-left:0;border-top:1px solid #dce5ee}#trackView #trackCurrentPanel .tracking-rail{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:18px}#trackView #trackCurrentPanel .tracking-rail:before{display:none}}
+@media(max-width:1050px){#trackView #trackCurrentPanel .buyer-progress-split{grid-template-columns:minmax(0,1fr) 235px}#trackView #trackCurrentPanel .buyer-progress-facts{padding:8px 10px}#trackView #trackCurrentPanel .tracking-rail{--tracking-ring-size:clamp(28px,9vw,38px)}#trackView #trackCurrentPanel .tracking-stage{padding:0 1px!important}#trackView #trackCurrentPanel .tracking-ring:before{inset:4px}#trackView #trackCurrentPanel .tracking-ring span{font-size:16px}#trackView #trackCurrentPanel .tracking-stage-label{font-size:9px}}
+@media(max-width:780px){:root{--side:174px}#trackView #trackCurrentPanel .buyer-progress-split{grid-template-columns:1fr}#trackView #trackCurrentPanel .buyer-progress-facts{border-left:0;border-top:1px solid #dce5ee}}
 </style>
 <style>
 /* Buyer visual details: preserve original data, handlers and saving feedback. */
@@ -332,7 +335,6 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 #trackView .top .sub{line-height:18.85px;color:#6b7c92}
 #trackView #trackCurrentPanel .tracking-progress-title strong{font-weight:700;color:#0c2e55}
 #trackView #trackCurrentPanel .tracking-section-title strong{line-height:18.85px;color:#0c2e55}
-#trackView #trackCurrentPanel .tracking-ring span{line-height:34.8px}
 #trackView #trackCurrentPanel .buyer-planning-fact b{line-height:17.4px}
 #trackView #trackCurrentPanel .tracking-row{font-weight:600}
 #trackView #trackCurrentPanel .tracking-row>.track-order-on,#trackView #trackCurrentPanel .tracking-row>.tracking-amount{font-weight:600}
@@ -425,15 +427,23 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   .touch-buyer #currentPanel .selection-remove:focus-visible{opacity:1;pointer-events:auto}
   .touch-buyer #currentPanel .selection-remove:disabled{opacity:.64;cursor:wait}
   .touch-buyer #currentPanel .selection-row:not(.swipe-open) .selection-remove:disabled{opacity:0}
+  .touch-buyer #currentPanel .selection-row.swipe-dragging > :not(.selection-actions){transition:none}
+  .touch-buyer #currentPanel .selection-row.swipe-dragging .selection-remove{
+    opacity:1;pointer-events:none;transition:none;clip-path:inset(0 0 0 calc(100% + var(--selection-shift)));
+  }
 }
 @media(prefers-reduced-motion:reduce){#currentPanel .selection-row > div,#currentPanel .selection-remove{transition:none!important}}
 .mobile-order-only,#mobileQtySheet:not([open]){display:none}
 #prepareMobileOrder{flex:0 0 auto;min-height:40px;padding:0 14px;border:1px solid #184b78;border-radius:7px;background:#184b78;color:#fff;font:inherit;font-weight:750;cursor:pointer}
 #prepareMobileOrder:hover{border-color:#123a61;background:#123a61}
 #prepareMobileOrder:focus-visible{outline:2px solid #184b78;outline-offset:2px}
+@media(min-width:881px){
+  #myView > .page-head > :is(#browse,#prepareMobileOrder){display:inline-flex;align-items:center;justify-content:center;width:172px;min-width:172px;height:40px;min-height:40px;font-size:12px;font-weight:750;white-space:nowrap}
+}
 :is(#currentPanel,#removedPanel,#orderView) .row:not(.mobile-order-row,.order-mobile-head)>div:nth-child(2){justify-content:center;text-align:center}
 #currentPanel .grid .row>div:is(:nth-child(4),:nth-child(5)),#orderView .order-grid .row:not(.mobile-order-row,.order-mobile-head)>div:nth-child(4){text-align:right}
 #currentPanel .grid .row>div:is(:nth-child(4),:nth-child(5)){justify-content:flex-end}
+#orderView .order-desktop-head>div:nth-child(4){justify-content:flex-end}
 #selectionRemoveDialog{width:min(calc(100% - 24px),390px);max-width:none;margin:auto;padding:20px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
 #selectionRemoveDialog::backdrop{background:#102a4a99}
 #selectionRemoveDialog h2{margin:0 0 8px;font-size:18px}
@@ -449,6 +459,10 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .mobile-qty-head h2{font-size:21px;margin:0}
 .mobile-qty-head button{width:44px;height:44px;border:1px solid var(--line);border-radius:50%;background:#f5f8fb;color:var(--ink);font-size:23px}
 .mobile-qty-product{justify-content:flex-start;margin:10px 0 14px}
+.mobile-qty-product #mobileQtyImage{flex:0 0 72px}
+.mobile-qty-product #mobileQtyImage :is(.thumb-shell,.thumb,.thumb-fallback){width:72px;height:72px}
+.mobile-qty-product #mobileQtyImage .thumb{object-fit:contain}
+.mobile-qty-product>div{min-width:0;overflow-wrap:anywhere}
 .mobile-qty-product strong,.mobile-qty-product small{display:block}
 .mobile-qty-fact,.mobile-qty-input{min-height:43px;border-top:1px solid var(--line);padding:7px 0}
 .mobile-qty-input input{width:106px;min-height:44px;padding:0 8px;border:1px solid #49698b;border-radius:7px;background:#f7fbff;text-align:right;font-size:18px;font-weight:750}
@@ -494,6 +508,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   #orderView .mobile-order-row{min-height:65px;scroll-margin-top:calc(var(--top) + 100px);cursor:pointer}
   #orderView .mobile-order-row>div,#orderView .order-mobile-head>div{padding:5px;min-width:0}
   #orderView .order-mobile-head>div:not(:first-child),#orderView .mobile-order-row .mobile-order-price{text-align:right}
+  #orderView .order-mobile-head>div:not(:first-child){justify-content:flex-end}
   #orderView .mobile-order-row .mobile-order-price{display:block;font-size:11px;font-weight:700;white-space:nowrap}
   #orderView .mobile-order-product{display:flex;align-items:center;gap:6px}
   #orderView .mobile-order-product>div{min-width:0}
@@ -759,12 +774,18 @@ function orderEntryRows(rows){
   }
   return [...byPointBaseSortId(numbered),...byPointBaseSortId(remaining)];
 }
+function mobileQuantityControls(item){
+  const qty=num(item.orderQtyCtn),failed=Boolean(state.quantityDrafts.get(String(item.id))?.error);
+  const label=failed?'Retry quantity for ':qty?'Edit quantity for ':'Add quantity for ';
+  return `<button type="button" class="mobile-qty-button${qty?'':' mobile-qty-add'}" aria-label="${label}${esc(item.itemName)}">${qty?qty.toLocaleString('en-US'):'+'}</button>
+      ${failed?'<span class="mobile-qty-status failed">Retry</span>':''}`;
+}
 function renderMobileOrder(query,movedItem){
   const rows=$('orderRows');
+  const changed=typeof movedItem==='string'?rows.querySelector(`[data-mobile-order-id="${CSS.escape(movedItem)}"]`):null;
   const headerBottom=$('orderView').querySelector('.order-mobile-head').getBoundingClientRect().bottom;
   let anchor=null;
   if($('orderView').classList.contains('active')&&window.scrollY>0){
-    const changed=typeof movedItem==='string'?rows.querySelector(`[data-mobile-order-id="${CSS.escape(movedItem)}"]`):null;
     const position=changed?.getBoundingClientRect();
     anchor=position&&position.bottom>headerBottom&&position.top<innerHeight
       ? changed.nextElementSibling||changed.previousElementSibling
@@ -783,16 +804,21 @@ function renderMobileOrder(query,movedItem){
   $('orderAllCount').textContent=all.length;
   $('orderShowing').textContent=`Showing ${items.length} of ${all.length} quoted products`;
   rows.className=items.length?'':'empty';
-  rows.innerHTML=items.length?items.map(item=>{
-    const key=String(item.id),qty=num(item.orderQtyCtn),pending=state.pendingQuantities.has(key),failed=Boolean(state.quantityDrafts.get(key)?.error);
-    const label=failed?'Retry quantity for ':qty?'Edit quantity for ':'Add quantity for ';
-    const status=failed?'Retry':pending?'Saving…':'';
-    return `<div class="row mobile-order-row" data-mobile-order-id="${esc(key)}">
+  const changedIndex=changed?items.findIndex(item=>String(item.id)===movedItem):-1;
+  if(changedIndex>=0&&rows.childElementCount===items.length){
+    const cell=changed.querySelector('.mobile-qty-cell');
+    const focused=cell.contains(document.activeElement);
+    cell.innerHTML=mobileQuantityControls(items[changedIndex]);
+    const next=items[changedIndex+1];
+    const nextRow=next?rows.querySelector(`[data-mobile-order-id="${CSS.escape(String(next.id))}"]`):null;
+    if(changed.nextElementSibling!==nextRow)rows.insertBefore(changed,nextRow);
+    if(focused)cell.querySelector('.mobile-qty-button').focus({preventScroll:true});
+  }else{
+    rows.innerHTML=items.length?items.map(item=>`<div class="row mobile-order-row" data-mobile-order-id="${esc(item.id)}">
       <div class="mobile-order-product">${thumbnail(item)}<div><span class="mono">${esc(item.barcode)}</span><div class="name">${esc(item.itemName)}</div><div class="packing-meta">${esc(item.packingSize)}</div></div></div>
       <div class="mobile-order-price">${money(ctnPrice(item))}</div>
-      <div class="mobile-qty-cell"><button type="button" class="mobile-qty-button${qty?'':' mobile-qty-add'}" aria-label="${label}${esc(item.itemName)}">${qty?qty.toLocaleString('en-US'):'+'}</button>
-      ${status?`<span class="mobile-qty-status${failed?' failed':''}">${status}</span>`:''}</div></div>`;
-  }).join(''):query?'<strong>No Matching Products</strong>Try another product name or barcode.':'<strong>No quoted products yet</strong>Quoted products can be ordered here.';
+      <div class="mobile-qty-cell">${mobileQuantityControls(item)}</div></div>`).join(''):query?'<strong>No Matching Products</strong>Try another product name or barcode.':'<strong>No quoted products yet</strong>Quoted products can be ordered here.';
+  }
   if(anchor){
     const replacement=rows.querySelector(`[data-mobile-order-id="${CSS.escape(anchor.dataset.mobileOrderId)}"]`);
     if(replacement)window.scrollBy(0,replacement.getBoundingClientRect().top-anchorTop);
@@ -887,7 +913,7 @@ function renderEditHistory(){const rows=allTrackingRows();$('trackHistoryCount')
 function setTrackHistoryTab(history){$('trackCurrentPanel').hidden=history;$('trackHistoryPanel').hidden=!history;$('trackCurrentTab').setAttribute('aria-selected',String(!history));$('trackHistoryTab').setAttribute('aria-selected',String(history))}
 function renderOrderTracking(){renderTrackOrders();renderCompletedOrders();renderEditHistory();requestOrderDetails()}
 $('trackCurrentTab').onclick=()=>setTrackHistoryTab(false);$('trackHistoryTab').onclick=()=>setTrackHistoryTab(true);
-function summary(){const ordered=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0),ctn=ordered.reduce((s,x)=>s+num(x.orderQtyCtn),0),cbm=totalCbm(ordered,x=>num(x.orderQtyCtn),x=>x.cbmPerCtn),amount=ordered.reduce((s,x)=>s+num(x.orderQtyCtn)*ctnPrice(x),0);$('sumProducts').textContent=ordered.length;$('sumCtn').textContent=`${ctn} CTN`;$('sumCbm').textContent=cbmText(cbm);$('sumAmount').textContent=`${state.currency} ${money(amount)}`;const mobile=mobileSelection.matches,waiting=mobile&&state.pendingQuantities.size>0;$('submitOrder').disabled=!ordered.length||waiting||Boolean(state.quantityReviewRequested)||[...state.quantityDrafts.values()].some(draft=>draft.error);$('submitOrder').textContent=waiting||state.quantityReviewRequested?'Saving quantities…':'Review Request';$('submitOrder').ariaDescription=quantityEditsBlocked()?(mobile?'Finish saving or retry failed quantities before reviewing.':'Quantities will be saved before the order preview opens.'):'';const visibleIds=new Set([...document.querySelectorAll(mobile?'#orderRows [data-mobile-order-id]':'#orderRows [data-qty]')].map(x=>x.dataset.mobileOrderId||x.dataset.qty)),hidden=ordered.filter(x=>!visibleIds.has(String(x.id))).length;$('hiddenOrdered').textContent=hidden?`${hidden} ordered item${hidden===1?' is':'s are'} currently hidden by this search.`:''}
+function summary(){const ordered=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0),ctn=ordered.reduce((s,x)=>s+num(x.orderQtyCtn),0),cbm=totalCbm(ordered,x=>num(x.orderQtyCtn),x=>x.cbmPerCtn),amount=ordered.reduce((s,x)=>s+num(x.orderQtyCtn)*ctnPrice(x),0);$('sumProducts').textContent=ordered.length;$('sumCtn').textContent=`${ctn} CTN`;$('sumCbm').textContent=cbmText(cbm);$('sumAmount').textContent=`${state.currency} ${money(amount)}`;const mobile=mobileSelection.matches,waiting=mobile&&state.pendingQuantities.size>0;$('submitOrder').disabled=!ordered.length||waiting||Boolean(state.quantityReviewRequested)||[...state.quantityDrafts.values()].some(draft=>draft.error);$('submitOrder').textContent=!mobile&&state.quantityReviewRequested?'Saving quantities…':'Review Request';$('submitOrder').ariaDescription=quantityEditsBlocked()?(mobile?'Finish saving or retry failed quantities before reviewing.':'Quantities will be saved before the order preview opens.'):'';const visibleIds=new Set([...document.querySelectorAll(mobile?'#orderRows [data-mobile-order-id]':'#orderRows [data-qty]')].map(x=>x.dataset.mobileOrderId||x.dataset.qty)),hidden=ordered.filter(x=>!visibleIds.has(String(x.id))).length;$('hiddenOrdered').textContent=hidden?`${hidden} ordered item${hidden===1?' is':'s are'} currently hidden by this search.`:''}
 const selectionImageDialog=$('selectionImageDialog'),selectionImage=$('selectionImage');
 const selectionRemoveDialog=$('selectionRemoveDialog');
 const mobileSelection=matchMedia('(max-width:880px)');
@@ -904,6 +930,11 @@ function refreshSelectionRemove(id){
 function closeSelectionRemove(){
   openSelectionRemove?.classList.remove('swipe-open');
   openSelectionRemove=null;
+}
+function clearSwipeFeedback(press){
+  if(!press?.dragging)return;
+  press.row.style.removeProperty('--selection-shift');
+  press.row.classList.remove('swipe-dragging');
 }
 function mobileQtyItem(){
   return mobileQtyCustomer===state.customerId?state.my.find(item=>String(item.id)===mobileQtyItemId&&isOrderable(item)):undefined;
@@ -980,12 +1011,27 @@ selectionRows.addEventListener('pointerdown',event=>{
 });
 selectionRows.addEventListener('pointermove',event=>{
   const press=selectionSwipe;
-  if(press?.removeButton&&press.id===event.pointerId&&Math.hypot(event.clientX-press.x,event.clientY-press.y)>=10)press.moved=true;
+  if(!press||press.id!==event.pointerId||!press.row.isConnected)return;
+  const dx=event.clientX-press.x,dy=event.clientY-press.y;
+  if(press.removeButton){
+    if(Math.hypot(dx,dy)>=10)press.moved=true;
+    return;
+  }
+  if(!press.dragging&&(Math.abs(dx)<8||Math.abs(dx)<Math.abs(dy)*1.5))return;
+  press.dragging=true;
+  const start=press.row===openSelectionRemove?-65:0;
+  press.row.classList.add('swipe-dragging');
+  press.row.style.setProperty('--selection-shift',`${Math.max(-65,Math.min(0,start+dx))}px`);
 });
-selectionRows.addEventListener('pointercancel',()=>{selectionSwipe=null});
+selectionRows.addEventListener('pointercancel',event=>{
+  if(selectionSwipe?.id!==event.pointerId)return;
+  clearSwipeFeedback(selectionSwipe);
+  selectionSwipe=null;
+});
 selectionRows.addEventListener('pointerup',event=>{
   if(!selectionSwipe||selectionSwipe.id!==event.pointerId)return;
-  const {row,removeButton,x,y,startedAt,moved}=selectionSwipe;
+  const {row,removeButton,x,y,startedAt,moved,dragging}=selectionSwipe;
+  clearSwipeFeedback(selectionSwipe);
   selectionSwipe=null;
   const dx=event.clientX-x,dy=event.clientY-y;
   if(!row.isConnected)return;
@@ -998,7 +1044,8 @@ selectionRows.addEventListener('pointerup',event=>{
       return;
     }
   }
-  if(Math.abs(dx)<36||Math.abs(dx)<Math.abs(dy)*1.5)return;
+  if(dragging)skipSelectionClick=true;
+  if(Math.abs(dx)<24||Math.abs(dx)<Math.abs(dy)*1.5)return;
   skipSelectionClick=true;
   closeSelectionRemove();
   if(dx<0){openSelectionRemove=row;row.classList.add('swipe-open')}
@@ -1038,6 +1085,7 @@ selectionImageDialog.addEventListener('close',()=>{
 });
 mobileSelection.addEventListener('change',event=>{
   closeSelectionRemove();
+  clearSwipeFeedback(selectionSwipe);
   selectionSwipe=null;
   skipSelectionClick=false;
   updateSelectionSearchPlaceholder();
