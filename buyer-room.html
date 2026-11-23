@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
-<meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v4">
+<meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v5">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -451,7 +451,9 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .mobile-qty-product{justify-content:flex-start;margin:10px 0 14px}
 .mobile-qty-product strong,.mobile-qty-product small{display:block}
 .mobile-qty-fact,.mobile-qty-input{min-height:43px;border-top:1px solid var(--line);padding:7px 0}
-.mobile-qty-input input{width:106px;min-height:44px;padding:0 8px;border:1px solid #aebfd2;border-radius:7px;text-align:right;font-size:18px;font-weight:750}
+.mobile-qty-input input{width:106px;min-height:44px;padding:0 8px;border:1px solid #49698b;border-radius:7px;background:#f7fbff;text-align:right;font-size:18px;font-weight:750}
+.mobile-qty-input input:focus,#orderView .qty-editor input.qty:not([readonly]):focus{outline:2px solid #1d5eaa;outline-offset:1px}
+#orderView .qty-editor input.qty:not([readonly]){border-color:#49698b;background:#f7fbff;cursor:text}
 .mobile-qty-input input{margin-left:auto}
 .mobile-qty-audit{margin:8px 0 0;font-size:12px;color:#5d7088}
 .mobile-qty-actions{display:flex;gap:9px;margin-top:14px}
@@ -499,7 +501,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   #orderView .mobile-order-product .name{font-size:11px}
   #orderView .mobile-order-product .mono,#orderView .mobile-order-product .packing-meta{display:block;font-size:9px;overflow-wrap:anywhere}
   #orderView .mobile-order-row>div.mobile-qty-cell{display:grid;justify-items:end;gap:2px}
-  #orderView .mobile-qty-button{min-width:44px;min-height:44px;max-width:100%;padding:0 4px;border:1px solid #aebfd0;border-radius:7px;background:#fff;color:var(--ink);font-size:14px;font-weight:750;overflow-wrap:anywhere}
+  #orderView .mobile-qty-button{min-width:44px;min-height:44px;max-width:100%;padding:0 4px;border:1px solid #49698b;border-radius:7px;background:#fff;color:var(--ink);font-size:14px;font-weight:750;overflow-wrap:anywhere}
   #orderView .mobile-qty-add{font-size:21px;color:#245485}
   #orderView .mobile-qty-status{font-size:9px;color:#53657b;white-space:nowrap}
   #orderView .mobile-qty-status.failed{color:#a92a1e}
@@ -798,18 +800,21 @@ function renderMobileOrder(query,movedItem){
   summary();
   markDisplayedQuotesSeen('order',items);
 }
+let desktopOrderRowsNeedSort=false;
 function renderOrder(movedItem){
   const focusedQty=document.activeElement?.dataset?.qty;
   // Detach old change handlers before replacing focused inputs: removing one
   // otherwise fires a stale blur/change and queues the same quantity twice.
   document.querySelectorAll('#orderRows [data-qty]').forEach(input=>{input.onchange=null;input.oninput=null;input.onblur=null});
   const q=$('orderSearch').value.trim();
+  desktopOrderRowsNeedSort=false;
   if(mobileSelection.matches){renderMobileOrder(q,movedItem);return;}
   const rows=$('orderRows'),quoted=state.my.filter(isOrderable);
   const items=orderEntryRows(quoted.filter(item=>matches(item,q)));
   if(focusedQty){
     // Keep keyboard targets in place during quantity entry.
     const positions=new Map([...rows.querySelectorAll('[data-qty]')].map((input,index)=>[input.dataset.qty,index]));
+    desktopOrderRowsNeedSort=items.some((item,index)=>positions.get(String(item.id))!==index);
     items.sort((a,b)=>(positions.get(String(a.id))??positions.size)-(positions.get(String(b.id))??positions.size));
   }
   $('orderAllCount').textContent=quoted.length;
@@ -935,6 +940,13 @@ function saveMobileQty(){
   queueQuantitySave(item,mobileQtyInput,true);
   renderOrder(key);
 }
+function sortAfterDesktopQuantityEntry(){
+  if(!desktopOrderRowsNeedSort||mobileSelection.matches||!$('orderView').classList.contains('active')||$('orderRows').contains(document.activeElement))return;
+  renderOrder();
+}
+$('orderRows').addEventListener('focusout',event=>{
+  if(event.relatedTarget&&!$('orderRows').contains(event.relatedTarget))requestAnimationFrame(sortAfterDesktopQuantityEntry);
+});
 $('orderRows').addEventListener('click',event=>{
   const key=event.target.closest('[data-mobile-order-id]')?.dataset.mobileOrderId;
   const item=key&&state.my.find(product=>String(product.id)===key&&isOrderable(product));
@@ -999,6 +1011,7 @@ selectionRows.addEventListener('click',event=>{
 },true);
 document.addEventListener('click',event=>{
   if(openSelectionRemove&&!selectionRows.contains(event.target))closeSelectionRemove();
+  if(!$('orderRows').contains(event.target))sortAfterDesktopQuantityEntry();
 });
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape')closeSelectionRemove();
