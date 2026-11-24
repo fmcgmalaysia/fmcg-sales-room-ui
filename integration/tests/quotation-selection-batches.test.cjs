@@ -69,3 +69,29 @@ test('quotation pack reads overlap within bounded batches and retain ordering, s
   assert.equal(rows[305].ea, 12);
   assert.equal(rows[305].sortId, undefined);
 });
+
+test('selection totals include only active records for the requested customers and do not look up product data', async () => {
+  const active = customerId => ({ customerId, removed: false, payload: { customerId } });
+  const fixture = [active('A'), active('A'), active('OTHER'),
+    { ...active('A'), removed: true },
+    { ...active('A'), payload: { customerId: 'A', removed: true } },
+    { ...active('A'), payload: { customerId: 'OTHER' } }];
+  const read = vm.runInNewContext(source + '\nreadMasterWebQuotationData', {
+    isWebQuotationReady: () => true, createMasterQuoteProjection: () => () => {},
+    wixData: {
+      query(collection) {
+        assert.equal(collection, 'WixBuyerListItems');
+        return {
+          hasSome(field, ids) { assert.equal(field, 'customerId'); assert.deepEqual(Array.from(ids), ['A', 'B']); return this; },
+          limit() { return this; },
+          async find() {
+            return { items: fixture.slice(0, 2), hasNext: () => true,
+              next: async () => ({ items: fixture.slice(2), hasNext: () => false }) };
+          }
+        };
+      }
+    }
+  });
+  const { counts } = await read({ action: 'selection-counts', customerIds: ['A', 'B', 'A'] });
+  assert.deepEqual(JSON.parse(JSON.stringify(counts)), [{ customerId: 'A', selectionCount: 2 }, { customerId: 'B', selectionCount: 0 }]);
+});

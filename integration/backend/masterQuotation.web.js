@@ -2,7 +2,6 @@ import { webMethod, Permissions } from 'wix-web-module';
 import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import { readManagedStaffIdentity } from 'backend/staffManagementAccess.js';
-import { projectFmcgStaffScope } from 'backend/staffManagementPolicy.js';
 import { createMasterQuoteSender, createMasterQuotationReader } from 'backend/masterQuoteTransport.js';
 import { createMasterQuotationActions } from 'backend/masterQuotationAccess.js';
 import { createMasterQuotationService } from 'backend/masterQuotationService.js';
@@ -10,6 +9,7 @@ import { createMasterQuotationWixStore } from 'backend/masterQuotationWixStore.j
 import { captureQuotationCosts, readQuotationCosts, readQuotationCostResult } from 'backend/pointbaseCostClient.js';
 import { readCurrentAdminFx } from 'backend/adminFxClient.js';
 import { createLastInvoicedPrices } from 'backend/masterQuotationLastSale.js';
+import { createLastPurchaseCosts } from 'backend/masterQuotationLastPurchase.js';
 
 const source = 'https://www.fmcgmalaysia.com/_functions/';
 const getQuotationSecret = () => getSecret('MASTER_WEB_QUOTATION_SHARED_SECRET');
@@ -32,13 +32,22 @@ const operate = createMasterQuotationActions({
     // Customer service grants are independent of internal quotation permission.
     return (await read({ action: 'customers', customerIds: null })).customers;
   },
-  async readCustomer(customerId, action) {
-    const { customer } = await read({ action: 'customer', customerId });
-    if (!customer) return null;
-    if (action === 'cost' || action === 'cost-status') return customer;
-    const [{ rateToMyr }] = await readCurrentAdminFx([customer.preferredCurrency]);
-    return { ...customer, rateToMyr };
+  async readCustomer(customerId) {
+    return (await read({ action: 'customer', customerId })).customer;
   },
+  async readRate(customer) {
+    const [{ rateToMyr }] = await readCurrentAdminFx([customer.preferredCurrency]);
+    return rateToMyr;
+  },
+  async readSelectionCounts(ids) {
+    const counts = [];
+    for (let index = 0; index < ids.length; index += 1000) {
+      const result = await read({ action: 'selection-counts', customerIds: ids.slice(index, index + 1000) });
+      counts.push(...result.counts);
+    }
+    return counts;
+  },
+  readPurchaseHistory: createLastPurchaseCosts(wixData),
   quotation
 });
 

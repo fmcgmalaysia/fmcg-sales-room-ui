@@ -1254,7 +1254,7 @@ window.addEventListener('message', event => {
   clearTimeout(pending.timer);
   if (m.ok === true) pending.resolve(m.result);
   else {
-    if (m.accessDenied === true) {
+    if (m.accessDenied === true && (!pending.context || pending.context === customerId())) {
       generation++;
       current = null;
       content.replaceChildren();
@@ -1268,6 +1268,48 @@ function customerLabel(name, selectionCount) {
   return Number.isSafeInteger(selectionCount) && selectionCount >= 0
     ? `${name} (${selectionCount.toLocaleString('en')})`
     : name;
+}
+
+async function loadSelectionCounts() {
+  try {
+    const result = await api('selection-counts', undefined, '');
+    if (result?.staffId !== staffId || !Array.isArray(result.counts)) return;
+    const options = new Map(Array.from($('#customer').options, option => [option.value, option]));
+    for (const row of result.counts) {
+      const option = options.get(row.customerId);
+      if (option && Number.isSafeInteger(row.selectionCount) && row.selectionCount >= 0) {
+        option.textContent = customerLabel(option.dataset.name, row.selectionCount);
+        option.dataset.confirmedCount = 'true';
+      }
+    }
+  } catch { /* Quotation actions stay available if the directory count cannot be confirmed. */ }
+}
+
+const purchaseHistoryKey = row => row.barcode + '|' + row.ea;
+
+async function loadPurchaseHistory(context, token) {
+  const products = new Map(current.rows.filter(row => /^[0-9]{6,22}$/.test(row.barcode || '') &&
+    Number.isSafeInteger(row.ea) && row.ea > 0).map(({ barcode, ea }) => [purchaseHistoryKey({ barcode, ea }), { barcode, ea }]));
+  if (!products.size) return;
+  try {
+    const items = [...products.values()];
+    const requests = [];
+    for (let i = 0; i < items.length; i += 1000) {
+      requests.push(api('purchase-history', { products: items.slice(i, i + 1000) }, context));
+    }
+    const results = await Promise.all(requests);
+    if (token !== generation || current?.customer?.customerId !== context) return;
+    if (results.some(result => result?.staffId !== staffId || result.customerId !== context || !Array.isArray(result.items))) return;
+    const byProduct = new Map(results.flatMap(result => result.items).filter(item =>
+      products.has(purchaseHistoryKey(item)) && Number.isFinite(item.netCostMyrCtn) && item.netCostMyrCtn > 0
+    ).map(item => [purchaseHistoryKey(item), item]));
+    const displayed = new Map(Array.from(quoteWindow?.body.querySelectorAll('tr[data-row]') || [], element => [element.dataset.row, element]));
+    for (const row of current.rows) {
+      row.lastPurchase = byProduct.get(purchaseHistoryKey(row)) || null;
+      const value = displayed.get(row.id)?.querySelector('[data-previous-nc]');
+      if (value) value.textContent = row.lastPurchase ? fixed(row.lastPurchase.netCostMyrCtn) : '—';
+    }
+  } catch { /* History may be unavailable independently of drafts, prices and actions. */ }
 }
 
 async function refresh() {
@@ -1288,9 +1330,10 @@ async function refresh() {
     }
     current = result;
     const option = $('#customer').selectedOptions[0];
-    if (option?.value === context) option.textContent = customerLabel(option.dataset.name, result.rows.length);
+    if (option?.value === context && !option.dataset.confirmedCount) option.textContent = customerLabel(option.dataset.name, result.rows.length);
     renderQuotes(scrollPosition);
     costButtonState();
+    void loadPurchaseHistory(context, token);
     if (costAttempts.has(context)) void confirmCostRead(context);
   } catch (error) {
     if (token === generation) message(error.message, true);
@@ -1327,7 +1370,10 @@ async function initialize() {
     if (result.customers.length) $('#customer').value = result.customers[0].customerId;
     $('#customer').disabled = !result.customers.length;
     message(result.customers.length ? '' : 'No quotation customers are assigned to your account.');
-    if (result.customers.length) await refresh();
+    if (result.customers.length) {
+      await refresh();
+      void loadSelectionCounts();
+    }
   } catch (error) { message(error.message, true); }
 }
 

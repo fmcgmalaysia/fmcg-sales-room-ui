@@ -1,6 +1,7 @@
 const KEY = /^[A-Za-z0-9_-]{1,120}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const ACTIONS = new Set(['customers', 'quotes', 'cost', 'cost-status', 'draft', 'publish']);
+const DIRECTORY = new Set(['customers', 'selection-counts']);
+const ACTIONS = new Set([...DIRECTORY, 'quotes', 'purchase-history', 'cost', 'cost-status', 'draft', 'publish']);
 
 function editInput(action, input) {
   if (!input || typeof input.selectionId !== 'string' || !KEY.test(input.selectionId) ||
@@ -27,13 +28,20 @@ export function connectMasterQuotationFrame(frame, run) {
     if (data?.type !== 'MASTER_QUOTATION_REQUEST' ||
         typeof data.requestId !== 'string' || !UUID.test(data.requestId) || !ACTIONS.has(data.action) ||
         typeof data.customerId !== 'string' ||
-        (data.action === 'customers' ? data.customerId !== '' : !KEY.test(data.customerId))) return;
+        (DIRECTORY.has(data.action) ? data.customerId !== '' : !KEY.test(data.customerId))) return;
 
     const { requestId, customerId, action } = data;
     const envelope = { type: 'MASTER_QUOTATION_RESULT', requestId, customerId, action };
     const editing = action === 'draft' || action === 'publish';
     const costRead = action === 'cost' || action === 'cost-status';
-    const input = editing ? editInput(action, data.input) : costRead && UUID.test(data.input?.requestId || '') ? { requestId: data.input.requestId } : undefined;
+    let input = editing ? editInput(action, data.input) : costRead && UUID.test(data.input?.requestId || '') ? { requestId: data.input.requestId } : undefined;
+    if (action === 'purchase-history') {
+      const products = data.input?.products;
+      if (!Array.isArray(products) || products.length > 1000 || products.some(product =>
+        typeof product?.barcode !== 'string' || !/^[0-9]{6,22}$/.test(product.barcode) ||
+        !Number.isSafeInteger(product.ea) || product.ea < 1)) return;
+      input = { products: products.map(({ barcode, ea }) => ({ barcode, ea })) };
+    }
     if ((editing || costRead) && !input) {
       frame.postMessage({ ...envelope, ok: false, error: 'Review the quotation inputs and try again.' });
       return;

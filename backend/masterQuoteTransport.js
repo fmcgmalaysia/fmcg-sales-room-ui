@@ -102,6 +102,8 @@ function validRead(input) {
   const { action, customerId, customerIds, selectionId } = input ?? {};
   if (action === 'customers') return customerIds === null ||
     (Array.isArray(customerIds) && customerIds.length <= 1000 && customerIds.every(key));
+  if (action === 'selection-counts') return Array.isArray(customerIds) &&
+    customerIds.length <= 1000 && customerIds.every(key);
   if (action === 'selection') return key(customerId) && key(selectionId);
   return ['customer', 'selections'].includes(action) && key(customerId);
 }

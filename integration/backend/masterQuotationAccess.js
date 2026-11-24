@@ -2,6 +2,7 @@ import { canEnterQuotations, canQuoteManagedCustomer } from 'backend/staffManage
 
 const ACTION_POLICY = Object.freeze({
   quotes: ['VIEW', 'VIEW'],
+  'purchase-history': ['VIEW', 'VIEW'],
   cost: ['EDIT', 'EDIT_QUOTATION'],
   'cost-status': ['EDIT', 'EDIT_QUOTATION'],
   draft: ['EDIT', 'EDIT_QUOTATION'],
@@ -17,19 +18,27 @@ function activeWebCustomer(customer) {
 // These adapters are server-only. Bind readIdentity to the same Wix request
 // that called the web method. ReadCustomer/ReadCustomers must come from the
 // authoritative customer directory; never pass customer records from Wix UI.
-export function createMasterQuotationActions({ readIdentity, readCustomer, readCustomers, quotation }) {
+export function createMasterQuotationActions({ readIdentity, readCustomer, readCustomers, readSelectionCounts, readRate, readPurchaseHistory, quotation }) {
   return async function run(action, customerId, input) {
-    if (action !== 'customers' && !Object.prototype.hasOwnProperty.call(ACTION_POLICY, action)) return { accessDenied: true };
+    const directoryAction = action === 'customers' || action === 'selection-counts';
+    if (!directoryAction && !Object.prototype.hasOwnProperty.call(ACTION_POLICY, action)) return { accessDenied: true };
     let record;
     try { ({ record } = await readIdentity()); }
     catch { return { accessDenied: true }; }
 
     if (!record?.title || !canEnterQuotations(record)) return { accessDenied: true };
     const { title: staffId, staffName } = record;
-    if (action === 'customers') {
+    if (directoryAction) {
       const customers = (await readCustomers(record))
         .filter(customer => activeWebCustomer(customer) && canQuoteManagedCustomer(record, customer))
         .map(({ customerId, name }) => ({ customerId, name }));
+      if (action === 'selection-counts') {
+        const ids = [...new Set(customers.map(customer => customer.customerId))];
+        const permitted = new Set(ids);
+        const counts = ids.length ? await readSelectionCounts(ids) : [];
+        return { staffId, counts: counts.filter(row => permitted.has(row.customerId) &&
+          Number.isSafeInteger(row.selectionCount) && row.selectionCount >= 0) };
+      }
       return { staffId, staffName, customers };
     }
 
@@ -38,13 +47,18 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readC
     if (customer?.customerId !== customerId || !activeWebCustomer(customer) || !canQuoteManagedCustomer(record, customer)) return { accessDenied: true };
     const scope = { staffId, customer };
     if (action === 'quotes') {
-      const rows = await quotation.list(scope);
-      const { preferredCurrency, rateToMyr, fullName } = customer;
+      const [rows, rateToMyr] = await Promise.all([quotation.list(scope), readRate ? readRate(customer) : customer.rateToMyr]);
+      const { preferredCurrency, fullName } = customer;
       return { staffId, customer: { customerId, preferredCurrency, rateToMyr, ...(fullName ? { fullName } : {}) }, rows,
         canEdit: true, canPublish: true };
     }
+    if (action === 'purchase-history') {
+      const items = await readPurchaseHistory({ record, customerId, products: input?.products ?? [] });
+      return { staffId, customerId, items };
+    }
     if (action === 'cost') return quotation.catchCost(scope, input);
     if (action === 'cost-status') return quotation.costResult(scope, input);
+    if (readRate) scope.customer = { ...customer, rateToMyr: await readRate(customer) };
     if (action === 'draft') return quotation.saveDraft(scope, input);
     return quotation.publish(scope, input);
   };

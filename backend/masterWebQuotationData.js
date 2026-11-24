@@ -95,6 +95,22 @@ async function readContext(customerId, selectionId, includeRemoved = false) {
 }
 
 export async function readMasterWebQuotationData({ action, customerId, customerIds, selectionId }) {
+  if (action === 'selection-counts') {
+    const ids = [...new Set(customerIds)];
+    const counts = new Map(ids.map(id => [id, 0]));
+    for (let index = 0; index < ids.length; index += 100) {
+      const group = new Set(ids.slice(index, index + 100));
+      const records = await rows(querySelection().hasSome('customerId', [...group]));
+      for (const record of records) {
+        if (!group.has(record.customerId) || record.removed) continue;
+        const data = payload(record);
+        if (data.customerId === record.customerId && !data.removed) {
+          counts.set(record.customerId, counts.get(record.customerId) + 1);
+        }
+      }
+    }
+    return { counts: [...counts].map(([customerId, selectionCount]) => ({ customerId, selectionCount })) };
+  }
   if (action === 'customers') {
     if (customerIds?.length === 0) return { customers: [] };
     const active = () => queryCustomer().eq('quotationMode', 'WEB').eq('webQuotationStatus', 'READY');
