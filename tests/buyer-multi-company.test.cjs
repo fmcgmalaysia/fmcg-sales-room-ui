@@ -358,9 +358,31 @@ window.addEventListener('message', async ({source,data}) => {
     await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
     await frame(room).locator('#companyName').filter({ hasText: 'Company ZZZ' }).waitFor();
     await frame(room).getByRole('button', { name: 'Return to your Catalogue' }).click();
-    await frame(room).getByRole('button', { name: 'Switch Company' }).waitFor();
+    await frame(room).locator('.shell .toolbar').waitFor();
+    const catalogueSwitch = frame(room).getByRole('button', { name: 'Switch Company' });
+    await catalogueSwitch.waitFor();
+    const desktopViewport = room.viewportSize();
+    for (const viewport of [desktopViewport, { width: 390, height: 820 }]) {
+      await room.setViewportSize(viewport);
+      const layout = await frame(room).locator('.shell').evaluate(shell => {
+        const toolbar = shell.querySelector('.toolbar');
+        const icon = shell.querySelector('[aria-label="Switch Company"]');
+        const toolbarBounds = toolbar.getBoundingClientRect();
+        const iconBounds = icon.getBoundingClientRect();
+        const workspaceBounds = shell.querySelector('.workspace').getBoundingClientRect();
+        return {
+          iconInToolbar: toolbar.contains(icon) && iconBounds.top >= toolbarBounds.top && iconBounds.bottom <= toolbarBounds.bottom,
+          workspaceStartsAfterToolbar: Math.abs(workspaceBounds.top - toolbarBounds.bottom) < 2,
+          workspaceHeight: workspaceBounds.height
+        };
+      });
+      assert.ok(layout.iconInToolbar, `Catalogue switch must stay in its toolbar at ${viewport.width}px`);
+      assert.ok(layout.workspaceStartsAfterToolbar);
+      assert.ok(layout.workspaceHeight > 200);
+    }
+    await room.setViewportSize(desktopViewport);
     assert.equal(new URL(room.url()).searchParams.get('company'), second.buyerCompanyId);
-    await frame(room).getByRole('button', { name: 'Switch Company' }).click();
+    await catalogueSwitch.click();
     try { await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company YYY' }).click(); }
     catch (error) {
       throw new Error(error.message + '\n' + JSON.stringify({ errors, host: await room.evaluate(() => window.qaError || ''),

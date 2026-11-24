@@ -149,13 +149,18 @@
       .detail-step:disabled{opacity:.4;cursor:default}
     }
   .pill.removed{background:#eef1f5;color:#50627d;border-color:#d2dbe8}
+  .toolbar{grid-template-columns:minmax(0,1fr) auto}
+  .toolbar>.buyer-company-switch{padding:0}
+  @media(max-width:900px){
+    .toolbar:has(.buyer-company-switch:not([hidden])) .summary{overflow-x:auto;scrollbar-width:none}
+  }
 </style>
 </head>
 <body>
   <main class="shell">
-    <div data-buyer-company-switch hidden></div>
     <header class="toolbar">
       <div class="summary"><button class="metric filter" id="selectionFilter" type="button">MY SELECTION <span class="metric-value"><b id="selectionCount">0</b><em>of</em><b id="selectionLimit">100</b></span></button><button class="metric filter" id="foodSelectionFilter" type="button">FOOD <b id="foodSelectionCount">0</b></button><button class="metric filter" id="nonFoodSelectionFilter" type="button">NON-FOOD <b id="nonFoodSelectionCount">0</b></button><span class="allowance" id="selectionAllowance">Your account allows up to 100 selected SKUs.</span></div>
+      <div data-buyer-company-switch hidden></div>
     </header>
     <section class="workspace">
       <section class="list-panel" aria-label="Catalogue products">
