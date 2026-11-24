@@ -42,7 +42,19 @@ function harness() {
   require('./load-master-quantity.cjs')(buyer,()=>[...table('WixBuyerOrderLines').values()].map(data));
   vm.runInContext(source('backend/catalogueAuth.web.js') + "\nresolveBuyerContext=async()=>({customerId:'C1',companyName:'DEMO',currency:'SGD',selectionLimit:100,email:'demo@example.test',actorName:'LAW',actorType:'STAFF'}); workspaceItems=async()=>__products(); globalThis.api={submitBuyerOrder,getBuyerOrderDetail,buyerOrderHistory};", buyer);
   buyer.__products = () => clone([...products.values()]);
-  const sales = vm.createContext({ ...base, wixRealtimeBackend: { publish: async () => {} } });
+  const allowedCustomer = (staff, _action, customerId) => staff.staffId === 'LAW' && customerId === 'C1';
+  const sales = vm.createContext({
+    ...base,
+    wixRealtimeBackend: { publish: async () => {} },
+    staffMayAccessCustomer: allowedCustomer,
+    requireStaffCustomerAccess(staff, action, customerId) {
+      if (!allowedCustomer(staff, action, customerId)) throw new Error('Staff access denied.');
+    }
+  });
+  Object.assign(sales, vm.runInContext(
+    '(function(){' + source('backend/webQuotationCustomer.js') +
+    '\nreturn { isWebQuotationCustomer, isWebQuotationReady };})()', sales
+  ));
   // Exercise the real new source modules. Only the external Master HTTP boundary is mocked here;
   // receiver persistence/replay is covered by integration/tests/nct-cross-site.test.cjs.
   table('WixFxRates').set('SGD', { _id: 'SGD', currency: 'SGD', active: true, rateToMyr: 3.25 });
@@ -58,7 +70,7 @@ function harness() {
       ['backend/nctSubmissionDelivery.js', 'createNctSubmissionDelivery'], ['backend/nctSalesIntake.js', 'submitNctSalesOrder']]) {
     sales[name] = vm.runInContext('(function(){' + source(file) + '\nreturn ' + name + ';})()', sales);
   }
-  vm.runInContext(source('sales-room/wix/onboarding.web.js') + "\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:'LAW',staffName:'LAW',loginEmail:'demo@example.test',canViewAllCustomers:false});loadSalesRoomCustomers=async()=>({customers:[{customerId:'C1'}],summary:{}});loadQuoteRiskCounts=async()=>new Map([['C1',{available:true,quoteRiskCount:0,pendingQuoteCount:0,redSignalCount:0,lowGpCount:0}]]);globalThis.api={submitSalesRoomOrder,saveSalesRoomOrderQty,getSalesRoomConfirmedOrders,getSalesRoomOrderDetail,getSalesRoomOrderProgress,getSalesRoomCustomersOperational};", sales);
+  vm.runInContext(source('sales-room/wix/onboarding.web.js') + "\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:'LAW',staffName:'LAW',loginEmail:'demo@example.test',canBrowseAllCustomers:false,customerScope:{customerActions:{VIEW:['C1']}}});loadSalesRoomCustomers=async()=>({customers:[{customerId:'C1'}],summary:{}});loadQuoteRiskCounts=async()=>new Map([['C1',{available:true,quoteRiskCount:0,pendingQuoteCount:0,redSignalCount:0,lowGpCount:0}]]);globalThis.api={submitSalesRoomOrder,saveSalesRoomOrderQty,getSalesRoomConfirmedOrders,getSalesRoomOrderDetail,getSalesRoomOrderProgress,getSalesRoomCustomersOperational};", sales);
   const download = vm.createContext({ ...base, buildBuyerOrderExcel: input => Buffer.from(JSON.stringify(input)) });
   require('./load-master-quantity.cjs')(sales,()=>[...table('WixBuyerOrderLines').values()].map(data));
   vm.runInContext(source('backend/buyerOrderDownload.js') + '\nglobalThis.download=buildBuyerOrderDownload;', download);
