@@ -63,10 +63,18 @@ function selectionView(record, customerId, includeRemoved = false) {
 async function packSelections(selections) {
   const products = new Map();
   const ids = [...new Set(selections.map(row => row.productId).filter(Boolean))];
+  const batches = [];
   for (let index = 0; index < ids.length; index += 100) {
-    const batch = ids.slice(index, index + 100);
-    const { items } = await wixData.query('FMCGMALAYSIA').hasSome('_id', batch).limit(100).find(readOptions);
-    for (const item of items) products.set(item._id, item);
+    batches.push(ids.slice(index, index + 100));
+  }
+  const concurrentBatches = 3;
+  for (let index = 0; index < batches.length; index += concurrentBatches) {
+    const pages = await Promise.all(batches.slice(index, index + concurrentBatches).map(batch =>
+      wixData.query('FMCGMALAYSIA').hasSome('_id', batch).limit(100).find(readOptions)
+    ));
+    for (const { items } of pages) {
+      for (const item of items) products.set(item._id, item);
+    }
   }
   return selections.map(({ productId, fallbackEa, ...row }) => {
     const product = products.get(productId);
