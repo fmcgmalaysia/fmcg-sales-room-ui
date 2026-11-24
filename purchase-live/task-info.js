@@ -119,8 +119,7 @@
     const receipts=selection.kind==='receipts';
     let body;
     if(receipts){
-      const rejected=m.receipts.some(row=>row.rejected!==0);
-      body=m.receipts.length?'<table class="rowlist"><thead><tr><th>P.O.</th><th>Received</th>'+(rejected?'<th>Rejected</th>':'')+'<th>Date</th><th>By</th></tr></thead><tbody>'+m.receipts.map(row=>'<tr><td>'+esc(row.po)+'</td><td>'+qty(row.received)+(row.kind==='CORRECTION'?'<small>Correction</small>':'')+'</td>'+(rejected?'<td>'+qty(row.rejected)+'</td>':'')+'<td>'+esc(date(row.at))+'</td><td>'+esc(row.by)+'</td></tr>').join('')+'</tbody></table>':'<p>'+(m.received===null?'No receipts.':'Receipt details unavailable. Refresh to check.')+'</p>';
+      body=m.receipts.length?'<table class="rowlist purchase-info-receipts"><thead><tr><th scope="col">P.O.</th><th scope="col">Received CTN</th><th scope="col">Status</th><th scope="col">Recorded</th></tr></thead><tbody>'+m.receipts.map(receiptRow).join('')+'</tbody></table>':'<p>'+(m.received===null?'No receipts.':'Receipt details unavailable. Refresh to check.')+'</p>';
     }else{
       const name=id=>context.customers?.find(row=>row.id===id)?.shortName||context.customers?.find(row=>row.id===id)?.name||id;
       body=m.sources.length?'<table class="rowlist"><thead><tr><th>Source</th><th>P.O.</th><th>Qty</th><th>From</th><th>Recorded</th></tr></thead><tbody>'+m.sources.map(row=>'<tr><td>'+esc(row.kind)+(row.repaid?' · Repaid':'')+'</td><td>'+esc(row.po)+'</td><td>'+qty(row.quantity)+'</td><td>'+esc(name(row.customerId))+'</td><td>'+esc(date(row.at))+'<small>'+esc(row.by||'—')+'</small></td></tr>').join('')+'</tbody></table>':'<p>'+(m.allocated===0?'Not allocated.':'Physical allocation is recorded, but its source is not available for review.')+'</p>';
@@ -131,6 +130,24 @@
     if(!infoDialog){infoDialog=document.createElement('dialog');infoDialog.className='purchase-info-dialog';infoDialog.setAttribute('aria-labelledby','purchaseInfoTitle');document.body.append(infoDialog);infoDialog.addEventListener('click',event=>{if(event.target.closest('[data-info-close]'))infoDialog.close();});infoDialog.addEventListener('close',()=>opened=null);}
     infoDialog.innerHTML='<div class="dialoghead"><div><h2 id="purchaseInfoTitle">'+(receipts?'Receipts':'Allocation')+'</h2><small>'+esc(m.task.name)+(receipts&&selection.batchId?' · PO-level receipts':'')+'</small></div><button type="button" class="purchase-info-close" data-info-close aria-label="Close">×</button></div><div class="dialogbody">'+body+'</div><div class="dialogfoot"><small>Read only · CTN</small><button type="button" class="btn" data-info-close>Close</button></div>';
     opened=selection;if(!infoDialog.open)infoDialog.showModal();
+  }
+  function receiptRow(row){
+    const statuses={
+      SHORT:row.shortfall>0?'Short '+qty(row.shortfall)+' CTN 短收':'Short delivery 短收',
+      DAMAGED:'Damaged 破损',WRONG:'Wrong product 错货',OTHER:'Receiving issue 收货异常',
+      PARTIAL:row.followUp?'Partial follow-up 分批补收':'Partial delivery 分批收货',
+      DELIVERY:row.followUp?'Follow-up receipt 补收':'Received 已收货',
+      CORRECTION:'Correction 收货更正',
+    };
+    const issue=['SHORT','DAMAGED','WRONG','OTHER'].includes(row.kind)||row.rejected>0;
+    const recordedStatus=Object.hasOwn(statuses,row.kind)?statuses[row.kind]:'Status unavailable 状态待核对';
+    const status=row.rejected>0&&['DELIVERY','PARTIAL'].includes(row.kind)
+      ? 'Received with rejection 部分拒收' : recordedStatus;
+    const rejected=Number.isSafeInteger(row.rejected)&&row.rejected!==0
+      ? '<small>Rejected 拒收 '+qty(row.rejected)+'</small>' : '';
+    return '<tr><td>'+esc(row.po)+'</td><td>'+qty(row.received)+rejected+'</td><td><strong'+(issue?' class="receipt-status-issue"':'')+'>'+esc(status)+'</strong>'+
+      (row.reason?'<small class="receipt-reason">'+esc(row.reason)+'</small>':'')+'</td><td>'+esc(date(row.at))+
+      (row.by?'<small>'+esc(row.by)+'</small>':'')+'</td></tr>';
   }
   if(typeof document!=='undefined')document.getElementById('app')?.addEventListener('click',event=>{const button=event.target.closest('[data-purchase-info]');if(!button)return;event.preventDefault();event.stopPropagation();show({kind:button.dataset.purchaseInfo,taskId:button.dataset.infoTask,batchId:button.dataset.infoBatch||'',sourceId:button.dataset.infoSource||''});});
   function refreshReceipts(next,renderQuantities){setContext(next);const table=document.querySelector('#taskRows')?.closest('table');if(table)decorate(table,true,renderQuantities);}

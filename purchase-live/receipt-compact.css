@@ -1,0 +1,63 @@
+#modal.receipt-feedback-dialog .receipt-quantity-grid {
+  background: #edf4fb;
+  border: 1px solid #d5e2ee;
+  border-radius: 5px;
+}
+#modal.receipt-feedback-dialog .receipt-quantity-grid .receipt-feedback-summary {
+  grid-template-columns: minmax(0,1.35fr) repeat(3,minmax(0,1fr));
+  align-items: center;
+  padding: 6px 0;
+  background: transparent;
+}
+#modal.receipt-feedback-dialog .receipt-quantity-grid .receipt-feedback-summary + .receipt-feedback-summary {
+  border-top: 1px solid #d5e2ee;
+}
+#modal.receipt-feedback-dialog .receipt-quantity-grid b {
+  padding-inline: 8px 4px;
+  text-align: left;
+  font-size: 11px;
+  line-height: 14px;
+}
+#modal.receipt-feedback-dialog .receipt-quantity-grid b small { font-weight: 400; }
+#modal.receipt-feedback-dialog .receipt-quantity-grid strong {
+  color: #17314f;
+  margin: 1px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+#modal.receipt-feedback-dialog .receipt-quantity-grid .receipt-quantity-short,
+.purchase-info-receipts .receipt-status-issue { color: #c81828; }
+#modal.receipt-feedback-dialog .receipt-feedback-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin: 8px 0 0;
+  color: #536a80;
+}
+#modal.receipt-feedback-dialog .receipt-feedback-note strong { color: #17314f; }
+#modal.receipt-feedback-dialog .dialogfoot .actions { flex-wrap: wrap; justify-content: flex-end; }
+
+dialog.purchase-info-dialog:has(.purchase-info-receipts) { width: min(580px,calc(100vw - 24px)); }
+.purchase-info-dialog .purchase-info-receipts { width: 100%; table-layout: fixed; }
+.purchase-info-dialog .purchase-info-receipts th,
+.purchase-info-dialog .purchase-info-receipts td {
+  padding: 6px 8px;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.purchase-info-receipts th:nth-child(1) { width: 23%; }
+.purchase-info-receipts th:nth-child(2) { width: 18%; }
+.purchase-info-receipts th:nth-child(4) { width: 25%; }
+.purchase-info-dialog .purchase-info-receipts td small {
+  display: block;
+  color: #536a80;
+  font-size: 10px;
+  line-height: 14px;
+}
+@media (max-width: 420px) {
+  .purchase-info-dialog:has(.purchase-info-receipts) .dialogbody { padding: 8px; }
+  .purchase-info-dialog .purchase-info-receipts th,
+  .purchase-info-dialog .purchase-info-receipts td { padding: 5px 4px; }
+}

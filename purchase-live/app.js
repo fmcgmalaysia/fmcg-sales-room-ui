@@ -479,6 +479,10 @@ const stages=[
       document.getElementById('dialogError').textContent=before+'Review the current quantities and confirm again. 请核对上方最新数量，再确认。';
     }
   }
+  function receiptQuantityRow(label, chinese, headings, values){
+    const cells=headings.map((heading,index)=>'<div><small>'+heading+'</small><strong'+(index===2&&values[index]>0?' class="receipt-quantity-short"':'')+'>'+qtyDigits(values[index])+' CTN</strong></div>').join('');
+    return '<div class="receipt-feedback-summary"><b>'+label+'<small>'+chinese+'</small></b>'+cells+'</div>';
+  }
   function receiptDecisionEditor(snapshot,draft){
     const {row,item,demand,covered,shortage}=snapshot;
     if(item.quantity===0&&item.receivingIssue===false){
@@ -491,9 +495,16 @@ const stages=[
     const decision=item.decision||{},current=decision.supplierDeliveryDecision||'WAIT';
     const readOnly=decision.customerShortfallRoute==='SUPPORT_SPLIT';
     dialogContext={kind:'quantity-case',taskId:row.id,caseId:item.id,receipt:snapshot};
+    const waitText=Number.isSafeInteger(item.quantity)&&item.quantity>0
+      ? 'Wait for '+item.quantity+' CTN 等待补货 '+item.quantity+' 箱' : 'Wait for replenishment 等待补货';
     const originalFeedback=item.warehouseFeedback?.reason,feedback=originalFeedback==='Supplier short-shipped 供应商少发货'?'Short delivery 供应商少发货':originalFeedback||'Warehouse feedback not available 货仓反馈尚未提供';
     formDialog('Receiving Shortfall 收货差额',row.po,
-      '<div class="receipt-feedback-field"><label>Supplier P.O. 供应商采购单</label></div><div class="receipt-feedback-summary"><div><small>Ordered 采购数量</small><strong>'+qtyDigits(item.planned)+' CTN</strong></div><div><small>Received 仓库实收</small><strong>'+qtyDigits(item.accepted)+' CTN</strong></div><div><small>P.O. shortage 供应商差额</small><strong>'+qtyDigits(item.quantity)+' CTN</strong></div></div><div class="receipt-feedback-field"><label>Customer order 客户订单</label></div><div class="receipt-feedback-summary"><div><small>Ordered 客户订货</small><strong>'+qtyDigits(demand)+' CTN</strong></div><div><small>Covered 客户可用</small><strong>'+qtyDigits(covered)+' CTN</strong></div><div><small>Customer shortage 客户缺口</small><strong>'+qtyDigits(shortage)+' CTN</strong></div></div>'+(covered===0&&item.accepted>0?'<p class="muted">No received stock is currently allocated for this customer. 已收货暂未有可供本客户的分配。</p>':'')+'<details><summary>Warehouse feedback 货仓反馈</summary><p>'+esc(feedback)+'</p></details><div class="receipt-feedback-field"><label for="receiptSolution">Next step 处理方式</label><select id="receiptSolution"><option value="WAIT">Await full delivery 等待供应商全数发货</option><option value="STOP">Stop waiting 停止等待</option></select></div><div class="receipt-feedback-options" id="receiptStopOptions" hidden>'+[['CN_PROMISED','Supplier will issue a CN','供应商承诺提供 CN'],['FUTURE_DEDUCTION','Deduct the amount from the next payment','供应商同意下次扣账'],['SUPPLIER_REFUSED','Supplier declined responsibility','供应商不愿意负责']].map(([value,label,chinese])=>'<label><input type="radio" name="receiptSupplierDecision" value="'+value+'"'+(decision.supplierDecision===value?' checked':'')+'><span>'+label+'<small>'+chinese+'</small></span></label>').join('')+(shortage>0?'<label for="shortfallRoute">Customer shortage 客户余量</label><select id="shortfallRoute"><option value="">Choose the next step 请选择</option><option value="ALLOCATE">Continue to ALLOC 去 ALLOC 调货或借货</option>'+(covered>0?'<option value="SUPPORT_SPLIT">Notify Support to split 通知 Support 不再等货</option>':'')+'</select>':'')+'</div>',
+      '<div class="receipt-quantity-grid">' +
+      receiptQuantityRow('Supplier P.O.', '供应商采购单', ['Ordered 采购','Received 实收','Short 短收'], [item.planned,item.accepted,item.quantity]) +
+      receiptQuantityRow('Customer order', '客户订单', ['Ordered 订购','Covered 可用','Short 缺口'], [demand,covered,shortage]) +
+      '</div><p class="receipt-feedback-note"><strong>Warehouse feedback 货仓反馈</strong><span>'+esc(feedback)+'</span></p>' +
+      (covered===0&&item.accepted>0?'<p class="muted">No received stock is currently allocated for this customer. 已收货暂未有可供本客户的分配。</p>':'') +
+      '<div class="receipt-feedback-field"><label for="receiptSolution">Next step 处理方式</label><select id="receiptSolution"><option value="WAIT">'+waitText+'</option><option value="STOP">Stop waiting 停止等待</option></select></div><div class="receipt-feedback-options" id="receiptStopOptions" hidden>'+[['CN_PROMISED','Supplier will issue a CN','供应商承诺提供 CN'],['FUTURE_DEDUCTION','Deduct the amount from the next payment','供应商同意下次扣账'],['SUPPLIER_REFUSED','Supplier declined responsibility','供应商不愿意负责']].map(([value,label,chinese])=>'<label><input type="radio" name="receiptSupplierDecision" value="'+value+'"'+(decision.supplierDecision===value?' checked':'')+'><span>'+label+'<small>'+chinese+'</small></span></label>').join('')+(shortage>0?'<label for="shortfallRoute">Customer shortage 客户余量</label><select id="shortfallRoute"><option value="">Choose the next step 请选择</option><option value="ALLOCATE">Continue to ALLOC 去 ALLOC 调货或借货</option>'+(covered>0?'<option value="SUPPORT_SPLIT">Notify Support to split 通知 Support 不再等货</option>':'')+'</select>':'')+'</div>',
       readOnly?'':'<button class="btn" id="refreshReceiptDecision" hidden>Refresh quantities 读取最新数量</button><button class="btn primary" id="saveReceiptDecision">Confirm 确定</button>','task');
     modal.classList.add('receipt-feedback-dialog');
     const solution=document.querySelector('#receiptSolution'),options=document.querySelector('#receiptStopOptions');solution.value=readOnly?current:draft?.delivery||current;
@@ -503,7 +514,17 @@ const stages=[
       if([...route.options].some(option=>option.value===choice))route.value=choice;
     }
     if(draft&&!readOnly)for(const input of options.querySelectorAll('input'))input.checked=input.value===draft.supplier;
-    const show=()=>{options.hidden=solution.value!=='STOP';};solution.onchange=show;show();
+    const primary=document.getElementById('saveReceiptDecision');
+    const show=()=>{
+      const stopped=solution.value==='STOP';
+      options.hidden=!stopped;
+      if(!primary)return;
+      const labels={ALLOCATE:'Go to ALLOC 前往 ALLOC',SUPPORT_SPLIT:'Hand off to Support 移交 Support'};
+      primary.textContent=stopped?(labels[route?.value]||'Record outcome 记录处理结果'):'Record waiting 记录等待';
+    };
+    solution.onchange=show;
+    if(route)route.onchange=show;
+    show();
     if(readOnly){
       solution.disabled=true;
       if(route)route.disabled=true;

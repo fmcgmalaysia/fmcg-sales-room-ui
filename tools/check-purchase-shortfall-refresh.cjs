@@ -3,12 +3,17 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createRequire } = require('node:module');
 
-const [assetRoot, candidate, playwrightModule] = process.argv.slice(2);
+const [assetRoot, candidate, playwrightModule, previewDir] = process.argv.slice(2);
 const { chromium } = require(playwrightModule || 'playwright');
 const origin = 'http://localhost:45971';
 const fixtureFile = path.resolve(__dirname, '../integration/tests/purchase-support-shortfall.test.cjs');
+const { purchaseReceiptInfo } = createRequire(fixtureFile)('./load-master-module.cjs')('purchaseReceiptInfo.js');
 const setup = fs.readFileSync(fixtureFile, 'utf8').split('\ntest(')[0]
-  .replaceAll('50', '100').replaceAll('55', '100').replace('expectedExtra:5', 'expectedExtra:0');
+  .replaceAll('50', '100').replaceAll('55', '100').replace('expectedExtra:5', 'expectedExtra:0')
+  .replace("kind:issue?'SHORT':'PARTIAL'", "kind:issue?'SHORT':accepted===100?'DELIVERY':'PARTIAL'")
+  .replace("reason:'Internal fake receipt'", "reason:issue?'Supplier short-shipped 供应商少发货':'Supplier delivered the remainder'")
+  .replace('activityTime:at,details:{beforeRevision,lines:',
+    "activityTime:accepted===100?'2026-11-20T01:00:00Z':at,initiatedByStaffName:'Warehouse QA',details:{beforeRevision,lines:");
 const fixture = new Function('require', setup + '; return fixture;')(createRequire(fixtureFile));
 const staff = { staffId: 'TEST', staffName: 'Test', memberId: 'MEMBER', canDecideQuantityCase: true };
 const shell = `<!doctype html><meta charset="utf-8"><style>iframe{width:100%;height:97vh;border:0}</style>
@@ -29,7 +34,11 @@ async function start(browser, state, seen) {
     const { type, company, requestId, input } = message;
     const reply = { type: type.replace('_REQUEST','_RESULT'), company, requestId, ok:true };
     if (type === 'PURCHASE_WORKSPACE_REQUEST') {
-      return { ...reply, workspace:{ ...state.workspace(), purchaseOrders:{ company, orders:[] } } };
+      const workspace=state.workspace();
+      return { ...reply, workspace:{ ...workspace,
+        tasks:workspace.tasks.map(row=>({...row,receiptHistory:purchaseReceiptInfo(
+          [{id:'FAKE-PO',number:'FAKE-PO',taskIds:[row.id]}],workspace.activity).get(row.id)||[]})),
+        purchaseOrders:{ company, orders:[] } } };
     }
     if (type === 'PURCHASE_ORDERS_REQUEST') return { ...reply, result:{ company, orders:[] } };
     if (type === 'PURCHASE_SAVE_REQUEST' && message.operation === 'QUANTITY_CASE') {
@@ -70,6 +79,44 @@ const openCase = (frame, quantity) => frame.locator('[data-quantity-case]')
     await openCase(cold.frame,20);
     assert.deepEqual(await supplier(cold.frame),['100 CTN','80 CTN','20 CTN']);
     assert.deepEqual(await coverage(cold.frame),['100 CTN','80 CTN','20 CTN']);
+    assert.equal(await cold.frame.locator('#saveReceiptDecision').innerText(),'Record waiting 记录等待');
+    assert.match(await cold.frame.locator('#receiptSolution option[value="WAIT"]').textContent(),/20 CTN/);
+    await cold.frame.locator('#receiptSolution').selectOption('STOP');
+    await cold.frame.locator('#shortfallRoute').selectOption('SUPPORT_SPLIT');
+    assert.equal(await cold.frame.locator('#saveReceiptDecision').innerText(),'Hand off to Support 移交 Support');
+    await cold.frame.locator('#shortfallRoute').selectOption('ALLOCATE');
+    assert.equal(await cold.frame.locator('#saveReceiptDecision').innerText(),'Go to ALLOC 前往 ALLOC');
+    await cold.frame.locator('#receiptSolution').selectOption('WAIT');
+    const aligned=()=>cold.frame.locator('.receipt-quantity-grid .receipt-feedback-summary').evaluateAll(rows=>
+      rows.map(row=>[...row.children].map(cell=>cell.getBoundingClientRect().x)));
+    for(const width of [1440,390,320]){
+      await cold.page.setViewportSize({width,height:800});
+      const [poColumns,customerColumns]=await aligned();
+      assert.deepEqual(poColumns,customerColumns);
+      assert.equal(poColumns.length,4);
+      assert.equal(await cold.frame.locator('#modal').evaluate(e=>e.scrollWidth<=e.clientWidth),true);
+    }
+    if(previewDir){
+      await cold.page.setViewportSize({width:1440,height:860});
+      await cold.frame.locator('#modal').screenshot({path:path.join(previewDir,'fixture-shortfall.png')});
+    }
+    await cold.frame.locator('#modal .dialogfoot').getByRole('button',{name:'Close',exact:true}).click();
+    await cold.frame.getByRole('button',{name:/^Receipt info/}).click();
+    let receiptTable=cold.frame.locator('.purchase-info-receipts');
+    assert.deepEqual(await receiptTable.locator('thead th').allTextContents(),['P.O.','Received CTN','Status','Recorded']);
+    assert.match(await receiptTable.locator('tbody tr').first().innerText(),/80[\s\S]*Short 20 CTN[\s\S]*供应商少发货/);
+    await cold.frame.locator('.purchase-info-dialog .dialogfoot').getByRole('button',{name:'Close',exact:true}).click();
+    arriving.receive('SECOND-20',100,80,'FIRST-80');
+    await cold.page.clock.fastForward(10000);
+    await cold.frame.getByRole('button',{name:/^Receipt info/}).click();
+    const histories=await receiptTable.locator('tbody tr').evaluateAll(rows=>rows.map(row=>[...row.cells].map(cell=>cell.innerText)));
+    assert.equal(histories.length,2);
+    assert.deepEqual(histories.map(row=>row[1]),['80','20']);
+    assert.match(histories[0][2],/Short 20 CTN[\s\S]*供应商少发货/);
+    assert.match(histories[1][2],/Follow-up receipt 补收[\s\S]*Supplier delivered the remainder/);
+    assert.match(histories[0][3],/19-11-26 20:00[\s\S]*Warehouse QA/);
+    assert.match(histories[1][3],/20-11-26 09:00[\s\S]*Warehouse QA/);
+    if(previewDir)await cold.frame.locator('.purchase-info-dialog').screenshot({path:path.join(previewDir,'fixture-receipts.png')});
     await cold.page.close();
 
     const initial = fixture({ shortReceipt:false });
@@ -139,7 +186,7 @@ const openCase = (frame, quantity) => frame.locator('[data-quantity-case]')
     await other.frame.getByText(/Sent to Support for splitting/).waitFor();
     assert.equal(await other.frame.locator('#saveReceiptDecision').count(),0);
     assert.equal(await other.frame.locator('#shortfallRoute').isEnabled(),false);
-    console.log('Passed: 0→80 first receipt, newer receipts with retained draft, server conflict, real zero coverage, and another employee’s Support handoff.');
+    console.log('Passed: aligned quantities at three widths, action labels, a four-column receipt history with separate 80 and 20 receipts, stale-save recovery, zero coverage, and concurrent Support handoff.');
   } finally {
     await browser.close();
   }
