@@ -9,6 +9,7 @@ import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { requireStaffCustomerAccess, staffMayAccessCustomer, getMasterSalesCreationAssignees, resolveMasterSalesCreationAssignee } from 'backend/masterStaffAccessClient.js';
 import { reserveWebQuotationCustomer, reserveWebQuotationPrimaryUser, activateWebQuotationCustomer } from 'backend/webQuotationRegistration.js';
+import { companyUserEmail, findCompanyLogin, saveLinkedCompanyUser } from 'backend/buyerCompanyAccess.js';
 import { isWebQuotationCustomer, isWebQuotationReady } from 'backend/webQuotationCustomer.js';
 import { applyWebQuotations } from 'backend/masterWebQuotationData.js';
 
@@ -727,7 +728,7 @@ export const getSalesRoomCustomerDetail = webMethod(
         .map((user) => ({
           userId: normalize(user.userId),
           userName: normalize(user.title),
-          email: normalizeEmail(user.email),
+          email: companyUserEmail(user),
           mobileNo: normalize(user.mobileNo),
           status: upper(user.status),
           primaryUser: normalize(customer.primaryUserId) ? normalize(user.userId || user._id) === normalize(customer.primaryUserId) : Boolean(user.primaryUser),
@@ -1085,8 +1086,10 @@ export const saveSalesRoomCustomerUser = webMethod(
 );
 
 async function allCustomerUsers(customerId = '') {
-  const result = await wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
-  return result.items.filter(user => !customerId || normalize(user.customerId) === normalize(customerId));
+  let query = wixData.query(CUSTOMER_USER_COLLECTION);
+  if (customerId) query = query.eq('customerId', normalize(customerId));
+  const result = await query.limit(1000).find({ suppressAuth: true, consistentRead: true });
+  return result.items;
 }
 
 function countsTowardUserLimit(user) {
@@ -1117,12 +1120,32 @@ export const addSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async 
   const input = validateCustomerUserInput(payload);
   const requestKey = normalize(requestId);
   if (!requestKey || requestKey.length > 100) throw new Error('A valid request reference is required.');
+  if (payload.linkExistingLogin === 'yes') {
+    if (!isWebQuotationReady(customer)) throw new Error('Approve this company before linking a Buyer Room login.');
+    const id = normalize(customer.customerId);
+    const scopedUsers = await allCustomerUsers(id);
+    const current = scopedUsers.find(user => normalize(user.requestId) === requestKey &&
+      user.linkedLoginId && companyUserEmail(user) === input.email && countsTowardUserLimit(user));
+    if (current) return { ok: true, customerId: id, userId: normalize(current.userId), status: current.status, duplicateRequest: true };
+    if (scopedUsers.some(user => companyUserEmail(user) === input.email && countsTowardUserLimit(user))) throw new Error('This email is already listed for this customer.');
+    if (scopedUsers.filter(countsTowardUserLimit).length >= 5) throw new Error('This customer already has the maximum of 5 users.');
+    const login = await findCompanyLogin(input.email);
+    if (!login || upper(login.status) !== 'ACTIVE') throw new Error('An active existing Buyer Room login is required.');
+    const { user, duplicateRequest } = await saveLinkedCompanyUser(id, login, {
+      title: input.userName, mobileNo: input.mobileNo, requestId: requestKey, requestSource: 'SALES ROOM'
+    });
+    if (!duplicateRequest) await writeAuditChanges(USER_AUDIT_COLLECTION, 'CUSTOMER_USER_LOGIN_LINKED', id, user.userId, [
+      { fieldId: 'status', fieldLabel: 'USER ACCESS', beforeValue: '', afterValue: 'ACTIVE' },
+      { fieldId: 'email', fieldLabel: 'USER EMAIL', beforeValue: '', afterValue: input.email }
+    ], staff);
+    return { ok: true, customerId: id, userId: user.userId, status: 'ACTIVE' };
+  }
   const directory = await allCustomerUsers();
   const repeated = directory.find(user => normalize(user.requestId) === requestKey && normalize(user.customerId) === normalize(customer.customerId));
   if (repeated) return { ok: true, customerId: normalize(customer.customerId), userId: normalize(repeated.userId), duplicateRequest: true };
   const customerUsers = directory.filter(user => normalize(user.customerId) === normalize(customer.customerId));
   const emailMatch = directory.find(user => normalizeEmail(user.email) === input.email);
-  if (emailMatch && normalize(emailMatch.customerId) !== normalize(customer.customerId)) throw new Error('This email is assigned to another customer account. Admin review is required.');
+  if (emailMatch && normalize(emailMatch.customerId) !== normalize(customer.customerId)) throw new Error('This email already has a Buyer Room login. Select Link existing login to grant access to this company.');
   if (emailMatch && ['ACTIVE', 'PENDING'].includes(upper(emailMatch.status))) throw new Error('This email is already listed for this customer.');
   if (customerUsers.filter(countsTowardUserLimit).length >= 5) throw new Error('This customer already has the maximum of 5 users.');
   const now = new Date();

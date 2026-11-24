@@ -12,6 +12,7 @@ import { buildBuyerSelectionDownload } from 'backend/buyerSelectionDownload.js';
 import { verifyBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
 import { getMasterStaffScope } from 'backend/masterStaffAccessClient.js';
+import { checkBuyerDownloadGrant, getActiveLinkedBuyerCompany } from 'backend/buyerCompanyAccess.js';
 
 const SITE_BASE = 'https://www.fmcgmalaysia.com';
 const CALLBACK_URL = SITE_BASE + '/_functions/googleStaffAuth';
@@ -49,7 +50,11 @@ async function findAuthorizedBuyer(email) {
   const users = (await wixData.query(CUSTOMER_USER_COLLECTION).eq('email', email).limit(2).find({ suppressAuth: true, consistentRead: true })).items;
   if (users.length !== 1) return { authorized: false, reason: users.length > 1 ? 'DUPLICATE_BUYER_EMAIL' : 'BUYER_NOT_REGISTERED' };
   const user = users[0];
-  if (normalize(user.status).toUpperCase() !== ACTIVE_STATUS) return { authorized: false, reason: 'BUYER_USER_INACTIVE' };
+  const linkedAccess = async reason => {
+    const linked = await getActiveLinkedBuyerCompany(user);
+    return linked ? { authorized: true, ...linked } : { authorized: false, reason };
+  };
+  if (normalize(user.status).toUpperCase() !== ACTIVE_STATUS) return linkedAccess('BUYER_USER_INACTIVE');
 
   const customerId = normalize(user.customerId);
   const customers = (await wixData.query(CUSTOMER_COLLECTION).eq('customerId', customerId).limit(2).find({ suppressAuth: true, consistentRead: true })).items;
@@ -58,7 +63,7 @@ async function findAuthorizedBuyer(email) {
   const lifecycle = normalize(customer.lifecycleStatus || customer.customerStatus).toUpperCase();
   const access = normalize(customer.catalogueAccessStatus || customer.accessStatus || customer.customerStatus).toUpperCase();
   if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) {
-    return { authorized: false, reason: 'CUSTOMER_INACTIVE' };
+    return linkedAccess('CUSTOMER_INACTIVE');
   }
   return { authorized: true, user, customer };
 }
@@ -130,7 +135,9 @@ export async function get_googleStaffAuth(request) {
 export async function get_buyerSelectionExcel(request) {
   try {
     const authorization = verifyBuyerSelectionExportToken(request?.query?.token, await getSecret('FMCG_QD_ROUTER_TOKEN'));
-    const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room';
+    if (authorization.buyerGrant) await checkBuyerDownloadGrant(authorization.customerId, authorization.buyerGrant);
+    const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room' +
+      (authorization.buyerGrant ? '?company=' + encodeURIComponent(authorization.customerId) : '');
     const file = await buildBuyerSelectionDownload(authorization.customerId, buyerRoomUrl);
     return response({
       status: 200,
@@ -148,7 +155,7 @@ export async function get_buyerSelectionExcel(request) {
     });
   } catch (error) {
     const code = normalize(error?.message);
-    const status = ['INVALID_EXPORT_TOKEN', 'EXPIRED_EXPORT_TOKEN'].includes(code) ? 403 : code === 'There are no products to export.' ? 404 : 500;
+    const status = ['INVALID_EXPORT_TOKEN', 'EXPIRED_EXPORT_TOKEN', 'BUYER_DOWNLOAD_ACCESS_REVOKED'].includes(code) ? 403 : code === 'There are no products to export.' ? 404 : 500;
     console.error('Buyer selection direct download failed', { status, code });
     return response({
       status,
@@ -161,7 +168,9 @@ export async function get_buyerSelectionExcel(request) {
 export async function get_buyerOrderExcel(request) {
   try {
     const authorization = verifyBuyerOrderExportToken(request?.query?.token, await getSecret('FMCG_QD_ROUTER_TOKEN'));
-    const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room';
+    if (authorization.buyerGrant) await checkBuyerDownloadGrant(authorization.customerId, authorization.buyerGrant);
+    const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room' +
+      (authorization.buyerGrant ? '?company=' + encodeURIComponent(authorization.customerId) : '');
     let file;
     let lastError;
     for (let attempt = 0; attempt < 16; attempt += 1) {
@@ -194,7 +203,7 @@ export async function get_buyerOrderExcel(request) {
     });
   } catch (error) {
     const code = normalize(error?.message);
-    const status = ['INVALID_ORDER_EXPORT_TOKEN', 'EXPIRED_ORDER_EXPORT_TOKEN'].includes(code) ? 403 : code === 'Order was not found.' ? 404 : 500;
+    const status = ['INVALID_ORDER_EXPORT_TOKEN', 'EXPIRED_ORDER_EXPORT_TOKEN', 'BUYER_DOWNLOAD_ACCESS_REVOKED'].includes(code) ? 403 : code === 'Order was not found.' ? 404 : 500;
     console.error('Buyer order direct download failed', { status, code });
     return response({
       status,

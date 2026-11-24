@@ -4,7 +4,8 @@ import wixWindowFrontend from 'wix-window-frontend';
 import { local, session } from 'wix-storage-frontend';
 import { authentication } from 'wix-members-frontend';
 import wixRealtimeFrontend from 'wix-realtime-frontend';
-import { getCurrentBuyerContext } from 'backend/catalogueAuth.web';
+import { getBuyerCompanies, getCurrentBuyerContext } from 'backend/catalogueAuth.web';
+import { buyerCompanyChooser, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
 let assistCustomerId = '';
 function getAssistCustomerId() {
@@ -54,9 +55,38 @@ $w.onReady(async function () {
   if (redirectingToStaffLogin) return;
   const frame = $w('#html1');
   const downloadButton = $w('#downloadExcelButton');
+  const requestedCompanyId = assistCustomerId ? '' : selectedBuyerCompanyId(wixLocationFrontend);
+  let scopedCompanyId = requestedCompanyId;
+  let companyAccess;
+  const companyAccessReady = assistCustomerId || !authentication.loggedIn() ? null :
+    getBuyerCompanies().then(access => {
+      companyAccess = buyerCompanyChooser(access, requestedCompanyId);
+      if (companyAccess.scoped) scopedCompanyId = companyAccess.currentId;
+    })
+      .catch(() => { if (requestedCompanyId) companyAccess = { companies: [], blocked: true, denied: true }; });
+  const buyerScope = () => assistCustomerId || (scopedCompanyId ? { buyerCompanyId: scopedCompanyId } : '');
+  const cataloguePath = () => assistCustomerId ? '/catalogue?assist=' + encodeURIComponent(assistCustomerId) :
+    buyerCompanyPath('/catalogue', companyAccess?.scoped ? companyAccess.currentId : '');
+  function sendCompanies() {
+    if (companyAccess) frame.postMessage({ type: 'BUYER_COMPANY_ACCESS', ...companyAccess });
+  }
+  async function denyCompanyAccess() {
+    companyAccess = { companies: [], blocked: true, denied: true };
+    workspaceReadEpoch++;
+    historyFiles.clear();
+    downloadButton.disable();
+    downloadButton.hide();
+    downloadButton.link = '';
+    try { companyAccess.companies = (await getBuyerCompanies()).companies; } catch (_) { /* Keep the workspace blocked. */ }
+    sendCompanies();
+  }
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
-  function openHistoryFile(message) {
+  async function openHistoryFile(message) {
+    if (scopedCompanyId && !(await getCurrentBuyerContext(buyerScope()))?.ok) {
+      await denyCompanyAccess();
+      return;
+    }
     const saved = historyFiles.get(message.company);
     if (!saved || saved.requestId !== message.requestId || saved.customerId !== message.customerId) return;
     const file = saved.documents?.find(file => file.fileId === message.fileId && file.ready === true);
@@ -93,9 +123,9 @@ $w.onReady(async function () {
     if (downloadPreparation) return downloadPreparation;
     const preparingKey = selectionDataKey;
     downloadPreparation = (async () => {
-      const result = await createBuyerSelectionDownload(assistCustomerId);
+      const result = await createBuyerSelectionDownload(buyerScope());
       if (!result?.ok || !result.url || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be prepared.');
-      if (preparingKey !== selectionDataKey) return;
+      if (preparingKey !== selectionDataKey || companyAccess?.blocked) return;
       selectionDownloadUrl = result.url;
       activeDownloadExpiresAt = Number(result.expiresAt);
       downloadButton.link = selectionDownloadUrl;
@@ -129,15 +159,22 @@ $w.onReady(async function () {
     return workspaceRefreshPromise;
   }
   async function loadWorkspace() {
+    if (companyAccessReady) await companyAccessReady;
+    sendCompanies();
+    if (companyAccess?.blocked) return;
     const readEpoch = ++workspaceReadEpoch;
     let result;
-    try { result = await getBuyerWorkspace(assistCustomerId); }
+    try { result = await getBuyerWorkspace(buyerScope()); }
     catch (error) {
       if (readEpoch !== workspaceReadEpoch) return;
       if (assistCustomerId) {
         if (!authentication.loggedIn() || error?.message === 'Sign in is required.') { goToBuyerRoomStaffLogin(assistCustomerId); return; }
         frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Staff Management could not authorize this Buyer Room. ' + (error?.message || String(error)) });
         throw error;
+      }
+      if (companyAccess?.scoped && /no longer available|not linked/.test(error?.message || '')) {
+        await denyCompanyAccess();
+        return;
       }
       throw error;
     }
@@ -163,7 +200,7 @@ $w.onReady(async function () {
     const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
     frame.postMessage({ type: 'BUYER_ROOM_DATA', data: {
       customerId: result.context.customerId,
-      catalogueUrl: siteBaseUrl ? siteBaseUrl + '/catalogue' + (assistCustomerId ? '?assist=' + encodeURIComponent(assistCustomerId) : '') : '',
+      catalogueUrl: siteBaseUrl ? siteBaseUrl + cataloguePath() : '',
       companyName: result.context.companyName,
       memberName: result.context.actorName || result.context.email,
       currency: result.context.currency || 'USD',
@@ -190,6 +227,7 @@ $w.onReady(async function () {
       else await loadWorkspace();
     } catch (error) {
       frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', action: actionName, itemId, ok: false, message: error?.message || 'The action could not be completed.' });
+      if (companyAccess?.scoped && /no longer available|not linked/.test(error?.message || '')) await denyCompanyAccess();
     } finally {
       if (quantityAction && --quantitySavesInFlight === 0 && quantityRefreshNeeded) {
         quantityRefreshNeeded = false;
@@ -201,17 +239,25 @@ $w.onReady(async function () {
 
   frame.onMessage(async (event) => {
     const message = event.data || {};
+    if (companyAccessReady) await companyAccessReady;
+    if (message.type === 'BUYER_COMPANY_SWITCH') {
+      if (companyAccess?.companies.some(company => company.customerId === message.customerId)) {
+        wixLocationFrontend.to(buyerCompanyPath('/buyer-room', message.customerId));
+      }
+      return;
+    }
+    if (companyAccess?.blocked && !['BUYER_ROOM_READY', 'BUYER_ROOM_REQUEST_DATA', 'BUYER_ROOM_LOADING_CAMPAIGN_SHOWN'].includes(message.type)) return;
     if (message.type === 'BUYER_ROOM_SELECTION_IMAGE_STATE' && typeof message.open === 'boolean') {
       selectionImageOpen = message.open;
       updateDownloadButtonVisibility();
       return;
     }
-    if (message.type === 'CUSTOMER_HISTORY_FILE_OPEN') { openHistoryFile(message); return; }
+    if (message.type === 'CUSTOMER_HISTORY_FILE_OPEN') { await openHistoryFile(message); return; }
     if (message.type === 'BUYER_TRANSACTION_HISTORY_REQUEST') {
       if (!['NCT','GHR'].includes(message.company) || typeof message.requestId !== 'string' || message.requestId.length > 100) return;
       const pending = {requestId:message.requestId, customerId:historyCustomerId};
       historyFiles.set(message.company, pending);
-      try { const result = await getBuyerTransactionHistory(message.company, assistCustomerId);
+      try { const result = await getBuyerTransactionHistory(message.company, buyerScope());
         if (historyFiles.get(message.company) === pending && result.company === message.company && result.customerId === historyCustomerId && result.customerId === pending.customerId) pending.documents = result.documents;
         frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:true, company:message.company, requestId:message.requestId, result}); }
       catch (error) { frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:false, company:message.company, requestId:message.requestId, error:error?.message || 'Transaction history could not be loaded.'}); }
@@ -244,12 +290,12 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_BROWSE_CATALOGUE') {
-      wixLocationFrontend.to(assistCustomerId ? '/catalogue?assist=' + encodeURIComponent(assistCustomerId) : '/catalogue');
+      wixLocationFrontend.to(cataloguePath());
       return;
     }
     if (message.type === 'BUYER_ROOM_USER_REQUEST') {
       try {
-        const result = await requestBuyerCustomerUser(message.payload || {}, message.requestId || '', assistCustomerId);
+        const result = await requestBuyerCustomerUser(message.payload || {}, message.requestId || '', buyerScope());
         frame.postMessage({ type: 'BUYER_ROOM_USER_RESULT', ...result, action: 'request' });
         await loadWorkspace();
       } catch (error) {
@@ -259,7 +305,7 @@ $w.onReady(async function () {
     }
     if (message.type === 'BUYER_ROOM_SET_PRIMARY') {
       try {
-        const result = await setBuyerPrimaryUser(message.userId || '', message.requestId || '', assistCustomerId);
+        const result = await setBuyerPrimaryUser(message.userId || '', message.requestId || '', buyerScope());
         frame.postMessage({ type: 'BUYER_ROOM_USER_RESULT', ...result, action: 'primary' });
         await loadWorkspace();
       } catch (error) {
@@ -268,40 +314,40 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_NOTIFICATIONS_READ') {
-      try { await markBuyerAccountNotificationsRead(message.eventIds || [], assistCustomerId); await loadWorkspace(); }
+      try { await markBuyerAccountNotificationsRead(message.eventIds || [], buyerScope()); await loadWorkspace(); }
       catch (error) { console.error('Buyer Room notification update failed', error); }
       return;
     }
     if (message.type === 'BUYER_ROOM_SAVE_QTY') {
-      await runAction(() => saveBuyerQuantity(message.itemId || '', message.quantityCtn, assistCustomerId), 'Quantity saved.', 'quantity', message.itemId || '');
+      await runAction(() => saveBuyerQuantity(message.itemId || '', message.quantityCtn, buyerScope()), 'Quantity saved.', 'quantity', message.itemId || '');
       return;
     }
     if (message.type === 'BUYER_ROOM_REMOVE') {
-      await runAction(() => removeBuyerItem(message.itemId || '', assistCustomerId), 'Product moved to Removed History.', 'remove', message.itemId || '');
+      await runAction(() => removeBuyerItem(message.itemId || '', buyerScope()), 'Product moved to Removed History.', 'remove', message.itemId || '');
       return;
     }
     if (message.type === 'BUYER_ROOM_RECOVER') {
-      await runAction(() => recoverBuyerItem(message.itemId || '', assistCustomerId), 'Restored to My Selection. A new quote has been requested.', 'recover', message.itemId || '');
+      await runAction(() => recoverBuyerItem(message.itemId || '', buyerScope()), 'Restored to My Selection. A new quote has been requested.', 'recover', message.itemId || '');
       return;
     }
     if (message.type === 'BUYER_ROOM_ORDER_PAGE') {
       try {
-        const result = await getBuyerOrderPage(message.cursor || '', assistCustomerId);
+        const result = await getBuyerOrderPage(message.cursor || '', buyerScope());
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_PAGE_RESULT', ...result });
       } catch (error) { frame.postMessage({ type: 'BUYER_ROOM_ORDER_PAGE_RESULT', ok: false, message: error?.message || 'Order history could not be loaded.' }); }
       return;
     }
     if (message.type === 'BUYER_ROOM_ORDER_DETAIL') {
       try {
-        const result = await getBuyerOrderDetail(message.orderId || '', assistCustomerId);
+        const result = await getBuyerOrderDetail(message.orderId || '', buyerScope());
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_DETAIL_RESULT', ...result });
       } catch (error) { frame.postMessage({ type: 'BUYER_ROOM_ORDER_DETAIL_RESULT', ok: false, orderId: message.orderId || '', message: error?.message || 'Order detail could not be loaded.' }); }
       return;
     }
     if (message.type === 'BUYER_ROOM_REDUCE_ORDER') {
       try {
-        const result = await reduceBuyerOrderLine(message.orderId || '', message.lineId || '', message.newQuantityCtn, message.requestId || '', assistCustomerId);
-        const detail = await getBuyerOrderDetail(message.orderId || '', assistCustomerId);
+        const result = await reduceBuyerOrderLine(message.orderId || '', message.lineId || '', message.newQuantityCtn, message.requestId || '', buyerScope());
+        const detail = await getBuyerOrderDetail(message.orderId || '', buyerScope());
         frame.postMessage({ type: 'BUYER_ROOM_REDUCTION_RESULT', ...result, order: detail.order });
         await loadWorkspace();
       } catch (error) {
@@ -312,10 +358,11 @@ $w.onReady(async function () {
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
       let result;
       try {
-        result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '', message.customerPoNumber || '');
+        result = await submitBuyerOrder(message.lines || [], buyerScope(), message.requestId || '', message.customerPoNumber || '');
         if (!result?.ok || !result.orderId) throw new Error(result?.message || 'Order could not be confirmed.');
       } catch (error) {
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: false, message: error?.message || 'Order could not be confirmed.' });
+        if (companyAccess?.scoped && /no longer available|not linked/.test(error?.message || '')) await denyCompanyAccess();
         return;
       }
       frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: result.warning || 'Order request sent to Sales Room.' });
@@ -331,7 +378,7 @@ $w.onReady(async function () {
 
   // When Wix has already started the fixed HTML embed, keep that frame and request a fresh handshake.
   // If the embed was not configured with its website address, retain the existing dynamic load.
-  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261123-waiting-campaign.html';
+  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261124-company-switch.html';
   if (frame.src !== buyerRoomEmbedUrl) frame.src = buyerRoomEmbedUrl;
   else frame.postMessage({ type: 'BUYER_ROOM_HOST_READY' });
   // The shell can render while the authorized data request is in flight.

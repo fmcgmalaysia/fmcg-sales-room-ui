@@ -6,6 +6,7 @@ import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { requireStaffCustomerAccess } from 'backend/masterStaffAccessClient.js';
 import { isWebQuotationReady } from 'backend/webQuotationCustomer.js';
 import { removedSelectionExpired } from 'backend/buyerSelectionRetention.js';
+import { resolveBuyerCompany } from 'backend/buyerCompanyAccess.js';
 
 const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
@@ -188,13 +189,20 @@ async function resolveSelectionContext_(assistCustomerId, staffAction = 'CATALOG
   if (!member) throw new Error('Please sign in before selecting products.');
   const memberId = normalize(member._id);
   const email = memberEmail_(member);
-  const requestedCustomerId = normalize(assistCustomerId);
+  const scopedCompany = typeof assistCustomerId === 'object';
+  const requestedCustomerId = scopedCompany ? '' : normalize(assistCustomerId);
   let actorType;
   let actorId;
   let actorName;
   let customer;
 
-  if (requestedCustomerId) {
+  if (scopedCompany) {
+    const selected = await resolveBuyerCompany(member, member.loginEmail, assistCustomerId);
+    customer = selected.customer;
+    actorType = 'CUSTOMER_USER';
+    actorId = normalize(selected.user.userId || selected.user._id);
+    actorName = normalize(selected.user.title || email);
+  } else if (requestedCustomerId) {
     const staff = await requireStaff_(member);
     const result = await wixData.query(CUSTOMER_COLLECTION).eq('customerId', requestedCustomerId).limit(2).find({ suppressAuth: true });
     if (result.items.length !== 1) throw new Error('Customer was not found.');

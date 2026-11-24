@@ -6,6 +6,8 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
+import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
+import { buyerCompanyChooser, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
 let catalogueContextMessage = null;
 let catalogueMenuMessage = null;
@@ -460,6 +462,22 @@ function sendCatalogueWorkspaceFilter(update) {
 }
 
 let catalogueAccessIssue = false;
+let catalogueCompanyAccess;
+let catalogueBuyerCompanyId = '';
+function selectedCatalogueScope() {
+    return selectionContext?.assistCustomerId || (catalogueBuyerCompanyId ? { buyerCompanyId: catalogueBuyerCompanyId } : '');
+}
+function sendCatalogueCompanies() {
+    if (!catalogueCompanyAccess) return;
+    try { $w('#html5').postMessage({ type: 'BUYER_COMPANY_ACCESS', ...catalogueCompanyAccess }); } catch (_) {}
+}
+async function denyCatalogueCompanyAccess() {
+    catalogueAccessIssue = true;
+    selectionContext = null;
+    catalogueCompanyAccess = { companies: [], blocked: true, denied: true };
+    try { catalogueCompanyAccess.companies = (await getBuyerCompanies()).companies; } catch (_) { /* Keep the workspace blocked. */ }
+    sendCatalogueCompanies();
+}
 function reportCatalogueAccess(message, blocked = true) {
     catalogueAccessIssue = blocked;
     try { $w('#text19').text=message?'Access unavailable':String(catalogueContextMessage?.sheetName||'Catalogue'); } catch (_) {}
@@ -549,9 +567,20 @@ $w.onReady(() => {
     const signedIn = authentication.loggedIn();
     if (!hasBuyerAccess && !signedIn && wixWindowFrontend.viewMode === 'Site') { wixLocationFrontend.to('/'); return; }
     if (hasBuyerAccess || signedIn) {
+        const requestedCompanyId = selectedBuyerCompanyId(wixLocationFrontend);
         try {
+            const access = await getBuyerCompanies().catch(error => {
+                if (requestedCompanyId) throw error;
+                return null;
+            });
+            if (access) {
+                catalogueCompanyAccess = buyerCompanyChooser(access, requestedCompanyId);
+                sendCatalogueCompanies();
+                if (catalogueCompanyAccess.blocked) return;
+                if (catalogueCompanyAccess.scoped) catalogueBuyerCompanyId = catalogueCompanyAccess.currentId;
+            }
             selectionContext = { mode: 'buyer', assistCustomerId: '' };
-            const state = await loadSelectionState('');
+            const state = await loadSelectionState(selectedCatalogueScope());
             if (state?.ok !== true || !state.customerId) throw new Error('Customer Catalogue access could not be verified.');
             sendCatalogueContext({
                 type: 'catalogueContext', mode: 'buyer',
@@ -561,6 +590,7 @@ $w.onReady(() => {
             restoreMobileCataloguePosition(state?.customerId)
                 .catch(error => console.warn('Catalogue browsing position could not be restored', error));
         } catch (error) {
+            if (requestedCompanyId || catalogueBuyerCompanyId) { await denyCatalogueCompanyAccess(); return; }
             selectionContext = null;
             local.removeItem('catalogueAccess');
             session.removeItem('catalogueAccess');
@@ -574,8 +604,9 @@ $w.onReady(() => {
     setInterval(async () => {
         if (!selectionContext || selectionRefreshPending) return;
         selectionRefreshPending = true;
-        try { await loadSelectionState(selectionContext.assistCustomerId || ''); }
+        try { await loadSelectionState(selectedCatalogueScope()); }
         catch (error) {
+            if (catalogueBuyerCompanyId) { await denyCatalogueCompanyAccess(); return; }
             const expiredAssistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
             if (expiredAssistCustomerId) {
                 if(!authentication.loggedIn())wixLocationFrontend.to('/sales-room-login?next='+encodeURIComponent('/catalogue?assist='+expiredAssistCustomerId));
@@ -910,12 +941,19 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
     const workspace = $w('#html5');
     workspace.onMessage(async (event) => {
         const message = event.data || {};
+        if (message.type === 'BUYER_COMPANY_SWITCH') {
+            if (catalogueCompanyAccess?.companies.some(company => company.customerId === message.customerId)) {
+                wixLocationFrontend.to(buyerCompanyPath('/catalogue', message.customerId));
+            }
+            return;
+        }
         if (message.type === 'catalogueWorkspaceReady') {
             const instanceId = typeof message.instanceId === 'string' ? message.instanceId : '';
             if (instanceId && instanceId === catalogueWorkspaceInstance) return;
             catalogueWorkspaceInstance = instanceId;
             lastWorkspaceProducts = null;
             catalogueWorkspaceReady = true;
+            sendCatalogueCompanies();
             if (catalogueWorkspaceFullReadComplete || catalogueWorkspaceProducts.length) sendCatalogueWorkspaceData();
             else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
             if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
@@ -973,7 +1011,6 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
                 return;
             }
             selectionBusyIds.add(productId);
-            const assistCustomerId = context.assistCustomerId || '';
             const flightKey = mobileSelectionFlightKey(productId);
             if (readMobileSelectionFlight(flightKey)?.expiresAt > Date.now()) {
                 joinedMobileSelections.add(productId);
@@ -981,7 +1018,7 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             }
             const flightOwner = claimMobileSelectionFlight(flightKey);
             try {
-                const result = await addCatalogueSelection(productId, assistCustomerId);
+                const result = await addCatalogueSelection(productId, selectedCatalogueScope());
                 if (!result?.ok) throw new Error(result?.error || 'Could not save this selection.');
                 if (selectionContext !== context) return;
                 selectedProductIds.add(productId);
@@ -993,8 +1030,12 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             } catch (error) {
                 console.error('Catalogue workspace selection failed', error);
                 if (selectionContext !== context) return;
+                if (catalogueBuyerCompanyId && /no longer available|not linked/.test(error?.message || '')) {
+                    await denyCatalogueCompanyAccess();
+                    return;
+                }
                 try {
-                    const state = await getCatalogueSelectionState(assistCustomerId);
+                    const state = await getCatalogueSelectionState(selectedCatalogueScope());
                     if (selectionContext !== context) return;
                     if (state?.ok && (state.removedProductIds || []).includes(productId)) {
                         workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: false, productId });
@@ -1032,7 +1073,7 @@ function openBuyerRoom() {
             session.setItem('staffBuyerEntryV1', JSON.stringify({ customerId: assistCustomerId, staffId: selectionContext.staffId, expiresAt: Date.now() + 30000 }));
         } catch (error) { /* The explicit URL still carries the authorized customer. */ }
     }
-    wixLocationFrontend.to(assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : '/buyer-room');
+    wixLocationFrontend.to(assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : buyerCompanyPath('/buyer-room', catalogueBuyerCompanyId));
 }
 
 function buyerRoomUrl(mode = catalogueContextMessage?.mode) {
@@ -1041,6 +1082,7 @@ function buyerRoomUrl(mode = catalogueContextMessage?.mode) {
     if (preview) return url.href;
     const assistCustomerId = String(selectionContext?.assistCustomerId || '').trim();
     if (assistCustomerId) url.searchParams.set('assist', assistCustomerId);
+    else if (catalogueBuyerCompanyId) url.searchParams.set('company', catalogueBuyerCompanyId);
     return url.href;
 }
 

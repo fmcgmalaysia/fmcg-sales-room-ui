@@ -15,7 +15,7 @@ function signatureFor(encodedPayload, secret) {
   return createHmac('sha256', normalize(secret)).update(encodedPayload).digest();
 }
 
-export function createBuyerOrderExportToken(customerId, orderId, secret, lifetimeSeconds = 900) {
+export function createBuyerOrderExportToken(customerId, orderId, secret, lifetimeSeconds = 900, buyerGrant) {
   const customer = normalize(customerId);
   const order = normalize(orderId);
   const key = normalize(secret);
@@ -27,7 +27,8 @@ export function createBuyerOrderExportToken(customerId, orderId, secret, lifetim
     customerId: customer,
     orderId: order,
     iat: now,
-    exp: now + Math.max(300, Math.min(1800, Number(lifetimeSeconds) || 900))
+    exp: now + Math.max(300, Math.min(1800, Number(lifetimeSeconds) || 900)),
+    ...(buyerGrant ? { buyerGrant } : {})
   };
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const signature = base64UrlEncode(signatureFor(encodedPayload, key));
@@ -48,5 +49,6 @@ export function verifyBuyerOrderExportToken(token, secret) {
   if (payload?.v !== TOKEN_VERSION || payload?.aud !== TOKEN_AUDIENCE || !normalize(payload?.customerId)
       || !normalize(payload?.orderId) || !Number.isFinite(Number(payload?.exp)) || Number(payload.exp) < now
       || Number(payload.exp) > now + 1800) throw new Error('EXPIRED_ORDER_EXPORT_TOKEN');
-  return { customerId: normalize(payload.customerId), orderId: normalize(payload.orderId), expiresAt: Number(payload.exp) * 1000 };
+  return { customerId: normalize(payload.customerId), orderId: normalize(payload.orderId), expiresAt: Number(payload.exp) * 1000,
+    ...(payload.buyerGrant ? { buyerGrant: payload.buyerGrant } : {}) };
 }

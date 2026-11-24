@@ -13,6 +13,7 @@ import { requireStaffCustomerAccess } from 'backend/masterStaffAccessClient.js';
 import { applyWebQuotations, readMasterWebQuotationData } from 'backend/masterWebQuotationData.js';
 import { isWebQuotationReady } from 'backend/webQuotationCustomer.js';
 import { removedSelectionExpired } from 'backend/buyerSelectionRetention.js';
+import { companyUserEmail, listBuyerCompanies, resolveBuyerCompany } from 'backend/buyerCompanyAccess.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -179,6 +180,14 @@ function contextFromCustomer(customer, actor) {
 async function resolveBuyerContext(assistCustomerId = '', staffAction = 'BUYER_ROOM_VIEW') {
   const member = await signedInMember();
   if (!member?._id) throw new Error('Sign in is required.');
+  if (typeof assistCustomerId === 'object') {
+    const { customer, user, grant } = await resolveBuyerCompany(member, member.loginEmail, assistCustomerId);
+    const userId = normalize(user.userId || user._id);
+    return { ...contextFromCustomer(customer, {
+      email: memberEmail(member), name: user.title, type: 'CUSTOMER_USER', userId,
+      primaryUser: normalize(customer.primaryUserId) === userId || Boolean(user.primaryUser)
+    }), downloadGrant: grant };
+  }
   const requestedId = normalize(assistCustomerId);
   if (requestedId) {
     const staff = await requireStaff(member);
@@ -308,7 +317,7 @@ function publicUser(user, primaryUserId = '') {
   return {
     userId: id,
     name: normalize(user.title),
-    email: normalizeEmail(user.email),
+    email: companyUserEmail(user),
     mobile: normalize(user.mobileNo),
     status: upper(user.status),
     primary: primaryUserId ? id === primaryUserId : Boolean(user.primaryUser),
@@ -362,12 +371,28 @@ async function writeBuyerUserAudit(action, customerId, userId, beforeStatus, aft
 }
 
 function buyerPageContext(buyer) {
-  if (buyer.actorType === 'CUSTOMER_USER') return buyer;
-  return buyer;
+  const { downloadGrant, ...context } = buyer;
+  return context;
 }
 
 export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
-  try { return { ok: true, buyer: buyerPageContext(await resolveBuyerContext(assistCustomerId)) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
+  try {
+    return { ok: true, buyer: buyerPageContext(await resolveBuyerContext(assistCustomerId)) };
+  } catch (error) {
+    if (!assistCustomerId) {
+      try {
+        const member = await signedInMember();
+        const { companies: [company] } = await listBuyerCompanies(member, member?.loginEmail);
+        if (company) return { ok: true, buyer: buyerPageContext(await resolveBuyerContext({ buyerCompanyId: company.customerId })) };
+      } catch (_) { /* Use the original sign-in failure. */ }
+    }
+    return { ok: false, reason: normalize(error?.message || error) };
+  }
+});
+export const getBuyerCompanies = webMethod(Permissions.SiteMember, async () => {
+  const member = await signedInMember();
+  if (!member?._id) throw new Error('Sign in is required.');
+  return listBuyerCompanies(member, member.loginEmail);
 });
 // Reuse existing member/customer authorization. This entry is read-only and cannot post payments.
 export const getBuyerTransactionHistory = webMethod(Permissions.SiteMember, async (company, assistCustomerId = '') => {
@@ -506,12 +531,16 @@ export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMembe
 });
 export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  return createBuyerSelectionMediaDownload(buyer.customerId, 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room');
+  if (buyer.downloadGrant) {
+    const { token, expiresAt } = createBuyerSelectionExportToken(buyer.customerId, await getSecret(BUYER_EXCEL_SIGNING_KEY), 3600, buyer.downloadGrant);
+    return { ok: true, expiresAt, url: '/_functions/buyerSelectionExcel?token=' + encodeURIComponent(token) };
+  }
+  return createBuyerSelectionMediaDownload(buyer.customerId, 'https://www.fmcgmalaysia.com/buyer-room');
 });
 export const createBuyerOrderDownload = webMethod(Permissions.SiteMember, async (orderId, assistCustomerId = '', buyerRoomUrl = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   const id = normalize(orderId);
-  const roomUrl = /^https:\/\//i.test(normalize(buyerRoomUrl)) ? normalize(buyerRoomUrl) : 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room';
+  const roomUrl = /^https:\/\//i.test(normalize(buyerRoomUrl)) ? normalize(buyerRoomUrl) : 'https://www.fmcgmalaysia.com/buyer-room';
   let file;
   let lastError;
   for (let attempt = 0; attempt < 16; attempt += 1) {
@@ -534,7 +563,7 @@ export const prepareBuyerOrderDownload = webMethod(Permissions.SiteMember, async
     throw new Error('Please refresh the order form and try again.');
   }
   const orderId = nextOrderId(buyer.customerId, submissionId);
-  const issued = createBuyerOrderExportToken(buyer.customerId, orderId, await getSecret(BUYER_EXCEL_SIGNING_KEY), 900);
+  const issued = createBuyerOrderExportToken(buyer.customerId, orderId, await getSecret(BUYER_EXCEL_SIGNING_KEY), 900, buyer.downloadGrant);
   return { ok: true, orderId, ...issued };
 });
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
