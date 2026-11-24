@@ -1,0 +1,19 @@
+{
+  "productionCode": "519377ede90dbfe733ec5d78e0ecb0619adab9ab",
+  "pagesRunId": 45304305886,
+  "verifiedAssets": 135,
+  "preservedBaselineAssets": 133,
+  "originalDeploymentRulesRestored": 7,
+  "wix": {
+    "site": "MASTER",
+    "published": true,
+    "officialUrl": "https://www.ltpos.ai/purchase",
+    "nativeComponent": "#html1",
+    "previousNativeSource": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261117-mobile-menu-icon-v1",
+    "previousVeloSource": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261120-shortfall-dispatch-confirmation-v1",
+    "currentSource": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/index-20261124-split-surplus.html",
+    "previousVeloSha256": "0497858aa0d2fb0c76e6475ceffada1cc401ccf5df935a9a8f5b771baa91a586",
+    "currentVeloSha256": "366bb28fcc3a2b80d876b79ea5aa57c0ad617905cee10db7a32bab819eec9de7",
+    "hashNormalization": "LF; strip trailing whitespace"
+  }
+}
