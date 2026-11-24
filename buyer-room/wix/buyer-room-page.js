@@ -71,6 +71,7 @@ $w.onReady(async function () {
   }
   async function denyCompanyAccess() {
     companyAccess = { companies: [], blocked: true, denied: true };
+    buyerOrderStorageKey = '';
     workspaceReadEpoch++;
     historyFiles.clear();
     downloadButton.disable();
@@ -94,6 +95,21 @@ $w.onReady(async function () {
   }
   let historyCustomerId = '';
   let frameReady = false;
+  let buyerOrderStorageKey = '';
+  let orderSubmissionInFlight = false;
+  let confirmedOrderRequest = null;
+  const orderRequestId = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+  function readOrderRequest(key) {
+    if (!key) return null;
+    try {
+      const request = JSON.parse(session.getItem(key));
+      return orderRequestId.test(request?.requestId) && Array.isArray(request.lines) ? request : null;
+    } catch (_) { return null; }
+  }
+  function forgetOrderRequest(key, requestId) {
+    if (readOrderRequest(key)?.requestId !== requestId) return;
+    try { session.removeItem(key); } catch (_) { /* A later retry uses the original request ID. */ }
+  }
   const campaignStorageKey = 'buyerWaitingCampaignLastV1';
   let waitingCampaignIndex;
   let activeBuyerRoomView = 'my';
@@ -186,6 +202,9 @@ $w.onReady(async function () {
       return;
     }
     if (historyCustomerId !== result.context.customerId) { historyFiles.clear(); historyCustomerId = result.context.customerId; }
+    const { customerId, actorType, actorUserId } = result.context;
+    buyerOrderStorageKey = actorType === 'CUSTOMER_USER' && actorUserId
+      ? 'buyerOrderRequestV1:' + JSON.stringify([customerId, actorUserId]) : '';
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
     // Quantity and its audit fields do not appear in the My Selection Excel.
     const currentSelectionKey = JSON.stringify((result.myList || []).map(({ orderQtyCtn, qtyEditedAt, qtyEditedBy, updatedAt, lastEditedBy, ...selection }) => selection));
@@ -210,6 +229,7 @@ $w.onReady(async function () {
       myList: result.myList || [],
       removed: result.removed || [],
       orders: result.orders || [],
+      pendingOrderRequestId: readOrderRequest(buyerOrderStorageKey)?.requestId || '',
       ordersNextCursor: result.ordersNextCursor || ''
     }});
     prepareSelectionDownload();
@@ -246,6 +266,13 @@ $w.onReady(async function () {
       return;
     }
     if (companyAccess?.blocked && !['BUYER_ROOM_READY', 'BUYER_ROOM_REQUEST_DATA', 'BUYER_ROOM_LOADING_CAMPAIGN_SHOWN'].includes(message.type)) return;
+    if (message.type === 'BUYER_ROOM_ORDER_ACK') {
+      if (message.requestId && message.requestId === confirmedOrderRequest?.requestId) {
+        forgetOrderRequest(confirmedOrderRequest.key, confirmedOrderRequest.requestId);
+        confirmedOrderRequest = null;
+      }
+      return;
+    }
     if (message.type === 'BUYER_ROOM_SELECTION_IMAGE_STATE' && typeof message.open === 'boolean') {
       selectionImageOpen = message.open;
       updateDownloadButtonVisibility();
@@ -354,17 +381,44 @@ $w.onReady(async function () {
       }
       return;
     }
-    if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
-      let result;
-      try {
-        result = await submitBuyerOrder(message.lines || [], buyerScope(), message.requestId || '', message.customerPoNumber || '');
-        if (!result?.ok || !result.orderId) throw new Error(result?.message || 'Order could not be confirmed.');
-      } catch (error) {
-        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: false, message: error?.message || 'Order could not be confirmed.' });
-        if (companyAccess?.scoped && /no longer available|not linked/.test(error?.message || '')) await denyCompanyAccess();
+    if (message.type === 'BUYER_ROOM_SUBMIT_ORDER' || message.type === 'BUYER_ROOM_RESUME_ORDER') {
+      if (orderSubmissionInFlight) return;
+      const resuming = message.type === 'BUYER_ROOM_RESUME_ORDER';
+      const key = buyerOrderStorageKey;
+      const saved = readOrderRequest(key);
+      const requestId = message.requestId || '';
+      if (resuming && saved?.requestId !== requestId) {
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', requestId, ok: false, recoveryUnavailable: true, message: 'The saved request is no longer available. Check Track Orders.' });
         return;
       }
-      frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: result.warning || 'Order request sent to Sales Room.' });
+      if (saved && saved.requestId !== requestId) {
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', requestId, ok: false, pendingOrderRequestId: saved.requestId });
+        return;
+      }
+      const request = saved || {
+        requestId, lines: message.lines || [], customerPoNumber: message.customerPoNumber || ''
+      };
+      if (key && !saved && orderRequestId.test(requestId)) {
+        try { session.setItem(key, JSON.stringify(request)); } catch (_) { /* Retry remains available while the page is open. */ }
+      }
+      orderSubmissionInFlight = true;
+      let result;
+      try {
+        result = await submitBuyerOrder(request.lines, buyerScope(), requestId, request.customerPoNumber);
+        if (!result?.ok || !result.orderId) throw new Error(result?.message || 'Order could not be confirmed.');
+      } catch (error) {
+        const detail = error?.message || 'Order could not be confirmed.';
+        if (!saved && /^(Enter a P\.O\. number of up to 100 characters\.|Enter at least one order quantity\.|Order lines are invalid\. Please refresh the order form\.|Invalid order line\.|All ordered products must have a released V\.I\.P price\.|All ordered products require EA and unit price data before submission\.)$/.test(detail)) {
+          forgetOrderRequest(key, requestId);
+        }
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', requestId, ok: false, pendingOrderRequestId: readOrderRequest(key)?.requestId || '', message: detail });
+        if (companyAccess?.scoped && /no longer available|not linked/.test(detail)) await denyCompanyAccess();
+        return;
+      } finally {
+        orderSubmissionInFlight = false;
+      }
+      confirmedOrderRequest = { key, requestId };
+      frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, requestId, message: result.warning || 'Order request sent to Sales Room.' });
       try { await refreshWorkspace(true); }
       catch (error) { console.error('Buyer order confirmed; workspace readback failed', error); }
     }

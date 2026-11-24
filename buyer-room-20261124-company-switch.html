@@ -906,6 +906,7 @@ function showOrderWait(preparing=false){$('orderWaitTitle').textContent=preparin
 function hideOrderWait(){$('orderWaitBg').classList.remove('show');$('orderWaitBg').setAttribute('aria-hidden','true')}
 function requestQuantityReview(){
   if(state.quantityReviewRequested||state.orderSubmitting||$('submitModalBg').classList.contains('show'))return;
+  if(pendingOrderRequestId){showOrderRecovery();return}
   showOrderWait(true);
   state.quantityReviewRequested=true;
   document.querySelectorAll('#orderRows [data-qty]').forEach(input=>{const item=state.my.find(x=>String(x.id)===input.dataset.qty);if(item&&isOrderable(item)&&!input.disabled&&!input.readOnly&&state.quantityDrafts.get(String(item.id))?.editing)confirmQuantityDraft(item,input,false)});
@@ -1151,7 +1152,7 @@ function updatePrepareOrderPosition(){
   const scrolledPast=isVisible&&$('browse').getBoundingClientRect().bottom<=document.querySelector('.global-header').getBoundingClientRect().bottom;
   $('prepareMobileOrder').classList.toggle('is-floating',scrolledPast);
 }
-$('prepareMobileOrder').onclick=()=>{showView('order');$('orderFormHeading').focus({preventScroll:true})};
+$('prepareMobileOrder').onclick=()=>{if(pendingOrderRequestId){showOrderRecovery();return}showView('order');$('orderFormHeading').focus({preventScroll:true})};
 $('mobileOrderBack').onclick=()=>{showView('my');$('prepareMobileOrder').focus({preventScroll:true})};
 function updateSelectionSearchPlaceholder(){
   $('mySearch').placeholder=state.listMode==='removed'?'Search removed products':
@@ -1352,6 +1353,40 @@ function closeExportMenus(){document.querySelectorAll('.export-wrap').forEach(w=
 function reviewDate(){return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()).replaceAll('/','-')}
 function clearOrderSubmitError(){const box=$('orderSubmitError');box.hidden=true;box.textContent=''}
 function showOrderSubmitError(message){const detail=String(message||'Order could not be confirmed.');const uncertain=/\b(?:500|502|503|504)\b|timeout|timed out|network|failed to fetch/i.test(detail);const box=$('orderSubmitError');box.textContent=(uncertain?'Submission status not confirmed. Your request may already have been received. Check Track Orders before sending again.':'Request needs attention. Your entered quantities have been kept.')+'\n'+detail;box.hidden=false;box.focus()}
+let pendingOrderRequestId='', activeOrderRequestId='', receivedOrderRequestId='', orderResponseTimer;
+const orderRecovery = document.createElement('dialog');
+orderRecovery.className='buyer-company-dialog';
+orderRecovery.setAttribute('aria-labelledby','orderRecoveryHeading');
+orderRecovery.innerHTML='<h2 id="orderRecoveryHeading">Resume order request</h2><p data-order-recovery-company></p><p data-order-recovery-detail></p><div class="buyer-company-choices"><button type="button" data-resume-order>Check and resume request</button><button type="button" data-order-recovery-close>Later</button></div>';
+document.body.append(orderRecovery);
+function showOrderRecovery(message=''){
+  orderRecovery.querySelector('[data-order-recovery-company]').textContent=state.companyName;
+  orderRecovery.querySelector('[data-order-recovery-detail]').textContent=message||'This request may already have been received. Continue with the same request to avoid sending it twice.';
+  if(!orderRecovery.open)orderRecovery.showModal();
+}
+orderRecovery.querySelector('[data-order-recovery-close]').onclick=()=>orderRecovery.close();
+orderRecovery.querySelector('[data-resume-order]').onclick=()=>{
+  if(!pendingOrderRequestId||state.orderSubmitting)return;
+  orderRecovery.close();
+  sendOrderRequest('BUYER_ROOM_RESUME_ORDER',{requestId:pendingOrderRequestId});
+};
+function sendOrderRequest(type,request){
+  activeOrderRequestId=request.requestId;
+  showOrderWait();
+  state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
+  post(type,request);
+  clearTimeout(orderResponseTimer);
+  orderResponseTimer=setTimeout(()=>{
+    if(!state.orderSubmitting)return;
+    hideOrderWait();
+    state.orderSubmitting=false;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request';
+    if(pendingOrderRequestId)showOrderRecovery();
+    else if(state.pendingOrder){
+      $('submitModalBg').classList.add('show');
+      showOrderSubmitError('The order response timed out.');
+    }
+  },25000);
+}
 function openOrderReview(){
   if(quantityEditsBlocked())return toast('Confirm each edited quantity with Enter and wait for saving to finish.');
   const ordered=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0);
@@ -1379,9 +1414,7 @@ $('confirmSubmit').onclick=()=>{
   state.orderAttempt.customerPoNumber=customerPoNumber;
   $('reviewPoNumber').readOnly=true;
   clearOrderSubmitError();
-  showOrderWait();
-  state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
-  post('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId,customerPoNumber:state.orderAttempt.customerPoNumber});
+  sendOrderRequest('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId,customerPoNumber:state.orderAttempt.customerPoNumber});
   $('submitModalBg').classList.remove('show');
 };
 $('trackMore').onclick=()=>{if(!state.ordersNextCursor||state.historyLoading)return;state.historyLoading=true;post('BUYER_ROOM_ORDER_PAGE',{cursor:state.ordersNextCursor});renderOrderTracking()};
@@ -1414,7 +1447,21 @@ window.addEventListener('message',e=>{
   if(m.type==='BUYER_ROOM_DOWNLOAD_ORDER_EXCEL'){downloadOrderExcel(m);return;}
   if(m.type==='BUYER_ROOM_HOST_READY'&&e.source===window.parent&&!state.customerId){post('BUYER_ROOM_READY',{view:'my'});return;}
   if(m.type==='BUYER_ROOM_LOADING_CAMPAIGN'&&e.source===window.parent){showSelectionCampaign(m.index);return;}
-  if(m.type==='BUYER_ROOM_DATA')applyData(m.data||{});
+  if(m.type==='BUYER_COMPANY_ACCESS'&&e.source===window.parent&&m.blocked){
+    pendingOrderRequestId='';
+    if(orderRecovery.open)orderRecovery.close();
+  }
+  if(m.type==='BUYER_ROOM_DATA'){
+    applyData(m.data||{});
+    if(e.source===window.parent&&m.data?.customerId){
+      const saved=m.data.pendingOrderRequestId===receivedOrderRequestId?'':m.data.pendingOrderRequestId||'';
+      if(saved!==pendingOrderRequestId){
+        pendingOrderRequestId=saved;
+        if(saved&&!state.orderSubmitting&&saved!==activeOrderRequestId)showOrderRecovery();
+        if(!saved&&orderRecovery.open)orderRecovery.close();
+      }
+    }
+  }
   if(m.type==='BUYER_ROOM_USER_RESULT'){
     const status=$('accountUserFormStatus');
     if(m.ok){status.className='account-form-status ok';status.textContent=m.action==='primary'?'Primary User updated.':(m.message||'User request submitted.');if(m.action==='request'){$('accountUserForm').reset();setTimeout(()=>{$('accountUserForm').hidden=true;$('accountAddUser').setAttribute('aria-expanded','false')},900)}}
@@ -1449,12 +1496,26 @@ window.addEventListener('message',e=>{
   }
   if(m.type==='BUYER_ROOM_ORDER_REFRESH')requestOrderDetails(true);
   if(m.type==='BUYER_ROOM_ORDER_RESULT'){
+    if(m.requestId&&(e.source!==window.parent||m.requestId!==activeOrderRequestId))return;
+    clearTimeout(orderResponseTimer);
     hideOrderWait();
     state.orderSubmitting=false;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request';
     if(m.ok){
+      pendingOrderRequestId='';activeOrderRequestId='';
+      if(orderRecovery.open)orderRecovery.close();
+      $('submitModalBg').classList.remove('show');
       state.orderAttempt=null;for(const line of state.pendingOrder||[])state.quantityDrafts.delete(String(line.itemId));state.pendingOrder=null;addOrderNotification(m.orderId);
       openOrderReceived(m.orderId);
+      if(m.requestId){receivedOrderRequestId=m.requestId;post('BUYER_ROOM_ORDER_ACK',{requestId:m.requestId})}
+    }else if(m.pendingOrderRequestId){
+      pendingOrderRequestId=m.pendingOrderRequestId;
+      $('submitModalBg').classList.remove('show');
+      showOrderRecovery(m.message);
+    }else if(m.recoveryUnavailable||!state.pendingOrder){
+      pendingOrderRequestId='';activeOrderRequestId='';
+      toast(m.message||'Check Track Orders before preparing another request.');
     }else{
+      pendingOrderRequestId='';
       $('submitModalBg').classList.add('show');
       showOrderSubmitError(m.message);
     }
