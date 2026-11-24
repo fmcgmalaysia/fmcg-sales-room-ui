@@ -17,6 +17,12 @@
     const target=state.rows.find(row=>row.key===key);
     return {...state,rows:state.rows.map(row=>row===target?row:workspace.tasks.find(saved=>saved.id===row.taskId)).filter(row=>row===target||row?.procurement?.totalCtn>0).map(row=>row===target?row:({...rowDraft(row,row.id),status:'saved'}))};
   }
+  function ordinarySurplus(state,parent){
+    if(state.batchId||parent?.supplyAllocation?.gap>0)return 0;
+    const planned=state.rows.filter(row=>row.supplierId&&row.supplyPurpose!=='STOCK')
+      .reduce((sum,row)=>sum+(Number(row.qty)||0),0);
+    return Math.max(0,planned-(parent?.ord||0));
+  }
   function validate(state,workspace){
     const parent=workspace.tasks.find(row=>row.id===state.rootId);if(!parent)return '原客户任务已不存在。';
     let total=0,chosen=0;
@@ -42,7 +48,11 @@
       }
       total+=qty;
     }
-    if(total>parent.ord&&state.rows.some(row=>!row.taskId&&row.supplierId&&!row.supplyPurpose))return '采购超过客户需求，请明确选择额外备货或替换缺口，再保存。';
+    if(total>parent.ord&&state.rows.some(row=>!row.taskId&&row.supplierId&&!row.supplyPurpose)){
+      if(state.batchId||parent.supplyAllocation?.gap>0)return '采购超过客户需求，请明确选择额外备货或替换缺口，再保存。';
+      const extra=ordinarySurplus(state,parent);
+      if(extra&&!state.reason.trim())return 'Add a reason for the '+extra+' surplus CTN. 请备注超出的 '+extra+' 箱。';
+    }
     if(!chosen&&!state.rows.some(row=>row.status==='saved'))return '请至少安排一家供应商。';
 
     if(state.reason.trim().length>2000)return '原因不能超过 2000 字。';
@@ -173,7 +183,7 @@
       const root=rootTask();
       const planned=state.rows.reduce((sum,row)=>sum+(row.supplierId||row.taskId?Number(row.qty)||0:0),0);
       document.querySelectorAll('.allocation-purpose').forEach(select=>{
-        select.hidden=!select.value&&!root.supplyAllocation?.gap&&planned<=root.ord;
+        select.hidden=!select.value&&!root.supplyAllocation?.gap&&(!state.batchId||planned<=root.ord);
       });
       if(!state||!document.querySelector('#allocationRows'))return;
       let assigned=0,amount=0,known=true;
@@ -191,9 +201,10 @@
       paintReferences();
       for(const row of state.rows){const extra=document.querySelector('[data-allocation-extra="'+row.key+'"]');if(extra)extra.hidden=assigned<=rootTask().ord;}
       const reasonRow=document.querySelector('.allocation-reason');if(reasonRow)reasonRow.hidden=!needsReason(state,workspace())&&!state.reason;
-      const reasonLabel=document.querySelector('#allocationReasonLabel');if(reasonLabel)reasonLabel.textContent=needsReason(state,workspace())?'原因 *':'原因（选填）';
+      const excess=ordinarySurplus(state,rootTask());
+      const reasonLabel=document.querySelector('#allocationReasonLabel');if(reasonLabel)reasonLabel.textContent=excess?'Surplus reason 超额备注 *':needsReason(state,workspace())?'原因 *':'原因（选填）';
       const reasonInput=document.querySelector('#allocationReason');if(reasonInput)reasonInput.className=needsReason(state,workspace())&&!state.reason.trim()?'allocation-required':'';
-      const stockNote=document.querySelector('#allocationStockNote');if(stockNote){stockNote.hidden=assigned<=rootTask().ord;stockNote.textContent='草稿超出客户需求 '+Math.max(0,assigned-rootTask().ord)+' CTN · 请核对采购用途，尚未形成库存';}
+      const stockNote=document.querySelector('#allocationStockNote');if(stockNote){stockNote.hidden=assigned<=rootTask().ord;stockNote.textContent=excess?'Customer order 客户订单 '+rootTask().ord+' CTN · Surplus 超额 '+excess+' CTN · 尚未形成库存':'草稿超出客户需求 '+Math.max(0,assigned-rootTask().ord)+' CTN · 请核对采购用途，尚未形成库存';}
       const batch=batchTask(),batchAdded=state.batchId?state.rows.filter(row=>!row.taskId&&row.supplierId).reduce((sum,row)=>sum+(Number(row.qty)||0),0):0;
       const savedTotal=state.rows.reduce((sum,row)=>sum+(workspace().tasks.find(item=>item.id===row.taskId)?.procurement?.totalCtn||0),0);
       const customerAssigned=state.rows.filter(row=>row.supplierId&&row.supplyPurpose!=='STOCK').reduce((sum,row)=>sum+(Number(row.qty)||0),0);

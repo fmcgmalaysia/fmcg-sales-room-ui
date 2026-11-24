@@ -12,7 +12,34 @@ test('saved PO uses plain text with pencil; financial lock removes all edit cont
  const f=fixture(),root=f.workspace.tasks[0];root.po='NCT-PO';root.procurement={revision:'P1',totalCtn:100,transportMode:'SUPPLIER_DELIVER'};f.ui.open('A');let html=f.node('#allocationRows').innerHTML;assert.doesNotMatch(html,/<input|<select/);assert.match(html,/data-allocation-amend/);root.financeSubmitted=true;f.ui.open('A');html=f.node('#allocationRows').innerHTML;assert.doesNotMatch(html,/<input|<select|data-allocation-amend/);assert.match(html,/Purchase order locked/);assert.match(f.node('#allocationConfirmations').innerHTML,/采购单已锁定/);f.ui.click({dataset:{allocationAmend:'A'}});f.edit('A','qty','1');assert.equal(f.submissions.length,0);
 });
 test('additional stock does not cover unplaced customer demand',()=>{const f=amended(),draft=f.ui.serialize().rows.find(row=>!row.taskId);f.edit(draft.key,'supplierId','S2');f.edit(draft.key,'supplyPurpose','STOCK');assert.equal(f.ui.serialize().rows.find(row=>!row.supplierId&&!row.hidden).qty,'200');assert.match(f.node('#allocationSummary').innerHTML,/待安排 <b>200 CTN/);});
-test('overfilled unsaved suppliers are flagged as drafts, not inventory, and require explicit purpose',()=>{const f=amended(),d=f.ui.serialize().rows.find(row=>!row.taskId);f.edit(d.key,'supplierId','S2');f.edit(d.key,'qty','400');f.edit(d.key,'lpCtn','48');f.edit(d.key,'transportMode','SUPPLIER_DELIVER');f.ui.edit({target:{id:'allocationReason',value:'Extra stock'}});f.ui.click({dataset:{allocationSave:d.key}});assert.equal(f.submissions.length,0);assert.match(f.node('#allocationStockNote').textContent,/尚未形成库存/);assert.doesNotMatch(f.node('#allocationSummary').innerHTML,/额外库存/);});
+test('normal split covers all 200 ordered cartons and asks only for the note on 5 surplus FOC cartons',()=>{
+ const f=fixture(),root=f.workspace.tasks[0];
+ root.ord=200;
+ root.po='NCT-PO-FIRST';
+ root.procurement={revision:'P1',totalCtn:100,draftPlan:false,transportMode:'SUPPLIER_DELIVER'};
+ f.ui.open('A');
+ const draft=f.ui.serialize()?.rows.find(row=>!row.taskId)?.key||'draft-1';
+ for(const [field,value] of Object.entries({supplierId:'S2',mode:'FOC',paid:'100',free:'5',lpPc:'2',lpCtn:'48',disc1:'0',disc2:'0',disc3:'0',transportMode:'SUPPLIER_DELIVER'}))f.edit(draft,field,value);
+ assert.equal(f.ui.serialize().rows.filter(row=>!row.hidden&&!row.supplierId).length,0);
+ assert.match(f.node('#allocationStockNote').textContent,/200 CTN.*5 CTN.*尚未形成库存/);
+ f.ui.click({dataset:{allocationSave:draft}});
+ assert.equal(f.submissions.length,0);
+ assert.match(f.ui.serialize().issue,/5 surplus CTN/);
+ f.ui.edit({target:{id:'allocationReason',value:'Supplier offered 5 FOC cartons'}});
+ f.ui.click({dataset:{allocationSave:draft}});
+ assert.equal(f.submissions.length,1);
+ const request=f.submissions[0];
+ assert.equal(request.operation,'ADD_SOURCE');
+ assert.equal(request.input.quantity,105);
+ assert.equal(request.input.costing.paidCtn,100);
+ assert.equal(request.input.costing.freeCtn,5);
+ assert.equal(request.input.supplyPurpose,undefined);
+ const {planPurchaseShares}=require('./load-master-module.cjs')('purchasePlan.js');
+ const plan=planPurchaseShares(f.workspace,[],'A','new-source',request.input.quantity);
+ assert.equal(plan.customerCtn,100);
+ assert.equal(plan.extraCtn,5);
+ assert.equal(plan.shares.reduce((sum,row)=>sum+row.customerCtn,0),200);
+});
 function imageFixture(records={},fail=false){let reads=[];const wixData={query(collection){return {hasSome(field,ids){this.ids=ids;return this;},limit(){return this;},async find(){reads.push([collection,this.ids]);if(fail)throw Error('offline');return {items:(records[collection]||[]).filter(row=>this.ids.includes(row._id))};}};}};let code=fs.readFileSync(path.join(__dirname,'../../backend/nctSalesIntake.js'),'utf8').replace(/^import .*;\r?\n/gm,'').replace('export async function submitNctSalesOrder','async function submitNctSalesOrder');const ctx={wixData,URL};vm.runInNewContext(code+'\nthis.enrich=withSubmissionImages;this.image=submissionImage;',ctx);return {...ctx,reads};}
 test('Submit resolves selection ID to its own product ID in batches, never by barcode',async()=>{const f=imageFixture({WixBuyerListItems:[{_id:'SEL',payload:JSON.stringify({customerId:'C',productId:'PRODUCT'})}],FMCGMALAYSIA:[{_id:'PRODUCT',image:'wix:image://v1/a~mv2.jpg/name.jpg'},{_id:'OTHER',image:'https://example.com/wrong.png'}]});const result=await f.enrich([{itemId:'SEL',barcode:'DUP'}],'C');assert.equal(result[0].productImageUrl,'https://static.wixstatic.com/media/a~mv2.jpg');assert.equal(f.reads.length,2);assert.equal(f.reads[1][1][0],'PRODUCT');});
 test('wrong customer, missing identity and unavailable image service cannot attach another product or block Submit',async()=>{for(const fail of [false,true]){const f=imageFixture({WixBuyerListItems:[{_id:'SEL',payload:JSON.stringify({customerId:'OTHER',productId:'PRODUCT'})}],FMCGMALAYSIA:[{_id:'PRODUCT',image:'https://example.com/wrong.png'}]},fail);const lines=[{itemId:'SEL'},{itemId:'MISSING'}];assert.deepEqual(await f.enrich(lines,'C'),lines);}});

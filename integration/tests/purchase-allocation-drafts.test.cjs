@@ -1,10 +1,10 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 function fixture(confirm=()=>true){
  const nodes=new Map(),node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',textContent:'',value:'',insertAdjacentHTML(_,html){this.innerHTML+=html;},querySelector(selector){return node(key+selector);}});return nodes.get(key);};
- const document={activeElement:null,querySelector:selector=>selector.includes('data-allocation-extra=')?null:node(selector)},ctx={window:{},document};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/supplier-allocation.js'),'utf8'),ctx);
+ const document={activeElement:null,querySelectorAll:()=>[],querySelector:selector=>selector.includes('data-allocation-extra=')?null:node(selector)},ctx={window:{},document};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/supplier-allocation.js'),'utf8'),ctx);
  const task=(id,ord)=>({id,customerId:'C',barcode:'BAR-'+id,ord,ea:24,supplierId:'S',editVersion:'V1',lpPc:2,lpCtn:48,disc1:0,disc2:0,disc3:0,procurement:{totalCtn:null,revision:'',draftPlan:true,transportMode:'SUPPLIER_DELIVER'}});
  const workspace={company:'NCT',customers:[{id:'C',shortName:'CUSTOMER'}],suppliers:[{id:'S',shortName:'SUPPLIER'},{id:'S2',shortName:'SUPPLIER 2'}],tasks:[task('A',100),task('B',80)]},submissions=[],messages=[],pos=[];let pending=null;
- const modal={open:true,classList:{add(){},contains:()=>true},close(){this.open=false;}};
+ const modal={open:true,classList:{add(){},contains:()=>true},querySelector:()=>null,close(){this.open=false;}};
  const ui=ctx.window.purchaseSupplierAllocation.create({workspace:()=>workspace,company:()=>workspace.company,rowLabel:id=>id==='A'?'ROW 050':'ROW 051',esc:x=>String(x??''),num:x=>Number.isFinite(x)?x.toFixed(2):'—',dialog(){modal.open=true;},modal:()=>modal,cache(){},status:(text,error)=>messages.push({text,error}),savePending:()=>pending,atOrigin:()=>true,mutate(_,request){submissions.push(request);},openPo:id=>pos.push(id),confirm,handIcon:()=>''});
  const edit=(id,field,value)=>ui.edit({target:{value,dataset:{allocationField:field},closest:()=>({dataset:{allocationRow:id}})}});
  return {ui,workspace,submissions,messages,pos,edit,modal,node,planner:ctx.window.purchaseSupplierAllocation,setPending:value=>pending=value};
@@ -94,7 +94,7 @@ test('repeated stale saved-source refreshes cannot reopen a dismissed dialog or 
 
 test('confirmed source immediately replaces Saving feedback while delayed readback cannot duplicate the save',()=>{
  const f=fixture();twoSources(f,true);f.ui.click({dataset:{allocationSave:'second'}});const request=f.submissions[0];f.setPending(request);f.ui.receipt(request,{ok:true,sourceTaskId:'NEW'});
- assert.match(f.node('#allocationIssue').textContent,/此来源已保存/);assert.match(f.node('#allocationIssue').className,/complete/);const saved=f.node('[data-allocation-row="second"] [data-allocation-save]');assert.equal(saved.textContent,'已保存');assert.equal(saved.disabled,true);assert.equal(saved.className,'allocation-save');assert.match(f.messages.at(-1).text,/可继续浏览/);
+ assert.match(f.node('#allocationIssue').textContent,/此来源已保存/);assert.match(f.node('#allocationIssue').className,/complete/);const saved=f.node('[data-allocation-row="second"] [data-allocation-save]');assert.equal(saved.hidden,true);assert.equal(saved.disabled,true);assert.match(f.messages.at(-1).text,/可继续浏览/);
  f.setPending(null);f.ui.click({dataset:{allocationSave:'second'}});assert.equal(f.submissions.length,1);assert.equal(f.ui.serialize().rows.find(row=>row.key==='second').status,'saved');assert.equal(f.ui.serialize().running,true,'next writes still require verified fresh versions');
 });
 test('confirmed feedback never reopens a closed source dialog or discards another source draft',()=>{
