@@ -9,6 +9,7 @@
 <meta name="buyer-mobile-quantity-build" content="20261123-buyer-mobile-quantity-visible-v1">
 <meta name="buyer-entry-build" content="20261123-buyer-early-embed-v1">
 <meta name="buyer-waiting-campaign-build" content="20261123-buyer-waiting-campaign-v2">
+<meta name="buyer-selection-toolbar-build" content="20261124-buyer-selection-toolbar-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -564,6 +565,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   @media(min-width:1161px){
     #myView.active:not(:has(#buyerSelectionLoading)){
       display:grid;grid-template-columns:max-content minmax(0,1fr) max-content max-content;
+      grid-template-rows:minmax(74px,auto) minmax(60px,auto) auto;
       align-items:center;gap:8px 12px
     }
     #myView.active:not(:has(#buyerSelectionLoading))>.page-head{display:contents}
@@ -583,7 +585,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
     #myView>.page-head>#prepareMobileOrder{grid-area:1/4;width:auto;min-width:161px}
     #myView.active:not(:has(#buyerSelectionLoading))>.selection-toolbar{
       grid-area:2/1/3/-1;grid-template-columns:max-content minmax(180px,1fr);gap:18px;
-      align-items:center;min-height:50px;margin:0;padding:0 166px 0 0
+      align-items:start;min-height:60px;margin:0;padding:20px 166px 0 0
     }
     .removed-history-active #myView.active:not(:has(#buyerSelectionLoading))>.selection-toolbar{padding-right:0}
     #myView .selection-toolbar .toolbar-search{width:100%;max-width:480px}
