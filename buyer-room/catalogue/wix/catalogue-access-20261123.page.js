@@ -7,7 +7,7 @@ import wixData from 'wix-data';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
 import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
-import { buyerCompanyChooser, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
+import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
 let catalogueContextMessage = null;
 let catalogueMenuMessage = null;
@@ -569,16 +569,10 @@ $w.onReady(() => {
     if (hasBuyerAccess || signedIn) {
         const requestedCompanyId = selectedBuyerCompanyId(wixLocationFrontend);
         try {
-            const access = await getBuyerCompanies().catch(error => {
-                if (requestedCompanyId) throw error;
-                return null;
-            });
-            if (access) {
-                catalogueCompanyAccess = buyerCompanyChooser(access, requestedCompanyId);
-                sendCatalogueCompanies();
-                if (catalogueCompanyAccess.blocked) return;
-                if (catalogueCompanyAccess.scoped) catalogueBuyerCompanyId = catalogueCompanyAccess.currentId;
-            }
+            catalogueCompanyAccess = await loadBuyerCompanyAccess(getBuyerCompanies, requestedCompanyId);
+            sendCatalogueCompanies();
+            if (catalogueCompanyAccess.blocked) return;
+            if (catalogueCompanyAccess.scoped) catalogueBuyerCompanyId = catalogueCompanyAccess.currentId;
             selectionContext = { mode: 'buyer', assistCustomerId: '' };
             const state = await loadSelectionState(selectedCatalogueScope());
             if (state?.ok !== true || !state.customerId) throw new Error('Customer Catalogue access could not be verified.');

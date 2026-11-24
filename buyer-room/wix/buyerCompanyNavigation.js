@@ -17,3 +17,11 @@ export function buyerCompanyChooser({ companies, originalCompanyId }, requestedI
   const currentId = companies[0].customerId;
   return { companies, blocked: false, currentId, scoped: originalCompanyId !== currentId };
 }
+
+export async function loadBuyerCompanyAccess(getBuyerCompanies, requestedId) {
+  try {
+    return buyerCompanyChooser(await getBuyerCompanies(), requestedId);
+  } catch (_) {
+    return { companies: [], blocked: true, currentId: '', denied: true };
+  }
+}

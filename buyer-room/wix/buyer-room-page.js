@@ -5,7 +5,7 @@ import { local, session } from 'wix-storage-frontend';
 import { authentication } from 'wix-members-frontend';
 import wixRealtimeFrontend from 'wix-realtime-frontend';
 import { getBuyerCompanies, getCurrentBuyerContext } from 'backend/catalogueAuth.web';
-import { buyerCompanyChooser, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
+import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
 let assistCustomerId = '';
 function getAssistCustomerId() {
@@ -59,11 +59,10 @@ $w.onReady(async function () {
   let scopedCompanyId = requestedCompanyId;
   let companyAccess;
   const companyAccessReady = assistCustomerId || !authentication.loggedIn() ? null :
-    getBuyerCompanies().then(access => {
-      companyAccess = buyerCompanyChooser(access, requestedCompanyId);
+    loadBuyerCompanyAccess(getBuyerCompanies, requestedCompanyId).then(access => {
+      companyAccess = access;
       if (companyAccess.scoped) scopedCompanyId = companyAccess.currentId;
-    })
-      .catch(() => { if (requestedCompanyId) companyAccess = { companies: [], blocked: true, denied: true }; });
+    });
   const buyerScope = () => assistCustomerId || (scopedCompanyId ? { buyerCompanyId: scopedCompanyId } : '');
   const cataloguePath = () => assistCustomerId ? '/catalogue?assist=' + encodeURIComponent(assistCustomerId) :
     buyerCompanyPath('/catalogue', companyAccess?.scoped ? companyAccess.currentId : '');

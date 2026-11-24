@@ -131,6 +131,27 @@ function fixture() {
     setMember: next => { member = next; }, setStaffCustomer: id => { staffCustomerId = id; } };
 }
 
+test('the entry stays closed while company access is unknown and opens only after an authorized choice', async () => {
+  const { loadBuyerCompanyAccess } = load('buyer-room/wix/buyerCompanyNavigation.js', {}, ['loadBuyerCompanyAccess']);
+  const unavailable = async () => { throw new Error('Temporary read failure'); };
+  assert.deepEqual(await loadBuyerCompanyAccess(unavailable, ''), {
+    companies: [], blocked: true, currentId: '', denied: true
+  });
+  const companies = [
+    { customerId: 'CUS-TEST-1', companyName: 'Test Alpha' },
+    { customerId: 'CUS-TEST-2', companyName: 'Test Beta' }
+  ];
+  const lookup = async () => ({ originalCompanyId: 'CUS-TEST-1', companies });
+  assert.equal((await loadBuyerCompanyAccess(lookup, '')).blocked, true);
+  assert.equal((await loadBuyerCompanyAccess(lookup, 'CUS-UNRELATED')).blocked, true);
+  assert.deepEqual(await loadBuyerCompanyAccess(lookup, 'CUS-TEST-2'), {
+    companies, blocked: false, currentId: 'CUS-TEST-2', scoped: true
+  });
+  assert.equal((await loadBuyerCompanyAccess(async () => ({
+    originalCompanyId: 'CUS-TEST-1', companies: [companies[0]]
+  }), '')).blocked, false);
+});
+
 test('one fake login can select and order separately in two companies, then loses only the revoked company', async () => {
   const { wixData, buyer, catalogue, sales, http, quote, setMember, setStaffCustomer } = fixture();
   const member = { _id: 'wix-buyer', loginEmail: email };
