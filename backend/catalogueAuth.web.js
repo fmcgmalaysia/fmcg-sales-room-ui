@@ -721,7 +721,7 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) throw new Error('Please refresh the order form and try again.');
   const requests = Array.isArray(requestedLines) ? requestedLines : [];
   if (!requests.length) throw new Error('Enter at least one order quantity.');
-  if (requests.length > buyer.selectionLimit || new Set(requests.map(line => normalize(line.itemId))).size !== requests.length) throw new Error('Order lines are invalid. Please refresh the order form.');
+  if (requests.length > Math.max(...SELECTION_LIMITS) || new Set(requests.map(line => normalize(line.itemId))).size !== requests.length) throw new Error('Order lines are invalid. Please refresh the order form.');
   return withBuyerSubmissionLock(buyer, submissionId, async () => {
   const id = nextOrderId(buyer.customerId, submissionId);
   const requestFingerprint = JSON.stringify(requests.map(line => [normalize(line.itemId), Number(line.quantityCtn)]).sort((a, b) => a[0].localeCompare(b[0]))) + (buyerPo ? '|PO:' + JSON.stringify(buyerPo) : '');
@@ -735,6 +735,7 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
     if (!Array.isArray(stored.pendingLines) || stored.pendingLines.length !== stored.lineCount) throw new Error('Incomplete order requires Sales Room review.');
     return stored.additionVersion === 1 ? finishBuyerAddition(stored, buyer) : finishBuyerOrder(stored, buyer);
   }
+  if (requests.length > buyer.selectionLimit) throw new Error('Order lines are invalid. Please refresh the order form.');
   const list = (await workspaceItems(buyer)).filter(item => !item.removed);
   const byId = new Map(list.map(item => [normalize(item.id), item]));
   const lines = requests.map((request, index) => {

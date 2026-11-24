@@ -355,6 +355,53 @@ test('the same buyer email yields two independent Sales transfers and Finance le
   assert.equal(projectCustomerAccount(await readContext('GHR')).entries.length, 0);
 });
 
+test('a reduced selection allowance blocks new orders but still permits recovery of the original request', async () => {
+  const { wixData, buyer, catalogue, quote } = fixture();
+  const customer = wixData.rows('WixCustomers').find(row => row.customerId === first.buyerCompanyId);
+  customer.selectionLimit = 300;
+  const lines = [];
+  for (let index = 0; index < 101; index++) {
+    const productId = 'allowance-product-' + index;
+    wixData.rows('FMCGMALAYSIA').push({
+      _id: productId, barcode: '955100000' + String(index).padStart(4, '0'), name: productId,
+      description: '330ML x 12', ea: 12, pointBaseStatus: 'ACTIVE'
+    });
+    const { selection } = await catalogue.addCatalogueSelection(productId, first);
+    quote(first.buyerCompanyId, selection.id, 24);
+    lines.push({ itemId: selection.id, quantityCtn: 1 });
+  }
+  const original = randomUUID();
+  const completed = await buyer.submitBuyerOrder(lines, first, original, 'OLD-ALLOWANCE');
+
+  customer.selectionLimit = 100;
+  const replay = await buyer.submitBuyerOrder(lines, first, original, 'OLD-ALLOWANCE');
+  assert.equal(replay.orderId, completed.orderId);
+  await assert.rejects(buyer.submitBuyerOrder(lines, first, original, 'DIFFERENT-PO'), /Order request conflict/);
+  const rejected = randomUUID();
+  await assert.rejects(buyer.submitBuyerOrder(lines, first, rejected, 'NEW-OVER-ALLOWANCE'), /Order lines are invalid/);
+  assert.equal(wixData.rows('WixBuyerOrders').length, 1);
+  assert.equal(wixData.rows('WixBuyerOrderLines').length, 101);
+
+  customer.selectionLimit = 300;
+  const incomplete = randomUUID();
+  const insert = wixData.insert;
+  wixData.insert = async (collection, row) => {
+    if (collection === 'WixBuyerOrderLines') throw Error('QA interrupted while saving orders');
+    return insert(collection, row);
+  };
+  try {
+    await assert.rejects(buyer.submitBuyerOrder(lines, first, incomplete, 'INCOMPLETE-ALLOWANCE'), /QA interrupted/);
+  } finally { wixData.insert = insert; }
+  const originalRecord = wixData.rows('WixBuyerOrders').find(row => row._id === incomplete);
+  assert.equal(originalRecord.isComplete, false);
+
+  customer.selectionLimit = 100;
+  const resumed = await buyer.submitBuyerOrder(lines, first, incomplete, 'INCOMPLETE-ALLOWANCE');
+  assert.equal(resumed.orderId, originalRecord.orderId);
+  assert.equal(wixData.rows('WixBuyerOrders').length, 2);
+  assert.equal(wixData.rows('WixBuyerOrderLines').length, 202);
+});
+
 test('the entry stays closed while company access is unknown and opens only after an authorized choice', async () => {
   const { loadBuyerCompanyAccess } = load('buyer-room/wix/buyerCompanyNavigation.js', {}, ['loadBuyerCompanyAccess']);
   const unavailable = async () => { throw new Error('Temporary read failure'); };
