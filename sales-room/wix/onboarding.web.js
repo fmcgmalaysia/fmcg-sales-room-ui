@@ -2,14 +2,16 @@ import { requestMasterFulfilment } from 'backend/masterFulfilmentClient.js';
 import { withMasterQuantities } from 'backend/masterQuantityClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
+import { createHash } from 'crypto';
 import wixData from 'wix-data';
 import { fetch } from 'wix-fetch';
 import wixRealtimeBackend from 'wix-realtime-backend';
 import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { requireStaffCustomerAccess, staffMayAccessCustomer, getMasterSalesCreationAssignees, resolveMasterSalesCreationAssignee } from 'backend/masterStaffAccessClient.js';
-import { reserveWebQuotationCustomer, reserveWebQuotationPrimaryUser, activateWebQuotationCustomer } from 'backend/webQuotationRegistration.js';
-import { companyUserEmail, findCompanyLogin, saveLinkedCompanyUser } from 'backend/buyerCompanyAccess.js';
+import { reserveWebQuotationCustomer, reserveWebQuotationPrimaryUser, reserveLinkedRegistrationPrimary, activateWebQuotationCustomer } from 'backend/webQuotationRegistration.js';
+import { companyUserEmail, findCompanyLogin, linkedAccessId, saveLinkedCompanyUser } from 'backend/buyerCompanyAccess.js';
+import { hasApprovedBuyerMember } from 'backend/buyerMemberProvisioning.js';
 import { isWebQuotationCustomer, isWebQuotationReady } from 'backend/webQuotationCustomer.js';
 import { applyWebQuotations } from 'backend/masterWebQuotationData.js';
 
@@ -51,10 +53,16 @@ export const createSalesRoomCustomer = webMethod(
     const customer = normalizeAndValidate(payload || {});
     const staff = await resolveCustomerRouting(payload?.assignedStaffId);
 
-    const existingAccess = await findCustomerUserByEmail(customer.picEmail);
-    if (existingAccess) {
+    const linkRequested = payload?.linkExistingLogin === 'yes';
+    const existingAccess = linkRequested ? await findCompanyLogin(customer.picEmail) : await findCustomerUserByEmail(customer.picEmail);
+    if (existingAccess && !linkRequested) {
       return resumeExistingRegistration(existingAccess, customer, staff);
     }
+    if (linkRequested && (!existingAccess?._id || existingAccess.linkedLoginId ||
+        upper(existingAccess.status) !== 'ACTIVE' || !(await hasApprovedBuyerMember(existingAccess)))) {
+      return { ok: false, error: 'Confirm an active, approved Buyer Room login before linking this company.' };
+    }
+    const linkedLogin = linkRequested ? existingAccess : null;
 
     const duplicateCompany = await wixData
       .query(CUSTOMER_COLLECTION)
@@ -62,10 +70,21 @@ export const createSalesRoomCustomer = webMethod(
       .limit(2)
       .find({ suppressAuth: true, consistentRead: true });
     const prior = duplicateCompany.items.length === 1 && duplicateCompany.items[0];
-    const resume = prior && isWebQuotationCustomer(prior) && /^[a-f0-9]{64}$/.test(prior.salesInitialGrantRevision || '') &&
-      ['REGISTERING', 'ACCESS RECORD ERROR'].includes(upper(prior.customerStatus)) &&
+    if (linkedLogin && prior?.customerId === linkedLogin.customerId) {
+      return resumeExistingRegistration(linkedLogin, customer, staff);
+    }
+    const sameRegistration = prior && isWebQuotationCustomer(prior) && /^[a-f0-9]{64}$/.test(prior.salesInitialGrantRevision || '') &&
       prior.assignedStaffId === staff.staffId && prior.primaryEmail === customer.picEmail &&
       prior.customerShortName === customer.customerShortName;
+    const sameLinkedPrimary = linkedLogin && sameRegistration &&
+      prior.primaryUserId === linkedAccessId(prior.customerId, linkedLogin._id);
+    const resume = sameRegistration && (linkedLogin ? sameLinkedPrimary : !prior.primaryUserId?.startsWith('LINK-')) &&
+      ['REGISTERING', 'ACCESS RECORD ERROR'].includes(upper(prior.customerStatus)) &&
+      (!linkedLogin || prior.accessStatus === 'PENDING');
+    if (sameLinkedPrimary && isWebQuotationReady(prior)) {
+      const userRecord = await reserveLinkedRegistrationPrimary(prior, linkedLogin);
+      return activateWebQuotationCustomer({ customerRecord: prior, userRecord, staff, linkedLogin });
+    }
     if (duplicateCompany.items.length && !resume) {
       throw new Error('This company is already registered.');
     }
@@ -101,16 +120,17 @@ export const createSalesRoomCustomer = webMethod(
         lifecycleStatus: 'ACTIVE',
         accessStatus: 'PENDING',
         reactivationStatus: 'NONE',
-        primaryEmail: customer.picEmail
+        primaryEmail: customer.picEmail,
+        ...(linkedLogin ? { primaryUserId: linkedAccessId(proposedCustomerId, linkedLogin._id) } : {})
     };
     const customerRecord = resume ? prior
-      : await reserveWebQuotationCustomer({ ...customerFields, quotationMode: 'WEB', webQuotationStatus: 'PENDING' });
+      : await reserveWebQuotationCustomer({ ...customerFields, quotationMode: 'WEB', webQuotationStatus: 'PENDING' }, linkedLogin);
     const customerId = normalize(customerRecord.customerId);
-    const userId = 'USR-' + customerId + '-01';
+    const userId = linkedLogin ? customerRecord.primaryUserId : 'USR-' + customerId + '-01';
 
     let userRecord;
     try {
-      userRecord = await reserveWebQuotationPrimaryUser({
+      userRecord = linkedLogin ? await reserveLinkedRegistrationPrimary(customerRecord, linkedLogin) : await reserveWebQuotationPrimaryUser({
         title: customer.picName,
         userId,
         customerId,
@@ -122,6 +142,8 @@ export const createSalesRoomCustomer = webMethod(
         failedLoginCount: 0
       });
     } catch {
+      if (linkedLogin) return { ok: false, retryable: true, result: { customerId },
+        error: 'Company reserved. Retry to confirm the linked buyer access.' };
       throw Error('Customer reserved. Retry this registration to confirm buyer access.');
     }
 
@@ -137,22 +159,24 @@ export const createSalesRoomCustomer = webMethod(
         beforeValue: '',
         afterValue: staff.staffId
       }],
-      auditActor
+      auditActor,
+      Boolean(linkedLogin)
     );
     await writeAuditChanges(
       USER_AUDIT_COLLECTION,
-      'CUSTOMER_USER_CREATED',
+      linkedLogin ? 'CUSTOMER_USER_LOGIN_LINKED' : 'CUSTOMER_USER_CREATED',
       customerId,
       userId,
       [
         { fieldId: 'title', fieldLabel: 'USER NAME', beforeValue: '', afterValue: userRecord.title },
-        { fieldId: 'email', fieldLabel: 'USER EMAIL', beforeValue: '', afterValue: userRecord.email },
+        { fieldId: 'email', fieldLabel: 'USER EMAIL', beforeValue: '', afterValue: linkedLogin ? companyUserEmail(userRecord) : userRecord.email },
         { fieldId: 'mobileNo', fieldLabel: 'USER MOBILE NO', beforeValue: '', afterValue: userRecord.mobileNo }
       ],
-      auditActor
+      auditActor,
+      Boolean(linkedLogin)
     );
 
-    return activateWebQuotationCustomer({ customerRecord, userRecord, staff });
+    return activateWebQuotationCustomer({ customerRecord, userRecord, staff, linkedLogin });
   }
 );
 
@@ -1561,13 +1585,15 @@ function normalizeEditableCustomerValue(key, value) {
   return normalize(value);
 }
 
-async function writeAuditChanges(collectionId, action, customerId, entityId, changes, staff) {
+async function writeAuditChanges(collectionId, action, customerId, entityId, changes, staff, once = false) {
   if (!changes.length) return;
 
   const changedAt = new Date().toISOString();
   for (let index = 0; index < changes.length; index += 1) {
     const change = changes[index];
-    const auditId =
+    const auditId = once
+      ? 'AUD-' + createHash('sha256').update(JSON.stringify([action, customerId, entityId, change.fieldId])).digest('hex').slice(0, 32)
+      :
       'AUD-' +
       changedAt.replace(/\D/g, '').slice(0, 17) +
       '-' +
@@ -1578,6 +1604,7 @@ async function writeAuditChanges(collectionId, action, customerId, entityId, cha
     await wixData.insert(
       collectionId,
       {
+        ...(once ? { _id: auditId } : {}),
         title: auditId,
         auditId,
         customerId: normalize(customerId),
@@ -1594,7 +1621,13 @@ async function writeAuditChanges(collectionId, action, customerId, entityId, cha
         changedByRole: upper(staff.role)
       },
       { suppressAuth: true }
-    );
+    ).catch(async error => {
+      if (!once) throw error;
+      const saved = await wixData.get(collectionId, auditId, { suppressAuth: true, consistentRead: true }).catch(() => null);
+      if (!saved || saved.customerId !== customerId || saved.entityId !== entityId ||
+          saved.action !== action || saved.fieldId !== change.fieldId ||
+          saved.afterValue !== auditValue(change.afterValue)) throw error;
+    });
   }
 }
 
@@ -1694,7 +1727,10 @@ async function resumeExistingRegistration(existingAccess, customer, staff) {
 
   const customerRecord = customerResult.items[0];
   if (upper(customerRecord.title) !== customer.companyName) {
-    throw new Error('This email is already authorized for another company.');
+    if (upper(existingAccess.status) === 'ACTIVE') {
+      return { ok: false, requiresExistingBuyerLogin: true };
+    }
+    throw new Error('An active existing Buyer Room login is required.');
   }
   if (normalize(customerRecord.assignedStaffId) !== staff.staffId) {
     throw new Error('This customer belongs to another salesperson.');

@@ -699,7 +699,7 @@ body,body *{font-family:Inter,"Segoe UI",Arial,sans-serif}
 <div id="fxRateModal" class="fx-modal-mask" hidden><section class="fx-modal" role="dialog" aria-modal="true" aria-labelledby="fxRateTitle"><header class="fx-modal-head"><div><span class="fx-admin-pill">ADMIN ONLY</span><h2 id="fxRateTitle">FX Rate Settings</h2><p>Maintain MYR conversion rates used for LTPOS quotations.</p></div><button class="fx-close" id="fxRateClose" type="button" aria-label="Close">×</button></header><div class="fx-rate-note"><span>ⓘ</span><div><strong>Save applies immediately</strong><small>LTPOS Quotations uses the rates saved in Wix.</small></div></div><div class="fx-modal-grid"><section class="fx-panel"><div class="fx-section-head"><div><h3>Transaction currencies</h3><p>MYR per 1 unit of transaction currency</p></div></div><div class="fx-rate-head"><span>CURRENCY</span><span>RATE TO MYR</span><span>STATUS</span></div><div id="fxRateRows"></div><button class="fx-add-currency" id="fxAddCurrency" type="button">＋ ADD TRANSACTION CURRENCY</button><div class="fx-sync-result" id="fxSyncResult"></div></section></div><footer class="fx-modal-actions"><button class="fx-cancel" id="fxRateCancel" type="button">CANCEL</button><button class="fx-save" id="fxRateSave" type="button">SAVE RATES</button></footer></section></div>
 ​
 <script>
-let staff={staffId:'',staffName:'',loginEmail:'',role:''};let submitting=false;let pendingCreatePayload=null;let createRecoveryTimer=null;let createRecoveryAttempts=0;let salesRoomHandshakeComplete=false;
+let staff={staffId:'',staffName:'',loginEmail:'',role:''};let submitting=false;let pendingCreatePayload=null;let submittedCreateValues='';let createRecoveryTimer=null;let createRecoveryAttempts=0;let salesRoomHandshakeComplete=false;
 let customerRecords=[];let filteredCustomerRecords=[];let customerPage=1;let customerAccessView='ACTIVE';let salesProgressCustomerId='';let salesProgressRequestId='';const customerPageSize=15;const pendingSelectionLimits=new Map();
 const quoteWorkSnapshotKey='sales-room-quote-work-v1';let quoteWorkSnapshot={};let customerRenderFingerprint='';let customerRefreshPending=false;let quoteWorkRetryTimer=null;
 try{quoteWorkSnapshot=JSON.parse(sessionStorage.getItem(quoteWorkSnapshotKey)||'{}')||{}}catch(_){quoteWorkSnapshot={}}
@@ -783,15 +783,44 @@ function renderAssignableStaff(payload){
 assignedSelect.addEventListener('change',updateAssignedQdHint);
 const form=document.getElementById('customerForm'),statusBox=document.getElementById('formStatus'),createBtn=document.getElementById('createBtn');
 function status(text,kind){statusBox.textContent=text;statusBox.className='status show '+kind}
+function offerExistingBuyerLogin(){
+  submitting=false;
+  createBtn.disabled=false;
+  createBtn.textContent=creationLabel();
+  const submitted=pendingCreatePayload;
+  if(!submitted)return;
+  const values=submittedCreateValues;
+  status('This email already has a Buyer Room login. Confirm that '+submitted.picEmail+' is authorized to buy for '+submitted.companyName+'.','wait');
+  const confirmLink=document.createElement('button');
+  confirmLink.type='button';
+  confirmLink.className='secondary';
+  confirmLink.textContent='Link existing login and create customer';
+  confirmLink.onclick=()=>{
+    if(submitting)return;
+    if(JSON.stringify(Array.from(new FormData(form)))!==values||
+       form.elements.picEmail.value.trim().toLowerCase()!==submitted.picEmail.trim().toLowerCase()||
+       form.elements.companyName.value.trim().toUpperCase()!==submitted.companyName){
+      status('Customer details changed. Review your entries and select Create Customer again.','wait');
+      return;
+    }
+    pendingCreatePayload={...submitted,linkExistingLogin:'yes'};
+    submitting=true;
+    createBtn.disabled=true;
+    createBtn.textContent='CREATING…';
+    status('Creating the customer and confirming the existing Buyer Room login…','wait');
+    window.parent.postMessage({type:'SALES_ROOM_CREATE_CUSTOMER',payload:pendingCreatePayload},'*');
+  };
+  statusBox.append(document.createElement('br'),confirmLink);
+}
 function clearCreateRecovery(){if(createRecoveryTimer)clearTimeout(createRecoveryTimer);createRecoveryTimer=null;createRecoveryAttempts=0}
 function createdCustomerMatches(c,p){if(!p)return false;const sameCompany=String(c.companyName||'').trim().toUpperCase()===String(p.companyName||'').trim().toUpperCase();const sameShortName=String(c.customerShortName||'').trim().toUpperCase()===String(p.customerShortName||'').trim().toUpperCase();const sameStaff=!p.assignedStaffId||String(c.assignedStaffId||'').trim().toUpperCase()===String(p.assignedStaffId||'').trim().toUpperCase();const recordEmail=String(c.primaryEmail||'').trim().toLowerCase(),submittedEmail=String(p.picEmail||'').trim().toLowerCase();return sameCompany&&sameShortName&&sameStaff&&(!recordEmail||!submittedEmail||recordEmail===submittedEmail)}
 function renderCreateSuccess(result){const id=String(result.customerId||''),company=String(result.companyName||pendingCreatePayload?.companyName||'Customer'),shortName=String(result.customerShortName||pendingCreatePayload?.customerShortName||company),qd=String(result.qdStatus||'ACTIVATION_REQUIRED').toUpperCase(),ready=qd==='READY';statusBox.className='status show ok create-success';statusBox.innerHTML='<div class="create-success-card"><span class="create-success-icon">✓</span><div class="create-success-copy"><strong>Customer Successfully Created · 客户注册成功</strong><span>'+esc(shortName)+' · '+esc(company)+' · '+esc(id)+'</span><small>'+(result.quotationMode==='WEB'?(result.webQuotationStatus==='READY'?'Web Quotations Ready · Customer Access Active':'Customer Created · Awaiting LTPOS Setup'):ready?'QD Ready · Customer Access Active':'Next Step: Open QD, complete Allow Access, then Verify & Activate.')+'</small></div><div class="create-success-actions"><button class="view-created" id="viewCreatedCustomer" type="button">View Customer</button><button class="create-another" id="createAnotherCustomer" type="button">Create Another</button></div></div>';document.getElementById('viewCreatedCustomer').onclick=()=>{showView('customers');currentCustomerId=id;window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*');window.parent.postMessage({type:'SALES_ROOM_CUSTOMER_DETAIL_REQUEST',customerId:id},'*')};document.getElementById('createAnotherCustomer').onclick=()=>{statusBox.className='status';statusBox.innerHTML='';showView('new');form.querySelector('input[name="companyName"]')?.focus()}}
 function completeCustomerCreation(result){const completed={...result,companyName:result.companyName||pendingCreatePayload?.companyName||''};clearCreateRecovery();submitting=false;createBtn.disabled=false;createBtn.textContent=creationLabel();form.reset();pendingCreatePayload=null;setTimeout(()=>renderCreateSuccess(completed),0);window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*')}
-function reconcilePendingCustomerCreation(rows){if(!pendingCreatePayload)return;const found=(Array.isArray(rows)?rows:[]).find(c=>createdCustomerMatches(c,pendingCreatePayload));if(found&&(found.quotationMode!=='WEB'||found.webQuotationStatus==='READY'))completeCustomerCreation(found)}
+function reconcilePendingCustomerCreation(rows){if(!createRecoveryAttempts||!pendingCreatePayload||pendingCreatePayload.linkExistingLogin==='yes')return;const found=(Array.isArray(rows)?rows:[]).find(c=>createdCustomerMatches(c,pendingCreatePayload));if(found&&(found.quotationMode!=='WEB'||found.webQuotationStatus==='READY'))completeCustomerCreation(found)}
 function requestCreateRecovery(){if(!pendingCreatePayload)return;createRecoveryAttempts+=1;window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*');if(createRecoveryAttempts<15){createRecoveryTimer=setTimeout(requestCreateRecovery,4000);return}clearCreateRecovery();submitting=false;createBtn.disabled=false;createBtn.textContent=creationLabel();status('Registration could not be confirmed automatically. Open My Customers before trying again.','err')}
 function beginCreateRecovery(){clearCreateRecovery();submitting=true;createBtn.disabled=true;createBtn.textContent='VERIFYING…';status('QD was created. Verifying the new customer record and refreshing My Customers…','wait');requestCreateRecovery()}
 form.addEventListener('reset',()=>setTimeout(()=>{statusBox.className='status';statusBox.innerHTML='';document.querySelectorAll('[data-wa]').forEach(x=>x.classList.toggle('on',x.dataset.wa==='YES'))},0));
-form.addEventListener('submit',e=>{e.preventDefault();if(submitting||!form.reportValidity())return;const selected=selectedQd();if(!quotationSetup?.canCreate){status('Customer creation access could not be confirmed.','err');return}if(quotationSetup.mayAssignOthers&&!selected){status('Please select a valid salesperson.','err');return}const d=Object.fromEntries(new FormData(form).entries());if(quotationSetup.mayAssignOthers)d.assignedStaffId=selected.staffId;d.companyName=d.companyName.trim().toUpperCase();d.customerShortName=d.customerShortName.trim().toUpperCase().replace(/\s+/g,' ');d.country=d.country.trim().toUpperCase();d.picName=d.picName.trim().toUpperCase();d.destinationPort=d.destinationPort.trim().toUpperCase();pendingCreatePayload=d;submitting=true;createBtn.disabled=true;createBtn.textContent='CREATING…';status(webRegistration()?'Creating the customer and confirming LTPOS access…':'Creating Customer ID and copying the complete Quotation Desk template. Please do not submit again.','wait');window.parent.postMessage({type:'SALES_ROOM_CREATE_CUSTOMER',payload:pendingCreatePayload},'*')});
+form.addEventListener('submit',e=>{e.preventDefault();if(submitting||!form.reportValidity())return;const selected=selectedQd();if(!quotationSetup?.canCreate){status('Customer creation access could not be confirmed.','err');return}if(quotationSetup.mayAssignOthers&&!selected){status('Please select a valid salesperson.','err');return}const d=Object.fromEntries(new FormData(form).entries());if(quotationSetup.mayAssignOthers)d.assignedStaffId=selected.staffId;d.companyName=d.companyName.trim().toUpperCase();d.customerShortName=d.customerShortName.trim().toUpperCase().replace(/\s+/g,' ');d.country=d.country.trim().toUpperCase();d.picName=d.picName.trim().toUpperCase();d.destinationPort=d.destinationPort.trim().toUpperCase();submittedCreateValues=JSON.stringify(Array.from(new FormData(form)));pendingCreatePayload=d;submitting=true;createBtn.disabled=true;createBtn.textContent='CREATING…';status(webRegistration()?'Creating the customer and confirming LTPOS access…':'Creating Customer ID and copying the complete Quotation Desk template. Please do not submit again.','wait');window.parent.postMessage({type:'SALES_ROOM_CREATE_CUSTOMER',payload:pendingCreatePayload},'*')});
 /* Customer workspace presentation overrides */
 customerTable=function(rows,recent){
   if(!rows.length)return '<div class="empty">No Customers Match The Current Filters.</div>';
@@ -1130,6 +1159,17 @@ window.addEventListener('message',e=>{
   if(m.type==='SALES_ROOM_CREATE_RESULT'){
     if(m.ok){
       completeCustomerCreation(m.result||{});
+    }else if(m.requiresExistingBuyerLogin){
+      offerExistingBuyerLogin();
+    }else if(pendingCreatePayload?.linkExistingLogin==='yes'){
+      const error=String(m.error||'Company setup could not be confirmed.');
+      if(m.retryable||/504|timeout|timed out|network|failed to fetch|unable to handle the request/i.test(error)){
+        offerExistingBuyerLogin();
+        statusBox.prepend(document.createTextNode('Setup confirmation is pending. Retry to continue the same registration. '));
+      }else{
+        submitting=false;createBtn.disabled=false;createBtn.textContent=creationLabel();
+        status(error,'err');
+      }
     }else{
       const error=String(m.error||'Please Retry');
       if(error.includes('504')||error.toLowerCase().includes('timeout'))beginCreateRecovery();

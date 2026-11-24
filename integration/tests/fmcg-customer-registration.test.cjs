@@ -231,18 +231,22 @@ function registration({ actor = salesperson, additionalOwners = [], loseFirstQdR
     return request;
   }
   const webCustomer = evaluate('backend/webQuotationCustomer.js', ['isWebQuotationCustomer', 'isWebQuotationReady'], {});
-  const memberProvisioning = evaluate('backend/buyerMemberProvisioning.js', ['prepareActivatedBuyerMember'], {
+  const memberProvisioning = evaluate('backend/buyerMemberProvisioning.js', ['prepareActivatedBuyerMember', 'hasApprovedBuyerMember'], {
     ...webCustomer, wixData: fmcg, elevate: method => method, members, setTimeout
   });
+  const companyAccess = evaluate('backend/buyerCompanyAccess.js', ['companyUserEmail', 'findCompanyLogin', 'linkedAccessId'], {
+    ...webCustomer, wixData: fmcg, createHash
+  });
   const webRegistration = evaluate('backend/webQuotationRegistration.js', ['webQuotationRegistrationEnabled', 'reserveWebQuotationCustomer',
-    'reserveWebQuotationPrimaryUser', 'activateWebQuotationCustomer'], {
-    ...webCustomer, ...client, ...memberProvisioning, wixData: fmcg, createHash, getSecret: async () => webRegistrationEnabled ? 'ENABLED' : ''
+    'reserveWebQuotationPrimaryUser', 'reserveLinkedRegistrationPrimary', 'activateWebQuotationCustomer'], {
+    ...webCustomer, ...client, ...memberProvisioning, ...companyAccess,
+    wixData: fmcg, createHash, getSecret: async () => webRegistrationEnabled ? 'ENABLED' : ''
   });
   const methods = webRegistrationEnabled ? ['createSalesRoomCustomer'] : ['createSalesRoomCustomer', 'verifySalesRoomCustomerQd'];
   const api = evaluate('sales-room/wix/onboarding.web.js', methods, {
     ...client, wixData: fmcg, webMethod: (_, handler) => handler, Permissions: { SiteMember: 'member' },
     getCurrentStaffContext: readStaff, getSecret: async () => 'fixture-qd', httpsRequest,
-    ...webCustomer, ...webRegistration
+    ...webCustomer, ...webRegistration, ...memberProvisioning, ...companyAccess, createHash
   });
   return { api, master, fmcg, fmcgWrites, masterWrites, qdRequests, files: qd.files, readStaff, client };
 }
@@ -284,6 +288,23 @@ test('approved members are reused and blocked or pending member access is preser
     assert.equal(flow.fmcg.rows('Members/FullData')[0].status, status);
     assert.equal(flow.fmcgWrites.filter(write => write.name === 'Members/FullData').length, 0);
   }
+});
+
+test('shared buyer identity creates a separate MASTER staff grant through the normal Sales Room route', async () => {
+  const flow = registration({ webRegistrationEnabled: true });
+  const original = await flow.api.createSalesRoomCustomer(payload);
+  assert.equal(original.ok, true);
+  const additional = { ...payload, companyName: 'Fixture Second Trading', customerShortName: 'FIXTURE TWO',
+    preferredCurrency: 'SGD', linkExistingLogin: 'yes' };
+  const linked = await flow.api.createSalesRoomCustomer(additional);
+  assert.equal(linked.ok, true);
+  assert.notEqual(linked.result.customerId, original.result.customerId);
+  const owner = flow.master.rows('StaffMasterAccess').find(row => row.title === salesperson.title);
+  assert.equal(owner.staffAccess.customerAccess[original.result.customerId], 'EDIT');
+  assert.equal(owner.staffAccess.customerAccess[linked.result.customerId], 'EDIT');
+  assert.equal(flow.fmcg.rows('Members/FullData').length, 1);
+  assert.equal(flow.fmcgWrites.filter(write => write.name === 'Members/FullData').length, 1);
+  assert.equal(flow.qdRequests.length, 0);
 });
 
 for (const failure of ['BEFORE', 'AFTER', 'READY_WRITE']) {

@@ -85,6 +85,8 @@ function fixture() {
     { _id: 'only-zzz', barcode: '9550000000023', name: 'Second company product', ea: 12, pointBaseStatus: 'ACTIVE' });
   let member = { _id: 'wix-buyer', loginEmail: email };
   let staffCustomerId = second.buyerCompanyId;
+  let confirmInitialGrant = async () => {};
+  let buyerMemberStatus = 'APPROVED';
   const prices = new Map();
   const readiness = load('backend/webQuotationCustomer.js', {}, ['isWebQuotationReady', 'isWebQuotationCustomer']);
   const common = {
@@ -95,6 +97,8 @@ function fixture() {
     requireStaffCustomerAccess(_staff, _action, id) {
       if (id !== staffCustomerId) throw new Error('Staff access denied.');
     },
+    resolveMasterSalesCreationAssignee: async () => ({ staffId: 'STF-QA', grantRevision: 'a'.repeat(64) }),
+    confirmMasterInitialSalesAccess: (...args) => confirmInitialGrant(...args),
     removedSelectionExpired: () => false,
     wixRealtimeBackend: { publish: async () => {} },
     getSecret: async () => 'test-export-secret',
@@ -110,8 +114,16 @@ function fixture() {
     })
   };
   const access = load('backend/buyerCompanyAccess.js', common,
-    ['companyUserEmail', 'findCompanyLogin', 'saveLinkedCompanyUser', 'resolveBuyerCompany',
+    ['companyUserEmail', 'findCompanyLogin', 'linkedAccessId', 'saveLinkedCompanyUser', 'resolveBuyerCompany',
       'getActiveLinkedBuyerCompany', 'listBuyerCompanies', 'checkBuyerDownloadGrant']);
+  const provisioning = load('backend/buyerMemberProvisioning.js', {
+    ...common, elevate: method => method, members: {
+      createMember: async () => assert.fail('Linking an approved account must never create a Wix member'),
+      getMember: async id => ({ _id: id, loginEmail: email, status: buyerMemberStatus })
+    }
+  }, ['hasApprovedBuyerMember', 'prepareActivatedBuyerMember']);
+  const registration = load('backend/webQuotationRegistration.js', { ...common, ...access, ...provisioning },
+    ['reserveWebQuotationCustomer', 'reserveWebQuotationPrimaryUser', 'reserveLinkedRegistrationPrimary', 'activateWebQuotationCustomer']);
   const tokenBindings = { createHmac, timingSafeEqual };
   const tokens = {
     ...load('backend/buyerSelectionExportToken.js', tokenBindings, ['createBuyerSelectionExportToken', 'verifyBuyerSelectionExportToken']),
@@ -121,15 +133,138 @@ function fixture() {
     ['getBuyerCompanies', 'getCurrentBuyerContext', 'getBuyerWorkspace', 'saveBuyerQuantity', 'submitBuyerOrder',
       'createBuyerSelectionDownload', 'getBuyerOrderDetail']);
   const catalogue = load('backend/catalogueSelection.web.js', { ...common, ...access }, ['getCatalogueSelectionState', 'addCatalogueSelection']);
-  const sales = load('sales-room/wix/onboarding.web.js', { ...common, ...access },
-    ['addSalesRoomCustomerUser', 'reviewSalesRoomCustomerUser']);
+  const sales = load('sales-room/wix/onboarding.web.js', { ...common, ...access, ...provisioning, ...registration },
+    ['createSalesRoomCustomer', 'addSalesRoomCustomerUser', 'reviewSalesRoomCustomerUser']);
   const http = load('backend/http-functions.js', { ...common, ...access, ...tokens, response: result => result,
     buildBuyerSelectionDownload: async (id, url) => ({ fileName: id + '.xlsx', bytes: Buffer.from(url) })
   }, ['get_buyerSelectionExcel', 'findAuthorizedBuyer']);
   return { wixData, buyer, catalogue, sales, http,
     quote: (customerId, selectionId, price) => prices.set(customerId + '|' + selectionId, price),
-    setMember: next => { member = next; }, setStaffCustomer: id => { staffCustomerId = id; } };
+    setMember: next => { member = next; }, setStaffCustomer: id => { staffCustomerId = id; },
+    setGrant: next => { confirmInitialGrant = next; }, setMemberStatus: status => { buyerMemberStatus = status; } };
 }
+
+const newCompany = { companyName: 'QA NEW COMPANY', customerShortName: 'QA NEW', country: 'MALAYSIA',
+  natureOfBusiness: 'WHOLESALE', picTitle: 'MR', picName: 'QA BUYER', picEmail: email.toUpperCase(),
+  picMobile: '+600000000000', whatsapp: 'NO', preferredCurrency: 'SGD', destinationPort: 'QA PORT' };
+const operator = { _id: 'wix-staff', loginEmail: 'staff.qa@example.test' };
+
+test('Sales Room links a new company only after staff confirmation and recovers the same pending registration', async () => {
+  const f = fixture();
+  const buyerMember = { _id: 'wix-buyer', loginEmail: email };
+  const confirmed = { ...newCompany, linkExistingLogin: 'yes' };
+  await assert.rejects(f.sales.createSalesRoomCustomer(confirmed), /staff/i);
+  f.setMember(operator);
+  const original = structuredClone(f.wixData.rows('WixCustomerUsers')[0]);
+  assert.deepEqual(await f.sales.createSalesRoomCustomer(newCompany), { ok: false, requiresExistingBuyerLogin: true });
+  f.setMemberStatus('BLOCKED');
+  assert.equal((await f.sales.createSalesRoomCustomer(confirmed)).ok, false);
+  assert.equal(f.wixData.rows('WixCustomers').length, 3);
+  f.setMemberStatus('APPROVED');
+  let grantCalls = 0;
+  f.setGrant(async (_staffEmail, _customer, _owner, _revision) => {
+    if (++grantCalls === 1) throw Error('Lost MASTER acknowledgement');
+  });
+  const pending = await f.sales.createSalesRoomCustomer(confirmed);
+  assert.equal(pending.retryable, true);
+  const id = pending.result.customerId;
+  const company = f.wixData.rows('WixCustomers').find(row => row.customerId === id);
+  const primary = f.wixData.rows('WixCustomerUsers').find(row => row.customerId === id);
+  assert.equal(company.accessStatus, 'PENDING');
+  assert.equal(primary.status, 'PENDING');
+  assert.equal(primary.userId, company.primaryUserId);
+  assert.equal(primary.linkedLoginId, original._id);
+  assert.equal(primary.email, undefined);
+  assert.equal(primary.wixMemberId, undefined);
+  f.setMember(buyerMember);
+  assert.deepEqual((await f.buyer.getBuyerCompanies()).companies.map(row => row.customerId), [first.buyerCompanyId]);
+  await assert.rejects(f.buyer.getBuyerWorkspace({ buyerCompanyId: id }), /no longer available/);
+
+  f.setMember(operator);
+  const completed = await f.sales.createSalesRoomCustomer(confirmed);
+  assert.equal(completed.ok, true);
+  assert.equal(completed.result.customerId, id);
+  assert.equal((await f.sales.createSalesRoomCustomer(confirmed)).result.customerId, id);
+  assert.equal(f.wixData.rows('WixCustomers').length, 4);
+  assert.equal(f.wixData.rows('WixCustomerUsers').length, 2);
+  assert.equal(f.wixData.rows('CustomerAssignmentAudit').length, 1);
+  assert.equal(f.wixData.rows('CustomerUserAudit').length, 3);
+  assert.deepEqual(f.wixData.rows('WixCustomerUsers')[0], original);
+  f.setMember(buyerMember);
+  assert.deepEqual((await f.buyer.getBuyerCompanies()).companies.map(row => row.customerId), [first.buyerCompanyId, id]);
+  const workspace = await f.buyer.getBuyerWorkspace({ buyerCompanyId: id });
+  assert.equal(workspace.account.primary.email, email);
+  assert.equal(workspace.account.users[0].primary, true);
+  assert.equal((await f.buyer.getBuyerWorkspace(first)).context.currency, 'USD');
+});
+
+test('simultaneous linked registrations share a customer, primary authorization and audit', async () => {
+  const f = fixture();
+  f.setMember(operator);
+  const confirmed = { ...newCompany, linkExistingLogin: 'yes' };
+  const [first, retry] = await Promise.all([
+    f.sales.createSalesRoomCustomer(confirmed), f.sales.createSalesRoomCustomer(confirmed)
+  ]);
+  assert.equal(first.ok, true);
+  assert.equal(retry.ok, true);
+  assert.equal(first.result.customerId, retry.result.customerId);
+  assert.equal(f.wixData.rows('WixCustomers').length, 4);
+  assert.equal(f.wixData.rows('WixCustomerUsers').length, 2);
+  assert.equal(f.wixData.rows('CustomerAssignmentAudit').length, 1);
+  assert.equal(f.wixData.rows('CustomerUserAudit').length, 3);
+});
+
+test('Chrome keeps Sales Room form values and requires an explicit association on every retry', { timeout: 15000 }, async () => {
+  let playwright;
+  try { playwright = require('playwright'); }
+  catch (_) { playwright = require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'); }
+  const f = fixture();
+  f.setMember(operator);
+  let initialGrantCount = 0;
+  f.setGrant(async () => {
+    if (++initialGrantCount === 1) throw Error('Lost MASTER acknowledgement');
+  });
+  const browser = await playwright.chromium.launch({ channel: 'chrome', headless: true });
+  try {
+    const page = await browser.newPage();
+    const requests = [];
+    await page.exposeBinding('createQaCustomer', async (_, fields) => {
+      requests.push(fields);
+      return f.sales.createSalesRoomCustomer(fields);
+    });
+    const html = fs.readFileSync(path.join(__dirname, '..', 'sales-room-20261124-company-switch.html'), 'utf8');
+    await page.route('**/*', route => new URL(route.request().url()).pathname === '/sales-qa'
+      ? route.fulfill({ contentType: 'text/html; charset=UTF-8', body: html }) : route.abort());
+    await page.addInitScript(() => window.addEventListener('message', async ({ data }) => {
+      if (data?.type !== 'SALES_ROOM_CREATE_CUSTOMER') return;
+      const result = await window.createQaCustomer(data.payload);
+      window.postMessage({ type: 'SALES_ROOM_CREATE_RESULT', ...result }, '*');
+    }));
+    await page.goto('http://fmcg-qa.invalid/sales-qa');
+    await page.evaluate(fields => {
+      showView('new');
+      renderAssignableStaff({ ok: true, canCreate: true, staff: [], quotationMode: 'WEB' });
+      for (const [field, value] of Object.entries(fields)) document.getElementById('customerForm').elements[field].value = value;
+    }, newCompany);
+    await page.locator('#createBtn').click();
+    const confirm = page.getByRole('button', { name: 'Link existing login and create customer' });
+    await confirm.waitFor();
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].linkExistingLogin, undefined);
+    assert.equal(f.wixData.rows('WixCustomers').length, 3);
+    await confirm.click();
+    await page.getByText(/Setup confirmation is pending/).waitFor();
+    assert.equal(await page.locator('input[name="picEmail"]').inputValue(), newCompany.picEmail);
+    assert.equal(await page.locator('input[name="companyName"]').inputValue(), newCompany.companyName);
+    await confirm.click();
+    await page.getByText(/Customer Successfully Created/).waitFor();
+    assert.equal(requests.length, 3);
+    assert.equal(requests[2].linkExistingLogin, 'yes');
+    assert.equal(f.wixData.rows('WixCustomers').length, 4);
+  } finally {
+    await browser.close();
+  }
+});
 
 test('the entry stays closed while company access is unknown and opens only after an authorized choice', async () => {
   const { loadBuyerCompanyAccess } = load('buyer-room/wix/buyerCompanyNavigation.js', {}, ['loadBuyerCompanyAccess']);

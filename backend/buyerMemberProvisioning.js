@@ -12,6 +12,15 @@ async function findMembers(email) {
   return (await wixData.query('Members/FullData').eq('loginEmail', email).limit(2).find(read)).items;
 }
 
+export async function hasApprovedBuyerMember(login) {
+  const email = normalizeEmail(login.email);
+  const matches = login.wixMemberId ? [{ _id: login.wixMemberId }] : await findMembers(email);
+  if (matches.length !== 1 || !matches[0]?._id) return false;
+  const member = await getMember(matches[0]._id, { fieldsets: ['FULL'] });
+  return member?._id === matches[0]._id && member.status === 'APPROVED' &&
+    normalizeEmail(member.loginEmail) === email;
+}
+
 // Called by the staff-only activation path after the customer and user are active.
 // Creating a member here sends no email and leaves password setup to the buyer.
 export async function prepareActivatedBuyerMember(activatedCustomer, activatedUser) {

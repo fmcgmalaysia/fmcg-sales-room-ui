@@ -48,7 +48,7 @@ async function readCompany(customerId) {
   return lifecycle !== 'ARCHIVED' && access === 'ACTIVE' && isWebQuotationReady(customer) ? customer : null;
 }
 
-function linkedAccessId(customerId, loginId) {
+export function linkedAccessId(customerId, loginId) {
   return 'LINK-' + createHash('sha256').update(JSON.stringify([customerId, loginId])).digest('hex').slice(0, 32);
 }
 
