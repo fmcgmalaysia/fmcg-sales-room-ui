@@ -935,6 +935,31 @@
     .quote-find-result { grid-area: result; justify-self: end; font-size: 11px; }
     .quote-grid tr.quote-find-target td { background: #e7f1ff; }
     .quote-grid tr.quote-find-target td:first-child { box-shadow: inset 3px 0 #2563eb; }
+    .quote-find > label { grid-area: label; }
+    .quote-find-field { grid-area: field; position: relative; }
+    .quote-find-field input { padding-inline-end: 37px; font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1.35; color: #15364f; }
+    .quote-find-field input::-webkit-search-cancel-button { display: none; }
+    #quote-find-clear {
+      position: absolute; inset: 4px 5px 4px auto; width: 29px; padding: 0;
+      border: 0; border-radius: 4px; background: transparent; color: #486680; font-family: inherit; font-size: 18px; font-weight: 600; line-height: 1;
+    }
+    #quote-find-clear:hover { background: #eef4fa; }
+    .quote-grid .quotation-history div { white-space: nowrap; line-height: 1.38; }
+    .quote-grid .quotation-history small { display: inline; color: #526d82; font-size: 10px; }
+    .quote-grid .remark-lines { max-width: 100%; line-height: 1.3; }
+    .quote-grid .remark-lines > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wix-quotation-workroom .quote-grid .calc-stack {
+      display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 2px 5px; align-items: center;
+    }
+    .quote-grid .calc-stack .calc-margin { grid-area: 1 / 1; display: flex; align-items: center; justify-content: end; gap: 3px; }
+    .quote-grid .calc-stack .calc-margin input { width: 45px; padding-inline: 3px; }
+    .quote-grid .calc-stack .calc-margin span, .quote-grid .calc-target small { color: #526d82; font-size: 10px; white-space: nowrap; }
+    .quote-grid .calc-stack .calc-target { grid-area: 2 / 1; display: flex; justify-content: end; gap: 4px; }
+    .quote-grid .calc-stack .update { grid-area: 1 / 2 / 3 / 3; }
+    @media(max-width: 768px) {
+      .wix-quotation-workroom .quote-grid tr[data-row] > td.calc-combined:last-child { grid-column: 1 / -1; }
+      .quote-grid .calc-stack { max-width: 150px; margin-inline-start: auto; }
+    }
     @media (min-width: 1001px) {
       .wix-quotation-workroom .quote-summary {
         grid-template-columns: minmax(0, 440px) minmax(350px, 460px) minmax(175px, 1fr);
@@ -968,7 +993,7 @@
     </div>
     <div id="notice">
       <span id="notice-text" role="status" aria-live="polite">Connecting to Sales Management…</span>
-      <button id="notice-dismiss" type="button" aria-label="Dismiss notice" hidden>×</button>
+      <button id="notice-dismiss" type="button" aria-label="Dismiss notice">×</button>
     </div>
     <section id="content" aria-label="Quotation workroom"></section>
   </main>
@@ -1057,7 +1082,7 @@ function updateQuoteWindow(scrollTop) {
       else body.insertAdjacentHTML('beforeend', quoteRow(row, index + 1));
     }
   }
-  const spacer = count => `<tr class="quote-spacer" aria-hidden="true"><td colspan="14" style="height:${count * quoteRowHeight}px"></td></tr>`;
+  const spacer = count => `<tr class="quote-spacer" aria-hidden="true"><td colspan="12" style="height:${count * quoteRowHeight}px"></td></tr>`;
   if (first) body.insertAdjacentHTML('afterbegin', spacer(first));
   if (end < rows.length) body.insertAdjacentHTML('beforeend', spacer(rows.length - end));
 }
@@ -1152,7 +1177,7 @@ function message(value = '', error = false, warning = false) {
   notice.hidden = !value;
   notice.classList.toggle('error', error);
   notice.classList.toggle('cost-warning', warning);
-  $('#notice-dismiss').hidden = !value || !(error || warning);
+  $('#notice-dismiss').hidden = !value;
 }
 $('#notice-dismiss').addEventListener('click', () => message());
 
@@ -1239,6 +1264,12 @@ window.addEventListener('message', event => {
   }
 });
 
+function customerLabel(name, selectionCount) {
+  return Number.isSafeInteger(selectionCount) && selectionCount >= 0
+    ? `${name} (${selectionCount.toLocaleString('en')})`
+    : name;
+}
+
 async function refresh() {
   hideProductPreview();
   const token = ++generation;
@@ -1256,6 +1287,8 @@ async function refresh() {
       throw Error('The quotation workspace could not be verified.');
     }
     current = result;
+    const option = $('#customer').selectedOptions[0];
+    if (option?.value === context) option.textContent = customerLabel(option.dataset.name, result.rows.length);
     renderQuotes(scrollPosition);
     costButtonState();
     if (costAttempts.has(context)) void confirmCostRead(context);
@@ -1283,7 +1316,15 @@ async function initialize() {
       if (result.customers.some(row => row.customerId === context) && /^[a-f0-9-]{36}$/i.test(packet?.requestId || '')) costAttempts.set(context, packet);
     }
     $('#staff').textContent = result.staffName || '';
-    $('#customer').replaceChildren(...result.customers.map(item => new Option(item.name, item.customerId)));
+    const customerOptions = [...result.customers].sort((left, right) =>
+      left.name.localeCompare(right.name, 'en', { sensitivity: 'base', numeric: true })
+    );
+    $('#customer').replaceChildren(...customerOptions.map(item => {
+      const option = new Option(customerLabel(item.name, item.selectionCount), item.customerId);
+      option.dataset.name = item.name;
+      return option;
+    }));
+    if (result.customers.length) $('#customer').value = result.customers[0].customerId;
     $('#customer').disabled = !result.customers.length;
     message(result.customers.length ? '' : 'No quotation customers are assigned to your account.');
     if (result.customers.length) await refresh();
@@ -1662,22 +1703,29 @@ function quoteRow(row, number) {
   const previousCurrency = previous?.currency !== current.customer.preferredCurrency ? escapeHtml(previous?.currency) + ' ' : '';
   const image = productImage(row.imageUrl);
   const desc = escapeHtml(row.name);
-  return `<tr aria-rowindex="${number + 2}" data-row="${escapeHtml(row.id)}" class="${dirty(row) ? 'row-dirty' : ''}">
+  const previousPurchase = row.lastPurchase;
+  const note = typeof details.remark === 'string' ? details.remark.trim() : '';
+  const noteLines = note ? note.split(/\r?\n|\r/).slice(0, 3) : ['—'];
+  return `<tr aria-rowindex="${number + 1}" data-row="${escapeHtml(row.id)}" class="${dirty(row) ? 'row-dirty' : ''}">
     <td class="row-number">${String(number).padStart(3, '0')}</td>
     <td class="image-cell">${image}</td>
     <td class="desc-cell"><span class="barcode">${escapeHtml(row.barcode)}</span><div class="product-name" title="${desc}">${desc}</div><span class="packing">${escapeHtml(row.packing)}</span></td>
-    <td class="previous-sp"><span class="mobile-label">Last SP</span><span data-previous-sp>${previous ? previousCurrency + fixed(previous.priceCtn) + ' / CTN' : ''}</span><small>${quoteDate(previous?.siDate)}</small></td>
+    <td class="previous-sp quotation-history"><span class="mobile-label">History</span>
+      <div title="Last invoiced selling price per carton${previous?.siDate ? ' · ' + escapeHtml(quoteDate(previous.siDate)) : ''}"><span data-previous-sp>${previous ? previousCurrency + fixed(previous.priceCtn) : '—'}</span> <small>SP</small></div>
+      <div title="Last confirmed purchase net cost in MYR per carton"><span data-previous-nc>${Number.isFinite(previousPurchase?.netCostMyrCtn) ? fixed(previousPurchase.netCostMyrCtn) : '—'}</span> <small>NC</small></div></td>
     <td><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><div class="quote-value quote-value-suffix quote-ea"><button type="button" class="quote-ea-lock" data-action="unlock-ea" aria-label="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" title="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" ${Number(price?.priceEa) > 0 ? '' : 'hidden'} ${disabled || !lockedEa ? 'disabled' : ''}>${eaLockIcon(lockedEa)}</button><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" placeholder="0.00" value="${price ? fixed(price.priceEa) : ''}" ${disabled ? 'disabled' : lockedEa ? 'readonly' : ''}><span class="quote-unit">EA</span></div>${quotationAmount(price?.priceCtn, 'CT', ' data-carton')}</td>
     <td><span class="mobile-label">Profit</span><span data-profit>${profit(price)}</span></td>
     <td><span class="mobile-label">List cost</span>${quotationAmount(details.lpEa, 'EA')}${quotationAmount(details.lpCtn, 'CT')}</td>
     <td class="disc-cell"><span class="mobile-label">Discount</span>${quotationDiscount(1, details.disc1, true)}${quotationDiscount(2, details.disc2, true)}${quotationDiscount(3, details.disc3, false)}</td>
     <td class="cost-cell"><span class="mobile-label">Net cost per CTN</span><b class="${details.priceStale === true && Number.isFinite(row.costMyr) ? 'stale-cost' : ''}"${details.priceStale === true ? ' title="Point Base price needs verification"' : ''}>${fixed(row.costMyr)}</b><small class="${row.costError ? 'warning' : ''}" title="${escapeHtml(row.costError || row.costAt || '')}">${row.costError ? 'Check cost' : row.costAt ? '' : 'Awaiting cost'}</small></td>
-    <td class="remark-cell"><span class="mobile-label">Remark</span>${escapeHtml(details.remark || '—')}</td>
+    <td class="remark-cell"><span class="mobile-label">Remark</span><div class="remark-lines" title="${escapeHtml(note)}">${noteLines.map(line => `<span>${escapeHtml(line) || '&nbsp;'}</span>`).join('')}</div></td>
     <td><span class="mobile-label">View Quote</span><div class="quote-actions"><button role="switch" aria-label="Show quote for ${desc}" aria-checked="${switchOn}" class="switch" data-action="toggle" ${disabled || current.canPublish === false || (!visible && !Number.isFinite(price?.gp)) ? 'disabled' : ''}></button><span class="quote-label" aria-live="polite">${publishing ? 'Publishing…' : row.pending ? 'Confirming…' : visible ? quoteDate(row.published.publishedAt) : ''}</span></div>
     <div class="quote-actions quote-edits">${quoteResumeButton(row)}<button hidden class="update" data-action="draft" ${disabled || !dirty(row) || !price ? 'disabled' : ''}>Save draft</button>${visible ? `<button hidden class="update primary" data-action="publish" ${disabled || current.canPublish === false || !quoteChanged(row) ? 'disabled' : ''}>Update quote</button>` : ''}</div></td>
-    <td class="calc-cell"><span class="mobile-label">Margin</span><label class="calc-margin"><input aria-label="Target margin for ${desc}" data-calc="GP" type="number" step="1" placeholder="0" value="${inputValue(target?.mode === 'GP' ? target.value : Number.isFinite(suggestion?.gp) ? Math.round(suggestion.gp) : null)}" ${disabled ? 'disabled' : ''}><span aria-hidden="true">%</span></label></td>
-    <td class="calc-cell"><span class="mobile-label">Selling</span><output class="calc-selling" aria-label="Target unit price for ${desc}" data-calculated-selling>${suggestion ? fixed(suggestion.priceEa) : '0.00'}</output></td>
-    <td class="calc-cell"><button type="button" class="update primary" data-action="apply" aria-label="${calculatorMatchesPrice(price, suggestion) ? 'Calculator price applied to' : 'Apply calculator for'} ${desc}" ${calculatorMatchesPrice(price, suggestion) ? 'data-applied' : ''} ${disabled || lockedEa || !suggestion || calculatorMatchesPrice(price, suggestion) ? 'disabled' : ''}><span class="calc-apply-label">Apply</span><svg class="calc-applied-check" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 12c2 .4 3.6 1.8 5 4 2.3-4.7 5.9-8 11-10.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>
+    <td class="calc-cell calc-combined"><span class="mobile-label">GP Calculator</span><div class="calc-stack">
+      <label class="calc-margin"><input aria-label="Target margin for ${desc}" data-calc="GP" type="number" step="0.01" placeholder="0.00" value="${Number.isFinite(target?.mode === 'GP' ? target.value : suggestion?.gp) ? fixed(target?.mode === 'GP' ? target.value : suggestion.gp) : ''}" ${disabled ? 'disabled' : ''}><span aria-hidden="true">% GP</span></label>
+      <div class="calc-target"><output class="calc-selling" aria-label="Target unit price for ${desc}" data-calculated-selling>${suggestion ? fixed(suggestion.priceEa) : '0.00'}</output><small>SP</small></div>
+      <button type="button" class="update primary" data-action="apply" aria-label="${calculatorMatchesPrice(price, suggestion) ? 'Calculator price applied to' : 'Apply calculator for'} ${desc}" ${calculatorMatchesPrice(price, suggestion) ? 'data-applied' : ''} ${disabled || lockedEa || !suggestion || calculatorMatchesPrice(price, suggestion) ? 'disabled' : ''}><span class="calc-apply-label">Apply</span><svg class="calc-applied-check" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 12c2 .4 3.6 1.8 5 4 2.3-4.7 5.9-8 11-10.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div></td>
   </tr>`;
 }
 function renderQuotes(scrollPosition) {
@@ -1692,13 +1740,13 @@ function renderQuotes(scrollPosition) {
     <div class="quote-customer"><h2>${customerName}</h2><span class="currency">${currency}</span></div>
     <div class="toolbar-meta"><span class="muted">Current FX &nbsp; 1 ${currency} = MYR ${format(current.customer.rateToMyr)}</span><span class="muted" data-cost-refresh>Last Cost Refresh &nbsp; ${quoteDate(latestCost, true) || '—'}</span><button class="primary" id="catch-cost" ${busy || !current.canEdit || !current.rows.length ? 'disabled' : ''}>${busy ? 'Working…' : 'Catch Cost'}</button></div>
     </div><dl class="quote-counts"><div><dt>Total Selected</dt><dd>${current.rows.length}</dd></div><div><dt>Quoted</dt><dd id="quoted-count">${quoted}</dd></div><div><dt>Awaiting Quote</dt><dd id="awaiting-quote-count">${current.rows.length - quoted}</dd></div><div><dt>High-Risk Quotes</dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl>
-    <label class="quote-find" for="quote-find">Find product
-      <input id="quote-find" type="search" placeholder="Product name or barcode" autocomplete="off" aria-describedby="quote-find-result"${rows.length ? '' : ' disabled'}>
+    <div class="quote-find"><label for="quote-find">Find product</label>
+      <div class="quote-find-field"><input id="quote-find" type="search" placeholder="Product name or barcode" autocomplete="off" aria-describedby="quote-find-result"${rows.length ? '' : ' disabled'}>
+      <button type="button" id="quote-find-clear" aria-label="Clear product search" hidden>×</button></div>
       <span class="quote-find-result" id="quote-find-result" role="status"></span>
-    </label></div>` + (rows.length ? `
-    <div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 2}"><colgroup>${[42, 62, '', 74, 94, 91, 82, 77, 75, 142, 72, 53, 56, 49].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
-    <thead><tr><th rowspan="2">Row</th><th rowspan="2">Image</th><th rowspan="2">Descriptions</th><th class="quote-left" rowspan="2">Last SP</th><th class="quote-right" rowspan="2">Selling Price</th><th class="quote-left" rowspan="2">Profit</th><th class="quote-right" rowspan="2">List Cost</th><th rowspan="2">Discount</th><th class="quote-right" rowspan="2">Net Cost</th><th rowspan="2">Remark</th><th rowspan="2">View Quote</th><th class="calc-cell calc-group" colspan="3">Target Profit Calculator</th></tr>
-    <tr class="calc-headings"><th class="calc-cell">Margin</th><th class="calc-cell">Selling</th><th class="calc-cell" aria-label="Apply"></th></tr></thead>
+    </div></div>` + (rows.length ? `
+    <div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 1}"><colgroup>${[40, 60, '', 87, 93, 87, 79, 74, 76, 200, 68, 128].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
+    <thead><tr><th>Row</th><th>Image</th><th>Descriptions</th><th class="quote-left">History</th><th class="quote-right">Selling Price</th><th class="quote-left">Profit</th><th class="quote-right">List Cost</th><th>Discount</th><th class="quote-right">Net Cost</th><th>Remark</th><th>View Quote</th><th class="calc-cell calc-group">GP Calculator</th></tr></thead>
     <tbody>${initialQuoteRows(rows)}</tbody></table></div>` :
     `<div class="empty">${current.rows.length ? 'No matching products.' : 'Products selected in Catalogue appear here.'}</div>`);
   mountQuoteRows(rows, scrollPosition);
@@ -1736,6 +1784,7 @@ function editPrice(row, tr, next, updateEa = false) {
 }
 content.addEventListener('input', event => {
   if (event.target.id === 'quote-find') {
+    $('#quote-find-clear').hidden = !event.target.value;
     if (!event.isComposing) findQuoteRow(event.target);
     return;
   }
@@ -1743,8 +1792,7 @@ content.addEventListener('input', event => {
   if (!input || input.disabled || input.readOnly || busy) return;
   const tr = input.closest('[data-row]');
   const row = current.rows.find(row => row.id === tr.dataset.row);
-  const value = input.value === '' ? null : input.dataset.calc === 'GP' ? Math.trunc(Number(input.value)) : Number(input.value);
-  if (input.dataset.calc === 'GP' && value !== null && Number(input.value) !== value) input.value = value;
+  const value = input.value === '' ? null : Number(input.value);
   if (input.dataset.mode) {
     editPrice(row, tr, { mode: 'EA', value: value === null ? null : roundCents(value) });
     return;
@@ -1756,6 +1804,15 @@ content.addEventListener('input', event => {
   const calculated = price?.priceEa;
   other.value = Number.isFinite(calculated) ? fixed(calculated) : '0.00';
   updateCalculatorApply(row, tr, sellingPrice(row), price);
-});</script>
+});
+content.addEventListener('click', event => {
+  if (event.target.id !== 'quote-find-clear') return;
+  const input = $('#quote-find');
+  input.value = '';
+  event.target.hidden = true;
+  findQuoteRow(input);
+  input.focus();
+});
+</script>
 </body>
 </html>
