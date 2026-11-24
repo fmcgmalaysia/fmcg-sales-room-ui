@@ -71,7 +71,7 @@ const first = { buyerCompanyId: 'CUS-FIXTURE-YYY' };
 const second = { buyerCompanyId: 'CUS-FIXTURE-ZZZ' };
 const foreign = { buyerCompanyId: 'CUS-FIXTURE-UNRELATED' };
 
-function fixture() {
+function fixture(setupMasterTransfer = () => ({})) {
   const wixData = fakeWixData();
   const ready = { quotationMode: 'WEB', webQuotationStatus: 'READY', lifecycleStatus: 'ACTIVE', accessStatus: 'ACTIVE' };
   wixData.rows('WixCustomers').push(
@@ -81,7 +81,7 @@ function fixture() {
   wixData.rows('WixCustomerUsers').push({ _id: 'login-buyer', userId: 'buyer-yyy', wixMemberId: 'wix-buyer',
     title: 'Test Buyer', email, customerId: first.buyerCompanyId, status: 'ACTIVE', primaryUser: true });
   wixData.rows('FMCGMALAYSIA').push(
-    { _id: 'shared-product', barcode: '9550000000016', name: 'Shared product', ea: 12, pointBaseStatus: 'ACTIVE' },
+    { _id: 'shared-product', barcode: '9550000000016', name: 'Shared product', description: '330ML x 12', ea: 12, pointBaseStatus: 'ACTIVE' },
     { _id: 'only-zzz', barcode: '9550000000023', name: 'Second company product', ea: 12, pointBaseStatus: 'ACTIVE' });
   let member = { _id: 'wix-buyer', loginEmail: email };
   let staffCustomerId = second.buyerCompanyId;
@@ -133,8 +133,8 @@ function fixture() {
     ['getBuyerCompanies', 'getCurrentBuyerContext', 'getBuyerWorkspace', 'saveBuyerQuantity', 'submitBuyerOrder',
       'createBuyerSelectionDownload', 'getBuyerOrderDetail']);
   const catalogue = load('backend/catalogueSelection.web.js', { ...common, ...access }, ['getCatalogueSelectionState', 'addCatalogueSelection']);
-  const sales = load('sales-room/wix/onboarding.web.js', { ...common, ...access, ...provisioning, ...registration },
-    ['createSalesRoomCustomer', 'addSalesRoomCustomerUser', 'reviewSalesRoomCustomerUser']);
+  const sales = load('sales-room/wix/onboarding.web.js', { ...common, ...access, ...provisioning, ...registration, ...setupMasterTransfer(wixData) },
+    ['createSalesRoomCustomer', 'addSalesRoomCustomerUser', 'reviewSalesRoomCustomerUser', 'submitSalesRoomOrder']);
   const http = load('backend/http-functions.js', { ...common, ...access, ...tokens, response: result => result,
     buildBuyerSelectionDownload: async (id, url) => ({ fileName: id + '.xlsx', bytes: Buffer.from(url) })
   }, ['get_buyerSelectionExcel', 'findAuthorizedBuyer']);
@@ -264,6 +264,95 @@ test('Chrome keeps Sales Room form values and requires an explicit association o
   } finally {
     await browser.close();
   }
+});
+
+test('the same buyer email yields two independent Sales transfers and Finance ledgers', async () => {
+  const { createNctReceiver } = await import('../integration/backend/nctReceiver.js');
+  const { createNctSubmissionDelivery } = await require('../integration/tests/load-nct-delivery.cjs')();
+  const loadMaster = require('../integration/tests/load-master-module.cjs');
+  const { createFinanceCustomerAccountOperations, customerAccountVersion } = loadMaster('customerAccountLedger.js');
+  const { projectCustomerAccount } = loadMaster('customerDebtor.js');
+  const master = fakeWixData(), secret = 'isolated-test-only';
+  const store = {
+    read: (collection, id) => master.get(collection, id).catch(() => null),
+    insert: master.insert,
+    remove: master.remove
+  };
+  const receive = createNctReceiver({ store, getIntakeSecret: async () => secret,
+    captureCosts: async barcodes => Object.fromEntries(barcodes.map(unitBarcode => [unitBarcode, {
+      unitBarcode, capturedAt: new Date().toISOString(), costCurrency: 'MYR', costStatus: 'CAPTURED',
+      costIssues: [], lpPc: 2, lpCtn: 24, disc1: 0, disc2: 0, disc3: 0, netCostCtn: 24, cbmPerCtn: 0.02
+    }]))
+  });
+  const { wixData, sales, buyer, catalogue, quote, setMember, setStaffCustomer } = fixture(source => {
+    const fetch = async (_endpoint, options) => {
+      const response = await receive({ headers: options.headers, body: { json: async () => JSON.parse(options.body) } });
+      return { ok: response.status === 200, json: async () => response.body };
+    };
+    return load('backend/nctSalesIntake.js', { wixData: source, createHash, fetch,
+      getSecret: async () => secret, createNctSubmissionDelivery }, ['submitNctSalesOrder']);
+  });
+  wixData.rows('WixFxRates').push({ currency: 'USD', active: true, rateToMyr: 4 }, { currency: 'SGD', active: true, rateToMyr: 3 });
+  const staff = { _id: 'wix-staff', loginEmail: 'staff.qa@example.test' };
+  setMember(staff);
+  const created = await sales.createSalesRoomCustomer({ ...newCompany, linkExistingLogin: 'yes' });
+  assert.equal(created.ok, true);
+  const newBuyer = { buyerCompanyId: created.result.customerId };
+  setStaffCustomer(newBuyer.buyerCompanyId);
+  setMember({ _id: 'wix-buyer', loginEmail: email });
+  assert.deepEqual((await buyer.getBuyerCompanies()).companies.map(row => row.customerId), [first.buyerCompanyId, newBuyer.buyerCompanyId]);
+  async function placeOrder(company, price, quantityCtn, po) {
+    const { selection } = await catalogue.addCatalogueSelection('shared-product', company);
+    quote(company.buyerCompanyId, selection.id, price);
+    return buyer.submitBuyerOrder([{ itemId: selection.id, quantityCtn }], company, randomUUID(), po);
+  }
+  const [alpha, beta] = await Promise.all([placeOrder(first, 24, 2, 'ALPHA-PO'), placeOrder(newBuyer, 36, 3, 'BETA-PO')]);
+  setMember(staff);
+  await assert.rejects(sales.submitSalesRoomOrder(alpha.orderId, 'NCT'), /Staff access denied/);
+  assert.equal(master.rows('NCTOrders').length, 0);
+  await sales.submitSalesRoomOrder(beta.orderId, 'NCT');
+  setStaffCustomer(first.buyerCompanyId);
+  await sales.submitSalesRoomOrder(alpha.orderId, 'NCT');
+  await sales.submitSalesRoomOrder(alpha.orderId, 'NCT');
+  assert.deepEqual(master.rows('NCTOrders').map(row => [row.customerId, row.title, row.transactionCurrency, row.orderQtyInCtn, row.customerPoNumber]), [
+    [newBuyer.buyerCompanyId, beta.orderId, 'SGD', 3, 'BETA-PO'],
+    [first.buyerCompanyId, alpha.orderId, 'USD', 2, 'ALPHA-PO']
+  ]);
+  assert.equal(master.rows('NCTTasks').length, 2);
+  assert.equal(master.rows('NCTOrders1').length, 0);
+
+  const at = '2026-11-25T00:30:00.000Z';
+  const readContext = async company => {
+    const suffix = company === 'NCT' ? '' : '1';
+    return { company, customers: master.rows('NCTOrders' + suffix).map(row => ({ id: row.customerId, name: row.customerCompanyName })),
+      tasks: [], activity: master.rows('NCTActivity' + suffix) };
+  };
+  const postPayment = createFinanceCustomerAccountOperations({ store, readContext,
+    names: { NCT: { activity: 'NCTActivity' }, GHR: { activity: 'NCTActivity1' } }, now: () => new Date(at) });
+  const paymentStaff = { memberId: 'FINANCE-QA', staffId: 'FINANCE-QA', staffName: 'QA Finance', canPostCustomerAccount: true };
+  for (const [buyerId, order, currency, amountCents] of [[first.buyerCompanyId, alpha, 'USD', 4800], [newBuyer.buyerCompanyId, beta, 'SGD', 10800]]) {
+    const id = 'QA-PROOF-' + buyerId;
+    await store.insert('NCTActivity', { _id: id, action: 'SUPPORT_DOCUMENT_UPLOADED', result: 'SAVED',
+      details: { document: { id, customerId: buyerId, orderId: order.orderId, company: 'NCT', scope: 'ORDER', code: '$',
+        currency, amountCents, reference: id, fileId: 'QA-FILE-' + buyerId, name: id + '.pdf', size: 200,
+        sha256: createHash('sha256').update(id).digest('hex'), at, by: 'QA Support', byStaffId: 'SUPPORT-QA' } } });
+    const input = { action: 'CONFIRM_DOCUMENT', customerId: buyerId, sourceDocumentId: id,
+      version: customerAccountVersion(await readContext('NCT')), number: 'BANK-' + buyerId, date: '2026-11-25', currency, amountCents };
+    const wrongCustomerId = buyerId === first.buyerCompanyId ? newBuyer.buyerCompanyId : first.buyerCompanyId;
+    await assert.rejects(postPayment({ company: 'NCT', staff: paymentStaff, requestId: randomUUID(),
+      input: { ...input, customerId: wrongCustomerId } }), /unavailable/);
+    const confirmation = { company: 'NCT', staff: paymentStaff, requestId: randomUUID(), input };
+    await postPayment(confirmation);
+    await postPayment(confirmation);
+  }
+  const context = await readContext('NCT');
+  const proofOrders = new Map(context.activity.filter(row => row.action === 'SUPPORT_DOCUMENT_UPLOADED')
+    .map(row => [row._id, row.details.document.orderId]));
+  const account = projectCustomerAccount(context);
+  assert.deepEqual(Array.from(account.entries, row => [row.customerId, proofOrders.get(row.sourceDocumentId), row.currency, row.amountCents]).sort(), [
+    [first.buyerCompanyId, alpha.orderId, 'USD', 4800], [newBuyer.buyerCompanyId, beta.orderId, 'SGD', 10800]
+  ].sort());
+  assert.equal(projectCustomerAccount(await readContext('GHR')).entries.length, 0);
 });
 
 test('the entry stays closed while company access is unknown and opens only after an authorized choice', async () => {
