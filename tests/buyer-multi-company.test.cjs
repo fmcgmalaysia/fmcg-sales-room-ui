@@ -349,7 +349,12 @@ window.addEventListener('message', async ({source,data}) => {
     }
     await frame(room).locator('#myRows').getByText('Shared product', { exact: false }).waitFor();
     assert.equal(new URL(room.url()).searchParams.get('company'), first.buyerCompanyId);
-    await frame(room).getByRole('button', { name: 'Switch Company' }).click();
+    const changeCompany = frame(room).getByRole('button', { name: 'Switch Company' });
+    await changeCompany.hover();
+    await frame(room).locator('.buyer-company-switch-tip').waitFor({ state: 'visible' });
+    assert.equal(await changeCompany.locator('svg').count(), 1);
+    assert.equal((await changeCompany.textContent()).trim(), '');
+    await changeCompany.click();
     await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
     await frame(room).locator('#companyName').filter({ hasText: 'Company ZZZ' }).waitFor();
     await frame(room).getByRole('button', { name: 'Return to your Catalogue' }).click();
@@ -396,5 +401,8 @@ window.addEventListener('message', async ({source,data}) => {
     await frame(other).getByText('Access to this company has ended. Choose an available company.').waitFor();
     assert.equal(wixData.rows('WixBuyerOrders').length, 2);
     assert.equal(new URL(room.url()).searchParams.get('company'), first.buyerCompanyId);
+    await room.goto(origin + '/buyer-room');
+    await frame(room).locator('#companyName').filter({ hasText: /^Company YYY$/ }).waitFor();
+    assert.equal(await frame(room).getByRole('button', { name: 'Switch Company' }).count(), 0);
   } finally { await browser.close(); }
 });

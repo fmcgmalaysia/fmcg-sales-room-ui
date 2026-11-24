@@ -22,13 +22,7 @@ for (const [filename, expected] of Object.entries(baseline)) {
   assert.equal(sha256(path.join(site, filename)), expected, 'Previously deployed asset changed: ' + filename);
 }
 
-for (const filename of [
-  'buyer-room-20261124-company-switch.html',
-  'buyer-room/company-switch.js',
-  'sales-room-20261124-company-switch.html'
-]) {
-  assert.ok(!Object.hasOwn(baseline, filename), 'Existing published asset would be overwritten.');
-  fs.mkdirSync(path.dirname(path.join(site, filename)), { recursive: true });
-  fs.copyFileSync(path.join(repo, filename), path.join(site, filename), fs.constants.COPYFILE_EXCL);
-  console.log(filename, sha256(path.join(site, filename)));
-}
+const filename = 'buyer-room/company-switch.js';
+assert.ok(Object.hasOwn(baseline, filename), 'The deployed company switch asset could not be verified.');
+fs.copyFileSync(path.join(repo, filename), path.join(site, filename));
+console.log(filename, sha256(path.join(site, filename)));

@@ -1,18 +1,31 @@
 (() => {
   const container = document.querySelector('[data-buyer-company-switch]');
   if (!container) return;
-  container.dataset.build = '20261124-buyer-company-v1';
+  container.dataset.build = '20261124-buyer-company-v2';
 
   const style = document.createElement('style');
   style.textContent = `
-    .buyer-company-switch { display:flex; justify-content:flex-end; padding:6px 18px; }
+    .buyer-company-switch { position:relative; display:flex; justify-content:flex-end; padding:6px 18px; }
     .buyer-company-switch[hidden] { display:none; }
     .global-header .buyer-company-switch { padding:0; }
-    .buyer-company-switch-icon { display:none; }
     .buyer-company-switch button, .buyer-company-dialog button {
       font:600 14px system-ui; color:#153453; background:#fff; border:1px solid #aabed1;
       border-radius:8px; padding:10px 14px; cursor:pointer;
     }
+    .buyer-company-switch button {
+      display:grid; place-items:center; width:38px; height:38px; padding:0;
+    }
+    .buyer-company-switch button:hover, .buyer-company-switch button:focus-visible {
+      background:#edf4fb; border-color:#52799f;
+    }
+    .buyer-company-switch-icon { display:block; width:20px; height:20px; }
+    .buyer-company-switch-tip {
+      position:absolute; inset-inline-end:0; inset-block-start:100%; z-index:5; pointer-events:none;
+      background:#153453; color:#fff; white-space:nowrap; padding:6px 9px; border-radius:5px;
+      font:600 12px/1.4 system-ui; visibility:hidden;
+    }
+    .buyer-company-switch button:hover + .buyer-company-switch-tip,
+    .buyer-company-switch button:focus-visible + .buyer-company-switch-tip { visibility:visible; }
     .buyer-company-dialog { color:#153453; background:#fff; border:0; border-radius:14px;
       width:min(420px, calc(100% - 28px)); max-height:calc(100% - 28px); padding:22px;
       margin:auto; box-shadow:0 20px 70px #142b4940; box-sizing:border-box; }
@@ -23,11 +36,6 @@
     .buyer-company-choices button { text-align:left; }
     .buyer-company-cancel { display:block; margin:14px 0 0 auto; }
     .buyer-company-cancel[hidden] { display:none; }
-    @media(max-width:600px) {
-      .global-header .buyer-company-switch button { width:34px; height:34px; padding:0; }
-      .global-header .buyer-company-switch-icon { display:inline; font-size:19px; }
-      .global-header .buyer-company-switch-label { display:none; }
-    }
   `;
   document.head.append(style);
   container.className = 'buyer-company-switch';
@@ -35,9 +43,12 @@
   const change = document.createElement('button');
   change.type = 'button';
   change.setAttribute('aria-label', 'Switch Company');
-  change.title = 'Switch Company';
-  change.innerHTML = '<span class="buyer-company-switch-icon" aria-hidden="true">⇄</span><span class="buyer-company-switch-label">Switch Company</span>';
-  container.append(change);
+  change.innerHTML = '<svg class="buyer-company-switch-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h15m-4-4 4 4-4 4m5 4H5m4-4-4 4 4 4"/></svg>';
+  const tip = document.createElement('span');
+  tip.className = 'buyer-company-switch-tip';
+  tip.setAttribute('aria-hidden', 'true');
+  tip.textContent = 'Switch company';
+  container.append(change, tip);
 
   const dialog = document.createElement('dialog');
   dialog.className = 'buyer-company-dialog';

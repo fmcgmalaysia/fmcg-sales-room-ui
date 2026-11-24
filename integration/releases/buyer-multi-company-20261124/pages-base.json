@@ -136,5 +136,8 @@
   "assets/logo-orange-white-cropped.png": "16ff99c361171150aabc8ae1c7353b582042d82dae4afea33e883637c00cc5a4",
   "account-room/index.html": "c11d7c3e80db707489d090a2d1f21997547026f3b89ad06a67d7ff3f6a4310fe",
   "buyer-room-20261123-waiting-campaign.html": "42b53b49ad361dc3517f0bec957de6a6b01a4c6572473cb32d72d08a384bd458",
-  "master-shared/workroom-app-header.js": "211feeedddd06ccad1226123c87c45bdd04dd3571a058dd4080c3f64db38dc80"
+  "master-shared/workroom-app-header.js": "211feeedddd06ccad1226123c87c45bdd04dd3571a058dd4080c3f64db38dc80",
+  "buyer-room-20261124-company-switch.html": "f4b353f4d3211905d509da990721dcfbfeca0b62b2d7c8c4f3a39edd4b63731b",
+  "sales-room-20261124-company-switch.html": "acdf1c9bb4ece4b84f4208ee2b1e17a71c7ee63e715cfeb047d9e00154b47b17",
+  "buyer-room/company-switch.js": "6917aeb60206ffb8dd848b323db1c3b39176c060c3da710dee24d97f3e1775e5"
 }
