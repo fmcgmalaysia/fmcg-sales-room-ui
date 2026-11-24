@@ -365,7 +365,7 @@ test('one fake login can select and order separately in two companies, then lose
   assert.equal(wixData.rows('WixBuyerOrders').length, 2);
 });
 
-test('Chrome switches both rooms and retains separate companies in two open order forms', { timeout: 45000 }, async () => {
+test('Chrome switches both rooms, waits for quantity saves and retains separate companies in two open orders', { timeout: 60000 }, async () => {
   let playwright;
   try { playwright = require('playwright'); }
   catch (_) { playwright = require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'); }
@@ -380,6 +380,14 @@ test('Chrome switches both rooms and retains separate companies in two open orde
   quote(first.buyerCompanyId, original.selection.id, 24);
   const navigation = load('buyer-room/wix/buyerCompanyNavigation.js', {}, ['buyerCompanyPath', 'buyerCompanyChooser']);
   const products = wixData.rows('FMCGMALAYSIA').map(product => ({ ...product, id: product._id, mainCategory: 'FOOD' }));
+  let nextQuantityGate;
+  function holdNextQuantity() {
+    let started, resume;
+    const requested = new Promise(resolve => { started = resolve; });
+    const result = new Promise(resolve => { resume = resolve; });
+    nextQuantityGate = { started, result };
+    return { requested, resume };
+  }
 
   function fixtureHost(isCatalogue) {
     const content = isCatalogue ? '/catalogue-frame' : '/buyer-frame';
@@ -421,7 +429,7 @@ window.addEventListener('message', async ({source,data}) => {
     }
     if (data.type==='BUYER_ROOM_SAVE_QTY') {
       const result=await window.qaRPC('quantity',data.itemId,data.quantityCtn);
-      post('BUYER_ROOM_ACTION_RESULT',{...result,itemId:data.itemId,action:'quantity',ok:true});
+      post('BUYER_ROOM_ACTION_RESULT',{ok:true,...result,itemId:data.itemId,action:'quantity'});
     }
     if(data.type==='BUYER_ROOM_SUBMIT_ORDER'){
       const result=await window.qaRPC('order',data.lines,data.requestId,data.customerPoNumber);
@@ -449,7 +457,15 @@ window.addEventListener('message', async ({source,data}) => {
       if (method === 'selection') return catalogue.getCatalogueSelectionState(scope);
       if (method === 'workspace') return buyer.getBuyerWorkspace(scope);
       if (method === 'add') return catalogue.addCatalogueSelection(args[0], scope);
-      if (method === 'quantity') return buyer.saveBuyerQuantity(args[0], args[1], scope);
+      if (method === 'quantity') {
+        if (nextQuantityGate) {
+          const gate = nextQuantityGate;
+          nextQuantityGate = null;
+          gate.started({ customerId: id, quantity: args[1] });
+          if (!await gate.result) return { ok: false, message: 'QA save failed.' };
+        }
+        return buyer.saveBuyerQuantity(args[0], args[1], scope);
+      }
       if (method === 'order') return buyer.submitBuyerOrder(args[0], scope, args[1], args[2] || '');
       throw new Error('Unknown fixture operation.');
     });
@@ -466,10 +482,11 @@ window.addEventListener('message', async ({source,data}) => {
         '/buyer-frame': 'buyer-room-20261124-company-switch.html',
         '/catalogue-frame': 'buyer-room/catalogue/wix/catalogue-company-switch.inline.html',
         '/master-shared/shipment-batches.js': 'master-shared/shipment-batches.js',
-        '/master-shared/workroom-app-header.js': 'master-shared/workroom-app-header.js'
+        '/master-shared/mobile-menu.js': 'master-shared/mobile-menu.js',
+        '/master-shared/mobile-menu.css': 'master-shared/mobile-menu.css'
       };
       return assets[url.pathname] ? route.fulfill({ path: path.join(root, assets[url.pathname]),
-        contentType: url.pathname.endsWith('.js') ? 'application/javascript' : 'text/html' }) : route.abort();
+        contentType: url.pathname.endsWith('.js') ? 'application/javascript' : url.pathname.endsWith('.css') ? 'text/css' : 'text/html' }) : route.abort();
     });
 
     const origin = 'https://companies.example.test';
@@ -533,9 +550,50 @@ window.addEventListener('message', async ({source,data}) => {
     quote(second.buyerCompanyId, selection.id, 36);
     await other.goto(origin + '/buyer-room?company=' + second.buyerCompanyId);
     await room.goto(origin + '/buyer-room?company=' + first.buyerCompanyId);
+    await frame(room).locator('#prepareMobileOrder').click();
+    const pendingSave = holdNextQuantity();
+    const orderQty = frame(room).locator('#orderRows input[data-qty]').first();
+    await orderQty.fill('4');
+    await orderQty.press('Tab');
+    assert.deepEqual(await pendingSave.requested, { customerId: first.buyerCompanyId, quantity: 4 });
+    await changeCompany.click();
+    await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
+    await frame(room).getByText('Saving your quantities before switching companies…').waitFor();
+    assert.equal(new URL(room.url()).searchParams.get('company'), first.buyerCompanyId);
+    pendingSave.resume(true);
+    await frame(room).locator('#companyName').filter({ hasText: /^Company ZZZ$/ }).waitFor();
+    assert.equal((await buyer.getBuyerWorkspace(first)).myList[0].orderQtyCtn, 4);
+
+    await room.setViewportSize({ width: 390, height: 820 });
+    await room.goto(origin + '/buyer-room?company=' + first.buyerCompanyId);
+    await frame(room).locator('#prepareMobileOrder').click();
+    const failedSave = holdNextQuantity();
+    await frame(room).locator('#orderRows [data-mobile-order-id]').first().click();
+    await frame(room).locator('#mobileQtyInput').fill('9');
+    await frame(room).locator('#mobileQtyForm .mobile-qty-save').click();
+    assert.deepEqual(await failedSave.requested, { customerId: first.buyerCompanyId, quantity: 9 });
+    await changeCompany.click();
+    await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
+    failedSave.resume(false);
+    await frame(room).getByText('Quantity could not be saved. You are still in the current company. Please retry.').waitFor();
+    assert.equal(new URL(room.url()).searchParams.get('company'), first.buyerCompanyId);
+    await changeCompany.click();
+    await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
+    await frame(room).getByRole('dialog', { name: 'Unsaved quantities' }).getByRole('button', { name: 'Stay and edit quantities' }).click();
+    await frame(room).locator('#orderRows [data-mobile-order-id]').first().click();
+    assert.equal(await frame(room).locator('#mobileQtyInput').inputValue(), '9');
+    await frame(room).locator('#mobileQtyClose').click();
+    await changeCompany.click();
+    await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
+    await frame(room).getByRole('dialog', { name: 'Unsaved quantities' }).getByRole('button', { name: 'Discard and switch' }).click();
+    await frame(room).locator('#mobileCompanyName').filter({ hasText: /^Company ZZZ$/ }).waitFor();
+    assert.equal((await buyer.getBuyerWorkspace(first)).myList[0].orderQtyCtn, 4);
+    await room.setViewportSize(desktopViewport);
+    await room.goto(origin + '/buyer-room?company=' + first.buyerCompanyId);
     async function prepare(page, qty) {
       await frame(page).locator('#prepareMobileOrder').click();
       const input = frame(page).locator('#orderRows input[data-qty]').first();
+      if (await input.evaluate(element => element.readOnly)) await frame(page).locator('[data-qty-edit]').first().click();
       await input.fill(String(qty));
       await input.press('Tab');
       await frame(page).locator('#submitOrder').click();

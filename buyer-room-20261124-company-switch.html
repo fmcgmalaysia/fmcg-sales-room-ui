@@ -797,6 +797,42 @@ function markDisplayedQuotesSeen(view,items){
 }
 function markQuotesSeen(){try{localStorage.setItem(state.quoteStorageKey,JSON.stringify(state.quoteSnapshot))}catch{}state.newQuoteItems=[];updateNotificationBadge()}
 function quantityEditsBlocked(){return state.pendingQuantities.size>0||[...state.quantityDrafts.values()].some(draft=>draft.editing||draft.error)}
+let companySwitchAfterSave = null;
+const discardCompanyQuantities = document.createElement('dialog');
+discardCompanyQuantities.className = 'buyer-company-dialog';
+discardCompanyQuantities.setAttribute('aria-labelledby', 'discardCompanyQuantitiesTitle');
+discardCompanyQuantities.innerHTML = '<h2 id="discardCompanyQuantitiesTitle">Unsaved quantities</h2><p>Stay to save your changes, or discard the unsaved changes and switch companies.</p><div class="buyer-company-choices"><button type="button" data-keep-quantities>Stay and edit quantities</button><button type="button" data-discard-quantities>Discard and switch</button></div>';
+document.body.append(discardCompanyQuantities);
+
+document.addEventListener('buyer-company-switch-request', event => {
+  if (!quantityEditsBlocked()) return;
+  event.preventDefault();
+  const { proceed, close } = event.detail;
+  close();
+  if (state.pendingQuantities.size) {
+    companySwitchAfterSave = { customerId: state.customerId, proceed };
+    toast('Saving your quantities before switching companies…');
+    return;
+  }
+  discardCompanyQuantities.querySelector('[data-keep-quantities]').onclick = () => discardCompanyQuantities.close();
+  discardCompanyQuantities.querySelector('[data-discard-quantities]').onclick = () => {
+    discardCompanyQuantities.close();
+    proceed();
+  };
+  discardCompanyQuantities.showModal();
+});
+
+function continueCompanySwitchAfterSave() {
+  if (!companySwitchAfterSave || state.pendingQuantities.size) return;
+  const { customerId, proceed } = companySwitchAfterSave;
+  companySwitchAfterSave = null;
+  if (state.customerId !== customerId) return;
+  if (quantityEditsBlocked()) {
+    toast('Finish the remaining quantity changes before switching companies.');
+    return;
+  }
+  proceed();
+}
 function rememberQuantityDraft(item,input){
   const key=String(item.id),draft=state.quantityDrafts.get(key)||{committedQty:num(input.dataset.committedQty)};
   draft.value=input.value;draft.editing=true;draft.error='';draft.awaitingEcho=false;state.quantityDrafts.set(key,draft);item.orderQtyCtn=Math.max(0,Math.floor(num(input.value)));summary()
@@ -842,6 +878,8 @@ function finishQuantity(result){
   if(!pending){if(!result.ok&&result.message)toast(result.message);return}
   const item=state.my.find(x=>String(x.id)===key);
   if(!result.ok){
+    const cancelledCompanySwitch = Boolean(companySwitchAfterSave);
+    companySwitchAfterSave = null;
     hideOrderWait();
     state.quantityReviewRequested=false;
     state.pendingQuantities.delete(key);
@@ -853,14 +891,16 @@ function finishQuantity(result){
       }
     }
     if(item){item.orderQtyCtn=draft?num(draft.value):pending.committedQty;item.qtyEditedAt=pending.committedAt;item.qtyEditedBy=pending.committedBy}
-    renderOrder(key);toast(result.message||'Quantity could not be saved. Please try again.');return;
+    renderOrder(key);toast(cancelledCompanySwitch
+      ? 'Quantity could not be saved. You are still in the current company. Please retry.'
+      : result.message||'Quantity could not be saved. Please try again.');return;
   }
   pending.committedQty=num(result.quantityCtn);pending.committedAt=result.qtyEditedAt||'';pending.committedBy=result.qtyEditedBy||'';
   if(pending.desiredQty!==pending.committedQty){pending.sentQty=pending.desiredQty;post('BUYER_ROOM_SAVE_QTY',{itemId:key,quantityCtn:pending.desiredQty});return}
   state.pendingQuantities.delete(key);
   const draft=state.quantityDrafts.get(key);if(draft){draft.value=String(pending.committedQty);draft.committedQty=pending.committedQty;draft.savedAt=pending.committedAt;draft.savedBy=pending.committedBy;draft.error='';draft.awaitingEcho=true;delete draft.mobileSortQty}
   if(item){item.orderQtyCtn=pending.committedQty;item.qtyEditedAt=pending.committedAt;item.qtyEditedBy=pending.committedBy}
-  renderOrder(key);continueQuantityReview();
+  renderOrder(key);continueQuantityReview();continueCompanySwitchAfterSave();
 }
 function showOrderWait(preparing=false){$('orderWaitTitle').textContent=preparing?'Preparing your order…':'Sending your order…';$('orderWaitCopy').textContent=preparing?'Saving your latest quantities.':'This may take about 10 seconds.';$('orderWaitBg').classList.add('show');$('orderWaitBg').setAttribute('aria-hidden','false')}
 function hideOrderWait(){$('orderWaitBg').classList.remove('show');$('orderWaitBg').setAttribute('aria-hidden','true')}

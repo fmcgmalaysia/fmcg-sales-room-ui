@@ -75,8 +75,14 @@
       if (company.customerId === access.currentId) button.setAttribute('aria-current', 'true');
       button.onclick = () => {
         if (company.customerId === access.currentId) { dialog.close(); return; }
-        parent.postMessage({ type: 'BUYER_COMPANY_SWITCH', customerId: company.customerId }, '*');
-        Array.from(choices.children).forEach(choice => { choice.disabled = true; });
+        const proceed = () => {
+          if (!access.companies.some(option => option.customerId === company.customerId)) return;
+          parent.postMessage({ type: 'BUYER_COMPANY_SWITCH', customerId: company.customerId }, '*');
+          Array.from(choices.children).forEach(choice => { choice.disabled = true; });
+        };
+        if (access.blocked || document.dispatchEvent(new CustomEvent('buyer-company-switch-request', {
+          cancelable: true, detail: { proceed, close: () => dialog.close() }
+        }))) proceed();
       };
       return button;
     }));
