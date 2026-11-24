@@ -22,7 +22,13 @@ for (const [filename, expected] of Object.entries(baseline)) {
   assert.equal(sha256(path.join(site, filename)), expected, 'Previously deployed asset changed: ' + filename);
 }
 
-const filename = 'buyer-room/company-switch.js';
-assert.ok(Object.hasOwn(baseline, filename), 'The deployed company switch asset could not be verified.');
-fs.copyFileSync(path.join(repo, filename), path.join(site, filename));
-console.log(filename, sha256(path.join(site, filename)));
+const assets = [
+  ['buyer-room-20261124-company-switch.html', 'buyer-room-20261125-order-recovery.html'],
+  ['sales-room-20261124-company-switch.html', 'sales-room-20261125-linked-registration.html'],
+  ['buyer-room/company-switch.js', 'buyer-room/company-switch-20261125.js']
+];
+for (const [source, filename] of assets) {
+  assert.ok(!Object.hasOwn(baseline, filename), 'Release must keep existing assets: ' + filename);
+  fs.copyFileSync(path.join(repo, source), path.join(site, filename), fs.constants.COPYFILE_EXCL);
+  console.log(filename, sha256(path.join(site, filename)));
+}

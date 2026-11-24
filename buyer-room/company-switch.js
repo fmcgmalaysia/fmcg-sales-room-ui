@@ -1,7 +1,7 @@
 (() => {
   const container = document.querySelector('[data-buyer-company-switch]');
   if (!container) return;
-  container.dataset.build = '20261124-buyer-company-v2';
+  container.dataset.build = '20261125-buyer-company-v3';
 
   const style = document.createElement('style');
   style.textContent = `

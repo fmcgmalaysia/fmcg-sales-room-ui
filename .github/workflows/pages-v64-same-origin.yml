@@ -1933,7 +1933,7 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 45341263045
+          run-id: 45348040551
           github-token: ${{ github.token }}
           path: ${{ format('{0}/buyer-multi-company-base', runner.temp) }}
 
@@ -1944,8 +1944,8 @@ jobs:
           mkdir "$site"
           tar --extract --file "$RUNNER_TEMP/buyer-multi-company-base/artifact.tar" --directory "$site"
           node tools/stage-buyer-multi-company.cjs "$site"
-          node --check "$site/buyer-room/company-switch.js"
-          node --test --test-name-pattern="one fake login" tests/buyer-multi-company.test.cjs
+          node --check "$site/buyer-room/company-switch-20261125.js"
+          node --test --test-name-pattern="one fake login|registration|Finance ledgers" tests/buyer-multi-company.test.cjs
 
       - name: Upload the scoped Buyer company selection package
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'buyer-multi-company-only'

@@ -560,7 +560,7 @@ window.addEventListener('message', async ({source,data}) => {
     });
     await context.route('**/*', route => {
       const url = new URL(route.request().url());
-      if (url.hostname === 'fmcgmalaysia.github.io' && url.pathname.endsWith('/buyer-room/company-switch.js')) {
+      if (url.hostname === 'fmcgmalaysia.github.io' && /\/buyer-room\/company-switch(?:-20261125)?\.js$/.test(url.pathname)) {
         return route.fulfill({ path: path.join(root, 'buyer-room/company-switch.js'), contentType: 'application/javascript' });
       }
       if (url.hostname !== 'companies.example.test') return route.abort();

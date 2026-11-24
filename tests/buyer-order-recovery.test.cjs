@@ -142,7 +142,7 @@ test('Chrome restores the original company request and acknowledges the visible 
         '/buyer-frame': ['buyer-room-20261124-company-switch.html', 'text/html'],
         '/master-shared/mobile-menu.css': ['master-shared/mobile-menu.css', 'text/css'],
         '/master-shared/mobile-menu.js': ['master-shared/mobile-menu.js', 'application/javascript'],
-        '/fmcg-sales-room-ui/buyer-room/company-switch.js': ['buyer-room/company-switch.js', 'application/javascript']
+        '/fmcg-sales-room-ui/buyer-room/company-switch-20261125.js': ['buyer-room/company-switch.js', 'application/javascript']
       };
       const asset = assets[url.pathname];
       return asset && ['buyer.example.test', 'fmcgmalaysia.github.io'].includes(url.hostname)
