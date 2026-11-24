@@ -402,6 +402,44 @@ test('a reduced selection allowance blocks new orders but still permits recovery
   assert.equal(wixData.rows('WixBuyerOrderLines').length, 202);
 });
 
+test('an interrupted request does not block the receipt of a completed order in another tab', async () => {
+  const { wixData, buyer, catalogue, quote } = fixture();
+  const { selection } = await catalogue.addCatalogueSelection('shared-product', first);
+  quote(first.buyerCompanyId, selection.id, 24);
+  const lines = [{ itemId: selection.id, quantityCtn: 2 }];
+  const alreadyComplete = randomUUID();
+  const completed = await buyer.submitBuyerOrder(lines, first, alreadyComplete, 'QA-SAME-PO');
+
+  const interrupted = randomUUID();
+  const insert = wixData.insert;
+  wixData.insert = async (collection, row) => {
+    if (collection === 'WixBuyerOrderLines') throw Error('QA interrupted second request');
+    return insert(collection, row);
+  };
+  try {
+    await assert.rejects(buyer.submitBuyerOrder(lines, first, interrupted, 'QA-SAME-PO'), /QA interrupted second request/);
+  } finally { wixData.insert = insert; }
+  const secondOrder = wixData.rows('WixBuyerOrders').find(row => row._id === interrupted);
+  const targetLockId = 'ORDER-LOCK-' + completed.orderId;
+  const targetLock = () => wixData.rows('WixOrderAudit').find(row => row._id === targetLockId);
+  assert.equal(secondOrder.isComplete, false);
+  assert.equal(JSON.parse(targetLock().payload).requestId, interrupted);
+
+  const receipt = await buyer.submitBuyerOrder(lines, first, alreadyComplete, 'QA-SAME-PO');
+  assert.equal(receipt.orderId, completed.orderId);
+  assert.equal(receipt.status, 'CONFIRMED');
+  assert.equal(JSON.parse(targetLock().payload).requestId, interrupted);
+  assert.equal(wixData.rows('WixBuyerOrderLines').length, 1);
+  await assert.rejects(buyer.submitBuyerOrder(lines, first, alreadyComplete, 'ALTERED-PO'), /Order request conflict/);
+  await assert.rejects(buyer.submitBuyerOrder(lines, first, randomUUID(), 'THIRD-TAB'), /previous order request is still being saved/);
+
+  const retried = await buyer.submitBuyerOrder(lines, first, interrupted, 'QA-SAME-PO');
+  assert.equal(retried.orderId, secondOrder.orderId);
+  assert.equal(retried.status, 'CONFIRMED');
+  assert.equal(targetLock(), undefined);
+  assert.equal(wixData.rows('WixBuyerOrders').length, 2);
+});
+
 test('the entry stays closed while company access is unknown and opens only after an authorized choice', async () => {
   const { loadBuyerCompanyAccess } = load('buyer-room/wix/buyerCompanyNavigation.js', {}, ['loadBuyerCompanyAccess']);
   const unavailable = async () => { throw new Error('Temporary read failure'); };

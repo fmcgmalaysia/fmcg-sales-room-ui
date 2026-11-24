@@ -727,11 +727,16 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
   const requestFingerprint = JSON.stringify(requests.map(line => [normalize(line.itemId), Number(line.quantityCtn)]).sort((a, b) => a[0].localeCompare(b[0]))) + (buyerPo ? '|PO:' + JSON.stringify(buyerPo) : '');
   let orderRecord = null;
   try { orderRecord = await wixData.get(BUYER_ORDER_COLLECTION, submissionId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* New submission. */ }
-  if (orderRecord) {
-    const stored = payloadData(orderRecord);
+  const stored = orderRecord ? payloadData(orderRecord) : null;
+  if (stored) {
     if (normalize(stored.customerId) !== buyer.customerId || normalize(stored.orderId) !== id) throw new Error('Order request conflict. Please contact Sales Room.');
     if (stored.requestFingerprint && stored.requestFingerprint !== requestFingerprint) throw new Error('Order request conflict. Please refresh the order form.');
     if (stored.isComplete) { await releaseBuyerAdditionLocks(stored, buyer); return { ok: true, orderId: id, status: stored.status }; }
+  }
+  const unfinished = (await buyerCustomerRecords(BUYER_ORDER_COLLECTION, buyer.customerId)).map(payloadData)
+    .find(order => !order.isComplete && order.additionVersion === 1 && order.requestId !== submissionId);
+  if (unfinished) throw new Error('A previous order request is still being saved. Retry that request before sending another.');
+  if (stored) {
     if (!Array.isArray(stored.pendingLines) || stored.pendingLines.length !== stored.lineCount) throw new Error('Incomplete order requires Sales Room review.');
     return stored.additionVersion === 1 ? finishBuyerAddition(stored, buyer) : finishBuyerOrder(stored, buyer);
   }
@@ -796,12 +801,8 @@ async function withBuyerSubmissionLock(buyer, requestId, action) {
   const lockId = 'BUYER-SUBMIT-LOCK-' + buyer.customerId;
   try { await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: lockId, title: lockId, payload: JSON.stringify({ action: 'BUYER_SUBMISSION_LOCK', customerId: buyer.customerId, requestId }) }, { suppressAuth: true }); }
   catch (_) { throw new Error('Another order request is being saved. Retry this same submission shortly.'); }
-  try {
-    const unfinished = (await buyerCustomerRecords(BUYER_ORDER_COLLECTION, buyer.customerId)).map(payloadData)
-      .find(order => !order.isComplete && order.additionVersion === 1 && order.requestId !== requestId);
-    if (unfinished) throw new Error('A previous order request is still being saved. Retry that request before sending another.');
-    return await action();
-  } finally { await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true }); }
+  try { return await action(); }
+  finally { await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true }); }
 }
 function buyerAdditionEligible(order, line, incoming) {
   if (!order?.isComplete || order.receiptOnly || order.submittedAt || normalize(order.destination) || !['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) return false;
