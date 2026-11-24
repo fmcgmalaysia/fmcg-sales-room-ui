@@ -1,0 +1,22 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { createHash } = require('node:crypto');
+
+const room = path.join(process.argv[2], 'purchase-live');
+const app = path.join(room, 'app.js');
+const frame = path.join(room, 'index-20261124-split-surplus.html');
+const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+const liveApp = fs.readFileSync(app);
+const liveFrame = fs.readFileSync(frame);
+assert.equal(sha(liveApp), '71bff0d844adfd880d83f94d4cf295c5b6cfc4d91a0f761916110592342957f6');
+assert.equal(sha(liveFrame), '218c808f15dc569bf1f24e17adb123e76c987844a5b1bb3cf900ab0886874668');
+const prior = 'src="app.js?v=20261120-shortfall-dispatch-confirmation-v1"';
+const markup = liveFrame.toString('utf8');
+assert.equal(markup.split(prior).length, 2);
+const next = markup.replace(prior,'src="app.js?v=20261124-purchase-shortfall-refresh-v1"');
+const candidate = fs.readFileSync(path.resolve(__dirname, '../purchase-live/app.js'));
+assert.match(candidate.toString('utf8'), /function receiptSnapshot\(caseId\)/);
+fs.writeFileSync(app,candidate);
+fs.writeFileSync(frame,next);
+console.log('Staged Purchase shortfall refresh in the existing frame and app paths.');

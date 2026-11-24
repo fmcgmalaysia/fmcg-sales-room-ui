@@ -43,6 +43,7 @@
     return [...labels,ids.length>3?'+'+(ids.length-3)+' tasks 笔任务':'',action,message,saveIssue&&saveIssue!==message?saveIssue:'','Ref 操作编号: '+current.requestId].filter(Boolean).join(' · ');
   }
   const drafts=new Map(), reads=new Map();
+  let latestReceiptWorkspace=null;
   let draftConflict=false,reviewAfterRefresh=false,supplierReview=null,allocationFilter=false;
   let poData=null,poLoading=null,poLoadError='',poTab='ACTIVE',poSearch='',poSupplier='';
   let poHistoryYear='',activityStaff='',activityType='',activityFrom='',activityTo='',activitySearch='';
@@ -197,13 +198,25 @@
       saveIssue='';saveInFlight=false;if(field)field.textContent='';
       showStatus(isSupplierSave(savePending)?supplierSavingText:purchaseConfirmingText);cacheDraft();checkSaveReceipt(savePending);return;
     }
-    saveIssue=error;const feedback=saveDiagnostic(savePending,error);showStatus(feedback,true);if(field)field.textContent=feedback+' 当前输入仍保留。';
+    const receiptConflict=failedAllocation.operation==='QUANTITY_CASE'&&modal.open&&dialogContext?.receipt&&field&&
+      /Quantity case changed|shortage was already sent to Support/i.test(error);
+    saveIssue=error;const feedback=saveDiagnostic(savePending,error);
+    if(receiptConflict)showStatus('');
+    else{showStatus(feedback,true);if(field)field.textContent=feedback+' 当前输入仍保留。';}
     saveInFlight=false;saveButtonState(false);
-    if(/changed|revision/i.test(error)){if(savePending.type==='PURCHASE_SUPPLIER_SAVE_REQUEST'&&field)field.innerHTML=esc(feedback)+' 当前输入仍保留。 <button class="btn" id="reviewSupplier">Review current data</button>';else draftConflict=true;}
+    if(!receiptConflict&&/changed|revision/i.test(error)){if(savePending.type==='PURCHASE_SUPPLIER_SAVE_REQUEST'&&field)field.innerHTML=esc(feedback)+' 当前输入仍保留。 <button class="btn" id="reviewSupplier">Review current data</button>';else draftConflict=true;}
     if(saveDialog?.content&&saveDialog.content!==document.querySelector('#dialogContent')){viewPendingSave();const originalError=document.querySelector('#dialogError');if(originalError)originalError.textContent=feedback+' 当前输入仍保留。';}freezeDialog(false);savePending=null;saveOrigin=null;saveDialog=null;const hadRowOrder=!!sequenceDraft;migrateRowOrder();document.querySelector('#companySelect').disabled=false;if(hadRowOrder||draftConflict&&view==='room')render();allocationUi()?.rejected(failedAllocation,error,true);updateSupplierSaveButton();cacheDraft();paintSaveTracker();
+    if(receiptConflict)requireReceiptReview('This case changed while saving. Your choices are still here. 保存时收货差额已变更，选择已保留。');
   });
   function saveEdits(){if(savePending){showStatus(saveDiagnostic(savePending,'新的修改尚未提交；先核对原保存，草稿仍保留。'),true);return;}for(const [id,item] of drafts){const row={...data.tasks.find(row=>row.id===id),...item.changes};if(['lpPc','lpCtn','disc1','disc2','disc3'].every(key=>typeof row[key]==='number'&&Number.isFinite(row[key]))){const beforeDiscount3=row.lpCtn*(1-row.disc1)*(1-row.disc2);if(beforeDiscount3-row.disc3<0){showStatus('未保存：Barcode '+row.barcode+' 的 Disc.3（MYR/CTN）超过了折后成本（约 '+num(beforeDiscount3)+'）。当前 Net Cost '+num(beforeDiscount3-row.disc3)+'，不能为负数；请修正后再 Save。',true);return;}}}if([...drafts.values()].some(item=>Object.values(item.invalid||{}).some(Boolean))){showStatus('请先修正标红的成本或折扣，输入已保留。',true);return;}if(!drafts.size)return;const edits=[...drafts].map(([taskId,item])=>({taskId,version:item.version,changes:item.changes}));const input={edits};mutate('PURCHASE_SAVE_REQUEST',{operation:'EDIT',input});}
-  function roomRows(){const rows=(data?.tasks||[]).filter(row=>(view==='active'?(!activeCustomer||row.customerId===activeCustomer):row.customerId===customerId)&&!row.archived);return [...new Set(rows.map(row=>row.customerId))].flatMap(id=>{const ordered=sequenceDraft&&sequenceCustomerId===id?sequenceDraft:displayRows().taskSequence(data,id,displayRows().current(data,id)),ranks=new Map(ordered.map((key,index)=>[key,index]));return rows.filter(row=>row.customerId===id).sort((a,b)=>(ranks.get(a.id)??Infinity)-(ranks.get(b.id)??Infinity));});}
+  const customerCollator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
+const compareCustomerText = (a, b) => customerCollator.compare(String(a ?? '').trim(), String(b ?? '').trim());
+  function orderedCustomerIds(rows) {
+    const names = new Map((data?.customers || []).map(customer => [customer.id, customer.shortName || customer.name]));
+    return [...new Set(rows.map(row => row.customerId))].sort((a, b) =>
+      compareCustomerText(names.get(a) || a, names.get(b) || b) || compareCustomerText(a, b));
+  }
+  function roomRows(){const rows=(data?.tasks||[]).filter(row=>(view==='active'?(!activeCustomer||row.customerId===activeCustomer):row.customerId===customerId)&&!row.archived);return orderedCustomerIds(rows).flatMap(id=>{const ordered=sequenceDraft&&sequenceCustomerId===id?sequenceDraft:displayRows().taskSequence(data,id,displayRows().current(data,id)),ranks=new Map(ordered.map((key,index)=>[key,index]));return rows.filter(row=>row.customerId===id).sort((a,b)=>(ranks.get(a.id)??Infinity)-(ranks.get(b.id)??Infinity));});}
   function drawBrands(){if(!supplierContext)return;const context=supplierContext,query=document.querySelector('#brandSearch').value.trim().toUpperCase(),only=document.querySelector('#selectedBrandsOnly').checked,names=[...new Set([...context.options,...context.selected])].sort();document.querySelector('#brandOptions').innerHTML=names.filter(name=>name.includes(query)&&(!only||context.selected.has(name))).map(name=>`<label class="brand-choice"><input type="checkbox" data-brand="${esc(name)}" ${context.selected.has(name)?'checked':''}><span>${esc(name)}</span></label>`).join('');document.querySelector('#selectedBrandCount').textContent=context.selected.size+' selected';document.querySelector('#brandTabCount').textContent=context.selected.size;updateSupplierSaveButton();}
   const supplierFields={companyName:'supplierName',shortName:'supplierShortName',registrationNo:'supplierRegistration',registrationNoNew:'supplierRegistrationNew',tinNo:'supplierTin',officeTel:'supplierPhone',email:'supplierEmail',companyWebsite:'supplierWebsite',address:'supplierAddress',warehouseAddress:'supplierWarehouseAddress',bankName:'supplierBankName',bankAccountNo:'supplierBankAccountNo'};
   function supplierFormValues(){
@@ -248,13 +261,14 @@
   const supplierName = id => data.suppliers.find(row => row.id === id)?.shortName || data.suppliers.find(row => row.id === id)?.name || id || '—';
   function showStatus(message, error = false) { status.classList.remove('complete');status.classList.toggle('error', error); status.textContent = message; }
   function editingTask(){return savePending||costRetry||drafts.size||sequenceDraft||allocationUi()?.dirty()||modal.open||document.activeElement?.matches?.('input,select,textarea');}
-  function request(quiet=false,confirmedSave=false,receiptsOnly=false,completedSave=null) {
-    if(quiet&&!confirmedSave&&pending?.company===company)return;
-    const requestId = crypto.randomUUID(); pending = { requestId, company, quiet, confirmedSave,receiptsOnly,completedSave };
+  function request(quiet=false,confirmedSave=false,receiptsOnly=false,completedSave=null,receiptReview=null) {
+    if(quiet&&!confirmedSave&&!receiptReview&&pending?.company===company)return;
+    const requestId = crypto.randomUUID(); pending = { requestId, company, quiet, confirmedSave,receiptsOnly,completedSave,receiptReview };
     document.getElementById('refresh').hidden = true;
     if(!quiet){data = null; query = '';showStatus('正在读取 ' + company + ' 的真实采购资料…'); app.innerHTML = '<div class="live-empty">Loading Master CMS…</div>';}
     window.parent.postMessage({ type:'PURCHASE_WORKSPACE_REQUEST', company, requestId }, '*');
     setTimeout(() => { if (pending?.requestId !== requestId) return; pending = null;
+      if(receiptReview){if(modal.open&&dialogContext===receiptReview)requireReceiptReview('Could not refresh. Please try again. 读取失败，请重试。');return;}
       document.getElementById('refresh').hidden = false;
       showStatus('Could not load Purchase. 采购资料读取超时。', true); }, 30000);
   }
@@ -262,23 +276,34 @@
     const message = event.data || {};
     if (event.source !== window.parent || message.type !== 'PURCHASE_WORKSPACE_RESULT' || !pending ||
       message.requestId !== pending.requestId || message.company !== pending.company) return;
-    const quiet=pending.quiet,confirmedSave=pending.confirmedSave,receiptsOnly=pending.receiptsOnly,completedSave=pending.completedSave;pending = null;
+    const {quiet,confirmedSave,receiptsOnly,completedSave,receiptReview}=pending;pending = null;
+    const reviewingReceipt=receiptReview&&modal.open&&dialogContext===receiptReview;
     if(quiet&&editingTask()&&!receiptsOnly&&(!confirmedSave||savePending||costRetry))return;
     const preserveEditing=quiet&&Boolean(drafts.size||sequenceDraft||modal.open||document.activeElement?.matches?.('input,select,textarea'));
-    if(quiet&&!message.ok){showStatus(message.error||'后台更新失败，当前资料已保留。',true);return;}
+    if(quiet&&!message.ok){
+      if(reviewingReceipt)requireReceiptReview('Could not refresh. Please try again. 读取失败，请重试。');
+      else if(!receiptReview)showStatus(message.error||'后台更新失败，当前资料已保留。',true);
+      return;
+    }
     if (!message.ok) { document.getElementById('refresh').hidden = Boolean(message.canLogin || /access denied|not authorized|no access/i.test(message.error||'')); showStatus(message.error || 'Master data could not be loaded.', true); app.innerHTML = '<div class="live-empty">资料未载入。请核对员工登录及 Purchase Access。'+
       (message.canLogin?'<p><button class="btn primary" id="masterLogin">Sign in to Master</button></p>':'')+
       (message.identity?'<p>Master Member ID: <b>'+esc(message.identity.memberId)+'</b></p><p>'+esc(message.identity.email)+'</p>':'')+'</div>'; return; }
     const result = message.workspace;
     if (result?.company !== company || !Array.isArray(result.tasks) || !Array.isArray(result.customers) || !Array.isArray(result.suppliers)) {
+      if(reviewingReceipt){requireReceiptReview('The current quantities could not be confirmed. 无法核对最新数量。');return;}
       document.getElementById('refresh').hidden = false;
       showStatus('Master 回执格式不完整，未显示任何资料。', true); return;
     }
+    latestReceiptWorkspace=result;
     if(receiptsOnly&&editingTask()){
       if(savePending||costRetry)return;
       const current=new Map(result.tasks.map(task=>[task.id,task]));
       for(const task of data.tasks){const fresh=current.get(task.id);if(!fresh)continue;task.warehouse=fresh.warehouse;task.receiptHistory=fresh.receiptHistory;task.quantityCases=fresh.quantityCases;}
-      window.purchaseTaskInfo?.refreshReceipts(data,sourceQuantityCells);allocationUi()?.refreshReceiptLocks();return;
+      window.purchaseTaskInfo?.refreshReceipts(data,sourceQuantityCells);allocationUi()?.refreshReceiptLocks();
+      if(reviewingReceipt)refreshReceiptDecision(receiptReview);
+      else if(modal.open&&dialogContext?.receipt&&receiptSnapshot(dialogContext.caseId)?.key!==dialogContext.receipt.key)
+        requireReceiptReview('Quantities or status have changed. 收货数量或处理状态有更新。');
+      return;
     }
     const bundledOrders=result.purchaseOrders;
     if(bundledOrders&&(bundledOrders.company!==company||!Array.isArray(bundledOrders.orders))){showStatus('采购单回执不完整，当前资料已保留。',true);return;}
@@ -418,7 +443,44 @@ const stages=[
     const elsewhere=data.tasks.filter(task=>task.id!==row.id&&(task.id===parent.id||task.customerDemandTaskId===parent.id)).reduce((sum,task)=>sum+(task.procurement?.totalCtn||0),0);
     return Math.max(0,parent.ord-elsewhere);
   }
-  function receiptDecisionEditor(row,item){
+  function receiptSnapshot(caseId){
+    const workspace=latestReceiptWorkspace?.company===company?latestReceiptWorkspace:data;
+    const row=workspace?.tasks.find(task=>task.quantityCases?.some(item=>item.id===caseId));
+    const item=row?.quantityCases.find(item=>item.id===caseId);
+    if(item?.kind!=='RECEIPT')return null;
+    const root=row.procurementSource?workspace.tasks.find(task=>task.id===row.customerDemandTaskId):row;
+    const demand=root?.requested??root?.ord,covered=root?.supplyAllocation?.received;
+    const known=Number.isSafeInteger(demand)&&Number.isSafeInteger(covered)&&covered>=0&&covered<=demand;
+    const version=workspace.quantityCasesVersion;
+    return {row,item,demand,covered,shortage:known?demand-covered:null,version,key:JSON.stringify([version,demand,covered])};
+  }
+  function requireReceiptReview(message,reading=false){
+    const confirm=document.getElementById('saveReceiptDecision'),refresh=document.getElementById('refreshReceiptDecision');
+    if(!confirm||!refresh)return;
+    confirm.disabled=true;
+    refresh.hidden=false;
+    refresh.disabled=reading;
+    document.getElementById('dialogError').textContent=message;
+  }
+  function refreshReceiptDecision(previous){
+    const next=receiptSnapshot(previous.caseId);
+    if(!next){requireReceiptReview('This case is no longer open. Close this window to check the task. 此差额已不在待处理清单，请关闭后核对任务。');return;}
+    const draft={
+      delivery:document.getElementById('receiptSolution').value,
+      supplier:document.querySelector('input[name="receiptSupplierDecision"]:checked')?.value,
+      route:document.getElementById('shortfallRoute')?.value,
+    };
+    const old=previous.receipt;
+    receiptDecisionEditor(next,draft);
+    const quantityChanged=old.item.accepted!==next.item.accepted||old.item.quantity!==next.item.quantity||
+      old.covered!==next.covered||old.shortage!==next.shortage;
+    if(document.getElementById('saveReceiptDecision')&&next.shortage!==null&&next.version){
+      const before=quantityChanged?'Previously: P.O. received '+qtyDigits(old.item.accepted)+', customer covered '+qtyDigits(old.covered)+'. ':'';
+      document.getElementById('dialogError').textContent=before+'Review the current quantities and confirm again. 请核对上方最新数量，再确认。';
+    }
+  }
+  function receiptDecisionEditor(snapshot,draft){
+    const {row,item,demand,covered,shortage}=snapshot;
     if(item.quantity===0&&item.receivingIssue===false){
       dialogContext={kind:'receipt-review',taskId:row.id,caseId:item.id};
       formDialog('Receipt Review 收货核对',row.po,
@@ -428,17 +490,19 @@ const stages=[
     }
     const decision=item.decision||{},current=decision.supplierDeliveryDecision||'WAIT';
     const readOnly=decision.customerShortfallRoute==='SUPPORT_SPLIT';
-    const root=row.procurementSource?data.tasks.find(task=>task.id===row.customerDemandTaskId):row;
-    const demand=root?.requested??root?.ord,covered=root?.supplyAllocation?.received;
-    const shortage=Number.isSafeInteger(demand)&&Number.isSafeInteger(covered)?Math.max(0,demand-covered):null;
-    dialogContext={kind:'quantity-case',taskId:row.id,caseId:item.id};
+    dialogContext={kind:'quantity-case',taskId:row.id,caseId:item.id,receipt:snapshot};
     const originalFeedback=item.warehouseFeedback?.reason,feedback=originalFeedback==='Supplier short-shipped 供应商少发货'?'Short delivery 供应商少发货':originalFeedback||'Warehouse feedback not available 货仓反馈尚未提供';
     formDialog('Receiving Shortfall 收货差额',row.po,
-      '<div class="receipt-feedback-summary"><div><small>Customer order 客户订货</small><strong>'+qtyDigits(demand)+' CTN</strong></div><div><small>Covered 已覆盖</small><strong>'+qtyDigits(covered)+' CTN</strong></div><div><small>Customer shortage 客户尚缺</small><strong>'+qtyDigits(shortage)+' CTN</strong></div></div><details><summary>Supplier details 供应商明细</summary><div class="receipt-feedback-summary"><div><small>P.O. Qty 采购数量</small><strong>'+qtyDigits(item.planned)+' CTN</strong></div><div><small>Received 已收</small><strong>'+qtyDigits(item.accepted)+' CTN</strong></div><div><small>Outstanding 待收</small><strong>'+qtyDigits(item.quantity)+' CTN</strong></div></div><div class="receipt-feedback-field"><label>Warehouse feedback 货仓反馈</label><div>'+esc(feedback)+'</div></div></details><div class="receipt-feedback-field"><label for="receiptSolution">Next step 处理方式</label><select id="receiptSolution"><option value="WAIT">Await full delivery 等待供应商全数发货</option><option value="STOP">Stop waiting 停止等待</option></select></div><div class="receipt-feedback-options" id="receiptStopOptions" hidden>'+[['CN_PROMISED','Supplier will issue a CN','供应商承诺提供 CN'],['FUTURE_DEDUCTION','Deduct the amount from the next payment','供应商同意下次扣账'],['SUPPLIER_REFUSED','Supplier declined responsibility','供应商不愿意负责']].map(([value,label,chinese])=>'<label><input type="checkbox" name="receiptSupplierDecision" value="'+value+'"'+(decision.supplierDecision===value?' checked':'')+'><span>'+label+'<small>'+chinese+'</small></span></label>').join('')+(shortage>0?'<label for="shortfallRoute">Customer shortage 客户余量</label><select id="shortfallRoute"><option value="">Choose the next step 请选择</option><option value="ALLOCATE">Allocate or borrow 调货或借货</option>'+(covered>0?'<option value="SUPPORT_SPLIT">Notify Support to split 通知 Support 不再等货</option>':'')+'</select>':'')+'</div>',
-      readOnly?'':'<button class="btn primary" id="saveReceiptDecision">Confirm 确定</button>','task');
+      '<div class="receipt-feedback-field"><label>Supplier P.O. 供应商采购单</label></div><div class="receipt-feedback-summary"><div><small>Ordered 采购数量</small><strong>'+qtyDigits(item.planned)+' CTN</strong></div><div><small>Received 仓库实收</small><strong>'+qtyDigits(item.accepted)+' CTN</strong></div><div><small>P.O. shortage 供应商差额</small><strong>'+qtyDigits(item.quantity)+' CTN</strong></div></div><div class="receipt-feedback-field"><label>Customer order 客户订单</label></div><div class="receipt-feedback-summary"><div><small>Ordered 客户订货</small><strong>'+qtyDigits(demand)+' CTN</strong></div><div><small>Covered 客户可用</small><strong>'+qtyDigits(covered)+' CTN</strong></div><div><small>Customer shortage 客户缺口</small><strong>'+qtyDigits(shortage)+' CTN</strong></div></div>'+(covered===0&&item.accepted>0?'<p class="muted">No received stock is currently allocated for this customer. 已收货暂未有可供本客户的分配。</p>':'')+'<details><summary>Warehouse feedback 货仓反馈</summary><p>'+esc(feedback)+'</p></details><div class="receipt-feedback-field"><label for="receiptSolution">Next step 处理方式</label><select id="receiptSolution"><option value="WAIT">Await full delivery 等待供应商全数发货</option><option value="STOP">Stop waiting 停止等待</option></select></div><div class="receipt-feedback-options" id="receiptStopOptions" hidden>'+[['CN_PROMISED','Supplier will issue a CN','供应商承诺提供 CN'],['FUTURE_DEDUCTION','Deduct the amount from the next payment','供应商同意下次扣账'],['SUPPLIER_REFUSED','Supplier declined responsibility','供应商不愿意负责']].map(([value,label,chinese])=>'<label><input type="radio" name="receiptSupplierDecision" value="'+value+'"'+(decision.supplierDecision===value?' checked':'')+'><span>'+label+'<small>'+chinese+'</small></span></label>').join('')+(shortage>0?'<label for="shortfallRoute">Customer shortage 客户余量</label><select id="shortfallRoute"><option value="">Choose the next step 请选择</option><option value="ALLOCATE">Continue to ALLOC 去 ALLOC 调货或借货</option>'+(covered>0?'<option value="SUPPORT_SPLIT">Notify Support to split 通知 Support 不再等货</option>':'')+'</select>':'')+'</div>',
+      readOnly?'':'<button class="btn" id="refreshReceiptDecision" hidden>Refresh quantities 读取最新数量</button><button class="btn primary" id="saveReceiptDecision">Confirm 确定</button>','task');
     modal.classList.add('receipt-feedback-dialog');
-    const solution=document.querySelector('#receiptSolution'),options=document.querySelector('#receiptStopOptions');solution.value=current;
-    const route=document.querySelector('#shortfallRoute');if(route)route.value=decision.customerShortfallRoute||'';
+    const solution=document.querySelector('#receiptSolution'),options=document.querySelector('#receiptStopOptions');solution.value=readOnly?current:draft?.delivery||current;
+    const route=document.querySelector('#shortfallRoute');
+    if(route){
+      const choice=readOnly?decision.customerShortfallRoute:draft?.route??decision.customerShortfallRoute;
+      if([...route.options].some(option=>option.value===choice))route.value=choice;
+    }
+    if(draft&&!readOnly)for(const input of options.querySelectorAll('input'))input.checked=input.value===draft.supplier;
     const show=()=>{options.hidden=solution.value!=='STOP';};solution.onchange=show;show();
     if(readOnly){
       solution.disabled=true;
@@ -446,11 +510,16 @@ const stages=[
       options.querySelectorAll('input').forEach(input=>input.disabled=true);
       document.querySelector('#dialogError').insertAdjacentHTML('beforebegin','<p role="status">Sent to Support for splitting · Read only<br><small>已移交 Support 拆单 · 只读</small></p>');
     }
-    options.querySelectorAll('input').forEach(input=>input.onchange=()=>{if(input.checked)options.querySelectorAll('input').forEach(other=>{if(other!==input)other.checked=false;});});
+    if(!readOnly&&(shortage===null||!snapshot.version))requireReceiptReview('Customer quantities are not available. 客户数量待核对。');
   }
   function quantityCaseEditor(id){
     const row=data.tasks.find(row=>row.quantityCases?.some(item=>item.id===id)),item=row?.quantityCases.find(item=>item.id===id);if(!item)return;
-    if(item.kind==='RECEIPT')return receiptDecisionEditor(row,item);
+    if(item.kind==='RECEIPT'){
+      const snapshot=receiptSnapshot(id);
+      if(snapshot)return receiptDecisionEditor(snapshot);
+      showStatus('This receiving case has changed. 收货差额已更新。',true);
+      return;
+    }
     dialogContext={kind:'quantity-case',taskId:row.id,caseId:id};const decision=item.decision||{},financial=item.kind==='RECEIPT';
     formDialog(financial?'Receiving Issue 收货异常':'Unplaced Qty 未采购数量',row.po,
       '<div class="task-identity"><b>'+esc(row.barcode)+'</b><b>'+esc(row.name)+'</b><span>'+esc(row.packing)+'</span></div><p><b>'+qtyDigits(item.quantity)+' CTN</b> · '+(financial?'Account review required 需财务结案':'Purchase decision 采购员处理')+'</p><div class="source-purchase-form"><label for="caseCustomer">Customer 客户</label><select id="caseCustomer"><option value="PENDING">Pending 待确认</option><option value="WAIT">Wait 继续等货</option><option value="STOP">Stop waiting 不再等待</option></select>'+(financial?'<label for="caseSupplier">Resolution 处理</label><select id="caseSupplier"><option value="PENDING">Pending supplier 待供应商回复</option><option value="REPLENISH">Replenishment 补送或换货</option><option value="REFUND">CN + refund CN及退款</option><option value="CREDIT">CN + future deduction CN下次扣账</option><option value="INTERNAL">Internal loss 内部原因，Admin处理</option></select>':'')+'<label for="caseDate">Expected 预计日期</label><input id="caseDate" type="date" value="'+esc(decision.expectedDate||'')+'"><label for="caseMessage">Customer update 对外说明</label><textarea id="caseMessage" rows="2" maxlength="1000">'+esc(decision.customerMessage||'')+'</textarea><label for="caseReason">Internal note 内部原因</label><textarea id="caseReason" rows="2" maxlength="2000"></textarea></div><p class="muted">'+(financial?'仅保存处理方式不会解除财务风险。内部原因不会传给客户。':'客户原始需求保持不变；这项决定不会解除另一个收货异常。')+'</p>'+(decision.at?'<p class="muted">'+esc(time(decision.at))+' · by '+esc(decision.by)+'</p>':''),'<button class="btn primary" id="saveQuantityCase">Save & Notify 保存并反馈</button>','task');
@@ -554,7 +623,7 @@ const stages=[
   }
   function dashboard(){
     const rows=data.tasks.filter(row=>!row.archived);
-    const customers=`<table class="directory customer-directory"><colgroup>${[34,30,12,12,12].map(w=>`<col style="width:${w}%">`).join('')}</colgroup><thead><tr>${['Customer','Est. Shipment Date','Tasks','Risk','Entry'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${data.customers.map(c=>{const tasks=rows.filter(row=>row.customerId===c.id);return `<tr data-customer-name="${esc(c.name.toLowerCase())}"><td><button class="customerlink" data-dashboard-entry="true" data-customer="${esc(c.id)}">${esc(c.name)}</button></td><td>${tasks.length?shipmentSummary(tasks):'—'}</td><td class="numeric">${bubble(tasks.length)}</td><td class="numeric">${bubble(tasks.filter(riskDeal).length,true)}</td><td><button class="room-entry" data-dashboard-entry="true" data-customer="${esc(c.id)}" aria-label="Open ${esc(c.name)} Active Orders">${entryIcon()}</button></td></tr>`;}).join('')}</tbody></table>`;
+    const customers=`<table class="directory customer-directory"><colgroup>${[34,30,12,12,12].map(w=>`<col style="width:${w}%">`).join('')}</colgroup><thead><tr>${['Customer','Est. Shipment Date','Tasks','Risk','Entry'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${[...data.customers].sort((a, b) => compareCustomerText(a.name, b.name) || compareCustomerText(a.id, b.id)).map(c=>{const tasks=rows.filter(row=>row.customerId===c.id);return `<tr data-customer-name="${esc(c.name.toLowerCase())}"><td><button class="customerlink" data-dashboard-entry="true" data-customer="${esc(c.id)}">${esc(c.name)}</button></td><td>${tasks.length?shipmentSummary(tasks):'—'}</td><td class="numeric">${bubble(tasks.length)}</td><td class="numeric">${bubble(tasks.filter(riskDeal).length,true)}</td><td><button class="room-entry" data-dashboard-entry="true" data-customer="${esc(c.id)}" aria-label="Open ${esc(c.name)} Active Orders">${entryIcon()}</button></td></tr>`;}).join('')}</tbody></table>`;
     const suppliers=`<table class="directory supplier-directory"><colgroup>${[56,14,14,16].map(w=>`<col style="width:${w}%">`).join('')}</colgroup><thead><tr>${['Supplier','Tasks','Alert','Edit'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${data.suppliers.map(s=>{const tasks=rows.filter(row=>row.supplierId===s.id);return `<tr data-supplier-name="${esc([s.name,...(s.brands||[])].join(' ').toLowerCase())}"><td><button class="supplier-name" data-edit-supplier="${esc(s.id)}">${esc(s.name)}</button></td><td class="numeric">${bubble(tasks.length)}</td><td class="numeric">${window.purchaseDashboard.supplierAlertBadge(tasks,s.id)}</td><td class="action-cell"><button class="supplier-edit" data-edit-supplier="${esc(s.id)}" aria-label="Edit ${esc(s.name)}">${supplierEditIcon()}</button></td></tr>`;}).join('')}</tbody></table>`;
     return window.purchaseDashboard.render({data,orders:poData?.orders||[],category:dashboardCategory,query:dashboardQuery,selectedId:dashboardSelected,companyName:companyName(),customers,suppliers,lowGp:rows.filter(riskDeal).length,poLoading,poError:poLoadError});
   }
@@ -608,7 +677,8 @@ const stages=[
     }
   }
   function compactTaskHeading() {
-    const counts=customerTaskCounts(),ready=Boolean(poData),customers=[{id:'',name:'All Customers 全部客户'},...data.customers];
+    const counts=customerTaskCounts(),ready=Boolean(poData),customers=[{id:'',name:'All Customers 全部客户'},...[...data.customers].sort((a,b)=>
+      compareCustomerText(a.shortName || a.name, b.shortName || b.name) || compareCustomerText(a.id,b.id))];
     const badges=id=>{if(!id)return '';const count=counts.get(id)||{pending:0,issues:0};return [['pending','No PO 未开采购单'],['issues','Receiving issues 高危入库']].map(([key,label])=>'<span class="task-count-pill '+(!ready||count[key]===0?'neutral':key)+'" title="'+(ready?label:'Status not yet confirmed 状态尚未确认')+'" aria-label="'+(ready?label+' '+count[key]:'Status not yet confirmed')+'">'+(ready?count[key]:'—')+'</span>').join('');};
     const current=customers.find(customer=>customer.id===activeCustomer)||customers[0];
     return '<section class="roomhead active-order-heading compact-task-heading"><h1>Purchase Tasks <small class="ao-title-zh">采购任务</small></h1><div class="compact-task-controls"><details class="task-customer-picker"><summary aria-label="Choose customer 选择客户"><span class="task-customer-name">'+esc(current.shortName||current.name)+'</span>'+badges(current.id)+'<span class="task-picker-chevron" aria-hidden="true">⌄</span></summary><div class="task-customer-options" role="group" aria-label="Customers 客户">'+customers.map(customer=>'<button type="button" data-dashboard-entry="true" data-customer="'+esc(customer.id)+'" aria-pressed="'+String(customer.id===activeCustomer)+'"><span class="task-customer-name">'+esc(customer.shortName||customer.name)+'</span>'+badges(customer.id)+'</button>').join('')+'</div></details></div><div class="actions">'+inquiryActions()+'</div></section>';
@@ -1008,15 +1078,24 @@ const stages=[
     if(control.dataset.qty||control.dataset.taskEdit)return taskEditor(control.dataset.qty||control.dataset.taskEdit);
     if(control.dataset.taskTab)return taskEditor(dialogContext.taskId,control.dataset.taskTab);
     if(control.dataset.quantityCase){if(drafts.size||sequenceDraft){showStatus('请先保存或取消当前编辑。',true);return;}return quantityCaseEditor(control.dataset.quantityCase);}
+    if(control.id==='refreshReceiptDecision'){
+      if(control.disabled||!dialogContext?.receipt||savePending)return;
+      requireReceiptReview('Reading current quantities… 正在读取最新数量…',true);
+      return request(true,false,true,null,dialogContext);
+    }
     if(control.id==='saveReceiptDecision'){
-      const row=data.tasks.find(row=>row.id===dialogContext.taskId),item=row?.quantityCases.find(item=>item.id===dialogContext.caseId),delivery=document.querySelector('#receiptSolution').value;
+      const snapshot=dialogContext.receipt;
+      if(control.disabled||snapshot?.shortage==null||!snapshot.version)return;
+      if(receiptSnapshot(dialogContext.caseId)?.key!==snapshot.key)
+        return requireReceiptReview('Quantities or status have changed. 收货数量或处理状态有更新。');
+      const {item}=snapshot,delivery=document.querySelector('#receiptSolution').value;
       if(item?.decision?.customerShortfallRoute==='SUPPORT_SPLIT')return;
       const chosen=[...document.querySelectorAll('input[name="receiptSupplierDecision"]:checked')];
       if(!item||delivery==='STOP'&&chosen.length!==1){document.querySelector('#dialogError').textContent='Please select one supplier response 请选择一项供应商处理结果。';return;}
       const routeControl=document.querySelector('#shortfallRoute'),route=delivery==='STOP'?routeControl?.value:'';
       if(delivery==='STOP'&&routeControl&&!route){document.querySelector('#dialogError').textContent='Choose how to handle the customer shortage 请选择客户余量处理方式。';return;}
       const supplierDecision=delivery==='WAIT'?'PENDING':chosen[0].value;
-      return mutate('PURCHASE_SAVE_REQUEST',{operation:'QUANTITY_CASE',input:{action:'DECIDE',id:item.id,version:data.quantityCasesVersion,supplierDeliveryDecision:delivery,supplierDecision,...(route?{customerShortfallRoute:route}:{}),reason:delivery==='WAIT'?'Waiting for supplier to complete delivery':chosen[0].parentElement.textContent.trim()}});
+      return mutate('PURCHASE_SAVE_REQUEST',{operation:'QUANTITY_CASE',input:{action:'DECIDE',id:item.id,version:snapshot.version,supplierDeliveryDecision:delivery,supplierDecision,...(route?{customerShortfallRoute:route}:{}),reason:delivery==='WAIT'?'Waiting for supplier to complete delivery':chosen[0].parentElement.textContent.trim()}});
     }
     if(control.id==='saveQuantityCase'){
 
