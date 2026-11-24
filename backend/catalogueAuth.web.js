@@ -725,8 +725,13 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
   return withBuyerSubmissionLock(buyer, submissionId, async () => {
   const id = nextOrderId(buyer.customerId, submissionId);
   const requestFingerprint = JSON.stringify(requests.map(line => [normalize(line.itemId), Number(line.quantityCtn)]).sort((a, b) => a[0].localeCompare(b[0]))) + (buyerPo ? '|PO:' + JSON.stringify(buyerPo) : '');
-  let orderRecord = null;
-  try { orderRecord = await wixData.get(BUYER_ORDER_COLLECTION, submissionId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* New submission. */ }
+  let orderRecord;
+  try {
+    const match = await wixData.query(BUYER_ORDER_COLLECTION).eq('_id', submissionId).limit(1).find({ suppressAuth: true, consistentRead: true });
+    orderRecord = match.items[0];
+  } catch (_) {
+    throw new Error('Order status could not be verified. Retry this same request shortly.');
+  }
   const stored = orderRecord ? payloadData(orderRecord) : null;
   if (stored) {
     if (normalize(stored.customerId) !== buyer.customerId || normalize(stored.orderId) !== id) throw new Error('Order request conflict. Please contact Sales Room.');

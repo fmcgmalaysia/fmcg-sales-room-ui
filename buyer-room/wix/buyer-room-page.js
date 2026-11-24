@@ -408,7 +408,7 @@ $w.onReady(async function () {
         if (!result?.ok || !result.orderId) throw new Error(result?.message || 'Order could not be confirmed.');
       } catch (error) {
         const detail = error?.message || 'Order could not be confirmed.';
-        if (!saved && /^(Enter a P\.O\. number of up to 100 characters\.|Enter at least one order quantity\.|Order lines are invalid\. Please refresh the order form\.|Invalid order line\.|All ordered products must have a released V\.I\.P price\.|All ordered products require EA and unit price data before submission\.)$/.test(detail)) {
+        if (/^(Enter a P\.O\. number of up to 100 characters\.|Enter at least one order quantity\.|Order lines are invalid\. Please refresh the order form\.|Invalid order line\.|All ordered products must have a released V\.I\.P price\.|All ordered products require EA and unit price data before submission\.)$/.test(detail)) {
           forgetOrderRequest(key, requestId);
         }
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', requestId, ok: false, pendingOrderRequestId: readOrderRequest(key)?.requestId || '', message: detail });

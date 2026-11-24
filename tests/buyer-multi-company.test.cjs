@@ -440,6 +440,38 @@ test('an interrupted request does not block the receipt of a completed order in 
   assert.equal(wixData.rows('WixBuyerOrders').length, 2);
 });
 
+test('an unavailable order-status lookup never becomes a new order validation', async () => {
+  const { wixData, buyer, catalogue, quote } = fixture();
+  const { selection } = await catalogue.addCatalogueSelection('shared-product', first);
+  quote(first.buyerCompanyId, selection.id, 24);
+  const lines = [{ itemId: selection.id, quantityCtn: 2 }];
+  const original = randomUUID();
+  const order = await buyer.submitBuyerOrder(lines, first, original);
+  quote(first.buyerCompanyId, selection.id, 0);
+
+  const get = wixData.get;
+  const query = wixData.query;
+  const unavailable = () => { throw Error('QA primary order lookup unavailable'); };
+  wixData.get = (collection, id) => collection === 'WixBuyerOrders' && id === original ? unavailable() : get(collection, id);
+  wixData.query = collection => {
+    const builder = query(collection);
+    const eq = builder.eq;
+    builder.eq = (field, value) => {
+      if (collection === 'WixBuyerOrders' && field === '_id' && value === original) builder.find = unavailable;
+      return eq(field, value);
+    };
+    return builder;
+  };
+  try {
+    await assert.rejects(buyer.submitBuyerOrder(lines, first, original), /Order status could not be verified/);
+  } finally { wixData.get = get; wixData.query = query; }
+
+  assert.equal((await buyer.submitBuyerOrder(lines, first, original)).orderId, order.orderId);
+  await assert.rejects(buyer.submitBuyerOrder(lines, first, randomUUID()), /must have a released V.I.P price/);
+  assert.equal(wixData.rows('WixBuyerOrders').length, 1);
+  assert.equal(wixData.rows('WixBuyerOrderLines').length, 1);
+});
+
 test('the entry stays closed while company access is unknown and opens only after an authorized choice', async () => {
   const { loadBuyerCompanyAccess } = load('buyer-room/wix/buyerCompanyNavigation.js', {}, ['loadBuyerCompanyAccess']);
   const unavailable = async () => { throw new Error('Temporary read failure'); };

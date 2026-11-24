@@ -104,6 +104,36 @@ test('first-send input errors allow corrections and do not create a recovery pro
   assert.equal(storage.size, 0);
 });
 
+test('an unaccepted request can be corrected after a reload and definitive rejection', async () => {
+  const storage = new Map();
+  const attempts = [];
+  const options = {
+    customerId: 'ALPHA', actorUserId: 'BUYER-1', storage,
+    submit: async (lines, _scope, requestId) => {
+      attempts.push([requestId, lines[0].itemId]);
+      if (attempts.length === 1) throw new Error('Network connection timed out.');
+      if (attempts.length === 2) throw new Error('Order status could not be verified. Retry this same request shortly.');
+      if (requestId === alphaRequest) throw new Error('All ordered products must have a released V.I.P price.');
+      return { ok: true, orderId: 'CORRECTED-RECEIPT' };
+    }
+  };
+  const original = await buyerPage(options);
+  await original.send('BUYER_ROOM_SUBMIT_ORDER', { requestId: alphaRequest, lines: [{ itemId: 'withdrawn-item', quantityCtn: 4 }] });
+  const reloaded = await buyerPage(options);
+  assert.equal(reloaded.pending(), alphaRequest);
+  await reloaded.send('BUYER_ROOM_RESUME_ORDER', { requestId: alphaRequest });
+  assert.equal(reloaded.result().pendingOrderRequestId, alphaRequest);
+  await reloaded.send('BUYER_ROOM_RESUME_ORDER', { requestId: alphaRequest });
+  assert.equal(reloaded.result().pendingOrderRequestId, '');
+  assert.equal(storage.size, 0);
+  await reloaded.send('BUYER_ROOM_SUBMIT_ORDER', { requestId: betaRequest, lines: [{ itemId: 'eligible-item', quantityCtn: 4 }] });
+  assert.equal(reloaded.result().orderId, 'CORRECTED-RECEIPT');
+  assert.deepEqual(attempts, [
+    [alphaRequest, 'withdrawn-item'], [alphaRequest, 'withdrawn-item'],
+    [alphaRequest, 'withdrawn-item'], [betaRequest, 'eligible-item']
+  ]);
+});
+
 test('Chrome restores the original company request and acknowledges the visible receipt', { timeout: 35000 }, async () => {
   let playwright;
   try { playwright = require('playwright'); }
