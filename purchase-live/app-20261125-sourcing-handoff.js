@@ -483,32 +483,35 @@ const stages=[
     const decision=item.decision||{};
     const audit=(date,actor)=>[Number.isFinite(Date.parse(date))?shortTime(date):'',actor].filter(Boolean).join(' · ');
     const entries=(row.receiptHistory||[]).filter(entry=>entry.po===row.po&&Number.isSafeInteger(entry.received));
-    const issued=(row.history||[]).find(event=>event.action==='PURCHASE_PO_ASSIGNED'&&event.changes?.after===row.po);
-    const auditRow=(label,quantity,note='',stamp='',short=false)=>
-      '<tr><th scope="row">'+label+'</th><td class="receipt-statement-qty'+(short?' receipt-statement-short':'')+'">'+
-      qtyDigits(quantity)+'</td><td>'+[note,stamp].filter(Boolean).map(text=>'<span>'+esc(text)+'</span>').join('')+'</td></tr>';
-    const received=entries.length?entries.map((entry,index)=>auditRow(
-      entry.kind==='CORRECTION'?'Receipt correction 收货更正':entry.followUp||index>0?'Follow-up receipt 补收':'First receipt 首次实收',
-      entry.received,entry.reason,audit(entry.at,entry.by))).join(''):
-      auditRow('Received to date 累计实收',item.accepted,item.warehouseFeedback?.reason);
-    const action=decision.supplierDeliveryDecision==='STOP'?'Stop waiting 停止等待':decision.supplierDeliveryDecision==='WAIT'?'Waiting recorded 已记录等待':'';
-    const status=item.status==='RESOLVED'?'Closed 已结案':item.quantity===0&&item.receivingIssue===false?'Received in full 已收齐':
+    const complete=item.quantity===0&&item.receivingIssue===false;
+    const status=item.status==='RESOLVED'?'Closed 已结案':complete?'Received in full 已收齐':
       decision.supplierDeliveryDecision==='STOP'?'Waiting stopped 已停止等待':decision.supplierDeliveryDecision==='WAIT'?'Awaiting delivery 等待补货':'Open 待处理';
     const qty=value=>Number.isSafeInteger(value)?qtyDigits(value)+' CTN':'—';
-    return '<section class="receipt-statement"><h3>Supplier P.O. 供应商采购单</h3><table><thead><tr><th scope="col">Activity 记录</th><th scope="col">CTN</th><th scope="col">Note 备注</th></tr></thead><tbody>'+
-      auditRow('Order qty 采购数量',item.planned,'',audit(issued?.time,issued?.actor))+received+
-      auditRow('Outstanding 尚缺',item.quantity,action,audit(decision.at,decision.by),item.quantity>0)+
-      '</tbody></table><p class="receipt-statement-status"><b>Status 状态</b><span>'+status+'</span></p></section>'+
-      '<section class="receipt-statement-customer"><h3>Customer order 客户订单</h3><dl><div><dt>Ordered 订购</dt><dd>'+qty(demand)+
-      '</dd></div><div><dt>Covered 可用</dt><dd>'+qty(covered)+'</dd></div><div><dt>Short 缺口</dt><dd'+
-      (shortage>0?' class="receipt-statement-short"':'')+'>'+qty(shortage)+'</dd></div></dl></section>';
+    const metric=(label,chinese,value,short=false)=>'<div><dt>'+label+'<small>'+chinese+'</small></dt><dd'+
+      (short&&value>0?' class="receipt-statement-short"':'')+'>'+qty(value)+'</dd></div>';
+    const receiptLines=entries.map(entry=>{
+      const label=entry.kind==='CORRECTION'?'Receipt correction 收货更正':entry.followUp?'Follow-up received 补收':'Received 已收货';
+      const stamp=audit(entry.at,entry.by);
+      return '<li><div><span>'+label+'</span><strong>'+qty(entry.received)+'</strong></div>'+
+        (stamp?'<small>'+esc(stamp)+'</small>':'')+'</li>';
+    }).join('');
+    const reason=item.warehouseFeedback?.reason||entries.findLast(entry=>entry.reason)?.reason;
+    const feedback=reason==='Supplier short-shipped 供应商少发货'?'Short delivery 供应商少发货':reason;
+    const decisionStamp=audit(decision.at,decision.by);
+    return '<section class="receipt-statement"><div class="receipt-statement-heading"><h3>Supplier delivery 供应商交货</h3><span class="receipt-statement-status">'+status+'</span></div>'+
+      '<dl class="receipt-statement-metrics">'+metric('Ordered','采购',item.planned)+metric('Received total','累计实收',item.accepted)+
+      metric('Outstanding','尚缺',item.quantity,true)+'</dl>'+(decisionStamp?'<p class="receipt-statement-audit">Decision record 处理记录 · '+esc(decisionStamp)+'</p>':'')+'</section>'+
+      (receiptLines?'<section class="receipt-statement-history"><h3>Receipt history 收货记录</h3><ol>'+receiptLines+'</ol></section>':'')+
+      (feedback?'<p class="receipt-feedback-note receipt-statement-note"><strong>'+ (complete?'Original warehouse feedback 原货仓反馈':'Warehouse feedback 货仓反馈')+'</strong><span>'+esc(feedback)+'</span></p>':'')+
+      '<section class="receipt-statement-customer"><h3>Customer order 客户订单</h3><dl class="receipt-statement-metrics">'+metric('Ordered','订购',demand)+
+      metric('Covered','可用',covered)+metric('Short','缺口',shortage,true)+'</dl></section>';
   }
   function receiptDecisionEditor(snapshot,draft){
     const {row,item,demand,covered,shortage}=snapshot;
     if(item.quantity===0&&item.receivingIssue===false){
       dialogContext={kind:'receipt-review',taskId:row.id,caseId:item.id};
       formDialog('Receipt Review 收货核对',row.po,
-        receiptStatement(snapshot)+'<p>Goods received in full. The original receiving issue is retained for Finance reconciliation.<br><small>货物已收齐。原收货异常保留供财务核对。</small></p><p class="receipt-feedback-note"><strong>Original warehouse feedback 原货仓反馈</strong><span>'+esc(item.warehouseFeedback?.reason||'—')+'</span></p>','','task');
+        receiptStatement(snapshot)+'<p>Goods received in full. The original receiving issue is retained for Finance reconciliation.<br><small>货物已收齐。原收货异常保留供财务核对。</small></p>','','task');
       modal.classList.add('receipt-feedback-dialog');
       return;
     }
@@ -517,9 +520,8 @@ const stages=[
     dialogContext={kind:'quantity-case',taskId:row.id,caseId:item.id,receipt:snapshot};
     const waitText=Number.isSafeInteger(item.quantity)&&item.quantity>0
       ? 'Wait for '+item.quantity+' CTN 等待补货 '+item.quantity+' 箱' : 'Wait for replenishment 等待补货';
-    const originalFeedback=item.warehouseFeedback?.reason,feedback=originalFeedback==='Supplier short-shipped 供应商少发货'?'Short delivery 供应商少发货':originalFeedback||'Warehouse feedback not available 货仓反馈尚未提供';
     formDialog('Receiving Shortfall 收货差额',row.po,
-      receiptStatement(snapshot)+'<p class="receipt-feedback-note"><strong>Warehouse feedback 货仓反馈</strong><span>'+esc(feedback)+'</span></p>' +
+      receiptStatement(snapshot)+
       (covered===0&&item.accepted>0?'<p class="muted">No received stock is currently allocated for this customer. 已收货暂未有可供本客户的分配。</p>':'') +
       '<div class="receipt-feedback-field"><label for="receiptSolution">Next step 处理方式</label><select id="receiptSolution"><option value="WAIT">'+waitText+'</option><option value="STOP">Stop waiting 停止等待</option></select></div><div class="receipt-feedback-options" id="receiptStopOptions" hidden>'+[['CN_PROMISED','Supplier will issue a CN','供应商承诺提供 CN'],['FUTURE_DEDUCTION','Deduct the amount from the next payment','供应商同意下次扣账'],['SUPPLIER_REFUSED','Supplier declined responsibility','供应商不愿意负责']].map(([value,label,chinese])=>'<label><input type="radio" name="receiptSupplierDecision" value="'+value+'"'+(decision.supplierDecision===value?' checked':'')+'><span>'+label+'<small>'+chinese+'</small></span></label>').join('')+(shortage>0?'<label for="shortfallRoute">Customer shortage 客户余量</label><select id="shortfallRoute"><option value="">Choose the next step 请选择</option><option value="ALLOCATE">Continue to ALLOC 去 ALLOC 调货或借货</option>'+(covered>0?'<option value="SUPPORT_SPLIT">Notify Support to split 通知 Support 不再等货</option>':'')+'</select>':'')+'</div>',
       readOnly?'':'<button class="btn" id="refreshReceiptDecision" hidden>Refresh quantities 读取最新数量</button><button class="btn primary" id="saveReceiptDecision">Confirm 确定</button>','task');

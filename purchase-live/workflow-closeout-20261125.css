@@ -8,58 +8,69 @@
   display: inline-flex;
 }
 
-.receipt-statement, .receipt-statement-customer {
+.receipt-statement {
   color: #17314f;
   border: 1px solid #d5e2ee;
-  border-radius: 6px;
-  overflow: hidden;
+  border-radius: 8px;
+  background: #f1f6fb;
+  padding: 9px 11px;
 }
 
-.receipt-statement h3, .receipt-statement-customer h3 {
+.receipt-statement h3, .receipt-statement-history h3, .receipt-statement-customer h3 {
   margin: 0;
-  padding: 8px 10px;
-  background: #edf4fb;
-  font-size: 13px;
+  padding: 0;
+  color: #17314f;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.3;
 }
 
-.receipt-statement table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.receipt-statement th, .receipt-statement td {
-  padding: 6px 8px;
-  border-top: 1px solid #d5e2ee;
-  vertical-align: top;
-  text-align: start;
-  white-space: normal;
-  overflow-wrap: anywhere;
+.receipt-statement-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 8px;
 }
-.receipt-statement thead th { background: #f6f9fc; }
-.receipt-statement tbody th { background: #f6f9fc; font-weight: 600; }
-.receipt-statement thead th:first-child { width: 39%; }
-.receipt-statement thead th:nth-child(2) { width: 14%; }
-.receipt-statement td span { display: block; color: #536a80; }
-.receipt-statement td span + span { margin-block-start: 2px; }
-.receipt-statement-qty { text-align: end !important; font-weight: 600; }
-.receipt-statement thead th:nth-child(2) { text-align: end; }
-.receipt-statement-short { color: #c81828; }
 
 .receipt-statement-status {
+  padding: 3px 7px;
+  border-radius: 12px;
+  color: #34516b;
+  background: #e3edf7;
+  font-size: 11px;
+}
+
+.receipt-statement-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 8px 0 0; }
+.receipt-statement-metrics > div {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  gap: 8px;
-  margin: 0;
-  padding: 6px 8px;
-  border-top: 1px solid #d5e2ee;
+  min-width: 0;
+  padding-inline: 7px;
+}
+.receipt-statement-metrics > div:first-child { padding-inline-start: 0; }
+.receipt-statement-metrics > div + div { border-inline-start: 1px solid #d5e2ee; }
+.receipt-statement-metrics dt { color: #536a80; font-size: 11px; }
+.receipt-statement-metrics dt small { display: block; font-size: inherit; }
+.receipt-statement-metrics dd { margin: 2px 0 0; font-weight: 700; font-size: 15px; white-space: nowrap; }
+.receipt-statement-short { color: #c81828; }
+.receipt-statement-audit { margin: 7px 0 0; color: #536a80; font-size: 11px; }
+
+.receipt-statement-history { margin-block-start: 12px; }
+.receipt-statement-history ol { list-style: none; margin: 4px 0 0; padding: 0; }
+.receipt-statement-history li { border-bottom: 1px solid #dbe5ee; padding: 6px 0; }
+.receipt-statement-history li > div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.receipt-statement-history li strong { flex: none; color: #17314f; white-space: nowrap; }
+.receipt-statement-history li small { display: block; margin-top: 2px; color: #536a80; font-size: 11px; }
+
+#modal.receipt-feedback-dialog .receipt-statement-note {
+  display: block;
+  padding: 6px 9px;
+  border-inline-start: 2px solid #a6bacd;
   background: #f6f9fc;
 }
+.receipt-statement-note span { display: block; margin-block-start: 2px; }
 
-.receipt-statement-customer { margin-block-start: 8px; }
-.receipt-statement-customer dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
-.receipt-statement-customer dl > div { padding: 6px 8px; border-top: 1px solid #d5e2ee; }
-.receipt-statement-customer dl > div + div { border-inline-start: 1px solid #d5e2ee; }
-.receipt-statement-customer dt { color: #536a80; }
-.receipt-statement-customer dd { margin: 1px 0 0; font-weight: 600; }
-
-@media (max-width: 420px) {
-  .receipt-statement th, .receipt-statement td { padding-inline: 5px; }
-}
+.receipt-statement-customer { padding-block: 9px; border-bottom: 1px solid #dbe5ee; }
+.receipt-statement-customer .receipt-statement-metrics dd { font-size: 13px; }
