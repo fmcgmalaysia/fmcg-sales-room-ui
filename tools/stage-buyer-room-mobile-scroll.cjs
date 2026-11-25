@@ -14,9 +14,9 @@ const files = fs.readdirSync(site, { recursive: true, withFileTypes: true })
   .map(entry => path.relative(site, path.join(entry.parentPath, entry.name)).split(path.sep).join('/'))
   .sort();
 const manifest = files.map(name => `${sha256(fs.readFileSync(path.join(site, name)))}  ${name}\n`);
-assert.equal(files.length, 151);
-assert.equal(sha256(manifest.join('')), 'b77915d8bf2554ab88b0936462cc0ce86ddaf1eb0e3417fe7b3bfb2488aa90d7',
-  'Previously deployed Pages archive does not match run 45619162711.');
+assert.equal(files.length, 158);
+assert.equal(sha256(manifest.join('')), '9ba29cf5a7a3d5dc416202f84fc1126504123dcfdb73e202ac7ed6ec8cf37b29',
+  'Previously deployed Pages archive does not match run 45644018325.');
 
 const name = 'buyer-room-20261125-company-entry.html';
 const code = fs.readFileSync(path.join(__dirname, '..', name), 'utf8').replace(/\r\n/g, '\n');
