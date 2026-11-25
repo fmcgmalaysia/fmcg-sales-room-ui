@@ -97,10 +97,14 @@ export function createQuantityCaseOperations({store,names,readWorkspace,now=()=>
    const supplierDecision=item.kind==='UNPLACED'?'NOT_APPLICABLE':input.supplierDecision;
    if(compact){if(supplierDeliveryDecision==='WAIT'?supplierDecision!=='PENDING':!['CN_PROMISED','FUTURE_DEDUCTION','SUPPLIER_REFUSED'].includes(supplierDecision))throw Error('Select exactly one supplier response.');}
    else if(item.kind==='RECEIPT'&&!['REPLENISH','REFUND','CREDIT','INTERNAL','PENDING'].includes(supplierDecision))throw Error('Select the supplier shortage resolution.');
-   const route=input.customerShortfallRoute;
-   const sourcingHandoff=item.kind==='UNPLACED'&&customerDecision==='STOP'&&route==='SUPPORT_SPLIT';
+   const sourcingStop=item.kind==='UNPLACED'&&customerDecision==='STOP';
+   const coverage=sourcingStop?sourcingCoverage(workspace.tasks.find(row=>row.id===item.customerDemandTaskId)):null;
+   // Older tabs submit the sourcing decision without the new route field.
+   const requestedRoute=input.customerShortfallRoute;
+   const route=requestedRoute===undefined&&coverage?'SUPPORT_SPLIT':requestedRoute;
+   const sourcingHandoff=sourcingStop&&route==='SUPPORT_SPLIT';
+   if(coverage&&!sourcingHandoff)throw Error('Stopping the remaining sourcing requires a Support split.');
    if(route!==undefined&&!sourcingHandoff&&(!compact||supplierDeliveryDecision!=='STOP'||!['ALLOCATE','SUPPORT_SPLIT'].includes(route)))throw Error('Select a valid customer shortage action.');
-   const coverage=sourcingHandoff?sourcingCoverage(workspace.tasks.find(row=>row.id===item.customerDemandTaskId)):null;
    if(sourcingHandoff&&!coverage)throw Error('Issued purchase coverage changed. Refresh before sending the remaining quantity to Support.');
    const expectedDate=compact?item.decision?.expectedDate:input.expectedDate;
    if((customerDecision==='WAIT'||supplierDecision==='REPLENISH')&&(!/^\d{4}-\d{2}-\d{2}$/.test(expectedDate||'')||!Number.isFinite(Date.parse(expectedDate))||new Date(expectedDate).toISOString().slice(0,10)!==expectedDate))throw Error('Enter the expected replenishment date.');

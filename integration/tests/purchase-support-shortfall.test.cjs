@@ -31,7 +31,7 @@ function fixture({shortReceipt=true}={}){
   const split=(id,qty,revision)=>({company:'NCT',staff,requestId:uuid(id),input:{action:'DESK_SPLIT',customerId:'FAKE',taskId:'TASK',desk:1,revision:'',shortfallRevision:revision,parts:[{desk:1,quantity:qty},{desk:0,quantity:50-qty}]}});
   return {activity,inputs,workspace,receipt,request,decide,desk,split,receive,store};
 }
-test('stopping sourcing sends 100 issued cartons to Support without representing them as received', async () => {
+test('stopping sourcing without the new route still requires a Support split of the 100 issued cartons', async () => {
  const f = fixture({shortReceipt:false});
  const {orders:[order],tasks:[task]} = f.inputs();
  order.orderQtyInCtn = 200;
@@ -42,7 +42,7 @@ test('stopping sourcing sends 100 issued cartons to Support without representing
  const item=row().quantityCases.find(item=>item.kind==='UNPLACED');
  assert.equal(item.quantity,100);
  const request={company:'NCT',staff,requestId:uuid(101),input:{action:'DECIDE',id:item.id,
-  version:f.workspace().quantityCasesVersion,customerDecision:'STOP',customerShortfallRoute:'SUPPORT_SPLIT',
+  version:f.workspace().quantityCasesVersion,customerDecision:'STOP',
   customerMessage:'Part of the order needs another arrangement.',reason:'No supplier can fill the remaining 100 cartons.'}};
  const decision=await f.decide(request);
  assert.deepEqual(await f.decide(request),decision);
