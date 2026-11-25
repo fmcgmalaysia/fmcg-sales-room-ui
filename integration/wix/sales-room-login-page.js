@@ -6,7 +6,6 @@ import { getCurrentStaffContext } from 'backend/staffAuth.web';
 const SITE_BASE = 'https://www.fmcgmalaysia.com';
 const GOOGLE_START_URL = SITE_BASE + '/_functions/googleStaffAuthStart';
 const SALES_ROOM_URL = '/sales-room';
-const LOGIN_URL = '/sales-room-login';
 const STATE_KEY = 'salesRoomGoogleOAuthState';
 const RETURN_KEY = 'salesRoomGoogleOAuthReturn';
 const READY_LABEL = 'Continue with Google';
@@ -29,6 +28,12 @@ let googleReturnPromise = null;
 
 function setButton(label) {
   $w('#button1').label = label;
+  if (label === READY_LABEL) $w('#imageX36').show();
+  else $w('#imageX36').hide();
+}
+
+function clearGoogleReturn() {
+  try { wixLocationFrontend.queryParams.remove(['oauth', 'state', 'token']); } catch (_) {}
 }
 
 function newState() {
@@ -37,56 +42,69 @@ function newState() {
   return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
 }
 
-async function verifyStaffAndEnter() {
+async function readStaffContext() {
   try {
-    const staff = await getCurrentStaffContext();
-    if (staff && staff.authorized) {
-      setButton('ACCESS VERIFIED • OPENING SALES ROOM…');
-      wixLocationFrontend.to(staffReturnTarget());
-      return true;
-    }
-    setButton('ACCOUNT NOT AUTHORIZED • TRY AGAIN');
-  } catch (error) {
-    setButton('UNABLE TO VERIFY • TRY AGAIN');
+    return await getCurrentStaffContext();
+  } catch (_) {
+    return { authorized: false, reason: 'MEMBER_LOOKUP_ERROR' };
   }
+}
+
+const transientStaffFailure = new Set(['NOT_LOGGED_IN', 'MEMBER_LOOKUP_ERROR', 'STAFF_CMS_QUERY_ERROR', 'MASTER_STAFF_ACCESS_UNAVAILABLE']);
+
+async function verifyStaffAndEnter(justSignedIn = false) {
+  let staff = await readStaffContext();
+  if (justSignedIn && !staff?.authorized && transientStaffFailure.has(staff?.reason)) {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    staff = await readStaffContext();
+  }
+  if (staff?.authorized) {
+    setButton('OPENING SALES ROOM…');
+    wixLocationFrontend.to(staffReturnTarget());
+    return true;
+  }
+  if (staff?.reason === 'VERIFIED_STAFF_EMAIL_REQUIRED') setButton('STAFF EMAIL APPROVAL REQUIRED');
+  else if (transientStaffFailure.has(staff?.reason)) setButton('UNABLE TO VERIFY • TRY AGAIN');
+  else setButton('ACCOUNT NOT AUTHORIZED • TRY AGAIN');
   return false;
 }
 
 async function processGoogleReturn(query) {
+  const status = String(query.oauth || '');
   const returnedState = String(query.state || '');
   const token = String(query.token || '');
-  const fingerprint = returnedState + ':' + token;
   const expectedState = session.getItem(STATE_KEY) || '';
-  const alreadyValidated = session.getItem(RETURN_KEY) === fingerprint;
+  clearGoogleReturn();
+  session.removeItem(RETURN_KEY);
 
-  if (query.oauth !== 'success') {
+  if (status !== 'success') {
     session.removeItem(STATE_KEY);
-    session.removeItem(RETURN_KEY);
-    setButton(query.oauth === 'cancelled' ? READY_LABEL : 'ACCOUNT NOT AUTHORIZED • TRY AGAIN');
+    if (status === 'cancelled') setButton(READY_LABEL);
+    else if (status === 'not_authorized') setButton('ACCOUNT NOT AUTHORIZED • TRY AGAIN');
+    else if (status === 'unverified_email') setButton('VERIFY YOUR GOOGLE EMAIL');
+    else if (status === 'invalid_state') setButton('SECURITY CHECK FAILED • TRY AGAIN');
+    else setButton('GOOGLE SIGN-IN FAILED • TRY AGAIN');
     return true;
   }
 
-  if (!alreadyValidated && (!expectedState || returnedState !== expectedState || !token)) {
+  if (!expectedState || returnedState !== expectedState || !token) {
     session.removeItem(STATE_KEY);
     session.removeItem(RETURN_KEY);
     setButton('SECURITY CHECK FAILED • TRY AGAIN');
     return true;
   }
 
-  session.setItem(RETURN_KEY, fingerprint);
   $w('#button1').disable();
   setButton('VERIFYING STAFF ACCESS…');
 
   try {
     await authentication.applySessionToken(token);
     session.removeItem(STATE_KEY);
-    const entered = await verifyStaffAndEnter();
-    if (!entered) session.removeItem(RETURN_KEY);
+    await verifyStaffAndEnter(true);
   } catch (error) {
     session.removeItem(STATE_KEY);
     session.removeItem(RETURN_KEY);
-    setButton('SIGN-IN COULD NOT BE COMPLETED • TRY AGAIN');
-    wixLocationFrontend.to(LOGIN_URL);
+    setButton('SESSION FAILED • TRY AGAIN');
   } finally {
     $w('#button1').enable();
   }

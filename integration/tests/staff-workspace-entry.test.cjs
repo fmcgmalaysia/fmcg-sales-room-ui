@@ -4,7 +4,7 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'../..'),read=file=>fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n');
 function loginFixture({loggedIn=true,authorized=true,query={},stored={}}={}){
   let ready,lookups=0,tokens=0;const opened=[],storage=new Map(Object.entries(stored));
-  const nodes={button1:{style:{},onClick(){},enable(){},disable(){}},imageX36:{onClick(){}},text10:{style:{}}};
+  const nodes={button1:{style:{},onClick(){},enable(){},disable(){}},imageX36:{onClick(){},show(){},hide(){}},text10:{style:{}}};
   const $w=id=>nodes[id.slice(1)];$w.onReady=handler=>ready=handler;
   const api=vm.runInNewContext(read('integration/wix/sales-room-login-page.js').replace(/^import .+;$/gm,'')+'\n({validStaffTarget,staffReturnTarget})',{
     $w,URL,crypto:require('node:crypto').webcrypto,wixLocationFrontend:{query,to:url=>opened.push(url)},
