@@ -1,0 +1,65 @@
+.roomhead ~ .panel > .selection.purchase-po-actions {
+  display: flex !important;
+  justify-content: space-between;
+}
+
+.selection.purchase-po-actions .actions { margin-inline-start: auto; }
+.roomhead ~ .panel .selection.purchase-po-actions :is(#createSelectedPo, #copySupplierInquiry):disabled {
+  display: inline-flex;
+}
+
+.receipt-statement, .receipt-statement-customer {
+  color: #17314f;
+  border: 1px solid #d5e2ee;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.receipt-statement h3, .receipt-statement-customer h3 {
+  margin: 0;
+  padding: 8px 10px;
+  background: #edf4fb;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.receipt-statement table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.receipt-statement th, .receipt-statement td {
+  padding: 6px 8px;
+  border-top: 1px solid #d5e2ee;
+  vertical-align: top;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.receipt-statement thead th { background: #f6f9fc; }
+.receipt-statement tbody th { background: #f6f9fc; font-weight: 600; }
+.receipt-statement thead th:first-child { width: 39%; }
+.receipt-statement thead th:nth-child(2) { width: 14%; }
+.receipt-statement td span { display: block; color: #536a80; }
+.receipt-statement td span + span { margin-block-start: 2px; }
+.receipt-statement-qty { text-align: end !important; font-weight: 600; }
+.receipt-statement thead th:nth-child(2) { text-align: end; }
+.receipt-statement-short { color: #c81828; }
+
+.receipt-statement-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 8px;
+  border-top: 1px solid #d5e2ee;
+  background: #f6f9fc;
+}
+
+.receipt-statement-customer { margin-block-start: 8px; }
+.receipt-statement-customer dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+.receipt-statement-customer dl > div { padding: 6px 8px; border-top: 1px solid #d5e2ee; }
+.receipt-statement-customer dl > div + div { border-inline-start: 1px solid #d5e2ee; }
+.receipt-statement-customer dt { color: #536a80; }
+.receipt-statement-customer dd { margin: 1px 0 0; font-weight: 600; }
+
+@media (max-width: 420px) {
+  .receipt-statement th, .receipt-statement td { padding-inline: 5px; }
+}
