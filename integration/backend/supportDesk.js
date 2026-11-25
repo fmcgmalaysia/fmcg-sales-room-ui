@@ -69,10 +69,11 @@ function checkShortfallSplit(context,input,parts){
  const assigned=parts?.filter(part=>part.desk>0)||[];
  const stored=readSupportDesks(context.activity,context.company).find(row=>row.customerId===input.customerId);
  const originalDesk=supportDeskForTask(stored,input.taskId);
+ const splitQuantity=current?.splitQuantity??current?.received;
  if(current?.route!=='SUPPORT_SPLIT'||current.revision!==input.shortfallRevision||current.toArrange<=0||
-    current.received<=0||current.received>=current.demand||assigned.length!==1||
-    assigned[0].desk!==input.desk||originalDesk>0&&input.desk!==originalDesk||assigned[0].quantity!==current.received||parts.find(part=>part.desk===0)?.quantity!==current.demand-current.received)
-  throw Error('Received quantities or the Purchase decision changed. Refresh before confirming the split.');
+    splitQuantity<=0||splitQuantity>=current.demand||assigned.length!==1||
+    assigned[0].desk!==input.desk||originalDesk>0&&input.desk!==originalDesk||assigned[0].quantity!==splitQuantity||parts.find(part=>part.desk===0)?.quantity!==current.demand-splitQuantity)
+  throw Error('Supply quantities or the Purchase decision changed. Refresh before confirming the split.');
 }
 export function createSupportDeskOperations({store,names,readContext,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
@@ -183,8 +184,11 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
     }
    const previousAssignment=before.assignments.find(row=>row.taskId===input.taskId);
    const activeHandoff=customerShortfallRoute(context,task);
-   if(split&&!input.shortfallRevision&&activeHandoff?.route==='SUPPORT_SPLIT'&&activeHandoff.toArrange>0&&activeHandoff.received>0&&
-      activeHandoff.received<activeHandoff.demand&&previousAssignment?.shortfallRevision!==activeHandoff.revision){
+   const handoffQty=activeHandoff?.splitQuantity??activeHandoff?.received;
+   const pendingHandoff=activeHandoff?.route==='SUPPORT_SPLIT'&&activeHandoff.toArrange>0&&handoffQty>0&&
+      handoffQty<activeHandoff.demand&&previousAssignment?.shortfallRevision!==activeHandoff.revision;
+   if(pendingHandoff&&activeHandoff.stage==='SOURCING'&&!split)throw Error('Confirm the Purchase handoff split before moving this task.');
+   if(split&&!input.shortfallRevision&&pendingHandoff){
     checkShortfallSplit(context,input,requested);
    }
    if(split&&input.shortfallRevision)checkShortfallSplit(context,input,requested);

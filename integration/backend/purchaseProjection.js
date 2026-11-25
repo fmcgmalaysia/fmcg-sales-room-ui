@@ -184,9 +184,11 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       const assignment=desk?.assignments.find(item=>item.taskId===row.id);
       const handled=Boolean(route.revision&&assignment?.shortfallRevision===route.revision);
       const pending=handled?deskTaskPortions(activity,desk,row,flows).find(part=>part.desk===0):null;
-      const missing=pending?Math.min(route.toArrange,Math.max(0,pending.quantity-pending.allocated-route.waiting)):0;
+      const splitQuantity=route.splitQuantity??route.received;
+      const waitingForRemainder=route.stage==='SOURCING'?0:route.waiting;
+      const missing=pending?Math.min(route.toArrange,Math.max(0,pending.quantity-pending.allocated-waitingForRemainder)):0;
       row.customerShortfall={...route,
-        splitRequired:route.route==='SUPPORT_SPLIT'&&!handled&&route.received>0&&route.received<route.demand&&route.toArrange>0,
+        splitRequired:route.route==='SUPPORT_SPLIT'&&!handled&&splitQuantity>0&&splitQuantity<route.demand&&route.toArrange>0,
         arranged:handled,
         remainder:missing>0?{quantity:pending.quantity,covered:pending.allocated,missing}:null
       };

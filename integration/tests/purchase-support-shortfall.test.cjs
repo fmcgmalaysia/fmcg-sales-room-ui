@@ -31,6 +31,44 @@ function fixture({shortReceipt=true}={}){
   const split=(id,qty,revision)=>({company:'NCT',staff,requestId:uuid(id),input:{action:'DESK_SPLIT',customerId:'FAKE',taskId:'TASK',desk:1,revision:'',shortfallRevision:revision,parts:[{desk:1,quantity:qty},{desk:0,quantity:50-qty}]}});
   return {activity,inputs,workspace,receipt,request,decide,desk,split,receive,store};
 }
+test('stopping sourcing sends 100 issued cartons to Support without representing them as received', async () => {
+ const f = fixture({shortReceipt:false});
+ const {orders:[order],tasks:[task]} = f.inputs();
+ order.orderQtyInCtn = 200;
+ task.purchaseQtyInCtn = 200;
+ const plan = f.activity().find(event=>event.title==='PLAN');
+ Object.assign(plan.details,{totalCtn:100,customerCtn:100,expectedExtra:0});
+ const row=()=>f.workspace().tasks.find(line=>line.id==='TASK');
+ const item=row().quantityCases.find(item=>item.kind==='UNPLACED');
+ assert.equal(item.quantity,100);
+ const request={company:'NCT',staff,requestId:uuid(101),input:{action:'DECIDE',id:item.id,
+  version:f.workspace().quantityCasesVersion,customerDecision:'STOP',customerShortfallRoute:'SUPPORT_SPLIT',
+  customerMessage:'Part of the order needs another arrangement.',reason:'No supplier can fill the remaining 100 cartons.'}};
+ const decision=await f.decide(request);
+ assert.deepEqual(await f.decide(request),decision);
+ const handoff=row().customerShortfall;
+ assert.deepEqual([handoff.stage,handoff.splitRequired,handoff.demand,handoff.splitQuantity,handoff.received,handoff.toArrange],['SOURCING',true,200,100,0,100]);
+ await assert.rejects(f.desk({company:'NCT',staff,requestId:uuid(102),input:{action:'DESK_ASSIGN',customerId:'FAKE',taskId:'TASK',desk:1,revision:''}}),/Confirm the Purchase handoff/);
+ const split={company:'NCT',staff,requestId:uuid(103),input:{action:'DESK_SPLIT',customerId:'FAKE',taskId:'TASK',desk:1,
+  revision:'',shortfallRevision:handoff.revision,parts:[{desk:1,quantity:100},{desk:0,quantity:100}]}};
+ await assert.rejects(f.desk({...split,requestId:uuid(104),input:{...split.input,parts:[{desk:1,quantity:101},{desk:0,quantity:99}]}}),/changed/);
+ const saved=await f.desk(split);
+ assert.deepEqual(await f.desk(split),saved);
+ const desk=readSupportDesks(f.activity(),'NCT')[0];
+ const parts=()=>deskTaskPortions(f.activity(),desk,row()).map(part=>[part.desk,part.quantity,part.allocated,part.planned]);
+ assert.deepEqual(JSON.parse(JSON.stringify(parts())),[[1,100,0,100],[0,100,0,0]]);
+ assert.deepEqual(JSON.parse(JSON.stringify(row().customerShortfall.remainder)),{quantity:100,covered:0,missing:100});
+ assert.equal(row().customerShortfall.splitRequired,false);
+ assert.equal(row().po,'FAKE-PO');
+ const buyerLine=()=>projectPurchaseQuantities({...f.inputs(),customerId:'FAKE',requests:[{orderId:'ORDER',submissionId:'SUB'}],workspace:f.workspace()}).orders[0].lines[0];
+ assert.deepEqual([buyerLine().orderedQtyCtn,buyerLine().receivedQtyCtn],[200,0]);
+ assert.equal(f.activity().filter(event=>event.action==='WAREHOUSE_RECEIPT_SAVED').length,0);
+ await f.store.insert('',{title:'QA-RECEIPT-100',description:'FAKE-PO',action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',activityTime:at,
+  details:{beforeRevision:'',lines:[{taskId:'TASK',orderId:'ORDER',sourceLineId:'LINE',planned:100,beforeAccepted:0,beforeRejected:0,accepted:100,rejected:0,kind:'COMPLETE',issue:false}]}});
+ assert.deepEqual(JSON.parse(JSON.stringify(parts())),[[1,100,100,100],[0,100,0,0]]);
+ assert.deepEqual([buyerLine().orderedQtyCtn,buyerLine().receivedQtyCtn],[200,100]);
+});
+
 test('shortfall handoff and split preserve order, original PO and the four views after another 10 cartons',async()=>{
  const f=fixture(),row=()=>f.workspace().tasks[0];
  assert.equal(row().procurement.totalCtn,55);
