@@ -1,0 +1,103 @@
+.workroom-company-source, .workroom-company-switch[hidden], .workroom-company-trigger[hidden] {
+  display: none !important;
+}
+
+body > header > .workroom-company-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  margin-inline-start: auto;
+  color: inherit;
+  font: inherit;
+}
+
+.workroom-company-name {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+body > header .workroom-company-trigger {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+body > header .workroom-company-trigger:is(:hover, :focus-visible) { background: #ffffff24; }
+.workroom-company-trigger:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.workroom-company-trigger:disabled { opacity: .5; cursor: default; }
+.workroom-company-trigger svg { width: 20px; height: 20px; }
+
+body > dialog.workroom-company-menu {
+  position: fixed;
+  inset: 0 auto auto 0;
+  transform: none;
+  width: min(300px, calc(100% - 16px));
+  max-height: min(320px, calc(100% - 85px));
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #b9cadd;
+  border-radius: 10px;
+  background: #fff;
+  color: #153453;
+  box-sizing: border-box;
+  box-shadow: 0 12px 32px #102a4930;
+  font: 14px/1.3 'Segoe UI', Arial, sans-serif;
+}
+
+.workroom-company-menu::backdrop { background: transparent; }
+.workroom-company-menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.workroom-company-menu-heading h2 { margin: 6px 8px; font: 700 14px/1.25 'Segoe UI', Arial, sans-serif; }
+
+.workroom-company-menu button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.workroom-company-menu button:is(:hover, :focus-visible) { background: #eaf2fa; outline-offset: -2px; }
+.workroom-company-options button { display: block; width: 100%; text-align: start; font-weight: 600; }
+
+@media (max-width: 1023px) {
+  body > header[data-app-header-search] > .workroom-company-switch { grid-area: 1 / 2; max-width: min(44vw, 230px); }
+}
+
+@media (max-width: 700px), (max-width: 880px) and (pointer: coarse) {
+  body > header > .workroom-company-switch { gap: 3px; }
+  .workroom-company-name { font-size: 12px; }
+  body > header .workroom-company-trigger { width: 44px; height: 44px; }
+  body > dialog.workroom-company-menu {
+    inset: auto 0 0 !important;
+    width: min(100%, 100vw);
+    max-width: none;
+    max-height: calc(100% - 24px);
+    max-height: min(80dvh, calc(100% - 24px));
+    padding: 10px 14px max(14px, env(safe-area-inset-bottom));
+    border-radius: 16px 16px 0 0;
+    overscroll-behavior: contain;
+  }
+  .workroom-company-menu::backdrop { background: #132e49a6; }
+  .workroom-company-menu-heading h2 { font-size: 18px; }
+  .workroom-company-menu-heading button { min-height: 44px; }
+  .workroom-company-options button { min-height: 52px; font-size: 16px; }
+}

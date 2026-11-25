@@ -1,7 +1,7 @@
 (() => {
   const container = document.querySelector('[data-buyer-company-switch]');
   if (!container) return;
-  container.dataset.build = '20261125-buyer-company-sheet-v2';
+  container.dataset.build = '20261125-buyer-company-icon-v3';
 
   const style = document.createElement('style');
   style.textContent = `
@@ -19,7 +19,6 @@
       background:#edf4fb; border-color:#52799f;
     }
     .buyer-company-switch-icon { display:block; width:20px; height:20px; }
-    .buyer-company-switch-label { display:none; }
     .buyer-company-switch-tip {
       position:absolute; inset-inline-end:0; inset-block-start:100%; z-index:5; pointer-events:none;
       background:#153453; color:#fff; white-space:nowrap; padding:6px 9px; border-radius:5px;
@@ -47,12 +46,19 @@
     .buyer-company-status[data-error] { color:#a12323; }
     .buyer-company-cancel { display:block; margin:14px 0 0 auto; }
     .buyer-company-cancel[hidden] { display:none; }
+    @media (min-width:701px) {
+      .buyer-company-dialog[data-anchored] {
+        position:fixed; inset:var(--company-top) auto auto var(--company-left);
+        margin:0; width:min(350px,calc(100% - 16px)); padding:14px;
+        max-height:calc(100% - var(--company-top) - 8px);
+      }
+      .buyer-company-dialog[data-anchored]::backdrop { background:transparent; }
+      .buyer-company-dialog[data-anchored] h2 { font-size:17px; }
+    }
     @media (max-width:700px), (max-width:880px) and (pointer:coarse) {
       .buyer-company-switch button {
-        display:flex; justify-content:center; gap:5px; min-width:44px; width:auto; height:44px; padding:0 8px;
+        width:44px; height:44px;
       }
-      .buyer-company-switch-icon { width:16px; height:16px; }
-      .buyer-company-switch-label { display:inline; font-size:12px; }
       .buyer-company-switch-tip { display:none; }
       .toolbar>.buyer-company-switch { padding-inline-end:12px; }
       .buyer-company-dialog {
@@ -81,7 +87,9 @@
   change.type = 'button';
   change.setAttribute('aria-label', 'Switch Company');
   change.setAttribute('aria-haspopup', 'dialog');
-  change.innerHTML = '<svg class="buyer-company-switch-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h15m-4-4 4 4-4 4m5 4H5m4-4-4 4 4 4"/></svg><span class="buyer-company-switch-label" aria-hidden="true">Switch</span>';
+  change.setAttribute('aria-controls', 'buyerCompanyDialog');
+  change.setAttribute('aria-expanded', 'false');
+  change.innerHTML = '<svg class="buyer-company-switch-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h15m-4-4 4 4-4 4m5 4H5m4-4-4 4 4 4"/></svg>';
   const tip = document.createElement('span');
   tip.className = 'buyer-company-switch-tip';
   tip.setAttribute('aria-hidden', 'true');
@@ -90,6 +98,7 @@
 
   const dialog = document.createElement('dialog');
   dialog.className = 'buyer-company-dialog';
+  dialog.id = 'buyerCompanyDialog';
   dialog.setAttribute('aria-labelledby', 'buyerCompanyDialogTitle');
   dialog.setAttribute('aria-describedby', 'buyerCompanyDialogPrompt');
   dialog.innerHTML = '<h2 id="buyerCompanyDialogTitle" tabindex="-1">Choose a company</h2><p id="buyerCompanyDialogPrompt"></p><div class="buyer-company-choices"></div><p class="buyer-company-status" role="status" hidden></p><button type="button" class="buyer-company-cancel">Cancel</button>';
@@ -100,6 +109,7 @@
   const cancel = dialog.querySelector('.buyer-company-cancel');
   const status = dialog.querySelector('.buyer-company-status');
   const path = container.closest('.global-header') ? '/buyer-room' : '/catalogue';
+  const compact = matchMedia('(max-width:700px), (max-width:880px) and (pointer:coarse)');
   let access;
   let siteOrigin = '';
   let openingId = '';
@@ -111,6 +121,23 @@
   dialog.addEventListener('cancel', event => {
     if (access?.blocked || openingId) event.preventDefault();
   });
+  dialog.addEventListener('click', event => {
+    if (event.target !== dialog || !dialog.hasAttribute('data-anchored') || openingId) return;
+    const bounds = dialog.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX >= bounds.right || event.clientY < bounds.top || event.clientY >= bounds.bottom) dialog.close();
+  });
+  dialog.addEventListener('close', () => change.setAttribute('aria-expanded', 'false'));
+
+  function positionDialog() {
+    const anchored = !compact.matches && !access?.blocked && !container.hidden;
+    dialog.toggleAttribute('data-anchored', anchored);
+    if (!anchored) return;
+    const anchor = change.getBoundingClientRect();
+    const width = Math.min(350, document.documentElement.clientWidth - 16);
+    dialog.style.setProperty('--company-left', `${Math.max(8, Math.min(anchor.right - width, document.documentElement.clientWidth - width - 8))}px`);
+    dialog.style.setProperty('--company-top', `${anchor.bottom + 6}px`);
+  }
+  window.addEventListener('resize', () => { if (dialog.open) positionDialog(); });
 
   function showStatus(message, failed = false) {
     status.textContent = message;
@@ -187,7 +214,12 @@
       };
       return button;
     }));
-    if (!dialog.open) { dialog.showModal(); title.focus(); }
+    positionDialog();
+    if (!dialog.open) {
+      dialog.showModal();
+      change.setAttribute('aria-expanded', 'true');
+      title.focus();
+    }
   }
   change.onclick = present;
   window.addEventListener('pageshow', event => {
