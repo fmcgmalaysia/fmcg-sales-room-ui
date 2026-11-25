@@ -126,7 +126,7 @@ export async function readMasterWebQuotationData({ action, customerId, customerI
   if (action === 'customer') return { customer };
   if (action !== 'selections' || !customer) throw Error('Quotation data is unavailable.');
   const selections = (await rows(querySelection().eq('customerId', customerId))).map(row => selectionView(row, customerId)).filter(Boolean);
-  return { selections: await packSelections(selections) };
+  return { customer, selections: await packSelections(selections) };
 }
 
 export const acceptMasterWebQuotation = createMasterQuoteProjection({

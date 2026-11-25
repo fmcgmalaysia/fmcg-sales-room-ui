@@ -88,3 +88,28 @@ test('staff selection totals and NC reads are ownership scoped while rows and FX
   assert.equal((await run('purchase-history', 'A')).accessDenied, true);
   assert.equal((await run('selection-counts', '')).accessDenied, true);
 });
+
+test('the quotation grid uses the signed combined read once and enforces customer ownership before enrichment', async () => {
+  const customer = { customerId: 'A', name: 'A', preferredCurrency: 'USD', assignedStaffId: 'A', quotationMode: 'WEB', webQuotationStatus: 'READY', accessStatus: 'ACTIVE' };
+  const selections = [{ id: 'SELECTION-1', customerId: 'A' }];
+  const calls = [];
+  let oldTransport = false;
+  const run = createMasterQuotationActions({
+    readIdentity: async () => ({ record: { title: 'A', role: 'STAFF', staffStatus: 'ACTIVE', staffAccess: { quotationAccess: 'EDIT' } } }),
+    readQuoteContext: async id => {
+      calls.push('context ' + id);
+      if (id !== customer.customerId) return { customer: { ...customer, customerId: id, assignedStaffId: 'B' }, selections: [] };
+      return oldTransport ? { selections } : { customer, selections };
+    },
+    readCustomer: async id => { calls.push('customer ' + id); return customer; },
+    readRate: async () => { calls.push('fx'); return 4; },
+    quotation: { list(scope, rows) { assert.equal(scope.customer, customer); assert.equal(rows, selections); calls.push('enrich'); return rows; } }
+  });
+  assert.equal((await run('quotes', 'A')).rows.length, 1);
+  assert.deepEqual(calls.splice(0), ['context A', 'enrich', 'fx']);
+  assert.equal((await run('quotes', 'B')).accessDenied, true);
+  assert.deepEqual(calls.splice(0), ['context B']);
+  oldTransport = true;
+  assert.equal((await run('quotes', 'A')).rows.length, 1);
+  assert.deepEqual(calls, ['context A', 'customer A', 'enrich', 'fx']);
+});

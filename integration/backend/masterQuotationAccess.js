@@ -18,7 +18,7 @@ function activeWebCustomer(customer) {
 // These adapters are server-only. Bind readIdentity to the same Wix request
 // that called the web method. ReadCustomer/ReadCustomers must come from the
 // authoritative customer directory; never pass customer records from Wix UI.
-export function createMasterQuotationActions({ readIdentity, readCustomer, readCustomers, readSelectionCounts, readRate, readPurchaseHistory, quotation }) {
+export function createMasterQuotationActions({ readIdentity, readCustomer, readQuoteContext, readCustomers, readSelectionCounts, readRate, readPurchaseHistory, quotation }) {
   return async function run(action, customerId, input) {
     const directoryAction = action === 'customers' || action === 'selection-counts';
     if (!directoryAction && !Object.prototype.hasOwnProperty.call(ACTION_POLICY, action)) return { accessDenied: true };
@@ -43,11 +43,12 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readC
     }
 
     if (typeof customerId !== 'string' || !/^[A-Za-z0-9_-]{1,120}$/.test(customerId)) return { accessDenied: true };
-    const customer = await readCustomer(customerId, action);
+    const context = action === 'quotes' && readQuoteContext ? await readQuoteContext(customerId) : null;
+    const customer = context?.customer ?? await readCustomer(customerId, action);
     if (customer?.customerId !== customerId || !activeWebCustomer(customer) || !canQuoteManagedCustomer(record, customer)) return { accessDenied: true };
     const scope = { staffId, customer };
     if (action === 'quotes') {
-      const [rows, rateToMyr] = await Promise.all([quotation.list(scope), readRate ? readRate(customer) : customer.rateToMyr]);
+      const [rows, rateToMyr] = await Promise.all([quotation.list(scope, context?.selections), readRate ? readRate(customer) : customer.rateToMyr]);
       const { preferredCurrency, fullName } = customer;
       return { staffId, customer: { customerId, preferredCurrency, rateToMyr, ...(fullName ? { fullName } : {}) }, rows,
         canEdit: true, canPublish: true };

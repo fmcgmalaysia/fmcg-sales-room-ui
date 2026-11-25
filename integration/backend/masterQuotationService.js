@@ -57,8 +57,8 @@ function rowSnapshot(row, cost) {
 // Adapters run on MASTER only. deliver accepts a fixed customer-safe projection and
 // must return a fresh or durable receipt for the same idempotency key.
 export function createMasterQuotationService({ revisions, readSelections, readSelection, readCosts, readCurrentCosts, readCostResult, deliver, readLastInvoicedPrices }) {
-  async function selections(customerId) {
-    const rows = await readSelections(customerId);
+  async function selections(customerId, prepared) {
+    const rows = prepared ?? await readSelections(customerId);
     if (!Array.isArray(rows) || rows.some(row => row.customerId !== customerId || row.removed)) throw Error('Selection scope could not be confirmed.');
     return rows;
   }
@@ -83,9 +83,9 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       return result;
     },
 
-    async list({ customer }) {
+    async list({ customer }, prepared) {
       const { customerId } = customer;
-      const rows = await selections(customerId);
+      const rows = await selections(customerId, prepared);
       const [batched, lastSales, currentCosts] = await Promise.all([
         revisions.latestFor ? revisions.latestFor(customerId, rows.map(row => row.id)) : null,
         readLastInvoicedPrices?.(customerId, rows).catch(error => {
