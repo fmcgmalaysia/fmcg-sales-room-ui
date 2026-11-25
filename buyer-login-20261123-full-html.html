@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="build" content="20261123-buyer-html-login-desktop-v5">
+  <meta name="build" content="20261126-buyer-login-access-notice-v1">
   <title>Buyer Room Sign In | FMCG Malaysia</title>
   <style>
     :root {
@@ -50,6 +50,13 @@
     h1 { font-size: clamp(29px, 3.25vw, 44px); line-height: 1.08; letter-spacing: -.04em; font-weight: 760; }
     h2 { font-size: 23px; line-height: 1.22; letter-spacing: -.02em; }
     .intro { margin: 10px 0 24px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .buyer-access-notice {
+      margin: -6px 0 16px; padding: 11px 13px; border: 1px solid #c9ddd1;
+      border-inline-start: 4px solid var(--green); border-radius: 8px;
+      background: #eef6ef; color: var(--ink); font-size: 14px; line-height: 1.4;
+    }
+    .buyer-access-notice strong { display: block; margin-bottom: 3px; }
+    .buyer-access-notice #contact { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; }
     .google, .signin, .first-time-login {
       display: flex; align-items: center; justify-content: center; gap: 10px;
       width: 100%; min-height: 46px; border: 1px solid; border-radius: 8px;
@@ -70,7 +77,7 @@
     .field input:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
     .field #password { padding-right: 46px; }
     .ico { position: absolute; left: 13px; top: 13px; color: #51665a; pointer-events: none; }
-    .ico svg, .toggle svg, .actions svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linejoin: round; stroke-linecap: round; }
+    .ico svg, .toggle svg, .actions svg, .buyer-access-notice svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linejoin: round; stroke-linecap: round; }
     .toggle { position: absolute; right: 3px; top: 2px; display: grid; place-items: center; min-width: 42px; min-height: 42px; background: none; border: 0; color: #415a4e; border-radius: 7px; }
     .toggle:hover { background: #edf4ee; }
     .forgot-row { display: flex; justify-content: flex-end; margin: -10px 0 4px; }
@@ -84,6 +91,7 @@
     .status { display: none; margin-top: 12px; padding: 10px 12px; border-radius: 7px; background: #eef6ef; color: var(--dark); font-size: 13px; line-height: 1.45; }
     .status.show { display: block; }
     .status.err { background: #fff0eb; color: #8f290d; }
+    #status.err { border-inline-start: 4px solid #a53114; font-weight: 650; }
     #password-reset { padding-top: 16px; border-top: 1px solid var(--line); }
     #password-reset p { margin: 8px 0 15px; color: var(--muted); font-size: 14px; line-height: 1.5; }
     #reset-email { padding-left: 12px; }
@@ -91,8 +99,6 @@
     .reset-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
     .actions { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 8px; }
     .actions .link { display: inline-flex; align-items: center; gap: 7px; }
-    .actions i { display: none; }
-    .note { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .site-footer-inner { align-items: flex-start; padding-top: 14px; padding-bottom: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
     .site-footer a { color: var(--green); text-decoration-thickness: 1px; text-underline-offset: 3px; }
     .desktop-login-brand, .desktop-login-footer, .campaign-shipping, .campaign-controls { display: none; }
@@ -198,6 +204,11 @@
       </div>
       <h1 id="login-title">Sign in to Buyer Room</h1>
       <p class="intro">Use the company email registered with FMCG Malaysia.</p>
+      <section class="buyer-access-notice" aria-labelledby="buyer-access-title">
+        <strong id="buyer-access-title">Authorized buyers only</strong>
+        <p>Only business customers approved by FMCG Malaysia can sign in. Please contact us for access or any questions.</p>
+        <button id="contact" class="link" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M4 12H2v5h4v-5H4Zm16 0h2v5h-4v-5h2ZM18 19c-1 2-3 2-5 2"/></svg><span>Contact Customer Service</span></button>
+      </section>
       <button id="google" class="google" type="button" aria-label="Continue with Google"><svg class="google-mark" aria-hidden="true" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.35 11.1h-9.18v3.71h5.29c-.23 1.19-.9 2.2-1.91 2.88v2.39h3.09c1.81-1.67 2.85-4.13 2.85-7.04 0-.67-.06-1.32-.14-1.94Z"/><path fill="#34A853" d="M12.17 21.5c2.59 0 4.77-.86 6.36-2.33l-3.09-2.39c-.86.58-1.96.92-3.27.92-2.5 0-4.61-1.69-5.37-3.96H3.61v2.47a9.6 9.6 0 0 0 8.56 5.29Z"/><path fill="#FBBC05" d="M6.8 13.74a5.77 5.77 0 0 1 0-3.68V7.59H3.61a9.6 9.6 0 0 0 0 8.62l3.19-2.47Z"/><path fill="#EA4335" d="M12.17 6.1c1.41 0 2.68.49 3.67 1.44l2.75-2.75C16.93 3.24 14.76 2.3 12.17 2.3a9.6 9.6 0 0 0-8.56 5.29L6.8 10.06c.76-2.27 2.87-3.96 5.37-3.96Z"/></svg><span>Continue with Google</span></button><div class="or">or use your company email</div>
       <form id="form">
         <label for="email" class="field-label">Company email</label><label class="field"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><input id="email" type="email" autocomplete="email" placeholder="Business Email" required aria-label="Business Email"></label>
@@ -216,8 +227,7 @@
   </div>
   <div id="reset-status" class="status" role="status" aria-live="polite"></div>
 </form>
-      <div class="actions"><button id="apply" class="link" type="button"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20v-2a5 5 0 0 1 10 0v2M14 20v-1.5a4 4 0 0 1 7 0V20"/></svg><span>Apply for Buyer Access</span></button><i aria-hidden="true"></i><button id="contact" class="link" type="button"><svg viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M4 12H2v5h4v-5H4Zm16 0h2v5h-4v-5h2ZM18 19c-1 2-3 2-5 2"/></svg><span>Contact Our Team</span></button></div>
-      <p class="note">Buyer access is limited to approved business customers.</p>
+      <div class="actions"><button id="apply" class="link" type="button"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20v-2a5 5 0 0 1 10 0v2M14 20v-1.5a4 4 0 0 1 7 0V20"/></svg><span>Apply for Buyer Access</span></button></div>
       <div class="desktop-login-footer">
         <span>© FMCG Malaysia</span>
         <a href="https://www.fmcgmalaysia.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>
