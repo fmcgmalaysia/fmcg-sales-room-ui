@@ -835,6 +835,11 @@ async function withBuyerSubmissionLock(buyer, requestId, readOrder, action) {
     return stored?.isComplete ? { ok: true, orderId: stored.orderId, status: stored.status } : undefined;
   });
 }
+async function isBuyerWriteLockOwner(lockId, lockAttemptId) {
+  const match = await wixData.query(BUYER_ORDER_AUDIT_COLLECTION).eq('_id', lockId).limit(1)
+    .find({ suppressAuth: true, consistentRead: true });
+  return payloadData(match.items[0]).lockAttemptId === lockAttemptId;
+}
 async function withBuyerWriteLock(lockId, details, busyMessage, action, readConfirmedReceipt) {
   const lockAttemptId = randomUUID();
   try {
@@ -842,9 +847,13 @@ async function withBuyerWriteLock(lockId, details, busyMessage, action, readConf
       _id: lockId, title: lockId, payload: JSON.stringify({ ...details, lockAttemptId })
     }, { suppressAuth: true });
   } catch (_) {
-    const receipt = await readConfirmedReceipt?.();
-    if (receipt) return receipt;
-    throw new Error(busyMessage);
+    // The insert can commit before Wix returns an acknowledgement.
+    const ownsLock = await isBuyerWriteLockOwner(lockId, lockAttemptId).catch(() => false);
+    if (!ownsLock) {
+      const receipt = await readConfirmedReceipt?.();
+      if (receipt) return receipt;
+      throw new Error(busyMessage);
+    }
   }
   try { return await action(); }
   finally {
@@ -852,9 +861,7 @@ async function withBuyerWriteLock(lockId, details, busyMessage, action, readConf
       await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true });
     } catch (_) {
       try {
-        const match = await wixData.query(BUYER_ORDER_AUDIT_COLLECTION).eq('_id', lockId).limit(1)
-          .find({ suppressAuth: true, consistentRead: true });
-        if (payloadData(match.items[0]).lockAttemptId === lockAttemptId) {
+        if (await isBuyerWriteLockOwner(lockId, lockAttemptId)) {
           await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true });
         }
       } catch (_) {

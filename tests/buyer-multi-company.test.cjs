@@ -440,6 +440,32 @@ test('an interrupted request does not block the receipt of a completed order in 
   assert.equal(wixData.rows('WixBuyerOrders').length, 2);
 });
 
+test('a lost lock insert acknowledgement recovers only its own quantity lock', async () => {
+  const { wixData, buyer, catalogue, quote } = fixture();
+  const { selection } = await catalogue.addCatalogueSelection('shared-product', first);
+  quote(first.buyerCompanyId, selection.id, 24);
+  const lockId = 'BUYER-QTY-LOCK-' + selection.id;
+  const insert = wixData.insert;
+  let responseWasLost = false;
+  wixData.insert = async (collection, row) => {
+    const saved = await insert(collection, row);
+    if (row._id === lockId && !responseWasLost) {
+      responseWasLost = true;
+      throw new Error('QA insert succeeded but acknowledgement was lost');
+    }
+    return saved;
+  };
+  assert.equal((await buyer.saveBuyerQuantity(selection.id, 2, first)).quantityCtn, 2);
+  assert.equal(responseWasLost, true);
+  assert.ok(!wixData.rows('WixOrderAudit').some(row => row._id === lockId));
+
+  const competingLock = { _id: lockId, title: lockId, payload: JSON.stringify({ lockAttemptId: 'another-owner' }) };
+  await insert('WixOrderAudit', competingLock);
+  await assert.rejects(buyer.saveBuyerQuantity(selection.id, 3, first), /being updated/);
+  assert.equal((await buyer.getBuyerWorkspace(first)).myList[0].orderQtyCtn, 2);
+  assert.equal(wixData.rows('WixOrderAudit').find(row => row._id === lockId).payload, competingLock.payload);
+});
+
 test('an unavailable order-status lookup never becomes a new order validation', async () => {
   const { wixData, buyer, catalogue, quote } = fixture();
   const { selection } = await catalogue.addCatalogueSelection('shared-product', first);
