@@ -33,6 +33,14 @@ test('native download waits for a prepared link, survives concurrent loads, and 
   assert.equal(button.target, '_self');
   assert.equal(button.visible, true);
   assert.equal(button.enabled, true);
+  await message({ data: { type: 'BUYER_ROOM_COMPANY_DIALOG_STATE', open: true } });
+  assert.equal(button.visible, false);
+  await message({ data: { type: 'BUYER_ROOM_SELECTION_IMAGE_STATE', open: true } });
+  await message({ data: { type: 'BUYER_ROOM_COMPANY_DIALOG_STATE', open: false } });
+  assert.equal(button.visible, false);
+  await message({ data: { type: 'BUYER_ROOM_SELECTION_IMAGE_STATE', open: false } });
+  assert.equal(button.visible, true);
+  assert.equal(button.link, 'https://example.test/site/_functions/buyerSelectionExcel?token=signed%20token');
   assert.equal(typeof click, 'function');
   click();
   assert.deepEqual(navigations, [], 'native link handles download without a second scripted navigation');

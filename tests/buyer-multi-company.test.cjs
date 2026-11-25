@@ -677,8 +677,8 @@ window.addEventListener('message', async ({source,data}) => {
     });
     await context.route('**/*', route => {
       const url = new URL(route.request().url());
-      if (url.hostname === 'fmcgmalaysia.github.io' && url.pathname.endsWith('/buyer-room/company-switch-entry-20261125.js')) {
-        return route.fulfill({ path: path.join(root, 'buyer-room/company-switch-entry-20261125.js'), contentType: 'application/javascript' });
+      if (url.hostname === 'fmcgmalaysia.github.io' && url.pathname.endsWith('/buyer-room/company-switch-sheet-20261125.js')) {
+        return route.fulfill({ path: path.join(root, 'buyer-room/company-switch-sheet-20261125.js'), contentType: 'application/javascript' });
       }
       if (url.hostname !== 'companies.example.test') return route.abort();
       if (['/buyer-room', '/catalogue'].includes(url.pathname)) {
@@ -686,7 +686,7 @@ window.addEventListener('message', async ({source,data}) => {
       }
       const assets = {
         '/buyer-frame': 'buyer-room-20261125-company-entry.html',
-        '/catalogue-frame': 'buyer-room/catalogue/wix/catalogue-20261125-company-entry.inline.html',
+        '/catalogue-frame': 'buyer-room/catalogue/wix/catalogue-20261125-company-sheet.inline.html',
         '/master-shared/shipment-batches.js': 'master-shared/shipment-batches.js',
         '/master-shared/mobile-menu.js': 'master-shared/mobile-menu.js',
         '/master-shared/mobile-menu.css': 'master-shared/mobile-menu.css'

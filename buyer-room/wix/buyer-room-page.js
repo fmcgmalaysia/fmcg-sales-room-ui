@@ -113,7 +113,7 @@ $w.onReady(async function () {
   const campaignStorageKey = 'buyerWaitingCampaignLastV1';
   let waitingCampaignIndex;
   let activeBuyerRoomView = 'my';
-  let selectionImageOpen = false;
+  const downloadOccluders = new Set();
   let selectionDownloadUrl = '';
   let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
@@ -124,7 +124,7 @@ $w.onReady(async function () {
   downloadButton.link = '';
 
   function updateDownloadButtonVisibility() {
-    if (activeBuyerRoomView === 'my' && selectionDownloadUrl && !selectionImageOpen) {
+    if (activeBuyerRoomView === 'my' && selectionDownloadUrl && !downloadOccluders.size) {
       downloadButton.enable();
       downloadButton.show();
     } else downloadButton.hide();
@@ -273,8 +273,8 @@ $w.onReady(async function () {
       }
       return;
     }
-    if (message.type === 'BUYER_ROOM_SELECTION_IMAGE_STATE' && typeof message.open === 'boolean') {
-      selectionImageOpen = message.open;
+    if (['BUYER_ROOM_SELECTION_IMAGE_STATE', 'BUYER_ROOM_COMPANY_DIALOG_STATE'].includes(message.type) && typeof message.open === 'boolean') {
+      if (message.open) downloadOccluders.add(message.type); else downloadOccluders.delete(message.type);
       updateDownloadButtonVisibility();
       return;
     }
