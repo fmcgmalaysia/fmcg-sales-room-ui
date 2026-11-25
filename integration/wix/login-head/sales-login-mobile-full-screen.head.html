@@ -1,0 +1,77 @@
+<style id="sales-login-mobile-full-screen">
+@media (max-width: 767px) {
+  #SITE_CONTAINER [data-testid="responsive-container-content"]:has(> #PAGE_SECTIONSaas9a) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto minmax(min-content, 1fr) auto !important;
+    min-height: 100vh;
+    min-height: 100svh;
+    min-height: 100dvh;
+    background: linear-gradient(170deg, #03171235, #0317128c),
+      url('https://static.wixstatic.com/media/4ecd18_e33f9222ab0a49aaa23e6afc1b652578~mv2.jpg') 58% center / cover no-repeat,
+      #102b25;
+  }
+
+  #SITE_CONTAINER [data-testid="responsive-container-content"]:has(> #PAGE_SECTIONSaas9a) > :is(header, main, footer) {
+    grid-column: 1 !important;
+    width: 100%;
+  }
+
+  #SITE_CONTAINER [data-testid="responsive-container-content"]:has(> #PAGE_SECTIONSaas9a) > header { grid-row: 1 !important; }
+  #PAGE_SECTIONSaas9a { display: block !important; grid-row: 2 !important; align-self: stretch; }
+  #SITE_CONTAINER [data-testid="responsive-container-content"]:has(> #PAGE_SECTIONSaas9a) > footer {
+    grid-row: 3 !important;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  #SITE_CONTAINER [data-testid="responsive-container-content"]:has(> #PAGE_SECTIONSaas9a) > :is(header, main, footer) [data-hook="bgLayers"] {
+    visibility: hidden;
+  }
+
+  #PAGE_SECTIONSaas9a > section { height: 100%; min-height: 0 !important; }
+  #PAGE_SECTIONSaas9a > section > [data-testid="responsive-container-content"] {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
+    width: 100%;
+    min-height: 0 !important;
+    padding: 32px clamp(20px, 8vw, 42px);
+  }
+
+  #PAGE_SECTIONSaas9a #comp-mtgly6qo,
+  #PAGE_SECTIONSaas9a #comp-mtglzqww {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #PAGE_SECTIONSaas9a :is(#comp-mtx57gp1, #comp-mtxudw09) { display: none !important; }
+  #PAGE_SECTIONSaas9a #comp-mtglzqww button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 52px;
+    padding: 8px 12px;
+    border: 1px solid #fff8;
+    border-radius: 8px;
+    background: #fff !important;
+    color: #14281e !important;
+  }
+
+  #PAGE_SECTIONSaas9a #comp-mtglzqww button[aria-label="Continue with Google"]::before {
+    content: '';
+    flex: 0 0 18px;
+    height: 18px;
+    background: url('https://static.wixstatic.com/media/4ecd18_e6cc8038801c46f2b03a4c013e07c9f9~mv2.png') center / contain no-repeat;
+  }
+
+  #PAGE_SECTIONSaas9a #comp-mtglzqww .wixui-button__label {
+    color: inherit !important;
+    font-size: clamp(13px, 3.7vw, 16px) !important;
+    font-weight: 650;
+    white-space: normal;
+  }
+}
+</style>
