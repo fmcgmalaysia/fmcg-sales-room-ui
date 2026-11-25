@@ -583,23 +583,77 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
     #myView .awaiting:has([data-empty]),#myView .awaiting-icon{display:none}
     #myView .currency span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
     #myView .currency b{padding:4px 6px;border-radius:4px;background:#f1f5f8;color:#35516a}
-    #myView>.selection-limit-row{grid-area:1/2;justify-self:start;margin:0;padding:0;border:0;min-height:0;white-space:nowrap}
+    #myView>.buyer-selection-tools>.selection-limit-row{grid-area:1/2;justify-self:start;margin:0;padding:0;border:0;min-height:0;white-space:nowrap}
     #myView .selection-progress{display:none}
     #myView>.page-head>#browse{grid-area:1/3;margin:0;width:auto;min-width:118px}
     #myView>.page-head>#browse[aria-disabled="false"]{border-color:#efb6a3;background:#fff5ef;color:#943515}
     #myView>.page-head>#browse[aria-disabled="false"] .plus{background:#f9dfd1;color:inherit}
     #myView>.page-head>#browse[aria-disabled="false"]:is(:hover,:focus-visible){border-color:#db7c5d;background:#ffebe0;color:#943515}
     #myView>.page-head>#prepareMobileOrder{grid-area:1/4;width:auto;min-width:161px}
-    #myView.active:not(:has(#buyerSelectionLoading))>.selection-toolbar{
+    #myView.active:not(:has(#buyerSelectionLoading))>.buyer-selection-tools>.selection-toolbar{
       grid-area:2/1/3/-1;grid-template-columns:max-content minmax(180px,1fr);gap:18px;
       align-items:start;min-height:60px;margin:0;padding:20px 166px 0 0
     }
-    .removed-history-active #myView.active:not(:has(#buyerSelectionLoading))>.selection-toolbar{padding-right:0}
+    .removed-history-active #myView.active:not(:has(#buyerSelectionLoading))>.buyer-selection-tools>.selection-toolbar{padding-right:0}
     #myView .selection-toolbar .toolbar-search{width:100%;max-width:480px}
     #myView>.list-panel{grid-area:3/1/4/-1;min-width:0}
   }
 </style>
-<link rel="stylesheet" href="master-shared/mobile-menu.css?v=20261117-mobile-menu-icon-v1"><script defer src="master-shared/mobile-menu.js?v=20261117-mobile-menu-icon-v1"></script></head>
+<link rel="stylesheet" href="master-shared/mobile-menu.css?v=20261117-mobile-menu-icon-v1"><script defer src="master-shared/mobile-menu.js?v=20261117-mobile-menu-icon-v1"></script><style id="buyer-selection-mobile-scroll">
+.buyer-selection-tools { display: contents; }
+.buyer-selection-footer { display: none; }
+
+@media (max-width: 880px) {
+  .touch-buyer #myView { --selection-filter-row: 36px; --selection-search-row: 47px; }
+  .touch-buyer #myView .buyer-selection-tools {
+    display: grid;
+    position: sticky;
+    top: var(--top);
+    z-index: 16;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: var(--selection-filter-row) var(--selection-search-row);
+    column-gap: 8px;
+    min-width: 0;
+    background: #fff;
+  }
+  .touch-buyer #myView:has(#buyerSelectionLoading) .buyer-selection-tools { display: none; }
+  .touch-buyer #myView .buyer-selection-tools .selection-filters { grid-area: 1 / 1 / 2 / -1; }
+  .touch-buyer #myView .buyer-selection-tools .toolbar-search { grid-area: 2 / 1 / 3 / 2; }
+  .touch-buyer.removed-history-active #myView .buyer-selection-tools .toolbar-search { grid-column: 1 / -1; }
+  .touch-buyer #myView .buyer-selection-tools .selection-limit-row { grid-area: 2 / 2 / 3 / 3; }
+
+  .touch-buyer #myView #currentPanel .table-wrap { overflow: visible; }
+  .touch-buyer #myView #currentPanel .row.head {
+    position: sticky;
+    top: calc(var(--top) + var(--selection-filter-row) + var(--selection-search-row));
+    z-index: 14;
+    border-radius: 6px 6px 0 0;
+  }
+  .touch-buyer #myView #currentPanel .packing-meta { font-weight: 550; }
+  .touch-buyer #myView #currentPanel .selection-barcode { font-size: 10px; }
+  .touch-buyer #myView #currentPanel .grid .selection-row > .selection-image-cell {
+    justify-content: flex-end;
+    padding-inline: 2px;
+  }
+
+  .touch-buyer #myView #prepareMobileOrder.is-floating {
+    top: auto;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .touch-buyer #myView:not(:has(#buyerSelectionLoading)) .buyer-selection-footer {
+    display: block;
+    grid-column: 1 / -1;
+    margin: 8px 0 50px;
+    padding: 7px 0;
+    border-top: 1px solid var(--line);
+    color: #52677e;
+    text-align: center;
+    font-size: 10px;
+  }
+}
+</style>
+</head>
 <body class="touch-buyer">
 <div class="mobile-note"><div><strong>Buyer Room works best on a computer or tablet.</strong>Please continue on a larger screen to manage product lists and orders.</div></div>
 <div class="shell">
@@ -632,8 +686,9 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
       <div class="page-head">
         <div class="page-title"><h1>My Selection</h1><div class="inline-stats"><div class="inline-stat product-count" hidden><b id="myCount">0</b><span>Products</span></div><div class="inline-stat awaiting"><span class="awaiting-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="hourglass-disc" cx="12" cy="12" r="10"/><path class="hourglass-mark" d="M8.2 6.5h7.6M8.2 17.5h7.6M9 6.5c0 2.7 1.3 3.6 3 5.5-1.7 1.8-3 2.8-3 5.5M15 6.5c0 2.7-1.3 3.6-3 5.5 1.7 1.8 3 2.8 3 5.5"/></svg></span><b id="awaitingCount">0</b><span class="selection-awaiting-desktop">Awaiting Quotation</span><span class="selection-awaiting-mobile">Awaiting quote</span></div><div class="inline-stat currency"><span>Transaction Currency</span><b id="listCurrency">USD</b></div></div></div><a class="browse" id="browse" href="#" target="_blank" rel="noopener" aria-disabled="true" aria-label="Open Catalogue in a new tab"><span class="plus" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="default-label">Add More Items</span><span class="hover-label">VIEW CATALOGUE</span><span class="mobile-order-only">Add Items</span></a><button type="button" id="prepareMobileOrder"><span class="prepare-order-desktop">Start Order Request</span><span class="mobile-order-only">Prepare Order</span></button>
       </div>
-      <div class="list-tabs-bar selection-toolbar"><div class="selection-filters" role="tablist" aria-label="Filter My Selection"><button class="selection-filter active" id="currentTab" type="button" data-list-mode="current" data-selection-filter="all" role="tab" aria-selected="true" aria-pressed="true">All <b id="currentCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="food" role="tab" aria-selected="false" aria-pressed="false">Food <b id="foodCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="nonfood" role="tab" aria-selected="false" aria-pressed="false">Non-food <b id="nonFoodCount">0</b></button><button class="selection-filter removed-filter" id="removedTab" type="button" data-list-mode="removed" role="tab" aria-selected="false">Removed <b id="removedCount">0</b></button></div><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="mySearch" type="search" aria-label="Search selection by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label></div>
+      <div class="buyer-selection-tools"><div class="list-tabs-bar selection-toolbar"><div class="selection-filters" role="tablist" aria-label="Filter My Selection"><button class="selection-filter active" id="currentTab" type="button" data-list-mode="current" data-selection-filter="all" role="tab" aria-selected="true" aria-pressed="true">All <b id="currentCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="food" role="tab" aria-selected="false" aria-pressed="false">Food <b id="foodCount">0</b></button><button class="selection-filter" type="button" data-selection-filter="nonfood" role="tab" aria-selected="false" aria-pressed="false">Non-food <b id="nonFoodCount">0</b></button><button class="selection-filter removed-filter" id="removedTab" type="button" data-list-mode="removed" role="tab" aria-selected="false">Removed <b id="removedCount">0</b></button></div><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="mySearch" type="search" aria-label="Search selection by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label></div>
       <div class="selection-limit-row"><div class="showing" id="myShowing" aria-live="polite">Loading your company workspace…</div><span class="limit-note"><button class="limit-lock" id="limitInfoButton" type="button" aria-label="How selection limits and V.I.P quotations work" aria-expanded="false" aria-controls="limitInfo"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg></button><b id="selectionSummaryCount">0</b> of <b id="selectionLimit">100</b> <span class="limit-unit">selected</span><span class="limit-popover" id="limitInfo" role="dialog" aria-label="Selection limit information" hidden><strong>How V.I.P quotations and selection limits work</strong><p>After you select products, we will provide V.I.P prices within 24 hours. You can then download the product details and current quotation.</p><ul class="limit-tiers"><li><span>New account</span><b>100 SKUs</b></li><li><span>Contact Customer Service</span><b>Up to 300 SKUs</b></li><li><span>After your first completed transaction</span><b>500 SKUs automatically</b></li><li><span>Highest account access</span><b>700 SKUs</b></li></ul></span></span><span class="selection-progress" aria-hidden="true"><i id="selectionProgress"></i></span></div>
+      </div>
       <div class="list-panel active" id="currentPanel"><div class="table-wrap"><div class="grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Descriptions</div><div>Normal Price</div><div>V.I.P Price</div><div>Added Time</div><div>Last Quoted</div><div class="remove-head">Remove</div></div><div id="myRows" class="empty">
         <div id="buyerSelectionLoading" class="selection-loading">
           <div class="selection-loading-status">
@@ -652,6 +707,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
         </div>
       </div></div></div></div>
       <div class="list-panel" id="removedPanel"><div class="showing" id="removedShowing"></div><div class="table-wrap"><div class="grid removed-grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Item Name / Packing Size</div><div>M³ / CTN</div><div>Removed Time</div><div>Edited By</div><div></div></div><div id="removedRows"></div></div></div></div>
+      <footer class="buyer-selection-footer">© fmcgMalaysia.com</footer>
       <dialog id="selectionWaitLightbox" class="selection-wait-lightbox" aria-labelledby="buyerSelectionLoadingMessage">
         <button id="selectionWaitClose" class="selection-wait-close" type="button" aria-label="Close loading preview">×</button>
       </dialog>
