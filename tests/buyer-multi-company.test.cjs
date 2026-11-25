@@ -677,16 +677,16 @@ window.addEventListener('message', async ({source,data}) => {
     });
     await context.route('**/*', route => {
       const url = new URL(route.request().url());
-      if (url.hostname === 'fmcgmalaysia.github.io' && /\/buyer-room\/company-switch(?:-20261125)?\.js$/.test(url.pathname)) {
-        return route.fulfill({ path: path.join(root, 'buyer-room/company-switch.js'), contentType: 'application/javascript' });
+      if (url.hostname === 'fmcgmalaysia.github.io' && url.pathname.endsWith('/buyer-room/company-switch-entry-20261125.js')) {
+        return route.fulfill({ path: path.join(root, 'buyer-room/company-switch-entry-20261125.js'), contentType: 'application/javascript' });
       }
       if (url.hostname !== 'companies.example.test') return route.abort();
       if (['/buyer-room', '/catalogue'].includes(url.pathname)) {
         return route.fulfill({ body: fixtureHost(url.pathname === '/catalogue'), contentType: 'text/html' });
       }
       const assets = {
-        '/buyer-frame': 'buyer-room-20261124-company-switch.html',
-        '/catalogue-frame': 'buyer-room/catalogue/wix/catalogue-company-switch.inline.html',
+        '/buyer-frame': 'buyer-room-20261125-company-entry.html',
+        '/catalogue-frame': 'buyer-room/catalogue/wix/catalogue-20261125-company-entry.inline.html',
         '/master-shared/shipment-batches.js': 'master-shared/shipment-batches.js',
         '/master-shared/mobile-menu.js': 'master-shared/mobile-menu.js',
         '/master-shared/mobile-menu.css': 'master-shared/mobile-menu.css'
@@ -711,9 +711,11 @@ window.addEventListener('message', async ({source,data}) => {
     await changeCompany.hover();
     await frame(room).locator('.buyer-company-switch-tip').waitFor({ state: 'visible' });
     assert.equal(await changeCompany.locator('svg').count(), 1);
-    assert.equal((await changeCompany.textContent()).trim(), '');
+    assert.equal(await changeCompany.locator('.buyer-company-switch-label').isVisible(), false);
     await changeCompany.click();
-    await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
+    const switchDialog = frame(room).getByRole('dialog', { name: 'Switch company' });
+    assert.equal(await switchDialog.getByRole('button', { name: 'Company YYY' }).count(), 0);
+    await switchDialog.getByRole('button', { name: 'Company ZZZ' }).click();
     await frame(room).locator('#companyName').filter({ hasText: 'Company ZZZ' }).waitFor();
     await frame(room).getByRole('button', { name: 'Return to your Catalogue' }).click();
     await frame(room).locator('.shell .toolbar').waitFor();
@@ -741,7 +743,7 @@ window.addEventListener('message', async ({source,data}) => {
     await room.setViewportSize(desktopViewport);
     assert.equal(new URL(room.url()).searchParams.get('company'), second.buyerCompanyId);
     await catalogueSwitch.click();
-    try { await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company YYY' }).click(); }
+    try { await switchDialog.getByRole('button', { name: 'Company YYY' }).click(); }
     catch (error) {
       throw new Error(error.message + '\n' + JSON.stringify({ errors, host: await room.evaluate(() => window.qaError || ''),
         child: await frame(room).locator('body').evaluate(body => [...body.querySelectorAll('dialog')].map(item => ({ name: item.className, text: item.textContent, open: item.open, display: getComputedStyle(item).display, rect: item.getBoundingClientRect().toJSON() }))) }));
@@ -763,7 +765,7 @@ window.addEventListener('message', async ({source,data}) => {
     await orderQty.press('Tab');
     assert.deepEqual(await pendingSave.requested, { customerId: first.buyerCompanyId, quantity: 4 });
     await changeCompany.click();
-    await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
+    await switchDialog.getByRole('button', { name: 'Company ZZZ' }).click();
     await frame(room).getByText('Saving your quantities before switching companies…').waitFor();
     assert.equal(new URL(room.url()).searchParams.get('company'), first.buyerCompanyId);
     pendingSave.resume(true);
@@ -779,18 +781,18 @@ window.addEventListener('message', async ({source,data}) => {
     await frame(room).locator('#mobileQtyForm .mobile-qty-save').click();
     assert.deepEqual(await failedSave.requested, { customerId: first.buyerCompanyId, quantity: 9 });
     await changeCompany.click();
-    await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
+    await switchDialog.getByRole('button', { name: 'Company ZZZ' }).click();
     failedSave.resume(false);
     await frame(room).getByText('Quantity could not be saved. You are still in the current company. Please retry.').waitFor();
     assert.equal(new URL(room.url()).searchParams.get('company'), first.buyerCompanyId);
     await changeCompany.click();
-    await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
+    await switchDialog.getByRole('button', { name: 'Company ZZZ' }).click();
     await frame(room).getByRole('dialog', { name: 'Unsaved quantities' }).getByRole('button', { name: 'Stay and edit quantities' }).click();
     await frame(room).locator('#orderRows [data-mobile-order-id]').first().click();
     assert.equal(await frame(room).locator('#mobileQtyInput').inputValue(), '9');
     await frame(room).locator('#mobileQtyClose').click();
     await changeCompany.click();
-    await frame(room).getByRole('dialog', { name: 'Choose a company' }).getByRole('button', { name: 'Company ZZZ' }).click();
+    await switchDialog.getByRole('button', { name: 'Company ZZZ' }).click();
     await frame(room).getByRole('dialog', { name: 'Unsaved quantities' }).getByRole('button', { name: 'Discard and switch' }).click();
     await frame(room).locator('#mobileCompanyName').filter({ hasText: /^Company ZZZ$/ }).waitFor();
     assert.equal((await buyer.getBuyerWorkspace(first)).myList[0].orderQtyCtn, 4);
