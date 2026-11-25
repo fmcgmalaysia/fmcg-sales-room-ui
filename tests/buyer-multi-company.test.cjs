@@ -129,7 +129,7 @@ function fixture(setupMasterTransfer = () => ({})) {
     ...load('backend/buyerSelectionExportToken.js', tokenBindings, ['createBuyerSelectionExportToken', 'verifyBuyerSelectionExportToken']),
     ...load('backend/buyerOrderExportToken.js', tokenBindings, ['createBuyerOrderExportToken', 'verifyBuyerOrderExportToken'])
   };
-  const buyer = load('backend/catalogueAuth.web.js', { ...common, ...access, ...tokens },
+  const buyer = load('backend/catalogueAuth.web.js', { ...common, ...access, ...tokens, randomUUID },
     ['getBuyerCompanies', 'getCurrentBuyerContext', 'getBuyerWorkspace', 'saveBuyerQuantity', 'submitBuyerOrder',
       'createBuyerSelectionDownload', 'getBuyerOrderDetail']);
   const catalogue = load('backend/catalogueSelection.web.js', { ...common, ...access }, ['getCatalogueSelectionState', 'addCatalogueSelection']);

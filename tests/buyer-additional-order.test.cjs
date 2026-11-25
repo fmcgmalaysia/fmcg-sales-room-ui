@@ -38,7 +38,7 @@ function harness() {
   table('WixCustomers').set('C1', { _id: 'C1', customerId: 'C1', assignedStaffId: 'LAW', title: 'DEMO' });
   const base = { wixData, Permissions: { SiteMember: 'member' }, webMethod: (_, fn) => fn, console, Date, Map, Set, Buffer };
   const source = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/^import .*;\r?$/gm, '').replace(/^export (const|async function|function) /gm, '$1 ');
-  const buyer = vm.createContext({ ...base });
+  const buyer = vm.createContext({ ...base, randomUUID: require('node:crypto').randomUUID });
   require('./load-master-quantity.cjs')(buyer,()=>[...table('WixBuyerOrderLines').values()].map(data));
   vm.runInContext(source('backend/catalogueAuth.web.js') + "\nresolveBuyerContext=async()=>({customerId:'C1',companyName:'DEMO',currency:'SGD',selectionLimit:100,email:'demo@example.test',actorName:'LAW',actorType:'STAFF'}); workspaceItems=async()=>__products(); globalThis.api={submitBuyerOrder,getBuyerOrderDetail,buyerOrderHistory};", buyer);
   buyer.__products = () => clone([...products.values()]);
