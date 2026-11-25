@@ -63,6 +63,8 @@
     const caughtRows=new Set();
     const sourceLocked=row=>{const saved=workspace().tasks.find(item=>item.id===row.taskId);return Boolean(state?.batchId&&saved?.procurement?.totalCtn>0||saved?.archived||saved?.salesInvoiceLocked||saved?.salesInvoiceNumber||saved?.financeSubmitted||api.financeLocked?.(row.taskId));};
     const rowLocked=row=>sourceLocked(row)||Boolean(workspace().tasks.find(item=>item.id===row.taskId)?.po&&!row.amending);
+    const removableDraft=(row,saved)=>Boolean(row.supplierId&&row.status!=='saved'&&(!row.taskId||
+      row.taskId===state.rootId&&saved&&!saved.supplierId&&!saved.procurement?.revision&&!saved.procurement?.totalCtn&&!saved.po&&!sourceLocked(row)));
     const parkedDrafts=new Map();
     const esc=api.esc,money=api.num;
     const workspace=()=>api.workspace();
@@ -152,7 +154,8 @@
       const prices=row.supplierId||row.taskId===state.rootId?priceKeys.map(key=>'<td><div class="allocation-number"><input type="text" inputmode="decimal" data-allocation-field="'+key+'" value="'+esc(row.raw[key]||(['lpPc','lpCtn','disc3'].includes(key)?'0.00':''))+'" '+(locked||!row.supplierId?'disabled':'')+' aria-label="Supplier '+(index+1)+' '+key+'">'+(['disc1','disc2'].includes(key)?'<span>%</span>':'')+'</div></td>').join('')+'<td class="amount"><b data-allocation-net>—</b></td><td class="allocation-catch">'+referenceAction+'</td><td class="amount"><b data-allocation-amount>—</b></td>':'<td colspan="8" class="allocation-waiting-space"></td>';
       const input=(field,value,label)=>'<label>'+label+'<input type="text" inputmode="'+(field==='amount'?'decimal':'numeric')+'" data-allocation-field="'+field+'" value="'+esc(field==='amount'?(value||'0.00'):value)+'" '+(locked||quantityLocked&&['paid','free'].includes(field)?'disabled':'')+'></label>';
       const detail=row.supplierId&&(row.mode==='FOC'||row.moneySource==='TOTAL')?'<tr data-allocation-row="'+esc(row.key)+'" class="allocation-detail"><td></td><td colspan="13"><div class="allocation-detail-fields">'+(row.mode==='FOC'?input('paid',row.paid,'付费 CTN')+'<span>＋</span>'+input('free',row.free,'赠送 CTN')+'<span data-allocation-total>= '+esc(row.qty)+' CTN</span>':'')+(row.moneySource==='TOTAL'?input('amount',row.amount,'实际总额 MYR'):'')+'</div></td></tr>':'';
-      return '<tr data-allocation-row="'+esc(row.key)+'" class="'+(!row.supplierId?'allocation-waiting':'')+'" '+(row.hidden?'hidden':'')+'><td>'+person+'</td><td>'+supplier+'</td><td>'+method+'</td><td>'+quantity+'</td>'+prices+'<td class="allocation-transport">'+transport+purpose+'</td><td class="allocation-po-cell">'+po+'</td></tr>'+detail;
+      const remove=removableDraft(row,saved)?'<button type="button" class="allocation-hand" data-allocation-remove-draft="'+esc(row.key)+'" '+(locked||state.running||state.current||api.savePending()?'disabled':'')+' aria-label="Remove unsaved supplier '+(index+1)+'" title="Remove unsaved supplier">×</button>':'';
+      return '<tr data-allocation-row="'+esc(row.key)+'" class="'+(!row.supplierId?'allocation-waiting':'')+'" '+(row.hidden?'hidden':'')+'><td>'+person+'</td><td>'+supplier+'</td><td>'+method+'</td><td>'+quantity+'</td>'+prices+'<td class="allocation-transport">'+transport+purpose+'</td><td class="allocation-po-cell">'+po+remove+'</td></tr>'+detail;
     }
     function renderRows(){
       document.querySelector('#allocationRows').innerHTML=state.rows.map(rowMarkup).join('');
@@ -317,6 +320,20 @@
     }
     function applyReference(row){const ref=row.pendingReference;if(!ref||ref.context!==referenceContext(row)||rowLocked(row))return;for(const name of priceKeys){row.raw[name]=displayPrice(ref.prices[name],name);row.originalRaw[name]=row.raw[name];row.originalPrices[name]=ref.prices[name];}row.moneySource='PRICES';row.reference={at:ref.at,source:ref.source};row.pendingReference=null;row.manual=[];row.edited=[];row.status='draft';state.dirty=true;api.cache();if(api.modal().classList.contains('supplier-allocation-dialog'))renderRows();}
     function click(control){
+      if(control.dataset.allocationRemoveDraft){
+        if(!state||state.running||state.current||api.savePending())return true;
+        const index=state.rows.findIndex(item=>item.key===control.dataset.allocationRemoveDraft),row=state.rows[index];
+        if(!row)return true;
+        const saved=workspace().tasks.find(item=>item.id===row.taskId);
+        if(!removableDraft(row,saved))return true;
+        if(referenceRequest?.key===row.key){referenceSession={};referenceRequest=null;}
+        caughtRows.delete(row.key);
+        if(row.taskId)state.rows[index]=rowDraft(saved,row.key);
+        else state.rows.splice(index,1);
+        state.dirty=Boolean(state.reason)||state.rows.some(item=>item.supplierId&&changed(item,workspace().tasks.find(saved=>saved.id===item.taskId)));
+        state.issue='Unsaved supplier removed.';state.issueTone='complete';
+        remainingRow();render();api.cache();return true;
+      }
       if(control.dataset.allocationAmend){const row=state?.rows.find(item=>item.key===control.dataset.allocationAmend),saved=workspace().tasks.find(item=>item.id===row?.taskId);if(!row||!saved?.po||state.running||state.current||api.savePending()||sourceLocked(row)||row.amending)return true;if(saved.editVersion!==row.version){pause('采购来源已变化；草稿保留，请核对最新资料。');return true;}row.amending=true;state.issue='Amending PO 正在修订采购单';state.issueTone='pending';renderRows();api.cache();return true;}
       if(control.dataset.allocationPo){const row=state?.rows.find(item=>item.key===control.dataset.allocationPo);if(!row||state.running||api.savePending())return true;if(!row.taskId||changed(row,workspace().tasks.find(saved=>saved.id===row.taskId))){state.issueTone='pending';document.querySelector('#allocationIssue').className='allocation-issue pending';state.issue='请先保存分单，再输入 PO；当前输入已保留。';document.querySelector('#allocationIssue').textContent=state.issue;return true;}api.openPo?.(row.taskId);return true;}
       if(control.dataset.allocationCatch){reference(control.dataset.allocationCatch);return true;}

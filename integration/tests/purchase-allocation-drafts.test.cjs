@@ -100,3 +100,41 @@ test('confirmed source immediately replaces Saving feedback while delayed readba
 test('confirmed feedback never reopens a closed source dialog or discards another source draft',()=>{
  const f=fixture();twoSources(f,true);f.edit('A','qty','bad');f.ui.click({dataset:{allocationSave:'second'}});const request=f.submissions[0],before=f.ui.serialize().rows.find(row=>row.key==='A').qty;f.modal.close();f.ui.receipt(request,{ok:true,sourceTaskId:'NEW'});assert.equal(f.modal.open,false);assert.equal(f.ui.serialize().rows.find(row=>row.key==='A').qty,before);assert.equal(f.submissions.length,1);
 });
+
+test('removing an unsaved supplier restores the waiting quantity without changing the issued PO',()=>{
+ const f=fixture(),root=f.workspace.tasks[0];
+ root.ord=200;root.po='QA-PO-01';
+ root.procurement={revision:'P1',totalCtn:100,draftPlan:false,transportMode:'SUPPLIER_DELIVER'};
+ f.ui.open('A');
+ f.edit('draft-1','supplierId','S2');f.edit('draft-1','qty','60');
+ assert.match(f.node('#allocationRows').innerHTML,/data-allocation-remove-draft="draft-1"/);
+ assert.doesNotMatch(f.node('#allocationRows').innerHTML,/data-allocation-remove-draft="A"/);
+ f.ui.click({dataset:{allocationRemoveDraft:'A'}});
+ f.setPending({requestId:'IN_FLIGHT'});
+ f.ui.click({dataset:{allocationRemoveDraft:'draft-1'}});
+ assert.equal(f.ui.serialize().rows.find(row=>row.key==='draft-1').qty,'60');
+ f.setPending(null);
+ f.ui.click({dataset:{allocationRemoveDraft:'draft-1'}});
+ assert.match(f.node('#allocationSummary').innerHTML.replace(/<[^>]*>/g,''),/待安排 100 CTN/);
+ assert.doesNotMatch(f.node('#allocationRows').innerHTML,/data-allocation-remove-draft=/);
+ assert.equal(root.po,'QA-PO-01');assert.equal(root.procurement.totalCtn,100);
+ assert.equal(f.submissions.length,0);assert.equal(f.ui.dirty(),false);
+});
+
+test('the first local supplier can be discarded but a persisted supplier plan cannot',()=>{
+ const f=fixture(),root=f.workspace.tasks[0];
+ root.supplierId='';f.ui.open('A');
+ f.edit('A','supplierId','S2');
+ assert.match(f.node('#allocationRows').innerHTML,/data-allocation-remove-draft="A"/);
+ f.ui.click({dataset:{allocationRemoveDraft:'A'}});
+ assert.doesNotMatch(f.node('#allocationRows').innerHTML,/data-allocation-remove-draft=/);
+ assert.equal(f.ui.dirty(),false);
+
+ root.supplierId='S2';
+ root.procurement={revision:'P1',totalCtn:65,draftPlan:true,transportMode:'SUPPLIER_DELIVER'};
+ f.ui.open('A');
+ assert.doesNotMatch(f.node('#allocationRows').innerHTML,/data-allocation-remove-draft=/);
+ f.ui.click({dataset:{allocationRemoveDraft:'A'}});
+ assert.equal(root.supplierId,'S2');assert.equal(root.procurement.totalCtn,65);
+ assert.equal(f.submissions.length,0);
+});
