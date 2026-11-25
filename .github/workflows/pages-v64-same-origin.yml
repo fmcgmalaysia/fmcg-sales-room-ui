@@ -2017,25 +2017,26 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-unsaved-supplier-only'
         run: sleep 8
 
-      - name: Download the exact current Pages archive for Purchase sourcing handoff
+      - name: Download the published MASTER archive for the UI closeout
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-sourcing-handoff-only'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages
-          run-id: 45619162711
+          run-id: 45644018325
           github-token: ${{ github.token }}
           path: ${{ format('{0}/purchase-sourcing-handoff-base', runner.temp) }}
 
-      - name: Stage Purchase and Support sourcing handoff
+      - name: Stage Purchase typography, Handle, and Buyer Room packing labels
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-sourcing-handoff-only'
         run: |
           site="$RUNNER_TEMP/purchase-sourcing-handoff-site"
           mkdir "$site"
           tar --extract --file "$RUNNER_TEMP/purchase-sourcing-handoff-base/artifact.tar" --directory "$site"
-          node tools/stage-purchase-sourcing-handoff.cjs "$site"
+          node tools/stage-finished-ui.cjs "$site"
           node --test integration/tests/purchase-quantity-cases.test.cjs integration/tests/purchase-support-shortfall.test.cjs integration/tests/stock-current-quantity-case.test.cjs integration/tests/stock-current-allocation-context.test.cjs
+          node --test tests/buyer-native-selection-download.test.cjs
 
-      - name: Upload the scoped Purchase sourcing handoff package
+      - name: Upload the scoped UI package
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-sourcing-handoff-only'
         uses: actions/upload-pages-artifact@v5
         with:

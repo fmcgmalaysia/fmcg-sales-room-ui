@@ -1,0 +1,35 @@
+/* Purchase-only typography. Keep the shared header, icon and status rules. */
+#app,
+body #modal,
+body #modal.receipt-feedback-dialog .dialogbody {
+  font-family: var(--master-font);
+}
+
+#app :is(h1, h2, h3),
+body #modal :is(h2, h3) {
+  font-family: var(--master-font);
+  font-weight: 600;
+}
+
+#app :is(table th, table td) {
+  font-size: 11px;
+}
+
+/* The workroom table stylesheet sets header emphasis with !important. */
+body #app table > thead > tr > th {
+  font-weight: 600 !important;
+}
+
+#app :is(
+  .purchase-company-caption, .directory-footer, .foot,
+  .history-date, .po-barcode, .po-created-age, .po-history-time,
+  .po-requested-time, table small
+) {
+  font-size: 10px;
+  font-weight: 400;
+}
+
+body #modal :is(button, input, select, textarea),
+body #modal.receipt-feedback-dialog .receipt-feedback-field select {
+  font-family: var(--master-font);
+}
