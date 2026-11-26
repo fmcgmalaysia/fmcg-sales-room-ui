@@ -229,10 +229,10 @@ export const continueCataloguePictures = webMethod(Permissions.Admin, () => cont
 // and this temporary job expires at 7:00 a.m. Malaysia time.
 export async function processCatalogueMigrationWindow() {
   const expires = Date.parse('2026-11-26T23:00:00Z');
-  const end = Math.min(Date.now() + 110000, expires);
+  const end = Math.min(Date.now() + 250000, expires);
   let last;
   let batches = 0;
-  while (batches < 30 && Date.now() + 12000 < end) {
+  while (batches < 64 && Date.now() + 12000 < end) {
     last = await continueCataloguePictureBatch();
     if (last.status !== 'MIGRATING') break;
     batches++;
@@ -241,3 +241,8 @@ export async function processCatalogueMigrationWindow() {
     status: last.status, batches, verified: last.totals.VERIFIED || 0
   });
 }
+
+export async function processCatalogueMigrationWindow16() { await processCatalogueMigrationWindow(); }
+export async function processCatalogueMigrationWindow27() { await processCatalogueMigrationWindow(); }
+export async function processCatalogueMigrationWindow38() { await processCatalogueMigrationWindow(); }
+export async function processCatalogueMigrationWindow49() { await processCatalogueMigrationWindow(); }
