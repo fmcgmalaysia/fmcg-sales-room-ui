@@ -11,6 +11,28 @@ import { getBuyerCompanies, getCurrentBuyerContext } from 'backend/catalogueAuth
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
 let assistCustomerId = '';
+const buyerWorkbookPhotoKey = 'buyerWorkbookPhotoV1';
+function buyerWorkbookPhotoEntry(location, storage, signedIn, now = Date.now()) {
+  const company = selectedBuyerCompanyId(location);
+  const selectionId = String(location.query?.imageSelection || '').trim();
+  const valid = entry => /^CUS-[a-z0-9-]{1,80}$/i.test(entry?.company || '') &&
+    /^[a-z0-9_-]{1,128}$/i.test(entry?.selectionId || '') &&
+    Number.isFinite(entry.expiresAt) && entry.expiresAt > now && entry.expiresAt <= now + 20 * 60000;
+  const opened = { company, selectionId, expiresAt: now + 20 * 60000 };
+  try {
+    if (company || selectionId) {
+      storage.removeItem(buyerWorkbookPhotoKey);
+      if (valid(opened) && !signedIn) storage.setItem(buyerWorkbookPhotoKey, JSON.stringify(opened));
+      return valid(opened) ? opened : null;
+    }
+    if (signedIn) {
+      const saved = JSON.parse(storage.getItem(buyerWorkbookPhotoKey) || 'null');
+      storage.removeItem(buyerWorkbookPhotoKey);
+      return valid(saved) ? saved : null;
+    }
+  } catch (_) { /* Storage unavailable; an already opened link still works. */ }
+  return valid(opened) ? opened : null;
+}
 function getAssistCustomerId() {
   // Assisted access must be explicit in the URL. Catalogue already preserves
   // the `assist` query when staff return to Buyer Room, while ignoring an old
@@ -58,10 +80,13 @@ $w.onReady(async function () {
   if (redirectingToStaffLogin) return;
   const frame = $w('#html1');
   const downloadButton = $w('#downloadExcelButton');
-  const requestedCompanyId = assistCustomerId ? '' : selectedBuyerCompanyId(wixLocationFrontend);
+  const workbookPhoto = assistCustomerId ? null :
+    buyerWorkbookPhotoEntry(wixLocationFrontend, session, authentication.loggedIn());
+  const requestedCompanyId = assistCustomerId ? '' :
+    selectedBuyerCompanyId(wixLocationFrontend) || workbookPhoto?.company || '';
   let scopedCompanyId = requestedCompanyId;
   let companyAccess;
-  let pendingImageFromWorkbook = String(wixLocationFrontend.query?.imageSelection || '').trim();
+  let pendingImageFromWorkbook = workbookPhoto?.selectionId || '';
   let photoBusy = false;
   const companyAccessReady = assistCustomerId || !authentication.loggedIn() ? null :
     loadBuyerCompanyAccess(getBuyerCompanies, requestedCompanyId).then(access => {
@@ -241,7 +266,7 @@ $w.onReady(async function () {
     if (pendingImageFromWorkbook) {
       const wanted = pendingImageFromWorkbook;
       pendingImageFromWorkbook = '';
-      if (result.myList?.some(item=>String(item.id)===wanted)) {
+      if (customerId === workbookPhoto?.company && result.myList?.some(item=>String(item.id)===wanted)) {
         frame.postMessage({type:'BUYER_ROOM_SHOW_SELECTION_IMAGE',customerId,selectionId:wanted});
       }
     }

@@ -23,30 +23,6 @@ function payloadData(record) {
   if (record?.payload && typeof record.payload === 'object') return record.payload;
   try { return JSON.parse(String(record?.payload || '{}')); } catch (_) { return {}; }
 }
-function imageUrl(value, depth = 0) {
-  if (depth > 5 || value == null) return '';
-  if (typeof value === 'object') {
-    for (const candidate of [value.url, value.id, value.src, value.fileName, value.image, value.imageInfo?.url, value.imageInfo?.id, value.media?.url, value.media?.id]) {
-      const resolved = imageUrl(candidate, depth + 1);
-      if (resolved) return resolved;
-    }
-    return '';
-  }
-  const raw = normalize(value);
-  if (!raw) return '';
-  if (raw.startsWith('{')) {
-    try { return imageUrl(JSON.parse(raw), depth + 1); } catch (_) { /* Continue with string parsing. */ }
-  }
-  const wixImage = /^(?:wix:)?image:\/\/v1\/([^/#?]+)/i.exec(raw);
-  if (wixImage) return `https://static.wixstatic.com/media/${encodeURIComponent(decodeURIComponent(wixImage[1]))}`;
-  const wixCdn = /^https?:\/\/static\.wixstatic\.com\/media\/([^/#?]+)/i.exec(raw);
-  if (wixCdn) return `https://static.wixstatic.com/media/${encodeURIComponent(decodeURIComponent(wixCdn[1]))}`;
-  if (/^https?:\/\//i.test(raw)) return raw;
-  if (/^[A-Za-z0-9_.~-]+\.(?:avif|bmp|gif|heic|jpeg|jpg|png|svg|tif|tiff|webp)$/i.test(raw)) return `https://static.wixstatic.com/media/${encodeURIComponent(raw)}`;
-  return '';
-}
-
-
 async function allSelectionRecords(customerId) {
   let result = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', customerId).limit(1000).find({ suppressAuth: true, consistentRead: true });
   const records = [...result.items];
@@ -115,7 +91,7 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
     }));
     selections = quoteRows.map(data => ({ data }));
   }
-  const rows = selections.map(({ data }) => {
+  const rows = selections.map(({ data, record }) => {
     const storedBarcode = normalize(data.barcode || data.unitBarcode);
     const product = byId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};
     const quoteActive = upper(data.quoteStatus || 'RFQ') === 'VIEW QUOTE';
@@ -126,7 +102,7 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
     const catalogueEa = numberOrBlank(product.ea ?? product.price);
     const cbm = numberOrBlank(product.m3Ctn ?? product.cbmPerCtn ?? product.cbm ?? data.cbmPerCtn);
     return {
-      imageUrl: imageUrl(product.image || product.productImage || product.mainImage || product.wixImageUrl || data.imageUrl || data.image),
+      selectionId: normalize(record?._id || data.id),
       unitBarcode: normalize(product.barcode || storedBarcode),
       itemName: normalize(product.name || product.title || data.itemName),
       packingSize: normalize(product.description || data.packingSize),
@@ -135,9 +111,9 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
       cbmPerCtn: cbm
     };
   });
-  const bytes = buildBuyerSelectionExcel({ buyerRoomUrl, currency, rows });
+  const bytes = buildBuyerSelectionExcel({ buyerRoomUrl, customerId:id, currency, rows });
   const fileName = `fmcgmalaysia.com-My-Selection-${new Date().toISOString().slice(0, 10)}.xlsx`;
-  const versionKey = createHash('sha256').update(JSON.stringify({ format: 'selection-image-links-v1', id, buyerRoomUrl, currency, rows, quoteVersions: selections.map(({ data }) => data.quoteEffectiveAt || data.quoteSyncedAt || '') })).digest('hex');
+  const versionKey = createHash('sha256').update(JSON.stringify({ format: 'selection-authorized-image-links-v2', id, buyerRoomUrl, currency, rows, quoteVersions: selections.map(({ data }) => data.quoteEffectiveAt || data.quoteSyncedAt || '') })).digest('hex');
   return { fileName, bytes: Buffer.from(bytes), rowCount: rows.length, versionKey };
 }
 
