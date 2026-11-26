@@ -19,6 +19,35 @@
   display: none;
 }
 
+html body header[data-master-workroom-header] > .account-menu-trigger {
+  order: 4;
+}
+
+html body header[data-master-workroom-header]:not(:has(> :is(.workroom-company-switch:not([hidden]), #staff, .staff, .session, .header-bottom))) > .account-menu-trigger {
+  margin-inline-start: auto;
+}
+
+@media (min-width: 801px) {
+  /* Finance and Warehouse can position the existing Refresh action over the masthead. */
+  html body:has(main :is(#refresh, #accountRefresh, #refreshDebtors):not([hidden])) > header.department-header.has-account-menu:has(> .account-menu-trigger) {
+    padding-inline-end: 88px !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  html body header[data-master-workroom-header].has-account-menu:has(> .account-menu-trigger):has([data-ltpos-brand-mark]) {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+  }
+
+  html body header[data-master-workroom-header] > .account-menu-trigger {
+    grid-area: 1 / 4;
+  }
+
+  html body header[data-master-workroom-header].has-account-menu:has(> .account-menu-trigger):has([data-ltpos-brand-mark]) > .app-header-search {
+    grid-column: 1 / -1;
+  }
+}
+
 .account-menu-trigger:hover,
 .account-menu-trigger[aria-expanded="true"] {
   border-color: currentColor;
@@ -62,9 +91,10 @@
   border-radius: 10px 10px 3px 3px;
 }
 
-.account-menu-panel {
+dialog.account-menu-panel {
   position: fixed;
   inset: auto;
+  transform: none;
   box-sizing: border-box;
   min-height: 0;
   width: min(272px, calc(100vw - 16px));
