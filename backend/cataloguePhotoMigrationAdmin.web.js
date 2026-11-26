@@ -106,6 +106,17 @@ async function continueCataloguePictureBatch() {
 }
 export const continueCataloguePictures = webMethod(Permissions.Admin, () => continueCataloguePictureBatch());
 
+// Inspect incomplete steps before deciding whether a private upload needs recovery.
+export const cataloguePictureReview = webMethod(Permissions.Admin, async () => {
+  const { items, totalCount } = await wixData.query(registry).ne('_id', checkpoint)
+    .ne('status', 'VERIFIED').ascending('_id')
+    .fields('_id', 'status', 'fileUrl', 'previewFileUrl').limit(20).find(options);
+  return { total: totalCount, items: items.map(row => ({
+    productId: row._id, stage: row.status,
+    originalRecorded: Boolean(row.fileUrl), previewRecorded: Boolean(row.previewFileUrl)
+  })) };
+});
+
 // Site-owned scheduler entry point. The browser still uses the Admin web method,
 // and this temporary job expires at 7:00 a.m. Malaysia time.
 export async function processCatalogueMigrationWindow() {
