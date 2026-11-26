@@ -9,7 +9,7 @@ import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
 import { listCataloguePage, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts } from 'backend/protectedCatalogue.web.js';
 import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
-import { continueCataloguePictures } from 'backend/cataloguePhotoMigrationAdmin.web.js';
+import { cataloguePictureProgress, continueCataloguePictures } from 'backend/cataloguePhotoMigrationAdmin.web.js';
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
 let catalogueContextMessage = null;
@@ -860,7 +860,7 @@ $w.onReady(() => {
     if (wixWindowFrontend.rendering?.env === 'backend') return;
     setupCatalogueWorkspace(setupNav());
 });
- 
+
 // This temporary owner view resumes the server-side cursor. The backend web
 // method independently requires a Wix administrator on every batch call.
 $w.onReady(async () => {
@@ -868,11 +868,10 @@ $w.onReady(async () => {
         wixLocationFrontend.query?.adminCatalogueImageMigration !== '1') return;
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
     let errors = 0;
-    let authorized = false;
+    try { await cataloguePictureProgress(); } catch { return; }
     while (errors < 3) {
         try {
             const batch = await continueCataloguePictures();
-            authorized = true;
             errors = 0;
             if (!batch || !['MIGRATING','BUSY','FINISHED'].includes(batch.status)) break;
             const progress = batch.totals || {};
@@ -883,12 +882,11 @@ $w.onReady(async () => {
                 ' · ' + verified + ' verified · ' + review + ' to review';
             if (batch.status === 'FINISHED') return;
             await delay(batch.status === 'BUSY' ? 4500 : 1200);
-        } catch (error) {
-            if (!authorized) return;
+        } catch {
             errors++;
             $w('#text20').text = 'Checking the saved migration position…';
             if (errors < 3) await delay(15000 * errors);
         }
     }
-    if (authorized) $w('#text20').text = 'Paused · Refresh to resume from the saved position';
+    $w('#text20').text = 'Paused · Refresh to resume from the saved position';
 });
