@@ -7,6 +7,7 @@
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
 <meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v6">
 <meta name="buyer-track-progress-build" content="20261123-buyer-track-progress-v1">
+<meta name="buyer-current-shipment-progress-build" content="20261126-buyer-current-shipment-loaded-v1">
 <meta name="buyer-mobile-quantity-build" content="20261123-buyer-mobile-quantity-visible-v1">
 <meta name="buyer-entry-build" content="20261123-buyer-early-embed-v1">
 <meta name="buyer-waiting-campaign-build" content="20261123-buyer-waiting-campaign-v2">
@@ -1126,7 +1127,12 @@ function completedLineQty(line){const value=line.loadedInvoicedQtyCtn;return Num
 function committedLineQty(line){for(const key of ['committedQtyCtn','committedQty','customerOrderQty','masterQtyCtn'])if(line[key]!==undefined&&line[key]!==null&&line[key]!=='')return Math.max(0,num(line[key]));return null}
 function effectiveRequestedQty(line){return Math.max(0,num(line.effectiveRequestedQtyCtn??line.requestedQtyCtn??line.quantityCtn))}
 function canReduceOrder(order){return false}
-function stageForLine(order,line){return window.customerShipmentBatches.progressStage(order,line)+1}
+function currentShipmentLoaded(line){
+  const shipment=line.customerShipment;
+  return Number.isSafeInteger(shipment?.currentQtyCtn)&&shipment.currentQtyCtn>0&&
+    shipment.confirmedQtyCtn===shipment.currentQtyCtn&&Number.isSafeInteger(line.loadedQtyCtn)&&line.loadedQtyCtn>=shipment.currentQtyCtn;
+}
+function stageForLine(order,line){return currentShipmentLoaded(line)?trackingStages.length:window.customerShipmentBatches.progressStage(order,line)+1}
 const trackingStages=['Request Sent','Confirmed','Processing','Received','Ready to Load','Loaded'];
 function requestTimestamp(order,line){return line.requestedAt||line.requestedOn||order.confirmedAt||order.requestedAt||''}
 function progressUpdated(order,line){const progress=line.progressUpdatedAt||line.completedAt||line.updatedAt||line.statusUpdatedAt||order.progressUpdatedAt||order.completedAt||order.updatedAt||order.confirmedAt||'';return new Date(line.lastQuantityEditAt||0)>new Date(progress||0)?line.lastQuantityEditAt:progress}
@@ -1142,7 +1148,7 @@ function shortfallShipmentHtml(line){
   const shipment=line.customerShipment;
   if(shipment){
     const current=shipment.currentQtyCtn.toLocaleString('en-US'),pending=shipment.pendingQtyCtn.toLocaleString('en-US');
-    const status=shipment.confirmedQtyCtn===shipment.currentQtyCtn?'Confirmed':shipment.confirmedQtyCtn>0?shipment.confirmedQtyCtn.toLocaleString('en-US')+' CTN confirmed':'Awaiting confirmation';
+    const status=currentShipmentLoaded(line)?'Loaded':shipment.confirmedQtyCtn===shipment.currentQtyCtn?'Confirmed':shipment.confirmedQtyCtn>0?shipment.confirmedQtyCtn.toLocaleString('en-US')+' CTN confirmed':'Awaiting confirmation';
     return '<small class="customer-fulfilment"><b>This shipment: '+current+' CTN · '+status+'</b><br>'+pending+' CTN awaiting arrangement</small>';
   }
   return '';

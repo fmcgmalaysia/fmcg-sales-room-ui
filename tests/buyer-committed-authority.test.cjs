@@ -42,3 +42,32 @@ test('shortfall updates the same Buyer row and its quantity, value and CBM total
  c.renderTrackOrders();assert.deepEqual(totals(),['30 Ctn','USD 756.00','0.5070 m³']);
  assert.equal(c.allTrackingRows().length,1);
 });
+
+test('the live Buyer entry marks a fully loaded current shipment while its balance stays unarranged',()=>{
+ const live=fs.readFileSync(path.join(__dirname,'../buyer-room-20261125-company-entry.html'),'utf8');
+ const line={lineId:'L',quantityCtn:2,committedQtyCtn:1,receivedQtyCtn:1,loadedQtyCtn:1,
+  customerShipment:{currentQtyCtn:1,confirmedQtyCtn:1,pendingQtyCtn:1}};
+ const c=ui([line]);
+ c.esc=String;
+ vm.runInContext(live.slice(live.indexOf('function currentShipmentLoaded('),live.indexOf('function requestTimestamp(')),c);
+ vm.runInContext(live.slice(live.indexOf('function shortfallShipmentHtml('),live.indexOf('function customerFulfilmentHtml(')),c);
+ vm.runInContext(live.split(/\r?\n/).find(row=>row.startsWith('function trackingDots(')),c);
+ const before=JSON.stringify(line);
+ const [row]=c.allTrackingRows();
+ assert.deepEqual([row.requested,c.trackingCommittedQty(row),row.stage],[2,1,6]);
+ assert.match(c.shortfallShipmentHtml(line),/This shipment: 1 CTN · Loaded.*1 CTN awaiting arrangement/);
+ assert.match(c.trackingDots(row.order,line,row.stage),/aria-label="Loaded · Completed"/);
+ assert.equal(JSON.stringify(line),before);
+
+ line.loadedQtyCtn=0;
+ assert.equal(c.allTrackingRows()[0].stage,4);
+ assert.match(c.shortfallShipmentHtml(line),/This shipment: 1 CTN · Confirmed/);
+ line.loadedQtyCtn=1;
+ line.customerShipment.confirmedQtyCtn=0;
+ assert.equal(c.allTrackingRows()[0].stage,4);
+ assert.match(c.shortfallShipmentHtml(line),/Awaiting confirmation/);
+ Object.assign(line,{quantityCtn:3,committedQtyCtn:2});
+ Object.assign(line.customerShipment,{currentQtyCtn:2,confirmedQtyCtn:2});
+ assert.equal(c.allTrackingRows()[0].stage,4);
+ assert.doesNotMatch(c.shortfallShipmentHtml(line),/· Loaded/);
+});
