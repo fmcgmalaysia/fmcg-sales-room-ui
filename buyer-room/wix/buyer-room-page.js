@@ -1,5 +1,7 @@
 import { connectAccountSession } from 'public/wix-account-session.js';
 import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+import { getBuyerSelectionPreviews } from 'backend/catalogueAuth.web';
+import { downloadBuyerSelectionImage } from 'backend/protectedCatalogue.web.js';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { local, session } from 'wix-storage-frontend';
@@ -59,6 +61,8 @@ $w.onReady(async function () {
   const requestedCompanyId = assistCustomerId ? '' : selectedBuyerCompanyId(wixLocationFrontend);
   let scopedCompanyId = requestedCompanyId;
   let companyAccess;
+  let pendingImageFromWorkbook = String(wixLocationFrontend.query?.imageSelection || '').trim();
+  let photoBusy = false;
   const companyAccessReady = assistCustomerId || !authentication.loggedIn() ? null :
     loadBuyerCompanyAccess(getBuyerCompanies, requestedCompanyId).then(access => {
       companyAccess = access;
@@ -234,6 +238,13 @@ $w.onReady(async function () {
       pendingOrderRequestId: readOrderRequest(buyerOrderStorageKey)?.requestId || '',
       ordersNextCursor: result.ordersNextCursor || ''
     }});
+    if (pendingImageFromWorkbook) {
+      const wanted = pendingImageFromWorkbook;
+      pendingImageFromWorkbook = '';
+      if (result.myList?.some(item=>String(item.id)===wanted)) {
+        frame.postMessage({type:'BUYER_ROOM_SHOW_SELECTION_IMAGE',customerId,selectionId:wanted});
+      }
+    }
     prepareSelectionDownload();
   }
 
@@ -283,6 +294,36 @@ $w.onReady(async function () {
     if (['BUYER_ROOM_SELECTION_IMAGE_STATE', 'BUYER_ROOM_COMPANY_DIALOG_STATE', 'BUYER_ROOM_ACCOUNT_MENU_STATE'].includes(message.type) && typeof message.open === 'boolean') {
       if (message.open) downloadOccluders.add(message.type); else downloadOccluders.delete(message.type);
       updateDownloadButtonVisibility();
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_IMAGE_PREVIEWS') {
+      if (!historyCustomerId || !Array.isArray(message.ids) || !message.ids.length || message.ids.length > 25 ||
+          typeof message.requestId !== 'string' || message.requestId.length > 64) return;
+      const customerId = historyCustomerId, currentScope = buyerScope();
+      let entries;
+      try { entries = await getBuyerSelectionPreviews(message.ids, currentScope); }
+      catch (_) { entries = []; }
+      if (historyCustomerId === customerId) {
+        frame.postMessage({type:'BUYER_ROOM_IMAGE_PREVIEWS_RESULT',requestId:message.requestId,customerId,entries});
+      }
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_DOWNLOAD_IMAGE') {
+      const selectionId = message.selectionId;
+      const customerId = historyCustomerId;
+      if (photoBusy || !customerId || assistCustomerId || typeof selectionId !== 'string' ||
+          !/^[a-zA-Z0-9_-]{1,128}$/.test(selectionId)) return;
+      photoBusy = true;
+      try {
+        const result = await downloadBuyerSelectionImage(customerId,selectionId);
+        if (!result?.url || !result.url.startsWith('https://')) throw Error('Image unavailable');
+        if (historyCustomerId !== customerId) return;
+        frame.postMessage({type:'BUYER_ROOM_IMAGE_DOWNLOAD_RESULT',ok:true,customerId,selectionId});
+        wixLocationFrontend.to(result.url);
+      } catch (_) {
+        frame.postMessage({type:'BUYER_ROOM_IMAGE_DOWNLOAD_RESULT',ok:false,customerId,selectionId,
+          message:'High-resolution image is currently unavailable.'});
+      } finally { photoBusy = false; }
       return;
     }
     if (message.type === 'CUSTOMER_HISTORY_FILE_OPEN') { await openHistoryFile(message); return; }

@@ -806,7 +806,15 @@ async function load() {
   const privatePreviews = createCataloguePreviewReader({ data: wixData, media: mediaManager });
   const transitionalPreviews = createCatalogueLegacyPreview({ data: wixData });
   const addPreviews = async page => transitionalPreviews(await privatePreviews(page));
-  cached = { read: createProtectedCatalogueRead({ data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews }),
+  const selectionPreviews = async (scope, products) => {
+    if (!products.length) return [];
+    const actor = await authorize(scope);
+    if (await reserveRead(actor, 'CATALOGUE_LIST', products.length) !== true ||
+        await reserveCoverage(actor, 'CATALOGUE_LIST', products.map(p=>p.id)) !== true) return [];
+    const entries = await addPreviews(products);
+    return entries.flatMap(entry=>entry.image ? [{ selectionId:entry.selectionId, image:entry.image }] : []);
+  };
+  cached = { selectionPreviews, read: createProtectedCatalogueRead({ data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews }),
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),
       getSelection: id => wixData.get('WixBuyerListItems', id, { suppressAuth: true, consistentRead: true }),
@@ -818,6 +826,10 @@ async function load() {
     retry: () => retryCatalogueAlerts(store, deliver) };
   expires = Date.now() + 60000;
   return cached;
+}
+
+export async function readOwnedSelectionPreviews(scope, products) {
+  return (await getCatalogueProtection()).selectionPreviews(scope, products);
 }
 
 export async function processCatalogueSecurityNotifications() {
