@@ -23,7 +23,7 @@ function listItem(item) {
   };
 }
 
-export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage }) {
+export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection }) {
   const page = createCataloguePageIndex(data);
   function activeProducts() {
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
@@ -41,15 +41,38 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
       const term = boundedText(input.term, 120);
       const principle = boundedText(input.principle, 150);
       const afterId = boundedText(input.afterId, 128);
+      const anchorId = boundedText(input.anchorId, 128);
+      if (anchorId && afterId) throw Error('Choose one page position.');
       const subcategories = input.subcategories ?? [];
       if (!Array.isArray(subcategories) || subcategories.length > 100 ||
           subcategories.some(id => !boundedText(id, 128))) throw new Error('Invalid catalogue category.');
       const size = input.size ?? 25;
       if (size !== 25 && size !== 50) throw new Error('Invalid catalogue page size.');
+      const view = input.selectionView ?? '';
+      if (!['', 'ALL', 'FOOD', 'NON_FOOD'].includes(view)) throw new Error('Invalid selection view.');
       const actor = await allowed(scope, 'CATALOGUE_LIST', size);
-      const { items, afterId: nextId } = await page({ term, principle, subcategories, afterId, size });
+      let selectedIds;
+      if (view) {
+        const { ids, food } = await readSelection(scope, actor);
+        selectedIds = view === 'FOOD' ? food : view === 'NON_FOOD' ? new Set([...ids].filter(id => !food.has(id))) : ids;
+      }
+      const { items, afterId: nextId, previousAfterId } = await page({ term, principle, subcategories, afterId, anchorId, size, selectedIds });
       if (await reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id)) !== true) throw new Error('Catalogue access temporarily limited.');
-      return { items, afterId: nextId };
+      return { items, afterId: nextId, previousAfterId };
+    },
+
+    async principles(scope, category) {
+      const id = boundedText(category, 128);
+      if (!id) throw Error('Choose a catalogue category.');
+      await allowed(scope, 'CATALOGUE_LIST', 1);
+      const result = await activeProducts().hasSome('subCategories', [id]).limit(1000).distinct('principle', OPTIONS);
+      return [...new Set(result.items.filter(name => typeof name === 'string' && name.trim()).map(name => name.trim()))];
+    },
+
+    async selectionCounts(scope) {
+      const actor = await allowed(scope, 'CATALOGUE_LIST', 1);
+      const { ids, food } = await readSelection(scope, actor);
+      return { total: ids.size, food: food.size, nonFood: ids.size - food.size };
     },
 
     async detail(scope, productId) {

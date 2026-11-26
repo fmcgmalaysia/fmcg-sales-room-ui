@@ -55,17 +55,19 @@ export function createCataloguePageIndex(data, now = Date.now) {
     return pending;
   }
 
-  return async function page({ term, principle, subcategories, afterId, size }) {
+  return async function page({ term, principle, subcategories, afterId, anchorId, size, selectedIds }) {
     const matching = () => subcategories.length ? active().hasSome('subCategories', subcategories) : active();
     const [index, categoryRows] = await Promise.all([
       ordered(), subcategories.length ? collect(matching().fields('_id')) : null
     ]);
     const categoryIds = categoryRows && new Set(categoryRows.map(row => row._id));
     const search = term.toLowerCase(), brand = principle.toLowerCase();
-    const matches = index.filter(item => (!categoryIds || categoryIds.has(item.id)) &&
+    const matches = index.filter(item => (!selectedIds || selectedIds.has(item.id)) && (!categoryIds || categoryIds.has(item.id)) &&
       (!brand || item.principle.toLowerCase() === brand) && (!search || item.searchText.includes(search)));
-    const from = afterId ? matches.findIndex(item => item.id === afterId) + 1 : 0;
+    const anchor = anchorId ? matches.findIndex(item => item.id === anchorId) : -1;
+    const from = afterId ? matches.findIndex(item => item.id === afterId) + 1 : anchor >= 0 ? Math.floor(anchor / size) * size : 0;
     if (afterId && !from) throw Error('Catalogue changed. Refresh the product list.');
+    const previousAfterId = from === 0 ? null : from <= size ? '' : matches[from - size - 1].id;
     let position = from;
     const items = [];
     while (items.length <= size && position < matches.length) {
@@ -78,6 +80,6 @@ export function createCataloguePageIndex(data, now = Date.now) {
         if (item?.name) items.push(item);
       }
     }
-    return { items: items.slice(0, size), afterId: items.length > size ? items[size - 1].id : null };
+    return { items: items.slice(0, size), previousAfterId, afterId: items.length > size ? items[size - 1].id : null };
   };
 }

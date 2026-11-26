@@ -20,7 +20,11 @@ function fixture(grant = true, reserveCoverage = async () => true) {
     };
   } };
   return { calls, read: createProtectedCatalogueRead({
-    data, authorize: async customerId => ({ customerId, actorId: 'QA' }), reserveRead: async () => grant, reserveCoverage
+    data, authorize: async customerId => ({ customerId, actorId: 'QA' }), reserveRead: async () => grant, reserveCoverage,
+    readSelection: async (_scope, actor) => {
+      const first = actor.customerId === 'A' ? 10 : 70;
+      return { ids: new Set(rows.slice(first, first + 30).map(row => row._id)), food: new Set([rows[first]._id]) };
+    }
   }) };
 }
 
@@ -36,6 +40,32 @@ test('page size, non-overlapping continuation and last page', async () => {
     assert.ok(!calls.flat().includes(key));
     assert.ok(!(key in first.items[0]));
   }
+});
+
+test('selected pages and counts follow the authorized company', async () => {
+  const { read } = fixture();
+  assert.deepEqual(await read.selectionCounts('A'), { total: 30, food: 1, nonFood: 29 });
+  const first = await read.list('A', { selectionView: 'ALL' });
+  const next = await read.list('A', { selectionView: 'ALL', afterId: first.afterId });
+  assert.equal(first.items.length, 25);
+  assert.deepEqual(next.items.map(row => row.id), ['0035', '0036', '0037', '0038', '0039']);
+  assert.deepEqual((await read.list('B', { selectionView: 'FOOD' })).items.map(row => row.id), ['0070']);
+  assert.equal((await read.list('B', { selectionView: 'NON_FOOD', size: 50 })).items.length, 29);
+});
+
+test('mobile return restores the page containing the product and can go back to the first page', async () => {
+  const { read } = fixture();
+  const anchored = await read.list('A', { size: 25, anchorId: '0064' });
+  assert.equal(anchored.items[0].id, '0050');
+  assert.ok(anchored.items.some(item => item.id === '0064'));
+  const prior = await read.list('A', { afterId: anchored.previousAfterId });
+  assert.equal(prior.items[0].id, '0025');
+  assert.equal(prior.previousAfterId, '');
+  const first = await read.list('A', { afterId: prior.previousAfterId });
+  assert.equal(first.previousAfterId, null);
+  assert.equal(first.items[0].id, '0000');
+  const expired = await read.list('A', { anchorId: 'removed' });
+  assert.equal(expired.items[0].id, '0000');
 });
 
 test('only returned IDs count and a rejected result never reaches the caller', async () => {

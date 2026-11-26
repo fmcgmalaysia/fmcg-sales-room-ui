@@ -7,6 +7,7 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
+import { listCataloguePage, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts } from 'backend/protectedCatalogue.web.js';
 import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
@@ -46,39 +47,25 @@ let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261120-catalogue-compact-navigation-v1';
+const CATALOGUE_BUILD_VERSION = '20261126-catalogue-protected-pages-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
-const CATALOGUE_PRODUCT_FIELDS = [
-    '_id', 'name', 'title', 'description', 'packingSize', 'ea', 'EA', 'price', 'barcode', 'unitBarcode',
-    'innerBoxBarcode', 'cartonBarcode', 'm3Ctn', 'cbmPerCtn', 'cbm', 'principle', 'brandName', 'mainCategory',
-    'image', 'countryOrigin', 'shelflife', 'shelfLife', 'pointBaseSortId', 'sortNo', 'sortNO', 'sortNumber',
-    'sortOrder', 'subCategories', 'unitPrice', 'pricePerUnit', 'currency'
-];
+let catalogueReadScope = null;
 let catalogueWorkspaceProducts = [];
-let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceInstance = '';
-let lastWorkspaceProducts = null;
-let lastWorkspaceCategoryMap = null;
-let lastWorkspaceCategoriesLoaded;
 let catalogueSelectionLimit = 100;
 let catalogueSelectionTotal = 0;
-let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
-let catalogueSubCategoryMainMap = new Map();
-let catalogueFoodProductIds = new Set();
-let catalogueFoodPrinciples = new Set();
-let catalogueFoodMembershipSubCategoryIds = null;
-let catalogueHomeSnapshot = null;
-let catalogueProductsLoaded = false;
-let catalogueWorkspaceRead = null;
-let catalogueFirstDisplayRead = null;
-let catalogueWorkspaceFullReadComplete = false;
-let catalogueWorkspaceSnapshotComplete = false;
-let catalogueCategoriesLoaded = false;
 let catalogueSelectionResolved = false;
+let catalogueWorkspaceFilter = { query: '', subIds: [], principle: '', selectionView: '' };
 let catalogueWorkspaceQueryVersion = 0;
+let cataloguePageStatus = 'loading';
+let catalogueNext = null, cataloguePrevious = null;
+let catalogueCounts = null, countVersion = 0;
+let currentPageRequest = {};
+let pageStarted = false;
+let selectionReturnFilter;
 let catalogueBrowseRevision = 0;
 let catalogueBrowseSubIds = [];
 let catalogueBrowseKey = '';
@@ -154,19 +141,11 @@ async function restoreMobileCataloguePosition(customerId) {
     if (typeof query !== 'string' || query.length > 200 || typeof principle !== 'string' || principle.length > 200
         || !Array.isArray(subIds) || subIds.length > 100 || !subIds.every(id => typeof id === 'string' && /^[a-z0-9_-]{1,100}$/i.test(id))
         || typeof anchor !== 'string' || anchor.length > 100 || !Number.isInteger(offset) || offset < 0 || offset > 200) return;
-    if (subIds.length) {
-        await showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', subIds), subIds, { anchor, offset });
-        return;
-    }
-    if (!catalogueWorkspaceFullReadComplete) await loadCatalogueWorkspaceProducts();
-    if (!catalogueWorkspaceFullReadComplete || catalogueWorkspaceQueryVersion !== 0) return;
-    catalogueWorkspaceFilter = { query, main: '', subIds: [], principle };
-    recordCatalogueBrowse([], { anchor, offset });
-    if (query) {
-        try { $w('#input2').value = query; } catch (error) {}
-    }
+    catalogueWorkspaceFilter = { query, subIds, principle, selectionView: '' };
+    currentPageRequest = { anchorId: anchor };
+    recordCatalogueBrowse(subIds, { anchor, offset });
+    if (query) { try { $w('#input2').value = query; } catch (_) {} }
     publishCatalogueSearchValue();
-    sendCatalogueWorkspaceData();
 }
 
 function imageUrl(value) {
@@ -192,8 +171,8 @@ async function getPrinciplesForSub(subId) {
     if (!logoLoadPromise) logoLoadPromise = loadPrincipleLogos();
     await logoLoadPromise;
     if (principleCache.has(subId)) return principleCache.get(subId);
-    const result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').hasSome('subCategories', [subId]).limit(1000).distinct('principle');
-    const names = (result.items || []).map(value => String(value || '').trim()).filter(Boolean);
+    if (!catalogueReadScope) return [];
+    const names = await listCataloguePrinciples(catalogueReadScope, subId);
     const items = [...new Set(names)].sort((a, b) => a.localeCompare(b)).map(name => ({ name, logo: principleLogoMap.get(name.toLowerCase()) || '' }));
     principleCache.set(subId, items);
     return items;
@@ -231,261 +210,88 @@ function sidebarSelectionState(state) {
     catalogueSelectionLimit = limit;
     catalogueSelectionTotal = activeSelectedProductIds.size;
     catalogueSelectionResolved = true;
+    if (catalogueReadScope) void refreshCounts();
     sendCatalogueWorkspaceData();
 }
 
-function catalogueReferenceIds(value) {
-    const values = Array.isArray(value) ? value : value ? [value] : [];
-    return values.map(entry => String(entry?._id || entry || '').trim()).filter(Boolean);
-}
-
-function catalogueUnitPrice(item) {
-    const candidates = [item.unitPrice, item.pricePerUnit];
-    const value = candidates.map(Number).find(number => Number.isFinite(number) && number > 0);
-    return value || null;
-}
-
-function catalogueProductRecord(item) {
-    return {
-        id: String(item?._id || ''),
-        name: String(item?.name || item?.title || '').trim(),
-        description: String(item?.description || item?.packingSize || '').trim(),
-        // The Catalogue CMS field labelled "EA" still uses the legacy key
-        // `price`. Keep it separate from indicative unit-price fields.
-        ea: String(item?.ea ?? item?.EA ?? item?.price ?? '').trim(),
-        barcode: String(item?.barcode || item?.unitBarcode || '').trim(),
-        innerBoxBarcode: String(item?.innerBoxBarcode || '').trim(),
-        cartonBarcode: String(item?.cartonBarcode || '').trim(),
-        cbmPerCtn: String(item?.m3Ctn ?? item?.cbmPerCtn ?? item?.cbm ?? '').trim(),
-        principle: String(item?.principle || '').trim(),
-        brandName: String(item?.brandName || '').trim(),
-        mainCategory: String(item?.mainCategory || '').trim().toUpperCase(),
-        image: imageUrl(item?.image),
-        countryOrigin: String(item?.countryOrigin || '').trim(),
-        shelfLife: String(item?.shelflife || item?.shelfLife || '').trim(),
-        sortNo: item?.pointBaseSortId ?? item?.sortNo ?? item?.sortNO ?? item?.sortNumber ?? item?.sortOrder ?? '',
-        subCategoryIds: catalogueReferenceIds(item?.subCategories),
-        unitPrice: catalogueUnitPrice(item),
-        currency: String(item?.currency || 'USD').trim().toUpperCase()
-    };
-}
-
-function sortCatalogueProducts(items) {
-    const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
-    return items
-        .map((item, index) => ({ item, index }))
-        .sort((left, right) => {
-            const leftBrand = String(left.item.brandName || '').trim();
-            const rightBrand = String(right.item.brandName || '').trim();
-            if (!leftBrand && rightBrand) return 1;
-            if (leftBrand && !rightBrand) return -1;
-            const brandOrder = collator.compare(leftBrand, rightBrand);
-            if (brandOrder) return brandOrder;
-            const leftRaw = String(left.item.sortNo ?? '').trim();
-            const rightRaw = String(right.item.sortNo ?? '').trim();
-            if (!leftRaw && !rightRaw) return left.index - right.index;
-            if (!leftRaw) return 1;
-            if (!rightRaw) return -1;
-            const leftNumber = Number(leftRaw);
-            const rightNumber = Number(rightRaw);
-            const order = Number.isFinite(leftNumber) && Number.isFinite(rightNumber)
-                ? leftNumber - rightNumber
-                : collator.compare(leftRaw, rightRaw);
-            return order || left.index - right.index;
-        })
-        .map(entry => entry.item);
-}
-
-function catalogueMainCategory(product) {
-    if (catalogueFoodProductIds.has(product.id) || catalogueFoodPrinciples.has(product.principle.toUpperCase())) return 'FOOD';
-    return (product.subCategoryIds || [])
-        .map(subCategoryId => catalogueSubCategoryMainMap.get(String(subCategoryId)))
-        .find(Boolean) || product.mainCategory || '';
-}
-
-function catalogueSelectionSummary() {
-    const allById = new Map(catalogueWorkspaceAllProducts.map(product => [product.id, product]));
-    const selectedProducts = sortCatalogueProducts([...activeSelectedProductIds].map(id => allById.get(id)).filter(Boolean));
-    const food = selectedProducts.filter(product => catalogueMainCategory(product).startsWith('FOOD')).length;
-    const total = activeSelectedProductIds.size;
-    return {
-        total,
-        food,
-        nonFood: Math.max(0, total - food),
-        products: selectedProducts.map(product => ({ ...product, mainCategory: catalogueMainCategory(product) }))
-    };
+async function refreshCounts() {
+    const scope = catalogueReadScope;
+    const version = ++countVersion;
+    catalogueCounts = null;
+    try {
+        const result = await readCatalogueSelectionCounts(scope);
+        if (version === countVersion && scope === catalogueReadScope) catalogueCounts = result;
+    } catch (_) { /* A missing count is shown as pending. */ }
+    if (version === countVersion) sendCatalogueWorkspaceData();
 }
 
 function sendCatalogueWorkspaceData() {
     if (!catalogueWorkspaceReady) return;
+    $w('#html5').postMessage({
+        type: 'catalogueWorkspaceData', products: catalogueWorkspaceProducts,
+        selectedProductIds: [...selectedProductIds], activeSelectedProductIds: [...activeSelectedProductIds],
+        removedProductIds: [...removedProductIds], selectionLimit: catalogueSelectionLimit,
+        selectionTotal: catalogueSelectionTotal, selectionFoodCount: catalogueCounts?.food,
+        selectionNonFoodCount: catalogueCounts?.nonFood, selectionCountsReady: catalogueCounts?.total === catalogueSelectionTotal,
+        selectionReady: catalogueSelectionResolved && Boolean(selectionContext) && Boolean(catalogueReadScope),
+        buyerRoomUrl: buyerRoomUrl(), context: catalogueContextMessage, buildVersion: CATALOGUE_BUILD_VERSION,
+        pageVersion: catalogueWorkspaceQueryVersion, pageStatus: cataloguePageStatus,
+        hasPrevious: cataloguePrevious !== null, hasNext: catalogueNext !== null,
+        selectionView: catalogueWorkspaceFilter.selectionView || ''
+    });
+    if (cataloguePageStatus === 'ready') $w('#html5').postMessage(workspaceFilterMessage());
+}
+
+async function fetchPage(position = {}, edge = '') {
+    currentPageRequest = position;
+    if (!catalogueReadScope || !catalogueWorkspaceReady) return;
+    const version = ++catalogueWorkspaceQueryVersion;
+    const scope = catalogueReadScope;
+    const filter = catalogueWorkspaceFilter;
+    pageStarted = true;
+    catalogueWorkspaceProducts = [];
+    cataloguePageStatus = 'loading';
+    catalogueNext = cataloguePrevious = null;
+    sendCatalogueWorkspaceData();
     try {
-        const refreshProducts = !catalogueWorkspaceInstance || catalogueWorkspaceProducts !== lastWorkspaceProducts ||
-            catalogueSubCategoryMainMap !== lastWorkspaceCategoryMap ||
-            catalogueCategoriesLoaded !== lastWorkspaceCategoriesLoaded;
-        const selection = catalogueSelectionSummary();
-        $w('#html5').postMessage({
-            type: 'catalogueWorkspaceData',
-            ...(refreshProducts ? { products: catalogueWorkspaceProducts.map(product => ({
-                ...product,
-                mainCategory: catalogueMainCategory(product)
-            })) } : {}),
-            selectedProductIds: [...selectedProductIds],
-            activeSelectedProductIds: [...activeSelectedProductIds],
-            removedProductIds: [...removedProductIds],
-            selectionProducts: selection.products,
-            selectionLimit: catalogueSelectionLimit,
-            selectionTotal: selection.total,
-            selectionFoodCount: selection.food,
-            selectionNonFoodCount: selection.nonFood,
-            selectionCountsReady: catalogueProductsLoaded && catalogueCategoriesLoaded && catalogueSelectionResolved,
-            selectionReady: catalogueSelectionResolved && Boolean(selectionContext),
-            buyerRoomUrl: buyerRoomUrl(),
-            context: catalogueContextMessage,
-            buildVersion: CATALOGUE_BUILD_VERSION
+        const result = await listCataloguePage(scope, {
+            term: filter.query, principle: filter.principle, subcategories: filter.subIds,
+            selectionView: filter.selectionView || '', size: wixWindowFrontend.formFactor === 'Mobile' ? 25 : 50, ...position
         });
-        lastWorkspaceProducts = catalogueWorkspaceProducts;
-        lastWorkspaceCategoryMap = catalogueSubCategoryMainMap;
-        lastWorkspaceCategoriesLoaded = catalogueCategoriesLoaded;
-        $w('#html5').postMessage(workspaceFilterMessage());
-    } catch (error) {}
-}
-
-function loadCatalogueWorkspaceProducts() {
-    if (!catalogueWorkspaceRead) {
-        const firstPageRead = wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE')
-            .fields(...CATALOGUE_PRODUCT_FIELDS).limit(1000).find();
-        catalogueWorkspaceRead = readCatalogueWorkspaceProducts(catalogueWorkspaceQueryVersion, firstPageRead)
-            .finally(() => { catalogueWorkspaceRead = null; });
-        const fullRead = catalogueWorkspaceRead;
-        catalogueFirstDisplayRead = Promise.race([
-            fullRead,
-            readCatalogueFirstProducts(catalogueWorkspaceQueryVersion, firstPageRead)
-                .then(() => catalogueWorkspaceProducts.length ? undefined : fullRead)
-        ]);
+        if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
+        catalogueWorkspaceProducts = result.items;
+        cataloguePrevious = result.previousAfterId;
+        catalogueNext = result.afterId;
+        cataloguePageStatus = 'ready';
+        if (edge) catalogueWorkspaceFilter = { ...filter, edge };
+    } catch (_) {
+        if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
+        cataloguePageStatus = 'failed';
     }
-    return catalogueWorkspaceRead;
-}
-
-async function readCatalogueFirstProducts(queryVersion, firstPageRead) {
-    try {
-        const brands = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').limit(1000).distinct('brandName');
-        if (brands.hasNext() || catalogueWorkspaceFullReadComplete || queryVersion !== catalogueWorkspaceQueryVersion) return;
-        const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
-        const names = [...new Set(brands.items.filter(value => typeof value === 'string' && value.trim()))]
-            .sort((left, right) => collator.compare(left.trim(), right.trim()));
-        for (let count = Math.min(5, names.length); count > 0;) {
-            let end = count;
-            while (end < names.length && collator.compare(names[end - 1].trim(), names[end].trim()) === 0) end += 1;
-            const result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE')
-                .hasSome('brandName', names.slice(0, end)).fields(...CATALOGUE_PRODUCT_FIELDS).limit(1000).find();
-            const firstPage = await firstPageRead;
-            if (catalogueProductsLoaded || queryVersion !== catalogueWorkspaceQueryVersion || result.hasNext() ||
-                !Number.isSafeInteger(firstPage.totalCount) || firstPage.totalCount > 10000) return;
-            const products = sortCatalogueProducts(result.items.map(catalogueProductRecord).filter(item => item.id && item.name));
-            if (products.length >= 50) {
-                catalogueWorkspaceProducts = products.slice(0, 50);
-                sendCatalogueWorkspaceData();
-                return;
-            }
-            if (end === names.length) return;
-            count = Math.min(names.length, Math.max(end + 1, end * 2));
-        }
-    } catch (error) {
-        console.warn('Catalogue first products deferred to the full CMS read', error);
-    }
-}
-
-async function readCatalogueWorkspaceProducts(queryVersion, firstPageRead = null) {
-    try {
-        const makeQuery = () => wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').fields(...CATALOGUE_PRODUCT_FIELDS);
-        const firstPage = firstPageRead ? await firstPageRead : await makeQuery().limit(1000).find();
-        let products = await readCataloguePagesInParallel(makeQuery, firstPage);
-        if (!products) {
-            products = [...firstPage.items];
-            let result = firstPage;
-            while (result.hasNext() && products.length < 10000) {
-                result = await result.next();
-                products.push(...result.items);
-            }
-        }
-        catalogueWorkspaceAllProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
-        catalogueWorkspaceSnapshotComplete = Number.isSafeInteger(firstPage.totalCount) && products.length >= firstPage.totalCount;
-        catalogueWorkspaceFullReadComplete = true;
-        if (queryVersion === catalogueWorkspaceQueryVersion) catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
-    } catch (error) {
-        console.error('Catalogue workspace CMS load failed', error);
-        if (queryVersion === catalogueWorkspaceQueryVersion) catalogueWorkspaceProducts = [];
-    }
-    catalogueProductsLoaded = true;
     sendCatalogueWorkspaceData();
 }
 
-async function readCataloguePagesInParallel(makeQuery, firstPage) {
-    const pageSize = firstPage.pageSize;
-    const total = Math.min(firstPage.totalCount, 10000);
-    if (!Number.isSafeInteger(total) || pageSize !== 1000 ||
-        firstPage.items.length !== pageSize || total <= 2 * pageSize) return null;
-
-    const products = [...firstPage.items];
-    const ids = new Set(products.map(item => item._id));
-    if (ids.size !== products.length || products.some(item => !item._id)) return null;
-    const step = pageSize - 1;
-    for (let offset = pageSize; offset < total;) {
-        const requests = [];
-        for (let slot = 0; slot < 3 && offset < total; slot += 1, offset += step) {
-            const length = Math.min(step, total - offset);
-            // The first item overlaps the preceding page to detect shifted offsets.
-            requests.push(makeQuery().skip(offset - 1).limit(length + 1).find()
-                .then(result => ({ result, length })).catch(() => null));
-        }
-        for (const page of await Promise.all(requests)) {
-            if (!page || page.result.totalCount !== firstPage.totalCount ||
-                page.result.items.length !== page.length + 1 ||
-                page.result.items[0]._id !== products[products.length - 1]._id) return null;
-            for (const item of page.result.items.slice(1)) {
-                if (!item._id || ids.has(item._id)) return null;
-                ids.add(item._id);
-                products.push(item);
-            }
-        }
-    }
-    return products;
+function showView({ query = '', principle = '', subIds = [], selectionView = '' } = {}) {
+    catalogueWorkspaceFilter = { query, principle, subIds, selectionView };
+    recordCatalogueBrowse(subIds);
+    return fetchPage();
 }
 
-async function showCatalogueWorkspaceQuery(query, resumeSubIds = null, position = null, resetActive = false) {
-    const queryVersion = ++catalogueWorkspaceQueryVersion;
-    const products = [];
-    try {
-        let result = await query.eq('pointBaseStatus', 'ACTIVE').fields(...CATALOGUE_PRODUCT_FIELDS).limit(1000).find();
-        products.push(...result.items);
-        while (result.hasNext() && products.length < 10000) {
-            result = await result.next();
-            products.push(...result.items);
-        }
-        if (queryVersion !== catalogueWorkspaceQueryVersion) return;
-        catalogueWorkspaceProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
-        catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
-        if (resetActive) catalogueWorkspaceFilter.resetActive = true;
-        recordCatalogueBrowse(resumeSubIds, position);
+function setReader(scope) {
+    catalogueReadScope = scope;
+    if (scope) {
+        void refreshCounts();
+        if (!pageStarted) void fetchPage(currentPageRequest);
+    } else {
+        ++countVersion;
+        ++catalogueWorkspaceQueryVersion;
+        catalogueWorkspaceProducts = [];
+        catalogueCounts = null;
+        cataloguePageStatus = 'blocked';
+        catalogueNext = cataloguePrevious = null;
+        pageStarted = false;
         sendCatalogueWorkspaceData();
-    } catch (error) {
-        console.error('Catalogue workspace filtered CMS load failed', error);
     }
-}
-
-async function showAllCatalogueWorkspaceProducts() {
-    const queryVersion = ++catalogueWorkspaceQueryVersion;
-    if (!catalogueWorkspaceFullReadComplete) await loadCatalogueWorkspaceProducts();
-    if (queryVersion !== catalogueWorkspaceQueryVersion) return;
-    catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
-    catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
-    recordCatalogueBrowse([]);
-    sendCatalogueWorkspaceData();
-}
-
-function sendCatalogueWorkspaceFilter(update) {
-    catalogueWorkspaceFilter = { ...catalogueWorkspaceFilter, ...update };
-    try { $w('#html5').postMessage({ type: 'catalogueWorkspaceFilter', ...catalogueWorkspaceFilter }); } catch (error) {}
 }
 
 let catalogueAccessIssue = false;
@@ -499,6 +305,7 @@ function sendCatalogueCompanies() {
     try { $w('#html5').postMessage({ type: 'BUYER_COMPANY_ACCESS', ...catalogueCompanyAccess }); } catch (_) {}
 }
 async function denyCatalogueCompanyAccess() {
+    setReader(null);
     catalogueAccessIssue = true;
     selectionContext = null;
     catalogueCompanyAccess = { companies: [], blocked: true, denied: true };
@@ -561,6 +368,7 @@ $w.onReady(() => {
                 try { session.setItem('catalogueAssistCustomerId', selection.customerId); } catch (_) {}
                 selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
                 sidebarSelectionState(selection);
+                setReader({ assistCustomerId: selection.customerId });
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
                     sheetName: String(selection.companyName || selection.customerId).trim(),
@@ -576,6 +384,7 @@ $w.onReady(() => {
             session.removeItem('catalogueAssistCustomerId');
             selectionContext = null;
             catalogueSelectionResolved = true;
+            setReader({ staffPreview: true });
             sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
         }
         return;
@@ -608,8 +417,8 @@ $w.onReady(() => {
                 sheetName: String(state?.companyName || 'Buyer Account').trim(),
                 signedInName: String(state?.actorName || 'Buyer').trim()
             });
-            restoreMobileCataloguePosition(state?.customerId)
-                .catch(error => console.warn('Catalogue browsing position could not be restored', error));
+            await restoreMobileCataloguePosition(state.customerId);
+            setReader({ buyerCompanyId: state.customerId });
         } catch (error) {
             if (requestedCompanyId || catalogueBuyerCompanyId) { await denyCatalogueCompanyAccess(); return; }
             selectionContext = null;
@@ -635,6 +444,7 @@ $w.onReady(() => {
                 return;
             }
             selectionContext = null;
+            setReader(null);
             selectedProductIds = new Set();
             activeSelectedProductIds = new Set();
             removedProductIds = new Set();
@@ -649,47 +459,13 @@ $w.onReady(() => {
 async function loadMenuData() {
     try {
         const result = await wixData.query('subCategories').ascending('mainCategory').ascending('title').fields('_id', 'mainCategory', 'title').limit(1000).find();
-        catalogueSubCategoryMainMap = new Map(result.items.map(item => [
-            String(item._id || ''),
-            String(item.mainCategory || '').trim().toUpperCase()
-        ]).filter(([id, mainCategory]) => id && mainCategory));
         sendCatalogueMenu({
             type: 'catalogueMenuData',
             items: result.items.map(item => ({ id: item._id, title: String(item.title || '').trim(), mainCategory: String(item.mainCategory || '').trim().toUpperCase() })).filter(item => item.id && item.title && item.mainCategory)
         });
-        const foodSubCategoryIds = result.items
-            .filter(item => String(item.mainCategory || '').trim().toUpperCase().startsWith('FOOD'))
-            .map(item => item._id)
-            .filter(Boolean);
-        catalogueFoodProductIds = new Set();
-        catalogueFoodPrinciples = new Set();
-        catalogueFoodMembershipSubCategoryIds = null;
-        if (foodSubCategoryIds.length) {
-            // The menu is already available. Give the first visible products priority over this background scan.
-            if (catalogueFirstDisplayRead) await catalogueFirstDisplayRead;
-            let foodResult = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').hasSome('subCategories', foodSubCategoryIds).fields('_id', 'principle').limit(1000).find();
-            foodResult.items.forEach(item => {
-                catalogueFoodProductIds.add(String(item._id || ''));
-                const principle = String(item.principle || '').trim().toUpperCase();
-                if (principle) catalogueFoodPrinciples.add(principle);
-            });
-            while (foodResult.hasNext() && catalogueFoodProductIds.size < 10000) {
-                foodResult = await foodResult.next();
-                foodResult.items.forEach(item => {
-                    catalogueFoodProductIds.add(String(item._id || ''));
-                    const principle = String(item.principle || '').trim().toUpperCase();
-                    if (principle) catalogueFoodPrinciples.add(principle);
-                });
-            }
-            if (!foodResult.hasNext()) catalogueFoodMembershipSubCategoryIds = foodSubCategoryIds;
-        }
-        sendCatalogueWorkspaceData();
     } catch (error) {
         console.error('Catalogue menu CMS load failed', error);
         sendCatalogueMenu({ type: 'catalogueMenuData', items: [] });
-    } finally {
-        catalogueCategoriesLoaded = true;
-        sendCatalogueWorkspaceData();
     }
 }
 
@@ -697,7 +473,6 @@ function setupNav() {
     const header = $w('#html3');
     const mega = $w('#html4');
     const workspace = $w('#html5');
-    const dataset = $w('#dataset1');
     let nativeSearch;
     try { nativeSearch = $w('#input2'); } catch (error) {
         try { nativeSearch = $w('#input1'); } catch (fallbackError) { nativeSearch = null; }
@@ -738,25 +513,7 @@ function setupNav() {
         header.postMessage({ type: 'megaState', open: false, main: activeMain });
     };
 
-    const applySearch = async (rawQuery) => {
-        const query = String(rawQuery || '').trim();
-        const queryVersion = ++catalogueWorkspaceQueryVersion;
-        if (!catalogueWorkspaceFullReadComplete) await loadCatalogueWorkspaceProducts();
-        if (queryVersion !== catalogueWorkspaceQueryVersion) return;
-        catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
-        catalogueWorkspaceFilter = { query, main: '', subIds: [], principle: '' };
-        recordCatalogueBrowse([]);
-        sendCatalogueWorkspaceData();
-        try {
-            if (query.length < 2) { await dataset.setFilter(wixData.filter()); return; }
-            const subResult = await wixData.query('subCategories').contains('title', query).limit(100).find();
-            let filter = wixData.filter().contains('name', query)
-                .or(wixData.filter().contains('principle', query));
-            const ids = subResult.items.map(item => item._id).filter(Boolean);
-            if (ids.length) filter = filter.or(wixData.filter().hasSome('subCategories', ids));
-            await dataset.setFilter(filter);
-        } catch (error) { console.error('Catalogue search failed', error); }
-    };
+    const applySearch = raw => showView({ query: String(raw || '').trim().slice(0, 120) });
 
     // The search control is a Wix element in the same section as the header.
     // It filters the existing CMS-backed catalogue without relying on iframe sizing.
@@ -771,7 +528,7 @@ function setupNav() {
         });
     }
 
-    const applyMainCategory = async (main, resetActive = false) => {
+    const applyMainCategory = async main => {
         const items = catalogueMenuMessage && Array.isArray(catalogueMenuMessage.items)
             ? catalogueMenuMessage.items
             : [];
@@ -780,64 +537,22 @@ function setupNav() {
             .map(item => item.id)
             .filter(Boolean);
         if (ids.length) {
-            await Promise.all([
-                dataset.setFilter(wixData.filter().hasSome('subCategories', ids)),
-                showCatalogueWorkspaceQuery(
-                    wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids),
-                    resetActive ? ids : null,
-                    null,
-                    resetActive
-                )
-            ]);
+            await showView({ subIds: ids });
         }
     };
 
     const resetCatalogueHome = async () => {
         clearTimeout(searchTimer);
-        const resetVersion = ++catalogueWorkspaceQueryVersion;
         if (nativeSearch) nativeSearch.value = '';
         header.postMessage({ type: 'catalogueHeaderFilter', query: '' });
         void hideMenu().catch(error => console.error('Catalogue menu could not close', error));
         void wixWindowFrontend.scrollTo(0, 0).catch(() => {});
-
-        const setHomeView = (ids, products, homeState = '') => {
-            catalogueWorkspaceProducts = products;
-            catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '', resetActive: true, homeState };
-            recordCatalogueBrowse(ids);
-            sendCatalogueWorkspaceData();
-        };
-        if (!catalogueMenuMessage) {
-            setHomeView([], [], 'loading');
-            await menuReady;
-        }
-        if (catalogueWorkspaceQueryVersion !== resetVersion) return;
-        const ids = (catalogueMenuMessage?.items || [])
-            .filter(item => item.mainCategory === 'FOOD').map(item => item.id).filter(Boolean);
-        if (!ids.length) {
-            setHomeView([], [], 'failed');
-            return;
-        }
-        const scope = new Set(ids);
-        const key = JSON.stringify([...scope].sort());
-        const sameMembership = catalogueFoodMembershipSubCategoryIds?.length === scope.size &&
-            catalogueFoodMembershipSubCategoryIds.every(id => scope.has(id));
-        const cachedProducts = catalogueHomeSnapshot?.key === key ? catalogueHomeSnapshot.products :
-            catalogueWorkspaceSnapshotComplete && sameMembership
-                ? catalogueWorkspaceAllProducts.filter(product => catalogueFoodProductIds.has(product.id)) : null;
-        if (cachedProducts) {
-            setHomeView(ids, cachedProducts);
-            void dataset.setFilter(wixData.filter().hasSome('subCategories', ids))
-                .catch(error => console.error('Catalogue dataset filter failed', error));
-            return;
-        }
-        setHomeView(ids, [], 'loading');
-        try { await applyMainCategory('FOOD', true); }
-        finally {
-            if (catalogueWorkspaceQueryVersion === resetVersion + 1) {
-                if (catalogueWorkspaceFilter.homeState === 'loading') setHomeView(ids, [], 'failed');
-                else catalogueHomeSnapshot = { key, products: catalogueWorkspaceProducts };
-            }
-        }
+        const revision = catalogueBrowseRevision;
+        await menuReady;
+        if (revision !== catalogueBrowseRevision) return;
+        const foodIds = (catalogueMenuMessage?.items || []).filter(item => item.mainCategory === 'FOOD').map(item => item.id);
+        if (foodIds.length) await showView({ subIds: foodIds });
+        else { ++catalogueWorkspaceQueryVersion; catalogueWorkspaceProducts = []; cataloguePageStatus = 'failed'; sendCatalogueWorkspaceData(); }
     };
     $w('#imageX38').onClick(() => {
         resetCatalogueHome().catch(error => console.error('Catalogue home could not be opened', error));
@@ -871,9 +586,8 @@ function setupNav() {
         } else if (message.type === 'catalogueAll') {
             await hideMenu();
             if (nativeSearch) nativeSearch.value = '';
-            await showAllCatalogueWorkspaceProducts();
+            await showView();
             publishCatalogueSearchValue();
-            await dataset.setFilter(wixData.filter());
         } else if (message.type === 'catalogueAccount') {
             await signOutCatalogue();
         } else if (message.type === 'catalogueBuyerRoom') {
@@ -901,48 +615,24 @@ function setupNav() {
         } else if (message.type === 'catalogueMegaLeave') {
             leaveTimer = setTimeout(hideMenu, 420);
         } else if (message.type === 'catalogueSub') {
-            if (message.id) {
-                await Promise.all([
-                    dataset.setFilter(wixData.filter().hasSome('subCategories', [message.id])),
-                    showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', [message.id]))
-                ]);
-            }
-            else {
-                const result = await wixData.query('subCategories').eq('title', message.sub).limit(1).find();
-                if (result.items.length) {
-                    const subId = result.items[0]._id;
-                    await Promise.all([
-                        dataset.setFilter(wixData.filter().hasSome('subCategories', [subId])),
-                        showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', [subId]))
-                    ]);
-                }
-            }
+            const id = message.id || catalogueMenuMessage?.items.find(item => item.title === message.sub)?.id;
+            if (id) await showView({ subIds: [id] });
             hideMenu();
         } else if (message.type === 'catalogueGroup') {
             const requestedIds = new Set(Array.isArray(message.ids) ? message.ids : []);
             const ids = (catalogueMenuMessage?.items || []).map(item => item.id).filter(id => requestedIds.has(id));
-            if (ids.length) {
-                await Promise.all([
-                    dataset.setFilter(wixData.filter().hasSome('subCategories', ids)),
-                    showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids), ids)
-                ]);
-            }
+            if (ids.length) await showView({ subIds: ids });
             hideMenu();
         } else if (message.type === 'cataloguePrinciple') {
             const principle = String(message.principle || '').trim();
             if (!principle) return;
-            let filter = wixData.filter().eq('principle', principle);
-            if (message.subId) filter = filter.hasSome('subCategories', [message.subId]);
-            let query = wixData.query('FMCGMALAYSIA').eq('principle', principle);
-            if (message.subId) query = query.hasSome('subCategories', [message.subId]);
-            await Promise.all([dataset.setFilter(filter), showCatalogueWorkspaceQuery(query)]);
+            await showView({ principle, subIds: message.subId ? [message.subId] : [] });
             hideMenu();
         }
     });
 
     setWorkspaceMenuState(false);
     mega.collapse();
-    try { dataset.setPageSize(30); } catch (error) {}
     const menuReady = loadMenuData();
     setInterval(async () => {
         if (!isOpen) { lastScrollY = null; return; }
@@ -985,11 +675,10 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             const instanceId = typeof message.instanceId === 'string' ? message.instanceId : '';
             if (instanceId && instanceId === catalogueWorkspaceInstance) return;
             catalogueWorkspaceInstance = instanceId;
-            lastWorkspaceProducts = null;
             catalogueWorkspaceReady = true;
             sendCatalogueCompanies();
-            if (catalogueWorkspaceFullReadComplete || catalogueWorkspaceProducts.length) sendCatalogueWorkspaceData();
-            else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
+            sendCatalogueWorkspaceData();
+            if (!pageStarted) await fetchPage(currentPageRequest);
             if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
             if (catalogueBuyerNavigationPending) workspace.postMessage({ type: 'cataloguePrepareBuyerRoom' });
         } else if (message.type === 'catalogueWorkspaceDismissMenu') {
@@ -1007,19 +696,35 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             try { $w('#input2').value = ''; } catch (error) {}
             if (main || nonFood) {
                 const ids = subId ? [subId] : categories.map(item => item.id);
-                await showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids), ids);
+                await showView({ subIds: ids });
                 publishCatalogueSearchValue();
                 return;
             }
-            const queryVersion = ++catalogueWorkspaceQueryVersion;
-            if (!catalogueWorkspaceFullReadComplete) await loadCatalogueWorkspaceProducts();
-            if (queryVersion !== catalogueWorkspaceQueryVersion) return;
-            if (principle && !catalogueWorkspaceAllProducts.some(product => product.principle.toLowerCase() === principle.toLowerCase())) return;
-            catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
-            catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle };
-            recordCatalogueBrowse([]);
+            await showView({ principle });
             publishCatalogueSearchValue();
-            sendCatalogueWorkspaceData();
+        } else if (message.type === 'catalogueSelectionView') {
+            const view = message.view;
+            if (!['', 'FOOD', 'NON_FOOD', 'ALL'].includes(view)) return;
+            if (!catalogueWorkspaceFilter.selectionView) selectionReturnFilter = catalogueWorkspaceFilter;
+            await showView(view ? { selectionView: view } : selectionReturnFilter);
+        } else if (message.type === 'catalogueTurnPage' && message.version === catalogueWorkspaceQueryVersion) {
+            const direction = message.direction;
+            if (direction === 'retry' && cataloguePageStatus === 'failed') await fetchPage(currentPageRequest);
+            if (cataloguePageStatus !== 'ready') return;
+            const cursor = direction === 'next' ? catalogueNext : direction === 'previous' ? cataloguePrevious : null;
+            if (cursor !== null) {
+                recordCatalogueBrowse(catalogueBrowseSubIds);
+                await fetchPage({ afterId: cursor }, direction === 'previous' ? 'last' : 'first');
+            }
+        } else if (message.type === 'catalogueDetailRequest') {
+            const version = catalogueWorkspaceQueryVersion, scope = catalogueReadScope;
+            const id = message.id;
+            if (!scope || version !== message.version || !catalogueWorkspaceProducts.some(product => product.id === id)) return;
+            let product = null;
+            try { product = await readCatalogueProduct(scope, id); } catch (_) {}
+            if (scope === catalogueReadScope && version === catalogueWorkspaceQueryVersion) {
+                workspace.postMessage({ type: 'catalogueDetailResult', version, id, product });
+            }
         } else if (message.type === 'catalogueWorkspacePosition') {
             rememberMobileCataloguePosition(message);
         } else if (message.type === 'catalogueWorkspaceNavigate') {
@@ -1059,6 +764,7 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
                 activeSelectedProductIds.add(productId);
                 removedProductIds.delete(productId);
                 catalogueSelectionTotal = activeSelectedProductIds.size;
+                void refreshCounts();
                 workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
                 sendCatalogueWorkspaceData();
             } catch (error) {
@@ -1091,7 +797,6 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             }
         }
     });
-    loadCatalogueWorkspaceProducts();
 }
 
 function openBuyerRoom() {

@@ -12,6 +12,7 @@ import { createCatalogueReadBudget } from './catalogueReadBudget.js';
 import { createCatalogueCoverage } from './catalogueCoverage.js';
 import { createCatalogueRiskAlert, retryCatalogueAlerts } from './catalogueRiskAlert.js';
 import { createProtectedCatalogueRead } from './protectedCatalogueRead.js';
+import { createCatalogueSelectionScope } from './catalogueSelectionScope.js';
 
 const collection = 'CatalogueProtection';
 const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(items.patch), collection });
@@ -44,7 +45,8 @@ async function load() {
   }
   const reserveRead = createCatalogueReadBudget({ store, policy: config.readPolicy, onIncident });
   const reserveCoverage = createCatalogueCoverage({ store, policy: config.coveragePolicy, onIncident });
-  cached = { read: createProtectedCatalogueRead({ data: wixData, authorize, reserveRead, reserveCoverage }),
+  const readSelection = createCatalogueSelectionScope({ data: wixData, getSelectionState: getCatalogueSelectionState });
+  cached = { read: createProtectedCatalogueRead({ data: wixData, authorize, reserveRead, reserveCoverage, readSelection }),
     retry: () => retryCatalogueAlerts(store, deliver) };
   expires = Date.now() + 60000;
   return cached;
