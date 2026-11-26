@@ -23,7 +23,7 @@ const { createQuantityCaseOperations, quantityCasesVersion } = load('purchaseQua
 const { projectPackingContext } = load('packingListContext.js');
 const { createPackingListOperations, packingVersion } = load('packingListOperations.js');
 
-async function scenario(company = 'NCT', demand = 100, productCount = 1) {
+async function scenario(company = 'NCT', demand = 100, productCount = 1, { sellingPricePc = 15, initialPlanCtn } = {}) {
   const rows = new Map(), clone = value => JSON.parse(JSON.stringify(value));
   const store = {
     all: async c => [...rows].filter(([key]) => key.startsWith(c + '/')).map(([, row]) => clone(row)),
@@ -42,12 +42,14 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const pdf = label => Buffer.from('%PDF-1.4\nTEST ONLY ' + label).toString('base64');
   await store.insert('SharedSuppliers', { _id: 'S', title: 'S', companyName: 'TEST SUPPLIER', shortName: 'TEST', supplierStatus: 'ACTIVE' });
   const receive = createNctIntake({ store, now, captureCosts: async barcodes => Object.fromEntries(barcodes.map(unitBarcode => [unitBarcode, { unitBarcode, capturedAt: now().toISOString(), costCurrency: 'MYR', costStatus: 'CAPTURED', costIssues: [], lpPc: 10, lpCtn: 100, disc1: 0, disc2: 0, disc3: 0, netCostCtn: 100, cbmPerCtn: .01 }])) });
-  const receipt = await receive({ sourceSiteId: '5292b63a-30e5-4c0e-8762-a1b127bbc651', destination: company, orderId: 'SCENARIO-' + company, customerId: 'C', customerCompanyName: 'TEST CUSTOMER', submissionId: 'SUB-' + company, submittedByStaffId: 'SALES', submittedByStaffName: 'SALES', submittedAt: now().toISOString(), transactionCurrency: 'MYR', fxRate: 1, lines: Array.from({length:productCount},(_,index)=>({sourceLineId:'L'+index,unitBarcode:'00'+(index+1),itemName:['CHOCOLATE BISCUITS','VANILLA BISCUITS','SOFT DRINK'][index],packingSize:'10 x 1',eaPerCtn:10,qtyCtn:demand,sellingPricePc:15})) });
+  const receipt = await receive({ sourceSiteId: '5292b63a-30e5-4c0e-8762-a1b127bbc651', destination: company, orderId: 'SCENARIO-' + company, customerId: 'C', customerCompanyName: 'TEST CUSTOMER', submissionId: 'SUB-' + company, submittedByStaffId: 'SALES', submittedByStaffName: 'SALES', submittedAt: now().toISOString(), transactionCurrency: 'MYR', fxRate: 1, lines: Array.from({length:productCount},(_,index)=>({sourceLineId:'L'+index,unitBarcode:'00'+(index+1),itemName:['CHOCOLATE BISCUITS','VANILLA BISCUITS','SOFT DRINK'][index],packingSize:'10 x 1',eaPerCtn:10,qtyCtn:demand,sellingPricePc})) });
   const id = receipt.taskIds[0];
   const workspace = async () => projectPurchaseWorkspace({ company, orders: await store.all(n.orders), tasks: await store.all(n.tasks), activity: await store.all(n.activity), suppliers: await store.all('SharedSuppliers'), staff: staff('PURCHASE') });
   const task = async () => (await workspace()).tasks.find(row=>row.id===id);
   const purchase = createPurchaseOperations({ store, now });
+  const plan=async (totalCtn,costing)=>purchase({...request('PURCHASE',{taskId:id,version:(await task()).editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:(await task()).procurement.revision,totalCtn,...(costing?{costing}:{}),supplierConfirmed:true,reason:'Supplier confirmed available cartons'}),operation:'PLAN'});
   await purchase({ ...request('PURCHASE', { edits: (await workspace()).tasks.map(row=>({taskId:row.id,version:row.editVersion,changes:{supplierId:'S'}})) }), operation: 'EDIT' });
+  if (initialPlanCtn !== undefined) await plan(initialPlanCtn);
   await purchase({ ...request('PURCHASE', { taskIds: receipt.taskIds, versions: Object.fromEntries((await workspace()).tasks.map(row=>[row.id,row.editVersion])), poNumber: company + '-PO-TEST' }), operation: 'PO' });
   const poOps = createPurchaseOrderOperations({ store, readWorkspace: workspace, names, documentService: documents, now });
   const po = async () => (await poOps.list(company, staff('PURCHASE'))).find(row=>row.taskIds.includes(id));
@@ -58,7 +60,14 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const acknowledge=async paymentId=>{const current=await po(),req=request('PURCHASE',{id:current.id,version:current.version,action:'ACK_PAYMENT',paymentId,reason:'Payment proof received'}),result=await poOps.save(req);assert.deepEqual(await poOps.save(req),result);return result;};
   const warehouseOrders = async () => projectWarehouseOrders({ company, purchaseOrders: await poOps.list(company, staff('WAREHOUSE')), tasks: (await workspace()).tasks, activity: await store.all(n.activity) });
   const warehouseOps = createWarehouseOperations({ store, names, readOrders: warehouseOrders, now });
-  const delivery = async (accepted, kind, resolveIssue = false) => warehouseOps.save(request('WAREHOUSE', { action: 'RECEIVE', id: (await po()).id, version: (await warehouseOrders()).find(row=>row.taskIds?.includes(id)||row.lines.some(line=>line.taskId===id)).version, lines: [{ taskId: id, accepted, rejected: 0, kind, resolveIssue, reason: 'Scenario delivery' }] }));
+  const delivery = async (accepted, kind, resolveIssue = false, replay = false) => {
+    const order = (await warehouseOrders()).find(row => row.lines.some(line => line.taskId === id));
+    const command = request('WAREHOUSE', { action: 'RECEIVE', id: order.id, version: order.version,
+      lines: [{ taskId: id, accepted, rejected: 0, kind, resolveIssue, reason: 'Scenario delivery' }] });
+    const result = await warehouseOps.save(command);
+    if (replay) assert.deepEqual(await warehouseOps.save(command), result);
+    return result;
+  };
   const allocator = createPlannerAllocationOperations({ store, names, readWorkspace: workspace, now });
   const allocateTask = async (taskId,quantity) => {
     const current=await workspace(),activity=await store.all(n.activity),version=allocationVersion(current,activity),ctx=customerAllocationContext(current,activity,readAllocations(activity),version),target=ctx.tasks.find(row=>row.id===taskId);
@@ -77,7 +86,7 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const allocate = async quantity => allocateTask(id,quantity);
   const shortageOps = createShortageOperations({ store, names, readWorkspace: workspace, now });
   const shortage = async (customerDecision, supplierDecision) => decideQuantity((await task()).quantityCases.some(item=>item.kind==='RECEIPT')?'RECEIPT':'UNPLACED',customerDecision,supplierDecision);
-  const context = async () => ({ ...await workspace(), activity: await store.all(n.activity), tasks: (await workspace()).tasks.map(row => ({ ...row, sellingPricePc: 15 })) });
+  const context = async () => ({ ...await workspace(), activity: await store.all(n.activity), tasks: (await workspace()).tasks.map(row => ({ ...row, sellingPricePc })) });
   const stockOps=createStockExceptionOperations({store,names,readContext:context,now});
   const quantityCaseOps=createQuantityCaseOperations({store,names,readWorkspace:workspace,now});
   const decideQuantity=async(kind,customerDecision,supplierDecision='PENDING')=>{const current=await workspace(),item=current.tasks.find(row=>row.id===id).quantityCases.find(item=>item.kind===kind);return quantityCaseOps({...request('PURCHASE',{action:'DECIDE',id:item.id,version:quantityCasesVersion(current,await store.all(n.activity)),customerDecision,supplierDecision,expectedDate:'2026-10-15',reason:'Internal supplier finding',customerMessage:'Available quantity confirmed'}),staff:{...staff('PURCHASE'),canDecideQuantityCase:true}});};
@@ -89,7 +98,6 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const quarantine=async(quantity,kind)=>stockOps({...request('WAREHOUSE',{action:'QUARANTINE',sourceTaskId:id,version:stockExceptionVersion(await context()),quantity,kind,reason:'Internal stock finding'}),staff:{...staff('WAREHOUSE'),canReportStockException:true}});
   const resolutionOps=createStockResolutionOperations({store,names,readContext:context,listOrders:poOps.list,now});
   const resolve=async(who,input)=>resolutionOps({...request(who,{version:stockResolutionVersion(await context(),await poOps.list(company,staff(who))),reason:'Stock resolution scenario',...input}),staff:{...staff(who),canReportStockException:who==='WAREHOUSE',canPlanStockResolution:who==='PURCHASE',canApproveStockLoss:who==='ADMIN',canCloseStockException:who==='ACCOUNT'}});
-  const plan=async (totalCtn,costing)=>purchase({...request('PURCHASE',{taskId:id,version:(await task()).editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:(await task()).procurement.revision,totalCtn,...(costing?{costing}:{}),supplierConfirmed:true,reason:'Supplier confirmed available cartons'}),operation:'PLAN'});
   const fulfilment = createCustomerFulfilmentOperations({ store, names, readContext: context, readRates: async () => [{ currency: 'MYR', rateToMyr: 1 }], now });
   const packingContext=async()=>projectPackingContext(await context()),packingSave=createPackingListOperations({store,names,readContext:packingContext,now});
   const loadForInvoice=async quantity=>{
@@ -103,14 +111,206 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const planOps=createShipmentPlanOperations({store,names,readContext:context,now});
   const split=async quantities=>planOps({...request('SALES',{action:'PLAN',customerId:'C',orderId:(await task()).orderId,version:shipmentPlanVersion(await context()),reason:'Customer requested split shipment',batches:quantities.map((quantity,index)=>({label:'Shipment '+(index+1),lines:[{taskId:id,quantity}]}))}),staff:{...staff('SALES'),customerId:'C',canSelectShipment:true}});
   const shipAction = async (who, input) => { const r = request(who, { version: shipmentVersion(await context()), reason: 'Scenario shipment', ...input }); r.staff = { ...r.staff, canSelectShipment: who === 'SALES', canInvoiceShipment: who === 'SUPPORT', canDispatchShipment: who === 'WAREHOUSE' }; return fulfilment(r); };
-  const invoice = async quantity => { await loadForInvoice(quantity); const selected = await shipAction('SALES', { action: 'SELECT', customerId: 'C', lines: [{ taskId: id, quantity }] }); await shipAction('SUPPORT', { action: 'INVOICE', id: selected.shipmentId, number: 'SI-' + sequence, date: '2026-10-12', amountCents: quantity * 15000 }); return selected.shipmentId; };
+  const invoice = async quantity => { await loadForInvoice(quantity); const selected = await shipAction('SALES', { action: 'SELECT', customerId: 'C', lines: [{ taskId: id, quantity }] }); await shipAction('SUPPORT', { action: 'INVOICE', id: selected.shipmentId, number: 'SI-' + sequence, date: '2026-10-12', amountCents: Math.round(quantity * sellingPricePc * 10 * 100) }); return selected.shipmentId; };
   const dispatch = async shipmentId => shipAction('WAREHOUSE', { action: 'DISPATCH', id: shipmentId, reference: 'TEST-CONTAINER' });
   const amounts = async () => finance({ action: 'AMOUNTS', amounts: (await po()).documents.filter(doc => ['INV','CN'].includes(doc.type)).map(doc => ({ fileId: doc.fileId, cents: doc.declaredCents, ...(doc.type === 'CN' ? { treatment: 'DEDUCT' } : {}) })) });
   const claim=async cents=>{const current=await po(),item=current.quantityCases.find(item=>item.quantity>0),cn=current.documents.find(doc=>doc.type==='CN'),refund=current.finance.payments.find(payment=>payment.direction==='REFUND');return finance({action:'SHORTAGE_CLAIM',caseId:item.id,signature:item.signature,quantity:item.quantity,outcome:item.decision.supplierDecision,cents,cnAllocations:[{fileId:cn.fileId,cents}],refundAllocations:refund?[{paymentId:refund.id,cents}]:[]});};
   const completion = async () => customerCompletion(id, await store.all(n.activity), await poOps.list(company, staff('ACCOUNT')));
   const progress=async()=>applyPurchaseProgress(await workspace(),await store.all(n.activity),await poOps.list(company,staff('PURCHASE'))).tasks;
-  return { packingContext, packingSave, loadForInvoice, store, names: n, company, id, task, po, upload, finance, pay, acknowledge, delivery, allocate, shortage, invoice, dispatch, amounts, claim, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, progress, setClock:value=>{clock=value;}, allPos:()=>poOps.list(company,staff('PURCHASE')) };
+  return { packingContext, packingSave, loadForInvoice, store, names: n, company, id, task, po, upload, finance, pay, acknowledge, delivery, allocate, shortage, invoice, dispatch, amounts, claim, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, progress, setClock:value=>{clock=value;}, allPos:()=>poOps.list(company,staff('PURCHASE')), request, documents, pdf, fulfilment, now };
 }
+
+async function buyerProgress(f, changeReply = () => {}) {
+  const { applyMasterQuantities } = await import('../../backend/masterQuantityProjection.js');
+  const { store, context } = f;
+  const { customerId, orderId, sourceLineId, barcode, ord, sellingPricePc, ea } = await f.task();
+  const [sourceOrder] = await store.all(f.names.orders);
+  const masterReceipt = { submissionId: sourceOrder.submissionId };
+  const workspace = await context();
+  const reply = projectPurchaseQuantities({ customerId, requests: [{ orderId, ...masterReceipt }], workspace,
+    orders: await store.all(f.names.orders), tasks: await store.all(f.names.tasks), activity: workspace.activity,
+    purchaseOrders: await f.allPos() });
+  changeReply(reply.orders[0].lines[0]);
+  const original = { orderId, masterReceipt,
+    lines: [{ lineId: sourceLineId, barcode, quantityCtn: ord, lockedPriceCtn: sellingPricePc * ea }] };
+  return applyMasterQuantities(customerId, [original], reply)[0].lines[0];
+}
+
+async function loadOnDesk(f, deskRevision, quantity) {
+  const { customerId } = await f.task();
+  const send = f.request('SUPPORT', { action: 'DESK_SEND', customerId, desk: 1, deskRevision,
+    version: packingVersion(await f.packingContext()), lines: [{ taskId: f.id, quantity }] });
+  send.staff.packingDepartment = 'SUPPORT';
+  const sent = await f.packingSave(send);
+  const packing = await f.packingContext();
+  const list = packing.lists.find(row => row.id === sent.id);
+  const request = f.request('WAREHOUSE', { action: 'DESK_LOAD', id: list.id, revision: list.revision,
+    version: packingVersion(packing), taskId: f.id, loaded: quantity, reasonCodes: [] });
+  request.staff.packingDepartment = 'WAREHOUSE';
+  const loaded = await f.packingSave(request);
+  assert.deepEqual(await f.packingSave(request), loaded);
+}
+
+async function issueDeskInvoice(f, quantity) {
+  const { createSupportInvoiceOperations, supportInvoiceState } = load('supportInvoice.js');
+  const { readSupportDesks } = load('supportDesk.js');
+  const { company, context, store, now } = f;
+  const { orderId, customerId } = await f.task();
+  const workspace = await context();
+  const [desk] = readSupportDesks(workspace.activity, company);
+  const issue = createSupportInvoiceOperations({ store, names: { [company]: f.names }, readContext: context,
+    saveFulfilment: f.fulfilment, readRates: async () => [{ currency: 'MYR', rateToMyr: 1 }], now });
+  const request = f.request('SUPPORT', { orderId, customerId, number: 'QA-SI-001',
+    version: supportInvoiceState(workspace).version, desk: { number: 1, revision: desk.revision },
+    lines: [{ taskId: f.id, quantity }] });
+  request.staff.packingDepartment = 'SUPPORT';
+  const issued = await issue(request);
+  assert.deepEqual(await issue(request), issued);
+  return issued;
+}
+
+async function closeSupplierPo(f, amountCents, shipmentId) {
+  await f.pay(amountCents, 'QA-SUPPLIER-PAYMENT');
+  await f.upload('INV', amountCents);
+  await f.upload('DO');
+  await f.amounts();
+  await f.finance({ action: 'CN_NOT_APPLICABLE', enabled: true });
+  await f.finance({ action: 'CHECK', enabled: true });
+  await f.dispatch(shipmentId);
+  assert.equal((await f.po()).state, 'HISTORY');
+}
+
+test('an isolated two-carton order closes from split receipt through Buyer status and paid history', async () => {
+  const { createSupportDeskOperations } = load('supportDesk.js');
+  const { createSupportDocumentOperations, supportDocumentVersion } = load('supportDocuments.js');
+  const { createFinanceCustomerAccountOperations, customerAccountVersion } = load('customerAccountLedger.js');
+  const { projectCustomerTransactionHistory } = load('customerTransactionHistory.js');
+  const { readPhysicalOutflows } = load('physicalOutflow.js');
+  const { projectStockCard } = load('stockCardProjection.js');
+  const f = await scenario('NCT', 2, 1, { sellingPricePc: 4.8 });
+  const { company, context, store, now } = f;
+  const names = { [company]: f.names };
+  const { customerId, orderId } = await f.task();
+  const support = input => {
+    const command = f.request('SUPPORT', input);
+    return { ...command, staff: { ...command.staff, packingDepartment: 'SUPPORT' } };
+  };
+  await f.upload('PO');
+  await f.delivery(1, 'SHORT', false, true);
+  assert.equal((await buyerProgress(f)).receivedQtyCtn, 1);
+  f.setClock('2026-10-13T03:00:00Z');
+  await f.delivery(1, 'DELIVERY', true, true);
+  assert.equal((await buyerProgress(f)).receivedQtyCtn, 2);
+  const receipts = (await context()).activity.filter(row => row.action === 'WAREHOUSE_RECEIPT_SAVED');
+  assert.deepEqual(receipts.map(row => row.details.lines[0].accepted - row.details.lines[0].beforeAccepted), [1, 1]);
+  assert.ok(receipts.every(row => row.details.lines[0].orderId === orderId));
+  assert.notEqual(receipts[0].activityTime, receipts[1].activityTime);
+
+  const updateDesk = createSupportDeskOperations({ store, names, readContext: context, now });
+  const assigned = await updateDesk(support({ action: 'DESK_ASSIGN', customerId, taskId: f.id, desk: 1, revision: '' }));
+  await loadOnDesk(f, assigned.deskState.revision, 2);
+  assert.equal((await buyerProgress(f)).loadedQtyCtn, 2);
+  assert.equal(readPhysicalOutflows((await context()).activity).length, 1);
+  assert.equal(projectStockCard(await context()).items.reduce((total, item) => total + item.onHand, 0), 0);
+
+  const issued = await issueDeskInvoice(f, 2);
+  assert.equal((await buyerProgress(f)).invoicedQtyCtn, 2);
+  await closeSupplierPo(f, 20000, issued.shipmentId);
+  const buyerLine = await buyerProgress(f);
+  assert.deepEqual([buyerLine.dispatchedQtyCtn, buyerLine.completedQtyCtn, buyerLine.invoiceNo], [2, 2, issued.number]);
+
+  const upload = createSupportDocumentOperations({ store, names, readContext: context, now,
+    documentService: async input => ({ ...await f.documents(input), ...(input.action === 'UPLOAD' ?
+      { customerLinkReady: true, size: Buffer.from(input.base64, 'base64').length } : {}) }) });
+  const attachment = async (code, reference, amountCents) => {
+    const command = support({ code, scope: 'INVOICE', orderId, customerId, invoiceId: issued.shipmentId,
+      version: supportDocumentVersion(await context()), reference, amountCents, base64: f.pdf(reference) });
+    const result = await upload(command);
+    assert.deepEqual(await upload(command), result);
+    return result.documentId;
+  };
+  const invoicePdf = await attachment('SI', issued.number, 9600);
+  const proof = await attachment('$', 'QA-PAYMENT', 9600);
+  const confirm = createFinanceCustomerAccountOperations({ store, names, readContext: context, now });
+  const confirmation = f.request('ACCOUNT', { action: 'CONFIRM_DOCUMENT', sourceDocumentId: proof, customerId,
+    version: customerAccountVersion(await context()), number: 'QA-PAYMENT', date: '2026-10-13', currency: 'MYR',
+    amountCents: 9600, allocations: [{ invoiceId: issued.shipmentId, amountCents: 9600 }] });
+  confirmation.staff.canPostCustomerAccount = true;
+  const payment = await confirm(confirmation);
+  assert.deepEqual(await confirm(confirmation), payment);
+
+  const finalContext = await context();
+  const history = projectCustomerTransactionHistory(finalContext, customerId);
+  assert.equal(history.transactions.length, 1);
+  const [transaction] = history.transactions;
+  assert.deepEqual([transaction.id, transaction.quantity, transaction.amountCents, transaction.paidCents, transaction.dueCents],
+    [issued.shipmentId, 2, 9600, 9600, 0]);
+  assert.equal(history.shipments[0].lines[0].orderId, orderId);
+  assert.equal(transaction.payments.length, 1);
+  assert.ok(transaction.documents.some(file => file.id === invoicePdf && file.ready));
+  assert.equal(history.account.balances[0].balanceCents, 0);
+  assert.equal(finalContext.activity.filter(row => row.action === 'CUSTOMER_ACCOUNT_DOCUMENT_SAVED').length, 1);
+  assert.equal(projectCustomerTransactionHistory(finalContext, 'OTHER-CUSTOMER').transactions.length, 0);
+});
+
+test('an issued 110-carton PO requires Support to split off the remaining 90 cartons before fulfilment', async () => {
+  const { createSupportDeskOperations, readSupportDesks } = load('supportDesk.js');
+  const { deskTaskPortions } = load('shortloadResolutionModel.js');
+  const f = await scenario('NCT', 200, 1, { initialPlanCtn: 110 });
+  const { company, context, store, now } = f;
+  const names = { [company]: f.names };
+  const originalPo = await f.po();
+  const { customerId, orderId } = await f.task();
+  assert.equal((await f.task()).sourcing.unplacedCtn, 90);
+
+  await f.decideQuantity('UNPLACED', 'STOP');
+  const handoff = (await f.task()).customerShortfall;
+  assert.deepEqual([handoff.stage, handoff.splitRequired, handoff.splitQuantity, handoff.toArrange],
+    ['SOURCING', true, 110, 90]);
+  const updateDesk = createSupportDeskOperations({ store, names, readContext: context, now });
+  const support = input => {
+    const command = f.request('SUPPORT', { customerId, taskId: f.id, desk: 1, revision: '', ...input });
+    return { ...command, staff: { ...command.staff, packingDepartment: 'SUPPORT' } };
+  };
+  await assert.rejects(updateDesk(support({ action: 'DESK_ASSIGN' })), /Confirm the Purchase handoff/);
+  const split = support({ action: 'DESK_SPLIT', shortfallRevision: handoff.revision,
+    parts: [{ desk: 1, quantity: 110 }, { desk: 0, quantity: 90 }] });
+  await assert.rejects(updateDesk(support({ ...split.input, parts: [{ desk: 1, quantity: 111 }, { desk: 0, quantity: 89 }] })), /changed/);
+  const confirmed = await updateDesk(split);
+  assert.deepEqual(await updateDesk(split), confirmed);
+
+  await f.upload('PO');
+  await f.delivery(110, 'DELIVERY', false, true);
+  const workspace = await context();
+  const task = await f.task();
+  const [desk] = readSupportDesks(workspace.activity, company);
+  assert.deepEqual(Array.from(deskTaskPortions(workspace.activity, desk, task), row => [row.desk, row.quantity, row.allocated]),
+    [[1, 110, 110], [0, 90, 0]]);
+  assert.deepEqual([(await f.po()).id, task.ord, task.procurement.totalCtn, task.customerShortfall.splitRequired],
+    [originalPo.id, 200, 110, false]);
+  const [sourceOrder] = await store.all(f.names.orders);
+  const reply = projectPurchaseQuantities({ customerId, requests: [{ orderId, submissionId: sourceOrder.submissionId }],
+    workspace, orders: await store.all(f.names.orders), tasks: await store.all(f.names.tasks), activity: workspace.activity,
+    purchaseOrders: await f.allPos() });
+  assert.deepEqual(Array.from(reply.orders[0].lines, row => [row.orderedQtyCtn, row.receivedQtyCtn]), [[200, 110]]);
+  assert.doesNotMatch(JSON.stringify(reply), /Internal supplier finding|SUPPORT_SPLIT/);
+  assert.equal(projectCustomerAccount(workspace).entries.length, 0);
+
+  await loadOnDesk(f, desk.revision, 110);
+  const issued = await issueDeskInvoice(f, 110);
+  await closeSupplierPo(f, 1100000, issued.shipmentId);
+  const buyerLine = await buyerProgress(f);
+  assert.deepEqual([buyerLine.quantityCtn, buyerLine.committedQtyCtn, buyerLine.invoicedQtyCtn,
+    buyerLine.dispatchedQtyCtn, buyerLine.completedQtyCtn, buyerLine.closedUnfulfilledQtyCtn],
+    [200, 110, 110, 110, 110, 90]);
+  await assert.rejects(buyerProgress(f, line => { line.completion.closedUnfulfilledQty = 91; }), /invoice completion/);
+  await assert.rejects(buyerProgress(f, line => {
+    line.completion.invoicedQty = 111;
+    line.completion.invoices[0].quantity = 111;
+    line.completion.closedUnfulfilledQty = 89;
+  }), /invoice completion/);
+  assert.equal(projectCustomerAccount(await context()).invoicePayments.invoices[0].quantity, 110);
+});
 
 test('payment handoff records paper review, partial payments and per-proof acknowledgement without financial clearance',async()=>{
  const f=await scenario();await f.upload('PO');await f.upload('PI');
