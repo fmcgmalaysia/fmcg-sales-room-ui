@@ -2121,7 +2121,7 @@ jobs:
           mkdir "$site"
           tar --extract --file "$RUNNER_TEMP/buyer-protected-images-base/artifact.tar" --directory "$site"
           node tools/stage-buyer-protected-images.cjs "$site"
-          node --test tests/buyer-media-projection.test.mjs tests/catalogue-image-assets.test.mjs tests/buyer-native-selection-download.test.cjs
+          node --test tests/buyer-media-projection.test.mjs tests/buyer-private-preview-source.test.cjs tests/catalogue-image-assets.test.mjs tests/buyer-native-selection-download.test.cjs
 
       - name: Upload the scoped Buyer Room image package
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'buyer-protected-images-only'

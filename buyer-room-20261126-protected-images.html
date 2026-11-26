@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
-<meta name="buyer-protected-images-build" content="20261126-buyer-protected-images-v1">
+<meta name="buyer-protected-images-build" content="20261127-buyer-protected-images-v2">
 <meta name="buyer-order-recovery-build" content="20261125-buyer-order-recovery-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
 <meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v6">
@@ -1352,7 +1352,13 @@ let previewTimer=0, selectionPreviewObserver;
 function safeSmallPicture(value){
   if(typeof value!=='string')return '';
   if(/^data:image\/jpeg;base64,[A-Za-z0-9+/=]{1,32000}$/.test(value))return value;
-  try{const url=new URL(value);return url.protocol==='https:'&&/(?:^|\.)(?:wixstatic\.com|wixmp\.com)$/.test(url.hostname)?url.href:'';}catch{return '';}
+  try{
+    const url=new URL(value);
+    const isPrivatePreview=url.origin==='https://download-files.wix.com'&&
+      url.pathname==='/_api/download/file'&&url.searchParams.get('downloadToken')&&
+      !url.username&&!url.password;
+    return isPrivatePreview?url.href:'';
+  }catch{return '';}
 }
 function attachSelectionPreview(target,image){
   target.querySelector('img')?.remove();

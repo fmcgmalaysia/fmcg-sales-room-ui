@@ -15,7 +15,7 @@ const before = new Map(files().map(file=>[file,digest(file)]));
 assert.equal(before.size,169);
 assert.equal(before.get(join(site,current)),'044adaaaab2966aa4276f2306c6e3821da14c380808645e826c9df2f70c40a62');
 const candidate=readFileSync(join(head,next),'utf8').replace(/\r\n/g,'\n');
-assert.match(candidate,/<meta name="buyer-protected-images-build" content="20261126-buyer-protected-images-v1">/);
+assert.match(candidate,/<meta name="buyer-protected-images-build" content="20261127-buyer-protected-images-v2">/);
 writeFileSync(join(site,next),candidate,{flag:'wx'});
 assert.equal(files().length,before.size+1);
 for(const [file,hash] of before) assert.equal(digest(file),hash,'Unexpected change: '+file);
