@@ -504,7 +504,7 @@ $w.onReady(async function () {
 
   // When Wix has already started the fixed HTML embed, keep that frame and request a fresh handshake.
   // If the embed was not configured with its website address, retain the existing dynamic load.
-  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261125-company-entry.html';
+  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261127-workbook-images.html';
   if (frame.src !== buyerRoomEmbedUrl) frame.src = buyerRoomEmbedUrl;
   else frame.postMessage({ type: 'BUYER_ROOM_HOST_READY' });
   // The shell can render while the authorized data request is in flight.
