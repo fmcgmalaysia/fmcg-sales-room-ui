@@ -47,9 +47,16 @@ test('format revision avoids reusing the previous plain-URL file while keeping c
  const source=fs.readFileSync('backend/buyerSelectionDownload.js','utf8').replace(/^import .*;\r?\n/gm,'').replace(/export async function /g,'async function ');
  const data={WixCustomers:[{customerId:'CUS-1',preferredCurrency:'USD'}],WixBuyerListItems:[{_id:'sel-1',payload:{customerId:'CUS-1',productId:'prod-1',barcode:row.unitBarcode,quoteStatus:'VIEW QUOTE',vipPriceEa:1.25}}],FMCGMALAYSIA:[{_id:'prod-1',barcode:row.unitBarcode,name:row.itemName,description:row.packingSize,ea:12,image:row.imageUrl,m3Ctn:.0123}]};
  const wixData={query(collection){return {eq(){return this},hasSome(){return this},limit(){return this},find:async()=>({items:data[collection],hasNext:()=>false})}}};
- const build=new Function('wixData','mediaManager','createHash','buildBuyerSelectionExcel','Buffer',source+'\nreturn buildBuyerSelectionDownload')(wixData,{},createHash,api().buildBuyerSelectionExcel,Buffer);
+ const build=new Function('wixData','mediaManager','createHash','buildBuyerSelectionExcel','Buffer','isWebQuotationCustomer',source+'\nreturn buildBuyerSelectionDownload')(wixData,{},createHash,api().buildBuyerSelectionExcel,Buffer,()=>false);
  const first=await build('CUS-1','https://example.test/buyer-room'),second=await build('CUS-1','https://example.test/buyer-room');
  assert.equal(first.versionKey,second.versionKey);assert.equal(first.rowCount,1);
- const old=new Function('wixData','mediaManager','createHash','buildBuyerSelectionExcel','Buffer',source.replace("format: 'selection-image-links-v1', ",'')+'\nreturn buildBuyerSelectionDownload')(wixData,{},createHash,api().buildBuyerSelectionExcel,Buffer);
+ const previous=cp.execFileSync('git',['show','verified/buyer-selection-image-links-20261104:backend/buyerSelectionDownload.js'],{encoding:'utf8'})
+   .replace(/^import .*;\r?\n/gm,'').replace(/export async function /g,'async function ');
+ const old=new Function('wixData','mediaManager','createHash','buildBuyerSelectionExcel','Buffer',previous+'\nreturn buildBuyerSelectionDownload')(wixData,{},createHash,api().buildBuyerSelectionExcel,Buffer);
  assert.notEqual(first.versionKey,(await old('CUS-1','https://example.test/buyer-room')).versionKey);
+ for(const body of entries(first.bytes).values()) assert.ok(!body.includes('image.jpg'));
+ const parts=entries(first.bytes);
+ assert.match(parts.get('xl/worksheets/sheet1.xml'), /0123456789012/);
+ assert.match(parts.get('xl/worksheets/_rels/sheet1.xml.rels'), /example\.test\/buyer-room/);
+ assert.doesNotMatch(parts.get('xl/worksheets/sheet1.xml'), /<hyperlink ref="A3"/);
 });
