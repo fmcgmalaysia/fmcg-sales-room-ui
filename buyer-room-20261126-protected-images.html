@@ -377,6 +377,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .selection-barcode,.selection-image-open,.selection-awaiting-mobile{display:none}
 #selectionImageDialog:not([open]){display:none}
 #selectionImageDialog{width:min(calc(100% - 24px),560px);max-width:none;max-height:calc(100% - 24px);margin:auto;padding:10px;border:0;border-radius:14px;background:#fff;color:var(--ink)}
+.thumb-shell.await-preview .thumb-fallback{display:grid}
 #selectionImageDialog .image-download{position:static;width:auto;height:auto;padding:8px 14px;border-radius:6px;background:#163952;color:white;font-size:14px}
 #selectionImageDialog .image-download-status{display:block;font-size:13px;margin-top:6px}
 @media(min-width:701px){
@@ -1355,6 +1356,7 @@ function safeSmallPicture(value){
 }
 function attachSelectionPreview(target,image){
   target.querySelector('img')?.remove();
+  target.classList.toggle('await-preview',!image);
   if(!image)return;
   const img=document.createElement('img');
   img.className='thumb my-thumb';
