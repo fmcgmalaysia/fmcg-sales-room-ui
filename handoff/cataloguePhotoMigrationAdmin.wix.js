@@ -215,7 +215,7 @@ export const continueCataloguePictures = webMethod(Permissions.Admin, async () =
   if ((state.leaseEnds || 0) > Date.now()) return { status:'BUSY', totals };
   const active = await store.move(state,'MIGRATING',{leaseEnds:Date.now()+45000});
   if (!active) return { status:'BUSY', totals };
-  const result = await runCataloguePictureBatch(active.afterId || '',8);
+  const result = await runCataloguePictureBatch(active.afterId || '',4);
   const progress = {...totals};
   for (const [key,count] of Object.entries(result.totals)) progress[key] = (progress[key] || 0)+count;
   const status = result.more ? 'MIGRATING' : 'FINISHED';
