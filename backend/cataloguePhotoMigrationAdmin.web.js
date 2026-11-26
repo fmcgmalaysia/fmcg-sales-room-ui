@@ -137,13 +137,20 @@ function recoveryJpegDimensions(bytes) {
   return null;
 }
 
-const catalogueJpegReviewIds = [
+function recoveryPngDimensions(bytes) {
+  if (bytes.length < 33 || bytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a' ||
+      bytes.readUInt32BE(8) !== 13 || bytes.toString('ascii', 12, 16) !== 'IHDR') return null;
+  const width = bytes.readUInt32BE(16), height = bytes.readUInt32BE(20);
+  return width && height ? { width, height } : null;
+}
+
+const catalogueImageReviewIds = [
   'pb_4800214061219', 'pb_8935001709015', 'pb_8990800010083',
   'pb_8990800010090', 'pb_8990800010113', 'pb_f8d3fe7e39b12f82ee7cef0e8eba7ffbcf70aa96535e01becd00758eb28de0c5'
 ];
 
-export const retryCatalogueReviewJpeg = webMethod(Permissions.Admin, async (id) => {
-  if (!catalogueJpegReviewIds.includes(id) || (await store.get(checkpoint))?.status !== 'FINISHED') return { status:'OUT_OF_SCOPE' };
+export const retryCatalogueReviewImage = webMethod(Permissions.Admin, async (id) => {
+  if (!catalogueImageReviewIds.includes(id) || (await store.get(checkpoint))?.status !== 'FINISHED') return { status:'OUT_OF_SCOPE' };
   const row = await store.get(id);
   if (row?.status !== 'NEW' || row.fileUrl || row.previewFileUrl) return { status:row?.status || 'MISSING' };
   let phase = 'SOURCE';
@@ -155,19 +162,19 @@ export const retryCatalogueReviewJpeg = webMethod(Permissions.Admin, async (id) 
     const descriptor = await elevate(files.getFileDescriptor)(fid);
     const sizeInBytes = Number(descriptor.sizeInBytes);
     if (descriptor._id !== fid || descriptor.private !== false || descriptor.operationStatus !== 'READY' ||
-        descriptor.mediaType !== 'IMAGE' || descriptor.mimeType !== 'image/jpeg' ||
+        descriptor.mediaType !== 'IMAGE' || !['image/jpeg','image/png'].includes(descriptor.mimeType) ||
         !/^[a-f0-9]{32}$/i.test(descriptor.hash || '') || !Number.isSafeInteger(sizeInBytes) ||
         sizeInBytes < 16 || sizeInBytes > 24 * 1024 * 1024) return { status:'DESCRIPTOR_REVIEW' };
     phase = 'SOURCE_BYTES';
     const url = 'https://static.wixstatic.com/media/' + fid;
     const bytes = await readBytes(url, sizeInBytes);
-    const dimensions = recoveryJpegDimensions(bytes);
+    const dimensions = descriptor.mimeType === 'image/png' ? recoveryPngDimensions(bytes) : recoveryJpegDimensions(bytes);
     if (!dimensions || bytes.length !== sizeInBytes || createHash('md5').update(bytes).digest('hex') !== descriptor.hash.toLowerCase()) {
       return { status:'SOURCE_CHECKSUM_REVIEW' };
     }
     phase = 'PRIVATE_COPY';
     const metadata = { ...dimensions, fileUrl:source, sizeInBytes, hash:descriptor.hash.toLowerCase(),
-      isPrivate:false, opStatus:'READY', mediaType:'image', mimeType:'image/jpeg' };
+      isPrivate:false, opStatus:'READY', mediaType:'image', mimeType:descriptor.mimeType };
     return await migrateCataloguePhoto(product, { ...operations,
       media:{ ...media, getFileInfo: ref => fileId(ref) === fid ? Promise.resolve(metadata) : media.getFileInfo(ref) },
       download:(address,limit) => address === url ? Promise.resolve(bytes) : readBytes(address,limit)

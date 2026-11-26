@@ -39,19 +39,20 @@ test('a one-record retry requires matching Wix descriptor size, checksum and val
   const bytes = Buffer.from('ffd8ffc00008080002000301ffd9', 'hex');
   const jpeg = Buffer.concat([bytes.subarray(0, 2), Buffer.from('ffe000020000', 'hex').subarray(0, 4), bytes.subarray(2)]);
   const hash = createHash('md5').update(jpeg).digest('hex');
-  let currentHash = '0'.repeat(32), calls = 0;
-  const repair = runInNewContext(source.replace(/^export /m, '') + '\nretryCatalogueReviewJpeg', {
+  let payload = jpeg, mimeType = 'image/jpeg', currentHash = '0'.repeat(32), calls = 0;
+  const repair = runInNewContext(source.replace(/^export /m, '') + '\nretryCatalogueReviewImage', {
     Buffer, createHash, Permissions: { Admin: 'admin' }, webMethod: (permission, handler) => { assert.equal(permission, 'admin'); return handler; },
     checkpoint: 'cursor', store: { get: async key => key === 'cursor' ? { status: 'FINISHED' } : { status: 'NEW', sourceId: file } },
     wixData: { get: async () => ({ _id: id, image: file }) }, products: 'products', options: {},
     fileId: value => value, sourceReference: value => value,
     elevate: adapter => adapter, files: { getFileDescriptor: async () => ({ _id: file, private: false,
-      operationStatus: 'READY', mediaType: 'IMAGE', mimeType: 'image/jpeg', sizeInBytes: jpeg.length, hash: currentHash }) },
-    readBytes: async () => jpeg, operations: {}, media: {},
+      operationStatus: 'READY', mediaType: 'IMAGE', mimeType, sizeInBytes: payload.length, hash: currentHash }) },
+    readBytes: async () => payload, operations: {}, media: {},
     migrateCataloguePhoto: async (product, services) => {
       calls++;
       const info = await services.media.getFileInfo(product.image);
-      assert.equal(info.width, 3); assert.equal(info.height, 2); assert.equal(info.hash, hash);
+      assert.equal(info.width, 3); assert.equal(info.height, 2); assert.equal(info.hash, currentHash);
+      assert.equal(info.mimeType, mimeType);
       return { status: 'VERIFIED' };
     }
   });
@@ -61,4 +62,10 @@ test('a one-record retry requires matching Wix descriptor size, checksum and val
   currentHash = hash;
   assert.equal((await repair(id)).status, 'VERIFIED');
   assert.equal(calls, 1);
+  mimeType = 'image/png';
+  assert.equal((await repair(id)).status, 'SOURCE_CHECKSUM_REVIEW');
+  payload = Buffer.from('89504e470d0a1a0a0000000d494844520000000300000002080200000000000000', 'hex');
+  currentHash = createHash('md5').update(payload).digest('hex');
+  assert.equal((await repair(id)).status, 'VERIFIED');
+  assert.equal(calls, 2);
 });
