@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
-<meta name="buyer-protected-images-build" content="20261127-buyer-protected-images-v2">
+<meta name="buyer-protected-images-build" content="20261127-buyer-protected-images-v3">
 <meta name="buyer-order-recovery-build" content="20261125-buyer-order-recovery-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
 <meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v6">
@@ -1354,10 +1354,12 @@ function safeSmallPicture(value){
   if(/^data:image\/jpeg;base64,[A-Za-z0-9+/=]{1,32000}$/.test(value))return value;
   try{
     const url=new URL(value);
-    const isPrivatePreview=url.origin==='https://download-files.wix.com'&&
-      url.pathname==='/_api/download/file'&&url.searchParams.get('downloadToken')&&
-      !url.username&&!url.password;
-    return isPrivatePreview?url.href:'';
+    if(url.username||url.password)return '';
+    const signedFile=url.origin==='https://download-files.wix.com'&&
+      url.pathname==='/_api/download/file'&&url.searchParams.get('downloadToken');
+    const signedMedia=url.origin==='https://download-files.wixmp.com'&&
+      /^\/media\/[A-Za-z0-9_.~-]+\.(?:jpe?g|png|webp)$/i.test(url.pathname)&&url.searchParams.get('token');
+    return signedFile||signedMedia?url.href:'';
   }catch{return '';}
 }
 function attachSelectionPreview(target,image){
