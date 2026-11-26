@@ -2,8 +2,8 @@ import https from 'https';
 import { createHash } from 'crypto';
 
 const mimeExtensions = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
-const fileId = uri => typeof uri === 'string' && /^wix:image:\/\/v1\/([A-Za-z0-9_~-]+\.(?:jpe?g|png|webp))\//i.exec(uri)?.[1];
-function sourceReference(value) {
+export const fileId = uri => typeof uri === 'string' && /^wix:image:\/\/v1\/([A-Za-z0-9_~-]+\.(?:jpe?g|png|webp))\//i.exec(uri)?.[1];
+export function sourceReference(value) {
   if (fileId(value)) return value;
   const id = typeof value === 'string' && /^https:\/\/static\.wixstatic\.com\/media\/([A-Za-z0-9_~-]+\.(?:jpe?g|png|webp))$/i.exec(value)?.[1];
   return id ? 'wix:image://v1/' + id + '/original' : '';
@@ -11,7 +11,7 @@ function sourceReference(value) {
 
 // The input to this transport is constructed solely from an authenticated Wix media descriptor.
 // The server never follows redirects, nor returns this legacy source URL to a buyer.
-function readBytes(url, limit) {
+export function readBytes(url, limit) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, res => {
       if (res.statusCode !== 200 || !String(res.headers['content-type'] || '').startsWith('image/')) {

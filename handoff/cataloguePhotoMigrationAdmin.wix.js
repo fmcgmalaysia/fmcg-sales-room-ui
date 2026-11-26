@@ -236,6 +236,66 @@ export const cataloguePictureReview = webMethod(Permissions.Admin, async () => {
   })) };
 });
 
+// Retry only the existing pre-upload exceptions, after validating the source independently.
+function recoveryJpegDimensions(bytes) {
+  if (bytes.length < 16 || bytes.readUInt16BE(0) !== 0xffd8 || bytes.readUInt16BE(bytes.length - 2) !== 0xffd9) return null;
+  for (let offset = 2; offset + 4 < bytes.length;) {
+    if (bytes[offset] !== 0xff) return null;
+    const marker = bytes[offset + 1];
+    const length = bytes.readUInt16BE(offset + 2);
+    if (length < 2 || offset + length + 2 > bytes.length) return null;
+    if (marker === 0xc0 || marker === 0xc2) {
+      if (length < 8) return null;
+      const height = bytes.readUInt16BE(offset + 5), width = bytes.readUInt16BE(offset + 7);
+      return width && height ? { width, height } : null;
+    }
+    if (marker === 0xda || marker === 0xd9) return null;
+    offset += length + 2;
+  }
+  return null;
+}
+
+const catalogueJpegReviewIds = [
+  'pb_4800214061219', 'pb_8935001709015', 'pb_8990800010083',
+  'pb_8990800010090', 'pb_8990800010113', 'pb_f8d3fe7e39b12f82ee7cef0e8eba7ffbcf70aa96535e01becd00758eb28de0c5'
+];
+
+export const retryCatalogueReviewJpeg = webMethod(Permissions.Admin, async (id) => {
+  if (!catalogueJpegReviewIds.includes(id) || (await store.get(checkpoint))?.status !== 'FINISHED') return { status:'OUT_OF_SCOPE' };
+  const row = await store.get(id);
+  if (row?.status !== 'NEW' || row.fileUrl || row.previewFileUrl) return { status:row?.status || 'MISSING' };
+  let phase = 'SOURCE';
+  try {
+    const product = await wixData.get(products,id,options);
+    const source = sourceReference(product.image), fid = fileId(source);
+    if (!fid || row.sourceId !== fid) return { status:'SOURCE_CHANGED' };
+    phase = 'DESCRIPTOR';
+    const descriptor = await elevate(files.getFileDescriptor)(fid);
+    const sizeInBytes = Number(descriptor.sizeInBytes);
+    if (descriptor._id !== fid || descriptor.private !== false || descriptor.operationStatus !== 'READY' ||
+        descriptor.mediaType !== 'IMAGE' || descriptor.mimeType !== 'image/jpeg' ||
+        !/^[a-f0-9]{32}$/i.test(descriptor.hash || '') || !Number.isSafeInteger(sizeInBytes) ||
+        sizeInBytes < 16 || sizeInBytes > 24 * 1024 * 1024) return { status:'DESCRIPTOR_REVIEW' };
+    phase = 'SOURCE_BYTES';
+    const url = 'https://static.wixstatic.com/media/' + fid;
+    const bytes = await readBytes(url, sizeInBytes);
+    const dimensions = recoveryJpegDimensions(bytes);
+    if (!dimensions || bytes.length !== sizeInBytes || createHash('md5').update(bytes).digest('hex') !== descriptor.hash.toLowerCase()) {
+      return { status:'SOURCE_CHECKSUM_REVIEW' };
+    }
+    phase = 'PRIVATE_COPY';
+    const metadata = { ...dimensions, fileUrl:source, sizeInBytes, hash:descriptor.hash.toLowerCase(),
+      isPrivate:false, opStatus:'READY', mediaType:'image', mimeType:'image/jpeg' };
+    return await migrateCataloguePhoto(product, { ...operations,
+      media:{ ...media, getFileInfo: ref => fileId(ref) === fid ? Promise.resolve(metadata) : media.getFileInfo(ref) },
+      download:(address,limit) => address === url ? Promise.resolve(bytes) : readBytes(address,limit)
+    });
+  } catch (_) {
+    const current = await store.get(id);
+    return { status:'REVIEW', phase, recordedStage:current?.status || '' };
+  }
+});
+
 // Site-owned scheduler entry point. The browser still uses the Admin web method,
 // and this temporary job expires at 7:00 a.m. Malaysia time.
 export async function processCatalogueMigrationWindow() {
