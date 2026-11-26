@@ -36,37 +36,44 @@ export function cleanCatalogueJpeg(bytes) {
   if (!Buffer.isBuffer(bytes) || bytes.length > MAX_BYTES || bytes.length < 16 ||
       bytes.readUInt16BE(0) !== 0xffd8 || bytes.readUInt16BE(bytes.length-2) !== 0xffd9) return '';
   const parts = [bytes.subarray(0,2)];
-  let dimensions = false;
-  for (let at=2; at+4<bytes.length;) {
-    if (bytes[at] !== 0xff) return '';
+  let frame = 0, scans = 0;
+  for (let at=2; at<bytes.length-2;) {
+    if (at+4>=bytes.length || bytes[at] !== 0xff) return '';
     const marker = bytes[at+1];
     const length = bytes.readUInt16BE(at+2);
     const end = at+2+length;
     if (length < 2 || end > bytes.length-2) return '';
-    if (marker === 0xc0) {
-      if (length < 8 || dimensions) return '';
+    if (marker === 0xc0 || marker === 0xc2) {
+      if (length < 8 || frame) return '';
       const height = bytes.readUInt16BE(at+5);
       const width = bytes.readUInt16BE(at+7);
       if (!width || !height || width > EDGE || height > EDGE) return '';
-      dimensions = true;
+      frame = marker;
     }
     if (marker === 0xda) {
-      if (!dimensions) return '';
-      // Accept only one baseline scan. Entropy data can contain stuffed bytes and
-      // restart markers. Extra sections, metadata and trailing data are disallowed.
-      for (let cursor=end;cursor<bytes.length-2;cursor++) {
-        if (bytes[cursor] !== 0xff) continue;
-        const tag=bytes[++cursor];
-        if (tag !== 0 && !(tag >= 0xd0 && tag <= 0xd7)) return '';
+      if (!frame || ++scans > (frame===0xc2 ? 20 : 1)) return '';
+      let cursor=end;
+      while (cursor < bytes.length-2) {
+        if (bytes[cursor++] !== 0xff) continue;
+        const tag=bytes[cursor];
+        if (tag !== 0 && !(tag >= 0xd0 && tag <= 0xd7)) {
+          cursor--;
+          break;
+        }
+        cursor++;
       }
-      parts.push(bytes.subarray(at));
-      return 'data:image/jpeg;base64,'+Buffer.concat(parts).toString('base64');
+      if (cursor===end) return '';
+      parts.push(bytes.subarray(at,cursor));
+      at=cursor;
+      continue;
     }
-    if ([0xc0,0xc4,0xdb,0xdd].includes(marker)) parts.push(bytes.subarray(at,end));
+    if ([0xc0,0xc2,0xc4,0xdb,0xdd].includes(marker)) parts.push(bytes.subarray(at,end));
     else if (marker !== 0xfe && !(marker >= 0xe0 && marker <= 0xef)) return '';
     at=end;
   }
-  return '';
+  if (!scans) return '';
+  parts.push(bytes.subarray(bytes.length-2));
+  return 'data:image/jpeg;base64,'+Buffer.concat(parts).toString('base64');
 }
 
 // Only selected page IDs reach this adapter. Deliver the small picture, never the

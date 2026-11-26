@@ -8,12 +8,12 @@ function segment(marker, body) {
   return Buffer.concat([header,body]);
 }
 const metadata=Buffer.from('https://static.wixstatic.com/media/legacy.png');
-function jpeg(width=128,height=88,payload=Buffer.from([1,2,3])) {
+function jpeg(width=128,height=88,payload=Buffer.from([1,2,3]),progressive=false) {
   const frame=Buffer.from([8,0,0,0,0,1,1,0x11,0]);
   frame.writeUInt16BE(height,1);
   frame.writeUInt16BE(width,3);
   return Buffer.concat([Buffer.from([0xff,0xd8]),segment(0xe1,metadata),segment(0xfe,metadata),
-    segment(0xc0,frame),segment(0xda,Buffer.from([1,1,0,0,63,0])),payload,Buffer.from([0xff,0xd9])]);
+    segment(progressive?0xc2:0xc0,frame),segment(0xda,Buffer.from([1,1,0,0,63,0])),payload,Buffer.from([0xff,0xd9])]);
 }
 function dataFixture(rows) {
   return { query:()=>({
@@ -27,6 +27,10 @@ test('inline legacy previews remove metadata and enforce JPEG dimensions and sca
   const output=Buffer.from(result.split(',')[1],'base64');
   assert.ok(!output.includes(metadata));
   assert.equal(cleanCatalogueJpeg(jpeg(129)),'');
+  const scans=Buffer.concat([Buffer.from([1,2,3]),segment(0xe1,metadata),segment(0xda,Buffer.from([1,1,0,0,63,0])),Buffer.from([4,5,6])]);
+  const progressive=cleanCatalogueJpeg(jpeg(128,88,scans,true));
+  assert.ok(progressive);
+  assert.ok(!Buffer.from(progressive.split(',')[1],'base64').includes(metadata));
   assert.equal(cleanCatalogueJpeg(jpeg(128,129)),'');
   assert.equal(cleanCatalogueJpeg(jpeg(100,100,Buffer.from([0xff,0xe1]))),'');
   assert.equal(cleanCatalogueJpeg(jpeg(100,100,Buffer.alloc(24001))),'');
