@@ -1,26 +1,32 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
 
 test('native download waits for a prepared link, survives concurrent loads, and follows the active view', async () => {
-  const source = fs.readFileSync(require('node:path').join(__dirname, '../buyer-room/wix/buyer-room-page.js'), 'utf8').replace(/^import .*;\r?\n/gm, '');
+  const readVeloSource = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8').replace(/^import .*;\r?\n/gm, '');
+  const source = readVeloSource('buyer-room/wix/buyer-room-page.js');
+  const accountSession = readVeloSource('integration/wix/wix-account-session.js').replace(/^export function /m, 'function ');
   let ready, message, click, resolveDownload, downloadCalls = 0, now = Date.now();
   const navigations = [], intervals = [];
   const button = { visible: true, enabled: true, hide() { this.visible = false; }, show() { this.visible = true; }, disable() { this.enabled = false; }, enable() { this.enabled = true; }, onClick(fn) { click = fn; } };
   const frame = { onMessage(fn) { message = fn; }, postMessage() {} };
   const $w = id => id === '#html1' ? frame : button;
   $w.onReady = fn => { ready = fn; };
+  const location = { query: { assist: 'CUS-TEST' }, path: ['buyer-room'], baseUrl: 'https://example.test/site', to(url) { navigations.push(url); } };
+  const wixWindow = { rendering: { env: 'browser' } };
   const context = {
     $w, console, URL, Date: { now: () => now }, encodeURIComponent, setInterval(fn) { intervals.push(fn); }, setTimeout() {},
     session: { setItem() {} },
-    wixLocationFrontend: { query: { assist: 'CUS-TEST' }, baseUrl: 'https://example.test/site', to(url) { navigations.push(url); } },
-    wixWindowFrontend: { rendering: { env: 'browser' } },
+    authentication: { loggedIn: () => false },
+    wixLocation: location, wixLocationFrontend: location,
+    wixWindow, wixWindowFrontend: wixWindow,
     wixRealtimeFrontend: { subscribe: () => Promise.resolve() },
     getBuyerWorkspace: async () => ({ ok: true, context: { customerId: 'CUS-TEST', status: 'ACTIVE' } }),
     createBuyerSelectionDownload: () => { downloadCalls++; return new Promise(resolve => { resolveDownload = resolve; }); }
   };
-  vm.runInNewContext(source, context);
+  vm.runInNewContext(accountSession + '\n' + source, context);
   await ready();
   assert.equal(button.visible, false);
   assert.equal(button.enabled, false);
