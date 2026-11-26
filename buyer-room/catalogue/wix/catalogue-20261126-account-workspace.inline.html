@@ -208,6 +208,8 @@
     const state={products:[],selectionProducts:[],selectedIds:new Set(),activeSelectedIds:new Set(),removedIds:new Set(),pendingSelectionIds:new Set(),activeId:'',query:'',main:'',subIds:[],principle:'',selectionView:'',homeStatus:'',selectionLimit:100,selectionTotal:0,selectionFoodCount:0,selectionNonFoodCount:0,selectionCountsReady:false,selectionReady:false,busyId:'',selectionErrorIds:new Set(),optimisticProducts:new Map(),buyerRoomUrl:''};
     let pageVersion=-1,pageStatus='loading',hasPrevious=false,hasNext=false;
     const details=new Map(), detailRequests=new Set();
+    const thumbnails=new Map();
+    let thumbnailsDeferred=false, thumbnailFrame, thumbnailRequest, thumbnailSequence=0;
     const pageNav=document.getElementById('pageNav');
     function turnPage(direction){post('catalogueTurnPage',{version:pageVersion,direction});}
     document.getElementById('pagePrevious').onclick=()=>turnPage('previous');
@@ -380,7 +382,44 @@
       mobileCategories.replaceChildren(shortcuts,...groups);
     }
     function filtered(){return state.products;}
-    function imageMarkup(p,large=false){return p.image?`<img src="${esc(p.image)}" loading="lazy" decoding="async" alt="">`:`<span class="fallback">${large?'IMAGE PENDING':'NO IMAGE'}</span>`}
+    function imageMarkup(p,large=false){
+      const image=thumbnailsDeferred?thumbnails.get(p.id):p.image;
+      if(image)return `<img src="${esc(image)}" ${thumbnailsDeferred?'':'loading="lazy" '}decoding="async" alt="">`;
+      if(thumbnailsDeferred&&!thumbnails.has(p.id))return '';
+      return `<span class="fallback">${large?'IMAGE PENDING':'NO IMAGE'}</span>`;
+    }
+    function queueCatalogueThumbnails(){
+      if(!thumbnailsDeferred||pageStatus!=='ready'||thumbnailFrame||thumbnailRequest)return;
+      thumbnailFrame=requestAnimationFrame(()=>{
+        thumbnailFrame=null;
+        if(!thumbnailsDeferred||pageStatus!=='ready'||thumbnailRequest)return;
+        const ids=new Set();
+        if((!mobile.matches||detailModal.open)&&state.activeId&&!thumbnails.has(state.activeId))ids.add(state.activeId);
+        const viewport=rows.getBoundingClientRect();
+        for(const row of rows.children){
+          const id=row.dataset.id;
+          const bounds=row.getBoundingClientRect();
+          if(id&&!thumbnails.has(id)&&bounds.bottom>viewport.top&&bounds.top<viewport.bottom)ids.add(id);
+          if(ids.size===10)break;
+        }
+        if(!ids.size)return;
+        const requestId=++thumbnailSequence;
+        thumbnailRequest={requestId,ids:[...ids]};
+        post('catalogueThumbnailRequest',{version:pageVersion,...thumbnailRequest});
+      });
+    }
+    function showCatalogueThumbnails(message){
+      if(message.version!==pageVersion||thumbnailRequest?.requestId!==message.requestId)return;
+      const urls=new Map(Array.isArray(message.images)?message.images.map(item=>[item.id,item.image]):[]);
+      for(const id of thumbnailRequest.ids){
+        thumbnails.set(id,urls.get(id)||'');
+        const row=rows.querySelector(`[data-id="${CSS.escape(id)}"] .thumb`);
+        if(row)row.innerHTML=imageMarkup({id});
+        if(id===state.activeId)productImage.innerHTML=imageMarkup({id},true);
+      }
+      thumbnailRequest=null;
+      queueCatalogueThumbnails();
+    }
     function render(preserveScroll=false){const scrollTop=rows.scrollTop,allItems=filtered(),items=allItems,pending=state.selectionCountsReady?'':'—';document.getElementById('selectionCount').textContent=state.selectionCountsReady?state.selectionTotal:pending;document.getElementById('selectionLimit').textContent=state.selectionLimit;document.getElementById('foodSelectionCount').textContent=state.selectionCountsReady?state.selectionFoodCount:pending;document.getElementById('nonFoodSelectionCount').textContent=state.selectionCountsReady?state.selectionNonFoodCount:pending;document.getElementById('selectionAllowance').textContent=`Your account allows up to ${state.selectionLimit} selected SKUs.`;document.getElementById('selectionFilter').classList.toggle('active',state.selectionView==='ALL');document.getElementById('foodSelectionFilter').classList.toggle('active',state.selectionView==='FOOD');document.getElementById('nonFoodSelectionFilter').classList.toggle('active',state.selectionView==='NON_FOOD');
       document.body.classList.toggle('selection-view',Boolean(state.selectionView));
       closeProductZoom();
@@ -392,7 +431,7 @@
       }
       if(!allItems.some(p=>p.id===state.activeId))state.activeId=allItems[0].id;
       rows.replaceChildren(...items.map(p=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${removed(p)?'removed':selected(p)?'selected':''}">${removed(p)?'Removed':selected(p)?'Selected':'Available'}</span></span>`;b.onclick=()=>{activate(p.id,true);openProductDetail()};return b}));
-      if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);updateDetailNavigation(allItems);}
+      if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);updateDetailNavigation(allItems);queueCatalogueThumbnails();}
     function activate(id,scroll){state.activeId=id;render(true);if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);if(row){const rowBox=row.getBoundingClientRect(),listBox=rows.getBoundingClientRect();if(rowBox.top<listBox.top)rows.scrollTop-=listBox.top-rowBox.top;else if(rowBox.bottom>listBox.bottom)rows.scrollTop+=rowBox.bottom-listBox.bottom}}}
     function showDetail(p){
       if(p && (!mobile.matches || detailModal.open)){
@@ -450,6 +489,8 @@
       else if(step<0?hasPrevious:hasNext)turnPage(step<0?'previous':'next');
     }
     rows.addEventListener('scroll',reportCataloguePosition);
+    rows.addEventListener('scroll',queueCatalogueThumbnails,{passive:true});
+    window.addEventListener('resize',queueCatalogueThumbnails,{passive:true});
     document.addEventListener('keydown',e=>{if(!detailModal.open&&!mobileMenu.open&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();e.stopPropagation();move(e.key==='ArrowDown'?1:-1);post('catalogueWorkspaceNavigate')}});
     function setSelectionView(view){post('catalogueSelectionView',{view:state.selectionView===view?'':view});}
     document.getElementById('selectionFilter').onclick=()=>setSelectionView('ALL');document.getElementById('foodSelectionFilter').onclick=()=>setSelectionView('FOOD');document.getElementById('nonFoodSelectionFilter').onclick=()=>setSelectionView('NON_FOOD');document.getElementById('closeDetail').onclick=closeProductDetail;
@@ -464,14 +505,16 @@
         else if(!d.open&&mobileMenu.open)mobileMenu.close();
       }
       if(d.type==='catalogueMenuData')renderMobileCategories(d.items);
+      if(d.type==='catalogueThumbnailResult')showCatalogueThumbnails(d);
       if(d.type==='catalogueDetailResult' && d.version===pageVersion && detailRequests.has(d.id)){
         details.set(d.id,d.product?.id===d.id?d.product:null);
         if(state.activeId===d.id)showDetail(state.products.find(p=>p.id===d.id));
       }
       if(d.type==='catalogueWorkspaceData'){
         if(!Number.isInteger(d.pageVersion)||d.pageVersion<pageVersion)return;
-        if(d.pageVersion!==pageVersion){details.clear();detailRequests.clear();state.activeId='';}
+        if(d.pageVersion!==pageVersion){details.clear();detailRequests.clear();thumbnails.clear();thumbnailRequest=null;state.activeId='';}
         pageVersion=d.pageVersion;pageStatus=d.pageStatus;
+        thumbnailsDeferred=d.thumbnailsDeferred===true;
         hasPrevious=d.hasPrevious===true;hasNext=d.hasNext===true;
         state.selectionView=d.selectionView || '';
         pageNav.hidden=!hasPrevious && !hasNext && pageStatus!=='failed';
@@ -519,7 +562,7 @@
       if(document.body.classList.contains('mega-open'))post('catalogueWorkspaceDismissMenu');
     });
     const instanceId=String(Date.now())+'-'+Math.random().toString(36).slice(2);
-    const announceReady=()=>post('catalogueWorkspaceReady',{instanceId});announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
+    const announceReady=()=>post('catalogueWorkspaceReady',{instanceId,deferredThumbnails:true});announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
   </script>
 </body>
 </html>

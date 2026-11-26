@@ -4,6 +4,15 @@ import { validCatalogueReader } from './catalogueReadIdentity.js';
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 32);
 export const catalogueCoverageKey = (actorId, action) => hash('catalogue-coverage:' + action + ':' + actorId);
 
+export async function readDeliveredCatalogueIds(store, actor, ids, windowMs, now = Date.now) {
+  const row = await store.read(catalogueCoverageKey(actor.actorId, 'CATALOGUE_LIST'));
+  const time = now();
+  return ids.filter(id => {
+    const timestamp = row?.usage?.[hash(id)];
+    return Number.isSafeInteger(timestamp) && timestamp <= time && timestamp > time - windowMs;
+  });
+}
+
 // Called with the actual product IDs immediately before returning a response.
 // A company switch changes incident attribution but retains the member's quota.
 export function createCatalogueCoverage({ store, policy, onIncident, now = Date.now }) {

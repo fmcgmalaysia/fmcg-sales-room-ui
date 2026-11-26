@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createCatalogueCoverage } from '../backend/catalogueCoverage.js';
+import { createCatalogueCoverage, readDeliveredCatalogueIds } from '../backend/catalogueCoverage.js';
 
 const alpha = { actorId: 'buyer', customerId: 'A', companyName: 'QA Alpha' };
 const beta = { ...alpha, customerId: 'B', companyName: 'QA Beta' };
@@ -20,7 +20,7 @@ function fixture() {
   const reserve = createCatalogueCoverage({
     store, now: () => time, policy: { CATALOGUE_DETAIL: rule, CATALOGUE_LIST: rule, BUYER_IMAGE: rule }
   });
-  return { reserve, rows, advance: ms => { time += ms; } };
+  return { reserve, rows, store, now: () => time, advance: ms => { time += ms; } };
 }
 
 test('slow unique reads trigger warning and restriction across companies; repeated products stay available', async () => {
@@ -42,6 +42,19 @@ test('slow unique reads trigger warning and restriction across companies; repeat
   advance(86400000);
   assert.equal(await reserve(beta, action, ['d']), true);
   assert.equal(Object.keys([...rows.values()][0].usage).length, 1);
+});
+
+test('thumbnail authorization reads the existing member list ledger without extending it', async () => {
+  const { reserve, store, now, rows, advance } = fixture();
+  await reserve(alpha, 'CATALOGUE_LIST', ['shown']);
+  await reserve(alpha, action, ['detail-only']);
+  const before = structuredClone(rows);
+  const delivered = member => readDeliveredCatalogueIds(store, member, ['shown', 'detail-only'], 86400000, now);
+  assert.deepEqual(await delivered(alpha), ['shown']);
+  assert.deepEqual(await delivered({ ...alpha, actorId: 'another-member' }), []);
+  assert.deepEqual(rows, before);
+  advance(86400000);
+  assert.deepEqual(await delivered(alpha), []);
 });
 
 test('concurrent reads do not exceed the unique limit or merge different accounts or actions', async () => {

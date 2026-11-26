@@ -152,10 +152,19 @@ function createCatalogueReadBudget({ store, policy, onIncident, now = Date.now }
 
 return { createCatalogueReadBudget };
 })();
-const { catalogueCoverageKey, createCatalogueCoverage } = (() => {
+const { catalogueCoverageKey, readDeliveredCatalogueIds, createCatalogueCoverage } = (() => {
 
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 32);
 const catalogueCoverageKey = (actorId, action) => hash('catalogue-coverage:' + action + ':' + actorId);
+
+async function readDeliveredCatalogueIds(store, actor, ids, windowMs, now = Date.now) {
+  const row = await store.read(catalogueCoverageKey(actor.actorId, 'CATALOGUE_LIST'));
+  const time = now();
+  return ids.filter(id => {
+    const timestamp = row?.usage?.[hash(id)];
+    return Number.isSafeInteger(timestamp) && timestamp <= time && timestamp > time - windowMs;
+  });
+}
 
 // Called with the actual product IDs immediately before returning a response.
 // A company switch changes incident attribution but retains the member's quota.
@@ -209,7 +218,7 @@ function createCatalogueCoverage({ store, policy, onIncident, now = Date.now }) 
   };
 }
 
-return { catalogueCoverageKey, createCatalogueCoverage };
+return { catalogueCoverageKey, readDeliveredCatalogueIds, createCatalogueCoverage };
 })();
 const { createCatalogueRiskAlert, retryCatalogueAlerts } = (() => {
 
@@ -694,7 +703,7 @@ function listItem(item) {
   };
 }
 
-function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews }) {
+function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews, deliveredIds, readPrivatePreviews }) {
   const page = createCataloguePageIndex(data);
   function activeProducts() {
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
@@ -729,8 +738,22 @@ function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCov
       }
       const { items, afterId: nextId, previousAfterId } = await page({ term, principle, subcategories, afterId, anchorId, size, selectedIds });
       if (await reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id)) !== true) throw new Error('Catalogue access temporarily limited.');
-      const products = addPreviews ? await addPreviews(items) : items;
+      const products = input.deferImages !== true && addPreviews ? await addPreviews(items) : items;
       return { items: products, afterId: nextId, previousAfterId };
+    },
+
+    async thumbnails(scope, ids) {
+      if (!Array.isArray(ids) || !ids.length || ids.length > 10 ||
+          ids.some(id => typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(id))) return [];
+      const actor = await allowed(scope, 'CATALOGUE_LIST', 1);
+      // The list request already counted these products. Delivery can repeat without
+      // granting new product coverage or consuming the same item units twice.
+      const delivered = await deliveredIds(actor, [...new Set(ids)]);
+      if (!delivered.length) return [];
+      const active = await activeProducts().hasSome('_id', delivered).fields('_id')
+        .limit(delivered.length).find(OPTIONS);
+      const previews = await readPrivatePreviews(active.items.map(item => ({ id: item._id })));
+      return previews.filter(item => item.image);
     },
 
     async principles(scope, category) {
@@ -814,7 +837,11 @@ async function load() {
     const entries = await addPreviews(products);
     return entries.flatMap(entry=>entry.image ? [{ selectionId:entry.selectionId, image:entry.image }] : []);
   };
-  cached = { selectionPreviews, read: createProtectedCatalogueRead({ data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews }),
+  cached = { selectionPreviews, read: createProtectedCatalogueRead({
+      data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews,
+      deliveredIds: (actor, ids) => readDeliveredCatalogueIds(store, actor, ids, config.coveragePolicy.CATALOGUE_LIST.windowMs),
+      readPrivatePreviews: privatePreviews
+    }),
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),
       getSelection: id => wixData.get('WixBuyerListItems', id, { suppressAuth: true, consistentRead: true }),

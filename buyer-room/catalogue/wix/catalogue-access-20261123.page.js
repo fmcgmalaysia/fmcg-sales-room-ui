@@ -7,7 +7,7 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
-import { listCataloguePage, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts } from 'backend/protectedCatalogue.web.js';
+import { listCataloguePage, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts, readCatalogueThumbnails } from 'backend/protectedCatalogue.web.js';
 import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
@@ -55,6 +55,7 @@ let catalogueReadScope = null;
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceInstance = '';
+let thumbnailWorkspace = false;
 let catalogueSelectionLimit = 100;
 let catalogueSelectionTotal = 0;
 let catalogueSelectionResolved = false;
@@ -236,6 +237,7 @@ function sendCatalogueWorkspaceData() {
         selectionReady: catalogueSelectionResolved && Boolean(selectionContext) && Boolean(catalogueReadScope),
         buyerRoomUrl: buyerRoomUrl(), context: catalogueContextMessage, buildVersion: CATALOGUE_BUILD_VERSION,
         pageVersion: catalogueWorkspaceQueryVersion, pageStatus: cataloguePageStatus,
+        thumbnailsDeferred: thumbnailWorkspace,
         hasPrevious: cataloguePrevious !== null, hasNext: catalogueNext !== null,
         selectionView: catalogueWorkspaceFilter.selectionView || ''
     });
@@ -256,7 +258,8 @@ async function fetchPage(position = {}, edge = '') {
     try {
         const result = await listCataloguePage(scope, {
             term: filter.query, principle: filter.principle, subcategories: filter.subIds,
-            selectionView: filter.selectionView || '', size: wixWindowFrontend.formFactor === 'Mobile' ? 25 : 50, ...position
+            selectionView: filter.selectionView || '', size: wixWindowFrontend.formFactor === 'Mobile' ? 25 : 50,
+            deferImages: thumbnailWorkspace, ...position
         });
         if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
         catalogueWorkspaceProducts = result.items;
@@ -676,6 +679,7 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             if (instanceId && instanceId === catalogueWorkspaceInstance) return;
             catalogueWorkspaceInstance = instanceId;
             catalogueWorkspaceReady = true;
+            thumbnailWorkspace = message.deferredThumbnails === true;
             sendCatalogueCompanies();
             sendCatalogueWorkspaceData();
             if (!pageStarted) await fetchPage(currentPageRequest);
@@ -724,6 +728,17 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             try { product = await readCatalogueProduct(scope, id); } catch (_) {}
             if (scope === catalogueReadScope && version === catalogueWorkspaceQueryVersion) {
                 workspace.postMessage({ type: 'catalogueDetailResult', version, id, product });
+            }
+        } else if (message.type === 'catalogueThumbnailRequest') {
+            const version = catalogueWorkspaceQueryVersion, scope = catalogueReadScope;
+            const { ids, requestId } = message;
+            if (!scope || !thumbnailWorkspace || cataloguePageStatus !== 'ready' || version !== message.version ||
+                !Number.isSafeInteger(requestId) || !Array.isArray(ids) || !ids.length || ids.length > 10 ||
+                !ids.every(id => catalogueWorkspaceProducts.some(product => product.id === id))) return;
+            let images = [];
+            try { images = await readCatalogueThumbnails(scope, ids); } catch (_) { /* Keep the list usable. */ }
+            if (scope === catalogueReadScope && version === catalogueWorkspaceQueryVersion) {
+                workspace.postMessage({ type: 'catalogueThumbnailResult', version, requestId, images });
             }
         } else if (message.type === 'catalogueWorkspacePosition') {
             rememberMobileCataloguePosition(message);

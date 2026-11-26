@@ -23,7 +23,7 @@ function listItem(item) {
   };
 }
 
-export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews }) {
+export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews, deliveredIds, readPrivatePreviews }) {
   const page = createCataloguePageIndex(data);
   function activeProducts() {
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
@@ -58,8 +58,22 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
       }
       const { items, afterId: nextId, previousAfterId } = await page({ term, principle, subcategories, afterId, anchorId, size, selectedIds });
       if (await reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id)) !== true) throw new Error('Catalogue access temporarily limited.');
-      const products = addPreviews ? await addPreviews(items) : items;
+      const products = input.deferImages !== true && addPreviews ? await addPreviews(items) : items;
       return { items: products, afterId: nextId, previousAfterId };
+    },
+
+    async thumbnails(scope, ids) {
+      if (!Array.isArray(ids) || !ids.length || ids.length > 10 ||
+          ids.some(id => typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(id))) return [];
+      const actor = await allowed(scope, 'CATALOGUE_LIST', 1);
+      // The list request already counted these products. Delivery can repeat without
+      // granting new product coverage or consuming the same item units twice.
+      const delivered = await deliveredIds(actor, [...new Set(ids)]);
+      if (!delivered.length) return [];
+      const active = await activeProducts().hasSome('_id', delivered).fields('_id')
+        .limit(delivered.length).find(OPTIONS);
+      const previews = await readPrivatePreviews(active.items.map(item => ({ id: item._id })));
+      return previews.filter(item => item.image);
     },
 
     async principles(scope, category) {

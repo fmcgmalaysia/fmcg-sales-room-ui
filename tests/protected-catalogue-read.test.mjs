@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createProtectedCatalogueRead } from '../backend/protectedCatalogueRead.js';
 
-function fixture(grant = true, reserveCoverage = async () => true) {
+function fixture(grant = true, reserveCoverage = async () => true, options = {}) {
   const calls = [];
   const rows = Array.from({ length: 101 }, (_, i) => ({
     _id: String(i).padStart(4, '0'), title: 'QA', pointBaseStatus: 'ACTIVE',
@@ -24,7 +24,8 @@ function fixture(grant = true, reserveCoverage = async () => true) {
     readSelection: async (_scope, actor) => {
       const first = actor.customerId === 'A' ? 10 : 70;
       return { ids: new Set(rows.slice(first, first + 30).map(row => row._id)), food: new Set([rows[first]._id]) };
-    }
+    },
+    ...options
   }) };
 }
 
@@ -40,6 +41,33 @@ test('page size, non-overlapping continuation and last page', async () => {
     assert.ok(!calls.flat().includes(key));
     assert.ok(!(key in first.items[0]));
   }
+});
+
+test('menu pages return without waiting for thumbnail signing', async () => {
+  let signed = 0;
+  const { read } = fixture(true, undefined, {
+    addPreviews: async items => { signed += 1; return items.map(item => ({ ...item, image: 'preview' })); }
+  });
+  const first = await read.list('A', { deferImages: true });
+  const second = await read.list('A', { afterId: first.afterId, deferImages: true });
+  assert.equal(first.items.length + second.items.length, 50);
+  assert.equal(signed, 0);
+  assert.equal((await read.list('A')).items[0].image, 'preview');
+  assert.equal(signed, 1);
+});
+
+test('visible image delivery remains bounded and only signs active products already returned to this member', async () => {
+  const charges = [];
+  const { read } = fixture(true, undefined, {
+    reserveRead: async (_actor, action, units) => { charges.push([action, units]); return true; },
+    deliveredIds: async (_actor, ids) => ids.filter(id => id !== '0040'),
+    readPrivatePreviews: async products => products.map(product => ({ ...product, image: 'verified-preview' }))
+  });
+  assert.deepEqual(await read.thumbnails('A', ['0001', '0001', '0040', 'missing']),
+    [{ id: '0001', image: 'verified-preview' }]);
+  assert.deepEqual(await read.thumbnails('A', Array(11).fill('0001')), []);
+  assert.deepEqual(charges, [['CATALOGUE_LIST', 1]]);
+  await assert.rejects(read.thumbnails('', ['0001']), /unavailable/);
 });
 
 test('selected pages and counts follow the authorized company', async () => {
