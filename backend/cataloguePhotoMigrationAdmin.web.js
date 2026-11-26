@@ -47,7 +47,7 @@ export const cataloguePictureProgress = webMethod(Permissions.Admin, async () =>
     wixData.query(products).count(options),
     wixData.query(products).isNotEmpty('image').count(options),
     wixData.query(products).eq('pointBaseStatus','ACTIVE').isNotEmpty('image').count(options),
-    wixData.query(registry).count(options),
+    wixData.query(registry).ne('_id','catalogue-picture-migration-v1').count(options),
     wixData.query(registry).eq('status','VERIFIED').count(options)
   ]);
   return { catalogueCount, withImage, activeWithImage, started, verified };
@@ -61,17 +61,17 @@ const operations = {
 };
 // A site administrator can process only catalogue-owned images. The client supplies no source
 // URLs and obtains only counts and an opaque continuation product ID. No originals are removed.
-export const prepareCataloguePictures = webMethod(Permissions.Admin, async (after, count) => {
+async function runCataloguePictureBatch(after, count) {
   after = after ?? '';
   count = count ?? 1;
-  if (typeof after !== 'string' || after.length > 128 || !Number.isSafeInteger(count) || count < 1 || count > 6) throw Error('Invalid batch.');
+  if (typeof after !== 'string' || after.length > 128 || !Number.isSafeInteger(count) || count < 1 || count > 12) throw Error('Invalid batch.');
   let query = wixData.query(products).isNotEmpty('image');
   if (after) query=query.gt('_id',after);
   const result=await query.ascending('_id').fields('_id','image').limit(count).find(options);
   const totals={};
   const review=[];
-  for (let start=0;start<result.items.length;start+=2) {
-    await Promise.all(result.items.slice(start,start+2).map(async product => {
+  for (let start=0;start<result.items.length;start+=4) {
+    await Promise.all(result.items.slice(start,start+4).map(async product => {
       let outcome;
       try { outcome=await migrateCataloguePhoto(product,operations); }
       catch { outcome={status:'REVIEW'}; }
@@ -80,4 +80,27 @@ export const prepareCataloguePictures = webMethod(Permissions.Admin, async (afte
     }));
   }
   return { examined:result.items.length,totals,review,next:result.items.at(-1)?._id||'',more:result.hasNext() };
+}
+export const prepareCataloguePictures = webMethod(Permissions.Admin, (after, count) => runCataloguePictureBatch(after, count));
+
+// The cutover uses a dedicated durable cursor. An interrupted worker releases its
+// lease after 45 seconds. Each photo's upload claim still prevents duplicate copies.
+const checkpoint = 'catalogue-picture-migration-v1';
+export const continueCataloguePictures = webMethod(Permissions.Admin, async () => {
+  let state = await store.get(checkpoint);
+  if (!state) state = await store.create(checkpoint, checkpoint);
+  if (state.sourceId !== checkpoint || !['NEW','MIGRATING','FINISHED'].includes(state.status))
+    throw Error('Cannot resume catalogue migration.');
+  const totals = state.progress || {};
+  if (state.status === 'FINISHED') return { status:'FINISHED', totals };
+  if ((state.leaseEnds || 0) > Date.now()) return { status:'BUSY', totals };
+  const active = await store.move(state,'MIGRATING',{leaseEnds:Date.now()+45000});
+  if (!active) return { status:'BUSY', totals };
+  const result = await runCataloguePictureBatch(active.afterId || '',8);
+  const progress = {...totals};
+  for (const [key,count] of Object.entries(result.totals)) progress[key] = (progress[key] || 0)+count;
+  const status = result.more ? 'MIGRATING' : 'FINISHED';
+  const stored = await store.move(active,status,{afterId:result.next||active.afterId||'',progress,leaseEnds:0});
+  if (!stored) return { status:'BUSY', totals };
+  return { status, totals:progress, examined:result.examined };
 });
