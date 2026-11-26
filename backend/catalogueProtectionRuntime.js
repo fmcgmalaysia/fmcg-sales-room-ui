@@ -3,6 +3,7 @@ import { mediaManager } from 'wix-media-backend';
 import { files } from 'wix-media.v2';
 import { elevate } from 'wix-auth';
 import { createCataloguePreviewReader, createVerifiedCatalogueMedia } from './catalogueImageAssets.js';
+import { createCatalogueLegacyPreview } from './catalogueLegacyPreview.js';
 import wixData from 'wix-data';
 import { currentMember } from 'wix-members-backend';
 import { auth } from '@wix/essentials';
@@ -52,7 +53,9 @@ async function load() {
   const reserveRead = createCatalogueReadBudget({ store, policy: config.readPolicy, onIncident });
   const reserveCoverage = createCatalogueCoverage({ store, policy: config.coveragePolicy, onIncident });
   const readSelection = createCatalogueSelectionScope({ data: wixData, getSelectionState: getCatalogueSelectionState });
-  const addPreviews = createCataloguePreviewReader({ data: wixData, media: mediaManager });
+  const privatePreviews = createCataloguePreviewReader({ data: wixData, media: mediaManager });
+  const transitionalPreviews = createCatalogueLegacyPreview({ data: wixData });
+  const addPreviews = async page => transitionalPreviews(await privatePreviews(page));
   cached = { read: createProtectedCatalogueRead({ data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews }),
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),
