@@ -160,6 +160,17 @@ const store = {
     }
   }
 };
+// Counts let the owner distinguish missing artwork from outstanding privacy checks.
+export const cataloguePictureProgress = webMethod(Permissions.Admin, async () => {
+  const [catalogueCount, withImage, activeWithImage, started, verified] = await Promise.all([
+    wixData.query(products).count(options),
+    wixData.query(products).isNotEmpty('image').count(options),
+    wixData.query(products).eq('pointBaseStatus','ACTIVE').isNotEmpty('image').count(options),
+    wixData.query(registry).count(options),
+    wixData.query(registry).eq('status','VERIFIED').count(options)
+  ]);
+  return { catalogueCount, withImage, activeWithImage, started, verified };
+});
 const operations = {
   store, media, verify:verifyCatalogueImageAsset,
   sourceNow: async id => (await wixData.get(products,id,options)).image,
