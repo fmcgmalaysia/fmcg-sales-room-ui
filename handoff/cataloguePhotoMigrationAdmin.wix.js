@@ -205,7 +205,7 @@ export const prepareCataloguePictures = webMethod(Permissions.Admin, (after, cou
 // The cutover uses a dedicated durable cursor. An interrupted worker releases its
 // lease after 45 seconds. Each photo's upload claim still prevents duplicate copies.
 const checkpoint = 'catalogue-picture-migration-v1';
-export const continueCataloguePictures = webMethod(Permissions.Admin, async () => {
+async function continueCataloguePictureBatch() {
   let state = await store.get(checkpoint);
   if (!state) state = await store.create(checkpoint, checkpoint);
   if (state.sourceId !== checkpoint || !['NEW','MIGRATING','FINISHED'].includes(state.status))
@@ -222,4 +222,22 @@ export const continueCataloguePictures = webMethod(Permissions.Admin, async () =
   const stored = await store.move(active,status,{afterId:result.next||active.afterId||'',progress,leaseEnds:0});
   if (!stored) return { status:'BUSY', totals };
   return { status, totals:progress, examined:result.examined };
-});
+}
+export const continueCataloguePictures = webMethod(Permissions.Admin, () => continueCataloguePictureBatch());
+
+// Site-owned scheduler entry point. The browser still uses the Admin web method,
+// and this temporary job expires at 7:00 a.m. Malaysia time.
+export async function processCatalogueMigrationWindow() {
+  const expires = Date.parse('2026-11-26T23:00:00Z');
+  const end = Math.min(Date.now() + 110000, expires);
+  let last;
+  let batches = 0;
+  while (batches < 30 && Date.now() + 12000 < end) {
+    last = await continueCataloguePictureBatch();
+    if (last.status !== 'MIGRATING') break;
+    batches++;
+  }
+  if (last) console.info('Catalogue picture migration window', {
+    status: last.status, batches, verified: last.totals.VERIFIED || 0
+  });
+}
