@@ -1,14 +1,15 @@
+import { connectWorkroomAccount } from 'public/wix-workroom-account.js';
 import { authentication } from 'wix-members-frontend';
 import { getLtposWorkspaces } from 'backend/ltposWorkspaces.web';
 
 const FRAME = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/ltpos/managed.html?v=ltpos-staff-portal-brand-v1';
-const SITE = 'https://fmcg999.wixstudio.com/master';
+const SITE = 'https://www.ltpos.ai';
 const workspaces = new Map([
   ['purchase', ['Purchase 采购', 'https://www.ltpos.ai/purchase']],
   ['support', ['Support 后勤', SITE + '/support-department']],
   ['warehouse', ['Warehouse 货仓', SITE + '/warehouse-department']],
   ['stock-control', ['Stock Control 库存管理', 'https://www.ltpos.ai/stock-control']],
-  ['finance', ['Finance 财务', SITE + '/account-department']], ['sales-management', ['Sales Management 销售管理', 'https://www.ltpos.ai/quotations']],
+  ['finance', ['Finance 财务', SITE + '/account-department']], ['sales-management', ['Quotation & Sales Performance', 'https://www.ltpos.ai/quotations']],
   ['staff-management', ['Staff Management 员工管理', SITE + '/staff-management']],
   ['sales-room', ['Sales Room 销售工作室', 'https://www.fmcgmalaysia.com/sales-room-login']]
 ]);
@@ -43,13 +44,23 @@ $w.onReady(() => {
     const nativeLinks = await renderLinks(staff.workspaceIds);
     send(nativeLinks ? 'ready' : 'no-access', { ...staff, nativeLinks });
   }
+  const accountSession = connectWorkroomAccount(frame, '', {
+    onExit: async () => {
+      await clearLinks();
+      send('signed-out');
+    },
+    signIn: async () => {
+      if (!authentication.loggedIn()) await authentication.promptLogin({ mode: 'login', modal: true });
+      await load();
+    }
+  });
   frame.onMessage(async ({ data }) => {
     if (!data || !['LTPOS_READY', 'LTPOS_SIGN_IN', 'LTPOS_SIGN_OUT'].includes(data.type) || busy) return;
     busy = true;
     try {
       if (data.type === 'LTPOS_SIGN_OUT' && authentication.loggedIn()) {
-        await clearLinks();
-        await authentication.logout();
+        await accountSession.signOut();
+        return;
       }
       if (data.type === 'LTPOS_SIGN_IN' && !authentication.loggedIn()) {
         try { await authentication.promptLogin({ mode: 'login', modal: true }); }

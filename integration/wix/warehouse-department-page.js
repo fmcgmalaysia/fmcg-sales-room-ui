@@ -1,12 +1,41 @@
+import { connectWorkroomAccount } from 'public/wix-workroom-account.js';
+import { getWarehouseStockSaveStatus } from 'backend/warehouseStockIssues.web';
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { handlePackingList } from 'public/packingListBridge.js';
 import { getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
 import { getWarehouseStockIssues as getStockExceptions, saveWarehouseStockIssue as saveStockException } from 'backend/warehouseStockIssues.web';
-import { getWarehouseOrders, saveWarehouseReceipt, saveWarehousePreparation, captureWarehouseCbm } from 'backend/warehouseReceiving.web';
-import { authentication } from 'wix-members-frontend';
+import { getWarehouseOrders, getWarehouseReceiptStatus, saveWarehouseReceipt, saveWarehousePreparation, captureWarehouseCbm } from 'backend/warehouseReceiving.web';
+import { authentication, currentMember } from 'wix-members-frontend';
+
+async function stockReadStatus(error) {
+  let timeout;
+  try {
+    const member = await Promise.race([
+      currentMember.getMember(),
+      new Promise(resolve => { timeout = setTimeout(() => resolve(null), 2500); })
+    ]);
+    if (member === undefined) return 'SIGN_IN_REQUIRED';
+    if (!member?._id) return 'SESSION_UNCONFIRMED';
+    return [error?.status, error?.statusCode, error?.httpStatus].includes(403)
+      ? 'ACCESS_DENIED' : 'READ_UNAVAILABLE';
+  } catch (_) {
+    return 'SESSION_UNCONFIRMED';
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+async function warehouseOrdersReadStatus(error) {
+  const reason = String(error?.message || '');
+  if (reason === 'Sign in with your approved staff account.' || reason === 'Please sign in with your approved Master staff account.') return 'SIGN_IN_REQUIRED';
+  if (['Staff access is not authorized.', 'Sign in with your verified Google work email.', 'Staff identity changed. Sign in again.'].includes(reason)) return 'STAFF_UNVERIFIED';
+  if (reason === 'Staff permission does not allow this operation.') return 'ACCESS_DENIED';
+  const memberState = await stockReadStatus(error);
+  return memberState === 'SESSION_UNCONFIRMED' ? 'READ_UNAVAILABLE' : memberState;
+}
 import { getWarehouseStockControl } from 'backend/stockControl.web';
 $w.onReady(()=>{
   const room=$w('#html1');
+  connectWorkroomAccount(room, 'warehouse');
   let receivingRead;
   room.onMessage(async event=>{
     const message=event.data||{};
@@ -14,7 +43,7 @@ $w.onReady(()=>{
     if(message.type==='STOCK_CONTROL_READ_REQUEST'){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!message.requestId||message.requestId.length>100||JSON.stringify(message).length>2000)return;
       try{const result=await getWarehouseStockControl(message.company,message.input||{});room.postMessage({type:'STOCK_CONTROL_READ_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
-      catch(error){room.postMessage({type:'STOCK_CONTROL_READ_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Stock could not be read. 库存读取未完成。'});}return;
+      catch(error){room.postMessage({type:'STOCK_CONTROL_READ_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Stock could not be read. 库存读取未完成。',readStatus:await stockReadStatus(error)});}return;
     }
     if(['TASK_CHAT_LIST_REQUEST','TASK_CHAT_PAGE_REQUEST','TASK_CHAT_SAVE_REQUEST'].includes(message.type)&&await handleTaskChat(message,'WAREHOUSE',result=>room.postMessage(result)))return;
     if(message.type==='WAREHOUSE_CBM_REQUEST'){
@@ -33,6 +62,13 @@ $w.onReady(()=>{
       try{const result=message.type==='DEPARTMENT_MESSAGES_REQUEST'?await getDepartmentMessages(message.company,message.department):await saveDepartmentMessage(message.company,message.department,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
       catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Messages could not be confirmed.'});}return;
     }
+    if(message.type==='STOCK_SAVE_STATUS_REQUEST'){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100)return;
+      const response={type:'STOCK_SAVE_STATUS_RESULT',company:message.company,requestId:message.requestId};
+      try{room.postMessage({...response,ok:true,result:await getWarehouseStockSaveStatus(message.company,message.saveRequestId,message.caseId)});}
+      catch(_){room.postMessage({...response,ok:false});}
+      return;
+    }
     if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
       const type=message.type==='STOCK_READ_REQUEST'?'STOCK_READ_RESULT':'STOCK_SAVE_RESULT';
@@ -46,10 +82,22 @@ $w.onReady(()=>{
     if(['FULFILMENT_READ_REQUEST','FULFILMENT_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string')return;room.postMessage({type:message.type.replace('_REQUEST','_RESULT'),company:message.company,requestId:message.requestId,ok:false,error:'Use the Desk-authorized Delivery Task. The old Dispatch entry is retired.'});return;
     }
+    if(message.type==='WAREHOUSE_RECEIPT_STATUS_REQUEST'){
+     if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100)return;
+     const {company,requestId,saveRequestId,poId}=message;
+     const response={type:'WAREHOUSE_RECEIPT_STATUS_RESULT',company,requestId};
+     try{room.postMessage({...response,ok:true,result:await getWarehouseReceiptStatus(company,saveRequestId,poId)});}
+     catch(_){room.postMessage({...response,ok:false});}
+     return;
+    }
     if(!['WAREHOUSE_ORDERS_REQUEST','WAREHOUSE_RECEIPT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>(message.type==='WAREHOUSE_RECEIPT_REQUEST'?3100000:200000))return;
     const type=message.type==='WAREHOUSE_ORDERS_REQUEST'?'WAREHOUSE_ORDERS_RESULT':'WAREHOUSE_RECEIPT_RESULT';
     try{let result;if(message.type==='WAREHOUSE_ORDERS_REQUEST'){if(receivingRead?.company!==message.company||receivingRead?.requestId!==message.requestId)receivingRead={company:message.company,requestId:message.requestId,promise:getWarehouseOrders(message.company)};result=await receivingRead.promise;}else result=await saveWarehouseReceipt(message.company,message.requestId,message.input);room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});}
-    catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'});}
+    catch(error){
+      const response={type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'};
+      if(message.type==='WAREHOUSE_ORDERS_REQUEST')response.readStatus=await warehouseOrdersReadStatus(error);
+      room.postMessage(response);
+    }
   });
-  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261114-warehouse-stock-list-v1';
+  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261120-warehouse-incoming-receipt-review-v1';
 });

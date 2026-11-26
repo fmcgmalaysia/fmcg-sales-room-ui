@@ -7,8 +7,11 @@
 .support-workroom .order-tasks .support-allocation-qty{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:19px;min-width:28px;padding:0 8px;border:0;border-radius:12px;font:600 11px/19px var(--master-font);font-variant-numeric:tabular-nums;letter-spacing:normal;vertical-align:middle;white-space:nowrap}
 .support-allocation-covered{background:#E4EEFC}.support-allocation-waiting{background:#FFF0D9}.support-shortfall-split{background:#E51B2B;color:#fff}
 </style>
+<link rel="stylesheet" href="../master-shared/company-switch.css?v=20261125-company-switch-icon-v1"><link rel="stylesheet" href="../master-shared/workroom-masthead.css?v=20261125-master-masthead-v1"><meta name="header-account-menu-build" content="20261126-ltpos-account-v1">
+<link rel="stylesheet" href="../account-menu/account-menu.css?v=20261126-ltpos-account-v1">
+<script type="module" src="../account-menu/workroom-account.js?v=20261126-ltpos-account-v1"></script>
 </head>
-<body class="support-workroom"><header data-app-header-search='#search' data-app-header-search-region="main" data-app-header-search-force=".support-customers-view #search" data-touch-menu-button><strong class="brand"><img data-ltpos-brand-mark src="https://static.wixstatic.com/media/4ecd18_e1d405185f9a4efdbb867f139f234848~mv2.png" width="192" height="192" alt="" style="width:1.27em;height:.83em;object-fit:cover;vertical-align:-.095em;margin-inline-end:.35em">MASTER</strong><span class="department">Support Department</span><select id="company" aria-label="Company"><option value="NCT">North Cape Trading · NCT</option><option value="GHR">Global HR · GHR</option></select><b id="staff"></b></header>
+<body class="support-workroom"><header data-master-workroom-header data-app-header-search='#search' data-app-header-search-region="main" data-app-header-search-force=".support-customers-view #search" data-touch-menu-button><strong class="brand"><img data-ltpos-brand-mark src="https://static.wixstatic.com/media/4ecd18_e1d405185f9a4efdbb867f139f234848~mv2.png" width="192" height="192" alt="" style="width:1.27em;height:.83em;object-fit:cover;vertical-align:-.095em;margin-inline-end:.35em">MASTER</strong><span class="department">Support Department</span><select id="company" aria-label="Company"><option value="NCT">North Cape Trading · NCT</option><option value="GHR">Global HR · GHR</option></select><b id="staff"></b></header>
 <nav data-touch-menu-panel aria-label="Support navigation"><button data-view="customers" class="active">Customers</button><span data-view="orders" class="orders-tab">Orders</span><button data-view="transactions">Invoices &amp; Payments</button><button data-view="invoiceRegister">Invoice Register</button></nav>
 <main><div class="heading"><div><h1 id="title">Customers</h1><p id="company-name">North Cape Trading Sdn. Bhd.</p></div><button id="back" hidden>← Back</button></div>
 <div class="guide" id="guide"><b>Document Guide</b><div id="guide-items"></div></div>
@@ -26,4 +29,4 @@
 
 <section id="print-invoice" hidden></section>
 <link rel="stylesheet" href="../master-shared/task-chat.css?v=20261115-master-compact-workrooms-v1"><script src="../master-shared/task-chat.js?v=20261116-chat-receipt-v1"></script><script src="workroom-model.js?v=20261119-purchase-support-shortfall-v1"></script><script src="../master-shared/desk-delivery.js?v=20261119-master-workroom-domain-v1"></script><script src="workroom-20261125-sourcing-handoff.js"></script><script defer src="../master-shared/workroom-app-header.js?v=20261117-workroom-header-v1"></script>
-</body></html>
+<script src="../master-shared/company-switch.js?v=20261125-company-switch-icon-v1"></script></body></html>

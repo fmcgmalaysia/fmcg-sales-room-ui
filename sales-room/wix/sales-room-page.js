@@ -1,3 +1,4 @@
+import { connectAccountSession } from 'public/wix-account-session.js';
 import { salesRoomShipment } from 'backend/onboarding.web';
 import { createSalesRoomCustomer, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, checkSalesRoomOrderReceipt, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
 import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web.js';
@@ -125,6 +126,7 @@ $w.onReady(function () {
   }
   staffPromise.then(staff => { if (!staff.authorized) showStaffAccessIssue(staff); });
 
+  const accountSession = connectAccountSession([salesRoom], STAFF_LOGIN_URL);
   salesRoom.onMessage(async (event) => {
     const message = event.data || {};
 
@@ -243,8 +245,7 @@ $w.onReady(function () {
     }
 
     if (message.type === 'SALES_ROOM_LOGOUT') {
-      await authentication.logout();
-      wixLocationFrontend.to(STAFF_LOGIN_URL);
+      await accountSession.signOut();
       return;
     }
 

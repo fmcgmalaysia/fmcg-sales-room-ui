@@ -1,3 +1,4 @@
+import { connectAccountSession } from 'public/wix-account-session.js';
 import { authentication } from 'wix-members-frontend';
 import wixLocationFrontend from 'wix-location-frontend';
 import { local, session } from 'wix-storage-frontend';
@@ -10,6 +11,32 @@ import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
 let catalogueContextMessage = null;
+let catalogueAccountSession;
+let catalogueAccountMenuReady = false;
+let catalogueAccountMenuRequested = false;
+
+function openCatalogueAccountMenu(workspace) {
+    if (!catalogueAccountMenuReady) {
+        catalogueAccountMenuRequested = true;
+        return;
+    }
+    catalogueAccountMenuRequested = false;
+    workspace.postMessage({
+        type: 'catalogueAccountMenu',
+        signedIn: authentication.loggedIn(),
+        name: catalogueContextMessage?.signedInName || '',
+        company: catalogueContextMessage?.sheetName || ''
+    });
+}
+
+function signOutCatalogue() {
+    return catalogueAccountSession.signOut(() => {
+        if (catalogueBrowseKey) {
+            try { local.removeItem(catalogueBrowseKey); } catch (error) {}
+            catalogueBrowseKey = '';
+        }
+    });
+}
 let catalogueMenuMessage = null;
 let principleLogoMap = new Map();
 const principleCache = new Map();
@@ -818,6 +845,10 @@ function setupNav() {
 
     header.onMessage(async (event) => {
         const message = event.data || {};
+        if (message.type === 'catalogueOpenAccountMenu') {
+            openCatalogueAccountMenu(workspace);
+            return;
+        }
         if (message.type === 'catalogueHeaderReady') {
             if (catalogueContextMessage) header.postMessage(catalogueContextMessage);
             if (catalogueMenuMessage) mega.postMessage(catalogueMenuMessage);
@@ -844,12 +875,7 @@ function setupNav() {
             publishCatalogueSearchValue();
             await dataset.setFilter(wixData.filter());
         } else if (message.type === 'catalogueAccount') {
-            if (catalogueBrowseKey) {
-                try { local.removeItem(catalogueBrowseKey); } catch (error) {}
-                catalogueBrowseKey = '';
-            }
-            await authentication.logout();
-            wixLocationFrontend.to('/');
+            await signOutCatalogue();
         } else if (message.type === 'catalogueBuyerRoom') {
             openBuyerRoomWindow();
         }
@@ -933,8 +959,22 @@ function setupNav() {
 
 function setupCatalogueWorkspace(hideDesktopMenu) {
     const workspace = $w('#html5');
+    catalogueAccountSession = connectAccountSession([$w('#html3'), $w('#html4'), workspace], '/');
     workspace.onMessage(async (event) => {
         const message = event.data || {};
+        if (message.type === 'catalogueAccountMenuReady') {
+            catalogueAccountMenuReady = true;
+            if (catalogueAccountMenuRequested) openCatalogueAccountMenu(workspace);
+            return;
+        }
+        if (message.type === 'catalogueAccount') {
+            await signOutCatalogue();
+            return;
+        }
+        if (message.type === 'catalogueAccountSignIn') {
+            wixLocationFrontend.to('/');
+            return;
+        }
         if (message.type === 'BUYER_COMPANY_SWITCH') {
             if (catalogueCompanyAccess?.companies.some(company => company.customerId === message.customerId)) {
                 wixLocationFrontend.to(buyerCompanyPath('/catalogue', message.customerId));

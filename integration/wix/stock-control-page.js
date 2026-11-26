@@ -1,3 +1,4 @@
+import { connectWorkroomAccount } from 'public/wix-workroom-account.js';
 // Dedicated Stock Control page, using the site's existing html1 embed convention.
 import { getStockControlWorkspace } from 'backend/stockControl.web';
 import { authentication } from 'wix-members-frontend';
@@ -5,6 +6,7 @@ import wixLocationFrontend from 'wix-location-frontend';
 
 $w.onReady(() => {
   const room = $w('#html1');
+  connectWorkroomAccount(room, 'stock-control');
   room.onMessage(async event => {
     const message = event.data || {};
     if (message.type === 'WAREHOUSE_LOGIN_REQUEST') {

@@ -1,3 +1,5 @@
+import { connectWorkroomAccount } from 'public/wix-workroom-account.js';
+import { getStockSaveStatus } from 'backend/stockExceptions.web';
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getPurchaseWorkspace } from 'backend/purchaseWorkspace.web';
 import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
@@ -8,6 +10,7 @@ import { authentication, currentMember } from 'wix-members-frontend';
 const UI_ORIGIN = 'https://fmcgmalaysia.github.io';
 $w.onReady(() => {
   const room = $w('#html1');
+  connectWorkroomAccount(room, 'purchase');
   room.onMessage(async event => {
     const message = event.data || {};
     if(['TASK_CHAT_LIST_REQUEST','TASK_CHAT_PAGE_REQUEST','TASK_CHAT_SAVE_REQUEST'].includes(message.type)&&await handleTaskChat(message,'PURCHASE',result=>room.postMessage(result)))return;
@@ -21,6 +24,13 @@ $w.onReady(() => {
       const type=message.type==='DEPARTMENT_MESSAGES_REQUEST'?'DEPARTMENT_MESSAGES_RESULT':'DEPARTMENT_MESSAGE_SAVE_RESULT';
       try{const result=message.type==='DEPARTMENT_MESSAGES_REQUEST'?await getDepartmentMessages(message.company,message.department):await saveDepartmentMessage(message.company,message.department,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
       catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Messages could not be confirmed.'});}return;
+    }
+    if(message.type==='STOCK_SAVE_STATUS_REQUEST'){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100)return;
+      const response={type:'STOCK_SAVE_STATUS_RESULT',company:message.company,requestId:message.requestId};
+      try{room.postMessage({...response,ok:true,result:await getStockSaveStatus(message.company,message.saveRequestId,message.caseId)});}
+      catch(_){room.postMessage({...response,ok:false});}
+      return;
     }
     if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
@@ -44,10 +54,10 @@ $w.onReady(() => {
       try {
         let result;
         if(message.type==='PURCHASE_SAVE_REQUEST')result=await savePurchaseOperation(message.company,message.requestId,message.operation,message.input);
-        else if(message.type==='PURCHASE_SUPPLIER_SAVE_REQUEST')result=await saveSupplierProfile(message.requestId,message.supplierId,message.expectedVersion,message.values);
+        else if(message.type==='PURCHASE_SUPPLIER_SAVE_REQUEST')result=await saveSupplierProfile(message.requestId,message.supplierId,message.expectedVersion,message.values,message.saveMemberId);
         else if(message.type==='PURCHASE_PROFILE_REQUEST')result=await getSupplierProfile(message.supplierId);
         else if(message.type==='PURCHASE_BRANDS_REQUEST')result=await getSupplierBrandOptions();
-        else result=await getPurchaseSaveResult(message.company,message.saveRequestId,message.supplierId??null);
+        else result=await getPurchaseSaveResult(message.company,message.saveRequestId,message.supplierId??null,message.saveMemberId);
         if(message.type==='PURCHASE_SAVE_CHECK_REQUEST'&&result?.ok===false&&result.retryable===false&&result.requestId===message.saveRequestId)room.postMessage({type:'PURCHASE_SAVE_RESULT',ok:false,company:message.company,requestId:message.saveRequestId,result,error:result.error});
         room.postMessage({type:replyType,ok:true,company:message.company,requestId:message.requestId,result});
       } catch(error) {room.postMessage({type:replyType,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Save could not be confirmed.'});}
@@ -86,5 +96,5 @@ $w.onReady(() => {
         ok: false, identity, error: error?.message || 'Purchase data could not be loaded.' });
     }
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261111-warehouse-desk-workflow-v1';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/index-20261124-split-surplus.html';
 });

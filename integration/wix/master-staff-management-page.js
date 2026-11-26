@@ -1,3 +1,4 @@
+import { connectWorkroomAccount } from 'public/wix-workroom-account.js';
 import { getManagedStaffDirectory, getManagedStaffSaveStatus, registerPendingStaff, updateManagedStaff, getManagedCustomerDirectory } from 'backend/staffManagement.web';
 import { authentication } from 'wix-members-frontend';
 
@@ -6,6 +7,7 @@ const rejectedSave = /^(Another employee change is being confirmed\.|Employee de
 
 $w.onReady(() => {
   const frame = $w('#html1');
+  connectWorkroomAccount(frame, 'staff-management');
   frame.onMessage(async ({ data }) => {
     if (!data || typeof data.requestId !== 'string' || data.requestId.length > 80) return;
     if (!['LIST_STAFF', 'REGISTER_STAFF', 'UPDATE_STAFF', 'CHECK_STAFF_SAVE', 'LIST_CUSTOMERS', 'SIGN_IN'].includes(data.action)) return;

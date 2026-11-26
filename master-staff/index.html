@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="build" content="20261114-staff-save-confirmation-v1">
+<meta name="build" content="20261119-staff-workspace-permissions-v1">
 <title>Staff Management · MASTER</title>
 <style>
   @font-face{font-family:"Purchase Dashboard Inter";font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fMZg.ttf) format("truetype")}
@@ -51,12 +51,17 @@
   .editor-empty{padding:18px;color:#4e6680}
   #save-status{flex:1}
   #save[hidden]{display:none}
+  #save[data-unchanged=true]:disabled{background:#e6ebef;color:#516378;border-color:#d4dde5;opacity:1}
   @media(max-width:800px){body>header{padding:0 12px;gap:10px;font-size:12px}body>header strong{font-size:16px}body>header span{padding-left:10px}}
   @media(max-width:760px){.workspace{grid-template-columns:1fr}}
   @media(max-width:540px){main{padding:16px 12px}h1{font-size:22px}.heading{gap:8px}}
+.permission-help{margin:6px 0;color:#526b82;font-size:12px}.permission-summary{display:block;padding:10px;background:#edf4fb;border-radius:5px;font-size:13px;white-space:pre-line}.permission-card{margin-top:10px;border:1px solid #c7d7e6;border-radius:6px;padding:10px}.permission-card>summary{font-size:14px;font-weight:650}.permission-card[open]>summary{margin-bottom:10px}.permission-card .scope-grid{row-gap:12px}input[type=checkbox]{width:16px;height:16px;flex:none}.permission-customer-scope[hidden]{display:none}
 </style><link rel="stylesheet" href="../master-shared/mobile-menu.css?v=20261115-responsive-workrooms-v1">
+<link rel="stylesheet" href="../master-shared/workroom-masthead.css?v=20261125-master-masthead-v1"><meta name="header-account-menu-build" content="20261126-ltpos-account-v1">
+<link rel="stylesheet" href="../account-menu/account-menu.css?v=20261126-ltpos-account-v1">
+<script type="module" src="../account-menu/workroom-account.js?v=20261126-ltpos-account-v1"></script>
 <body class="touch-staff">
-<header><strong>MASTER</strong><span>Administration 管理</span></header>
+<header data-master-workroom-header><strong><img data-ltpos-brand-mark src="https://static.wixstatic.com/media/4ecd18_e1d405185f9a4efdbb867f139f234848~mv2.png" width="192" height="192" alt="" style="width:1.27em;height:.83em;object-fit:cover;vertical-align:-.095em;margin-inline-end:.35em">MASTER</strong><span>Administration</span></header>
 <main>
   <div class="heading"><h1>Staff Management 员工管理</h1><button id="add" class="primary" type="button" disabled>＋ Add Employee</button></div>
   <div class="workspace">
@@ -76,7 +81,7 @@
       <label id="employee-status" hidden>Status<select name="status"><option value="PENDING">Pending</option><option value="ACTIVE">Active</option><option value="DISABLED">Disabled</option></select></label>
       <p id="registration-help" hidden>Use the employee’s Google work email. No invitation is needed.</p>
       <details class="access-options">
-      <summary>Set access now (optional)</summary>
+      <summary>Workspace permissions 工作间权限</summary>
       <fieldset>
         <legend>Companies 公司</legend>
         <div class="scope-grid">
@@ -85,23 +90,31 @@
         </div>
       </fieldset>
       <fieldset>
-        <legend>Department access 部门权限</legend>
+        <legend>Internal departments 内部部门</legend>
         <div id="department-options" class="scope-grid"></div>
         <label class="check"><input type="checkbox" name="supportViewAll">Support can view all customers</label>
       </fieldset>
-      <fieldset>
-        <legend>Sales Room</legend>
+      <p class="permission-help">Warehouse permissions use company scope and warehouse tasks. They do not grant customer pages.</p>
+      <details class="permission-card" open><summary>Sales Room · Customer work 客户工作</summary>
+        <label class="check"><input type="checkbox" name="customerWorkEnabled">Allow Sales Room entry 允许进入</label>
         <div class="scope-grid">
-          <label>Function<select name="salesFunction"><option value="">None</option><option>SALES</option><option>SUPPORT</option></select></label>
-          <label>Access<select name="salesRoom"><option value="">None</option><option value="VIEW">View</option><option value="EDIT">Edit</option></select></label>
+          <label>Customer scope 客户范围<select name="customerWorkScope"><option value="SELECTED">Selected customers 指定客户</option><option value="ALL">All customers 全部客户</option></select></label>
+          <label>Catalogue<select name="catalogueAccess"><option value="">No access</option><option value="VIEW">View products</option><option value="SELECT">View and select products</option></select></label>
+          <label>Buyer Room<select name="buyerRoomAccess"><option value="">No access</option><option value="VIEW">View only</option><option value="REQUEST">View and send requests</option></select></label>
+          <div><label class="check"><input type="checkbox" name="createCustomers">Register customers 注册客户</label><label class="check"><input type="checkbox" name="editProfiles">Edit customer details 编辑资料</label><label class="check"><input type="checkbox" name="submitOrders">Submit orders to NCT or GHR 提交订单</label></div>
         </div>
+        <p class="permission-help">Turning off Sales Room entry also blocks its customer pages and selection actions. Other departments stay separate.</p>
+      </details>
+      <details class="permission-card" open><summary>Sales Management 销售管理</summary>
+        <label class="check"><input type="checkbox" name="performanceAccess">Sales Performance · includes Quotations 业绩及报价</label>
+        <label class="check"><input type="checkbox" name="quotationAccess">Catch Cost, edit and publish quotations</label>
+        <p class="permission-help">Performance access includes quotation access. Quotation-only access does not grant performance. Quotations show current assigned customers; performance follows authoritative historical transaction ownership. Super Admin can view all.</p>
+      </details>
+      <fieldset id="customer-scope-options" class="permission-customer-scope"><legend>Selected customers 指定客户</legend>
+        <p>View permits browsing; Edit permits the customer actions enabled above. Support department scope also uses these grants. Warehouse does not.</p>
+        <div id="customer-options"></div><output id="customer-status" aria-live="polite"></output>
       </fieldset>
-      <fieldset>
-        <legend>Customer access 客户权限</legend>
-        <p>View permits browsing. Edit permits customer work; Support cannot edit or publish quotations.</p>
-        <div id="customer-options"></div>
-        <output id="customer-status" aria-live="polite"></output>
-      </fieldset>
+      <output id="permission-summary" class="permission-summary" aria-live="polite"></output>
       </details>
     </section>
     <footer><output id="save-status" aria-live="polite" hidden></output><button id="cancel" type="button">Cancel</button><button id="save" class="primary">Add Employee</button></footer>
@@ -111,20 +124,28 @@
 </main>
 <script type="module">
   const id = name => document.getElementById(name);
-  const parentOrigin = 'https://fmcg999.wixstudio.com';
+  const trustedParents = new Set(['https://www.ltpos.ai', 'https://ltpos.ai', 'https://fmcg999.wixstudio.com']);
+  let referrerOrigin = '';
+  try { referrerOrigin = new URL(document.referrer).origin; } catch (_) {}
+  const parentOrigin = trustedParents.has(referrerOrigin) ? referrerOrigin : '';
   const requests = new Map();
   const employees = [];
-  let editing = null, pendingSave = null, customers = [], selected = null;
-  let dirty = false, saving = false;
+  const pendingKey = 'master.staff.save.pending';
+  const pendingMessage = 'The system is checking this save. You can close this form. 系统正在确认保存，可以关闭表单。';
+  let editing = null, customers = [], selected = null;
+  let pendingReceipt, pendingForm = null, receiptTimer;
+  try { pendingReceipt = localStorage.getItem(pendingKey); } catch (_) {}
+  let dirty = false, saving = false, showingSavedEmployee = false;
+  let originalEmployeeFields, customerOptionsReady = false;
   let customerLoad = 0;
 
   function send(action, fields = {}) {
-    if (window.parent === window) return Promise.reject(Error('Open this page from the MASTER website.'));
+    if (window.parent === window || !parentOrigin) return Promise.reject(Error('Open this page from the MASTER website.'));
     return new Promise((resolve, reject) => {
       const requestId = crypto.randomUUID();
       const timer = setTimeout(() => {
         requests.delete(requestId);
-        reject(Error('MASTER did not confirm the request. Reload the directory to check its status.'));
+        reject(Error('MASTER did not confirm the request.'));
       }, 15000);
       requests.set(requestId, { resolve, reject, timer });
       window.parent.postMessage({ action, requestId, ...fields }, parentOrigin);
@@ -142,7 +163,11 @@
       const error = Error('Sign in with your MASTER staff account.');
       error.signInRequired = true;
       request.reject(error);
-    } else request.reject(Error(event.data.error || 'The request was rejected.'));
+    } else {
+      const error = Error(event.data.error || 'The request was rejected.');
+      error.saveRejected = event.data.saveRejected === true;
+      request.reject(error);
+    }
   });
 
   function render() {
@@ -160,7 +185,7 @@
       const status = document.createElement('span');
       status.className = 'employee-status';
       status.textContent = employee.role === 'SUPER ADMIN' ? 'Super Admin' :
-        employee.status === 'PENDING' ? 'Pending verification' : employee.status;
+        employee.status === 'PENDING' ? 'Pending verification' : employee.status + (employee.linked ? '' : ' · First sign-in pending');
       name.append(status);
       const email = document.createElement('span');
       email.className = 'employee-email';
@@ -177,7 +202,7 @@
   const form = id('add-form');
   const departments = [
     ['PURCHASE', 'Purchase'], ['SUPPORT', 'Support'], ['WAREHOUSE', 'Warehouse'],
-    ['ACCOUNT', 'Finance'], ['SALES MANAGEMENT', 'Sales Management']
+    ['ACCOUNT', 'Finance'], ['STOCK CONTROL', 'Stock Control']
   ];
   for (const [department, labelText] of departments) {
     const label = document.createElement('label');
@@ -186,7 +211,7 @@
     select.name = department;
     select.add(new Option('None', ''));
     select.add(new Option('View', 'VIEW'));
-    select.add(new Option('Edit', 'EDIT'));
+    if (department !== 'STOCK CONTROL') select.add(new Option('Edit', 'EDIT'));
     label.append(select);
     id('department-options').append(label);
   }
@@ -196,22 +221,68 @@
       name: data.get('name'),
       email: data.get('email'),
       access: {
-        departmentAccess: Object.fromEntries(departments.map(([department]) =>
-          [department, data.get(department)]).filter(([, level]) => level)),
+        departmentAccess: {...(editing?.access?.departmentAccess?.['SALES MANAGEMENT']?{'SALES MANAGEMENT':editing.access.departmentAccess['SALES MANAGEMENT']} : {}), ...Object.fromEntries(departments.map(([department]) => [department,data.get(department)]).filter(([,level])=>level))},
         companyIds: data.getAll('company'),
         supportViewAll: data.has('supportViewAll'),
-        salesRoom: data.get('salesRoom'),
-        salesFunction: data.get('salesFunction'),
+        salesRoom: editing?.access?.salesRoom ?? '',
+        salesFunction: editing?.access?.salesFunction ?? '',
+        customerWork: {
+          enabled: data.has('customerWorkEnabled'), scope: data.get('customerWorkScope'),
+          createCustomers: data.has('createCustomers'), editProfiles: data.has('editProfiles'),
+          catalogue: data.get('catalogueAccess'), buyerRoom: data.get('buyerRoomAccess'), submitOrders: data.has('submitOrders')
+        },
+        quotationAccess: form.elements.namedItem('quotationAccess').disabled ? (form.elements.namedItem('quotationAccess').dataset.standalone==='true'?'EDIT':'') : data.has('quotationAccess') ? 'EDIT' : '',
+        performanceAccess: data.has('performanceAccess') ? 'VIEW' : '',
         customerAccess: Object.fromEntries([...id('customer-options').querySelectorAll('select')]
           .filter(select=>select.value).map(select=>[select.dataset.customerId,select.value]))
       }
     };
   }
+  function employeeFields({name, email, status, access = {}}) {
+    const ordered = record => Object.entries(record ?? {}).sort(([left], [right]) => left.localeCompare(right));
+    return JSON.stringify([String(name ?? '').trim(), String(email ?? '').trim().toLowerCase(), status,
+      [...(access.companyIds ?? [])].sort(), ordered(access.departmentAccess), ordered(access.customerAccess),
+      Boolean(access.supportViewAll), access.salesRoom || '', access.salesFunction || '',
+      effectiveWork(access), effectiveQuotation(access), access.performanceAccess || '']);
+  }
+  function effectiveWork(access = {}) {
+    const work=access.customerWork;
+    return work ? {enabled:work.enabled,scope:work.scope,createCustomers:work.createCustomers,editProfiles:work.editProfiles,catalogue:work.catalogue,buyerRoom:work.buyerRoom,submitOrders:work.submitOrders} : {
+      enabled:Boolean(access.salesRoom),scope:'SELECTED',createCustomers:access.salesRoom==='EDIT'&&access.salesFunction==='SALES',editProfiles:access.salesRoom==='EDIT'&&access.salesFunction==='SALES',catalogue:access.salesRoom==='EDIT'?'SELECT':access.salesRoom?'VIEW':'',buyerRoom:access.salesRoom==='EDIT'?'REQUEST':access.salesRoom?'VIEW':'',submitOrders:access.salesRoom==='EDIT'
+    };
+  }
+  function effectiveQuotation(access = {}) { return access.quotationAccess ?? (access.salesFunction==='SALES'&&access.departmentAccess?.['SALES MANAGEMENT']==='EDIT'?'EDIT':''); }
+  function renderPermissionSummary() {
+    const performance=form.elements.namedItem('performanceAccess').checked, quote=form.elements.namedItem('quotationAccess');
+    if(performance){if(quote.dataset.standalone===undefined)quote.dataset.standalone=String(quote.checked);quote.checked=true;quote.disabled=true;}
+    else if(quote.dataset.standalone!==undefined){quote.disabled=false;quote.checked=quote.dataset.standalone==='true';delete quote.dataset.standalone;}
+    const {access}=registration(), work=access.customerWork;
+    const scope=work.scope==='ALL'?'all customers':'selected customers';
+    id('customer-scope-options').hidden=!(work.enabled&&work.scope==='SELECTED')&&!access.departmentAccess.SUPPORT;
+    id('permission-summary').textContent=(work.enabled ? 'Sales Room: '+scope+'\nCatalogue: '+(work.catalogue||'no access')+' · Buyer Room: '+(work.buyerRoom||'no access') : 'Customer work: no access')+
+      '\nQuotations: '+(access.quotationAccess||access.performanceAccess?'own assigned customers':'no access')+
+      '\nSales Performance: '+(access.performanceAccess?'own historically attributed transactions':'no access')+
+      '\nWarehouse never grants access to customer pages.';
+  }
+  function refreshEmployeeSave() {
+    renderPermissionSummary();
+    const button = id('save');
+    if (editing) {
+      const value = {...registration(), status:form.elements.namedItem('status').value};
+      if (!customerOptionsReady) value.access.customerAccess = editing.access?.customerAccess ?? {};
+      dirty = employeeFields(value) !== originalEmployeeFields;
+    }
+    button.disabled = saving || Boolean(pendingReceipt) || !customerOptionsReady || Boolean(editing && !dirty);
+    button.dataset.unchanged = String(Boolean(editing && !dirty && customerOptionsReady));
+  }
   id('search').addEventListener('input', render);
   function renderCustomerAccess(access) {
     const known = new Map(customers.map(customer=>[customer.id,customer.name]));
     for (const customerId of Object.keys(access ?? {})) if (!known.has(customerId)) known.set(customerId,customerId);
-    id('customer-options').replaceChildren(...[...known].map(([customerId,name],index)=>{
+    const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
+    const ordered = [...known].sort(([idA, nameA], [idB, nameB]) =>
+      collator.compare(String(nameA ?? '').trim(), String(nameB ?? '').trim()) || collator.compare(idA, idB));
+    id('customer-options').replaceChildren(...ordered.map(([customerId,name],index)=>{
       const row=document.createElement('div'); row.className='customer-access';
       const label=document.createElement('label'); label.textContent=name; label.htmlFor='grant-'+index;
       const select=document.createElement('select'); select.id=label.htmlFor; select.dataset.customerId=customerId;
@@ -226,8 +297,65 @@
     output.textContent = message;
   }
 
+  function rememberReceipt(requestId) {
+    pendingReceipt = requestId;
+    clearTimeout(receiptTimer);
+    try {
+      if (requestId) localStorage.setItem(pendingKey, requestId);
+      else localStorage.removeItem(pendingKey);
+    } catch (_) {}
+    if (!requestId) id('directory-warning').hidden = true;
+  }
+
+  function showPendingReceipt() {
+    id('directory-warning').hidden = false;
+    id('directory-warning').textContent = pendingMessage;
+  }
+
+  async function findReceipt(requestId, delays) {
+    for (const delay of delays) {
+      if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+      try {
+        const { saveStatus } = await send('CHECK_STAFF_SAVE', { saveRequestId: requestId });
+        if (saveStatus?.state === 'CONFIRMED' && saveStatus.requestId === requestId && saveStatus.employee) {
+          return saveStatus.employee;
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  function showConfirmedEmployee(employee) {
+    const index = employees.findIndex(row => row.staffId === employee.staffId);
+    if (index >= 0) employees[index] = employee;
+    else employees.push(employee);
+    const matchingForm = !form.hidden && pendingForm === customerLoad;
+    rememberReceipt(null);
+    pendingForm = null;
+    if (matchingForm) void openEmployee(employee, true);
+    else {
+      if (!form.hidden && dirty) id('save').hidden = false;
+      if (!form.hidden) refreshEmployeeSave();
+      render();
+    }
+  }
+
+  function scheduleReceipt(delay = 30000) {
+    clearTimeout(receiptTimer);
+    if (!pendingReceipt) return;
+    receiptTimer = setTimeout(async () => {
+      const requestId = pendingReceipt;
+      if (requestId && document.visibilityState !== 'hidden') {
+        const employee = await findReceipt(requestId, [0]);
+        if (requestId !== pendingReceipt) return;
+        if (employee) return showConfirmedEmployee(employee);
+      }
+      scheduleReceipt();
+    }, delay);
+  }
+
   function selectEmployee(employee = null) {
-    if (saving || pendingSave) return;
+    if (saving) return;
     if (!form.hidden && selected === employee) return;
     if (dirty) {
       showSaveStatus('Save or cancel your changes before switching employees.', true);
@@ -241,7 +369,9 @@
     selected = employee;
     editing = employee;
     dirty = false;
-    pendingSave = null;
+    showingSavedEmployee = saved;
+    customerOptionsReady = false;
+    originalEmployeeFields = employee ? employeeFields(employee) : undefined;
     form.reset();
     id('add-title').textContent = employee?.name ?? 'Add Employee';
     const administrator = employee?.role === 'SUPER ADMIN';
@@ -256,9 +386,9 @@
     id('save').textContent=employee?'Save':'Add Employee';
     id('employee-status').hidden=!employee;
     id('registration-help').hidden = Boolean(employee);
-    showSaveStatus(saved ? 'Saved successfully 已保存' : '');
-    id('save').hidden = saved;
-    id('cancel').textContent = saved ? 'Done' : 'Cancel';
+    showSaveStatus(saved ? 'Saved successfully 已保存' : pendingReceipt ? pendingMessage : '');
+    id('save').hidden = Boolean(pendingReceipt);
+    id('cancel').textContent = saved ? 'Close 关闭' : 'Cancel';
     const access=employee?.access ?? {};
     form.elements.namedItem('name').value=employee?.name ?? '';
     form.elements.namedItem('email').value=employee?.email ?? '';
@@ -266,13 +396,23 @@
     for(const [department] of departments) form.elements.namedItem(department).value=access.departmentAccess?.[department] ?? '';
     form.querySelectorAll('[name=company]').forEach(box=>box.checked=access.companyIds?.includes(box.value)===true);
     form.elements.namedItem('supportViewAll').checked=access.supportViewAll===true;
-    form.elements.namedItem('salesRoom').value=access.salesRoom ?? '';
-    form.elements.namedItem('salesFunction').value=access.salesFunction ?? '';
+    const work=effectiveWork(access);
+    form.elements.namedItem('customerWorkEnabled').checked=work.enabled;
+    form.elements.namedItem('customerWorkScope').value=work.scope;
+    for(const key of ['createCustomers','editProfiles','submitOrders'])form.elements.namedItem(key).checked=work[key];
+    form.elements.namedItem('catalogueAccess').value=work.catalogue;
+    form.elements.namedItem('buyerRoomAccess').value=work.buyerRoom;
+    form.elements.namedItem('quotationAccess').disabled=false;
+    form.elements.namedItem('quotationAccess').checked=Boolean(effectiveQuotation(access));
+    delete form.elements.namedItem('quotationAccess').dataset.standalone;
+    form.elements.namedItem('performanceAccess').checked=access.performanceAccess==='VIEW';
+    renderPermissionSummary();
     form.querySelector('details').open = Boolean(employee);
     if (saved) {
       renderCustomerAccess(access.customerAccess);
       id('customer-status').textContent = '';
-      id('save').disabled = false;
+      customerOptionsReady = true;
+      refreshEmployeeSave();
       return;
     }
     id('customer-options').replaceChildren();
@@ -281,13 +421,16 @@
       const result=await send('LIST_CUSTOMERS');
       if (form.hidden || load !== customerLoad) return;
       customers=result.customers;
-      renderCustomerAccess(access.customerAccess);id('customer-status').textContent='';id('save').disabled=false;
+      renderCustomerAccess(access.customerAccess);id('customer-status').textContent='';
+      customerOptionsReady = true;
+      refreshEmployeeSave();
     }catch(error){if (!form.hidden && load === customerLoad) id('customer-status').textContent=error.message;}
   }
   id('add').addEventListener('click', () => selectEmployee());
   id('cancel').addEventListener('click', () => {
-    if (saving || pendingSave) return;
-    if (editing && !id('save').hidden) { void openEmployee(editing); return; }
+    if (saving) return;
+    if (editing && !showingSavedEmployee && !id('save').hidden) { void openEmployee(editing); return; }
+    showingSavedEmployee = false;
     customerLoad++;
     dirty = false;
     selected = editing = null;
@@ -298,64 +441,97 @@
     render();
   });
   form.addEventListener('input', () => {
-    dirty = true;
-    id('save').hidden = false;
+    if (!editing) dirty = true;
+    showingSavedEmployee = false;
+    refreshEmployeeSave();
+    id('save').hidden = Boolean(pendingReceipt);
     id('cancel').textContent = 'Cancel';
     showSaveStatus('');
   });
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    if (form.hidden || saving || id('save').disabled || id('save').hidden) return;
+    if (form.hidden || saving || pendingReceipt || id('save').disabled || id('save').hidden) return;
     const submittedWithSaveFocus = document.activeElement === id('save');
     saving = true;
     id('save').disabled = true;
     id('cancel').disabled = true;
     showSaveStatus('Saving…');
-    let savedEmployee;
+    let savedEmployee, submitted;
     try {
-      if(!pendingSave) pendingSave={...registration(),saveRequestId:crypto.randomUUID(),
+      submitted={...registration(),saveRequestId:crypto.randomUUID(),
         ...(editing?{staffId:editing.staffId,revision:editing.revision,status:form.elements.namedItem('status').value}:{})};
+      rememberReceipt(submitted.saveRequestId);
+      pendingForm = customerLoad;
       form.querySelectorAll('input,select').forEach(element => element.disabled = true);
-      const result = await send(editing?'UPDATE_STAFF':'REGISTER_STAFF', pendingSave);
-      const index=employees.findIndex(employee=>employee.staffId===result.employee.staffId);
-      if(index>=0)employees[index]=result.employee;else employees.push(result.employee);
+      const result = await send(editing?'UPDATE_STAFF':'REGISTER_STAFF', submitted);
       savedEmployee = result.employee;
+      if (!savedEmployee) savedEmployee = await findReceipt(submitted.saveRequestId, [0, 1000, 2500]);
     } catch (error) {
-      showSaveStatus(error.message, true);
-      const uncertain=/awaiting confirmation|did not confirm/i.test(error.message);
-      if(!uncertain)pendingSave=null;
-      form.querySelectorAll('input,select').forEach(element=>element.disabled=uncertain);
-      id('save').textContent=uncertain?'Check same save':editing?'Save':'Add Employee';
+      if (!submitted || error.saveRejected || error.signInRequired) {
+        rememberReceipt(null);
+        pendingForm = null;
+        showSaveStatus(error.message, true);
+        form.querySelectorAll('input,select').forEach(element => element.disabled = false);
+      } else {
+        showSaveStatus('Checking the original save… 正在核对本次保存…');
+        savedEmployee = await findReceipt(submitted.saveRequestId, [0, 1000, 2500]);
+      }
     } finally {
       saving = false;
-      id('save').disabled = false;
-      id('cancel').disabled = Boolean(pendingSave && !savedEmployee);
+      if (!pendingReceipt) refreshEmployeeSave();
+      id('cancel').disabled = false;
     }
     if (savedEmployee) {
-      void openEmployee(savedEmployee, true);
+      showConfirmedEmployee(savedEmployee);
       if (submittedWithSaveFocus && document.activeElement === document.body && !form.hidden) id('cancel').focus();
+    } else if (pendingReceipt) {
+      dirty = false;
+      id('save').hidden = true;
+      id('cancel').textContent = 'Done';
+      showSaveStatus(pendingMessage);
+      showPendingReceipt();
+      scheduleReceipt();
     }
   });
 
-  async function loadDirectory() {
+  let directoryReadInFlight=false,directoryNeedsRetry=false,nextDirectoryRetry=0;
+  const directoryWorkInProgress = () => saving || dirty || Boolean(pendingReceipt);
+  const directoryAccessDenied = error => /^(?:Super Admin access is required|Staff access is not authorized)\./.test(error.message);
+  function resumeDirectory() {
+    if (!directoryNeedsRetry || directoryReadInFlight || document.hidden || navigator.onLine === false
+      || directoryWorkInProgress() || Date.now() < nextDirectoryRetry) return;
+    nextDirectoryRetry = Date.now() + 10000;
+    void loadDirectory(true);
+  }
+  async function loadDirectory(recovering=false) {
+    if (directoryReadInFlight) return;
+    directoryReadInFlight = true;
+    directoryNeedsRetry = false;
     try {
       const result = await send('LIST_STAFF');
+      if (recovering && directoryWorkInProgress()) {
+        directoryNeedsRetry = true;
+        return;
+      }
       employees.splice(0, employees.length, ...result.rows);
       id('add').disabled = false;
       id('search').disabled = false;
       id('sign-in').hidden = true;
       id('status').className = '';
-      id('directory-warning').hidden = true;
       render();
-      if (result.saveStatus && result.saveStatus.state !== 'CLEAR') {
-        const { state, requestId } = result.saveStatus;
-        const message = state === 'CONFIRMED_LOCK_HELD'
-          ? 'The previous save was recorded. Its confirmation lock is still held.'
-          : 'The previous save could not be confirmed.';
+      if (pendingReceipt || result.saveStatus?.state === 'UNCONFIRMED') {
+        rememberReceipt(pendingReceipt || result.saveStatus.requestId);
+        showPendingReceipt();
+        scheduleReceipt(0);
+      } else if (result.saveStatus?.state === 'CONFIRMED_LOCK_HELD') {
         id('directory-warning').hidden = false;
-        id('directory-warning').textContent = message + ' Check the original request before starting another save. Request: ' + requestId;
-      }
+        id('directory-warning').textContent = 'The save was recorded. The system is still confirming it. 保存已记录，系统正在确认。';
+      } else id('directory-warning').hidden = true;
     } catch (error) {
+      if (recovering && directoryWorkInProgress()) {
+        directoryNeedsRetry = !error.signInRequired && !directoryAccessDenied(error);
+        return;
+      }
       employees.length = 0;
       id('employees').replaceChildren();
       id('status').className = 'error';
@@ -363,6 +539,10 @@
       id('add').disabled = true;
       id('search').disabled = true;
       id('sign-in').hidden = !error.signInRequired;
+      directoryNeedsRetry = !error.signInRequired && !directoryAccessDenied(error);
+      if (directoryNeedsRetry && !recovering) setTimeout(resumeDirectory, 1000);
+    } finally {
+      directoryReadInFlight = false;
     }
   }
   id('sign-in').addEventListener('click', async () => {
@@ -376,6 +556,8 @@
       id('sign-in').disabled = false;
     }
   });
+  document.addEventListener('visibilitychange',resumeDirectory);
+  window.addEventListener('online',resumeDirectory);
   await loadDirectory();
 </script>
 </html>

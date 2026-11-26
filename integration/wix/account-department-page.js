@@ -1,19 +1,40 @@
+import { connectWorkroomAccount } from 'public/wix-workroom-account.js';
+import { getStockSaveStatus } from 'backend/stockExceptions.web';
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getCustomerFulfilment, confirmCustomerAccount } from 'backend/customerFulfilment.web';
 import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
-import { getAccountPurchaseOrders, queryAccountPurchaseOrders, planAccountReadIndex, maintainAccountReadIndex, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
-import { authentication } from 'wix-members-frontend';
+import { getAccountPurchaseOrders, getAccountSettlementStatus, queryAccountPurchaseOrders, planAccountReadIndex, maintainAccountReadIndex, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
+import { authentication, currentMember } from 'wix-members-frontend';
+
+async function stockReadStatus(error) {
+  let timeout;
+  try {
+    const member = await Promise.race([
+      currentMember.getMember(),
+      new Promise(resolve => { timeout = setTimeout(() => resolve(null), 2500); })
+    ]);
+    if (member === undefined) return 'SIGN_IN_REQUIRED';
+    if (!member?._id) return 'SESSION_UNCONFIRMED';
+    return [error?.status, error?.statusCode, error?.httpStatus].includes(403)
+      ? 'ACCESS_DENIED' : 'READ_UNAVAILABLE';
+  } catch (_) {
+    return 'SESSION_UNCONFIRMED';
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 import wixLocationFrontend from 'wix-location-frontend';
 import { getFinanceStockList } from 'backend/stockValuation.web';
 // PO read and final-Invoice review; payment ledger and Warehouse closure remain unconnected.
 $w.onReady(() => {
   const room=$w('#html1');
+  connectWorkroomAccount(room, 'finance');
   room.onMessage(async event=>{
     const message=event.data||{};
     if(message.type==='FINANCE_STOCK_LIST_READ_REQUEST'){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!message.requestId||message.requestId.length>100||JSON.stringify(message).length>2000)return;
       try{const result=await getFinanceStockList(message.company,message.input||{});room.postMessage({type:'FINANCE_STOCK_LIST_READ_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
-      catch(error){room.postMessage({type:'FINANCE_STOCK_LIST_READ_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Stock could not be confirmed. Refresh the stock list or check your Finance access.'});}return;
+      catch(error){room.postMessage({type:'FINANCE_STOCK_LIST_READ_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Stock could not be confirmed. Refresh the stock list or check your Finance access.',readStatus:await stockReadStatus(error)});}return;
     }
     if(['TASK_CHAT_LIST_REQUEST','TASK_CHAT_PAGE_REQUEST','TASK_CHAT_SAVE_REQUEST'].includes(message.type)&&await handleTaskChat(message,'ACCOUNT',result=>room.postMessage(result)))return;
     if(['DEPARTMENT_MESSAGES_REQUEST','DEPARTMENT_MESSAGE_SAVE_REQUEST'].includes(message.type)){
@@ -21,6 +42,13 @@ $w.onReady(() => {
       const type=message.type==='DEPARTMENT_MESSAGES_REQUEST'?'DEPARTMENT_MESSAGES_RESULT':'DEPARTMENT_MESSAGE_SAVE_RESULT';
       try{const result=message.type==='DEPARTMENT_MESSAGES_REQUEST'?await getDepartmentMessages(message.company,message.department):await saveDepartmentMessage(message.company,message.department,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
       catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Messages could not be confirmed.'});}return;
+    }
+    if(message.type==='STOCK_SAVE_STATUS_REQUEST'){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100)return;
+      const response={type:'STOCK_SAVE_STATUS_RESULT',company:message.company,requestId:message.requestId};
+      try{room.postMessage({...response,ok:true,result:await getStockSaveStatus(message.company,message.saveRequestId,message.caseId)});}
+      catch(_){room.postMessage({...response,ok:false});}
+      return;
     }
     if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
@@ -52,6 +80,14 @@ $w.onReady(() => {
       try{const result=message.type==='ACCOUNT_INDEX_PLAN_REQUEST'?await planAccountReadIndex(message.company):await maintainAccountReadIndex(message.company,message.action,message.generation);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
       catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Account read index request could not be confirmed.'});}return;
     }
+    if(message.type==='ACCOUNT_SETTLEMENT_STATUS_REQUEST'){
+     if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100)return;
+     const {company,requestId,saveRequestId,poId}=message;
+     const response={type:'ACCOUNT_SETTLEMENT_STATUS_RESULT',company,requestId};
+     try{room.postMessage({...response,ok:true,result:await getAccountSettlementStatus(company,saveRequestId,poId)});}
+     catch(_){room.postMessage({...response,ok:false});}
+     return;
+    }
     if(!['ACCOUNT_ORDERS_REQUEST','ACCOUNT_CHECK_REQUEST','ACCOUNT_SETTLEMENT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>(message.type==='ACCOUNT_SETTLEMENT_REQUEST'&&message.input?.action==='DOCUMENT_UPLOAD'?4250000:200000))return;
     const type=message.type==='ACCOUNT_ORDERS_REQUEST'?'ACCOUNT_ORDERS_RESULT':message.type==='ACCOUNT_SETTLEMENT_REQUEST'?'ACCOUNT_SETTLEMENT_RESULT':'ACCOUNT_CHECK_RESULT';
     try{
@@ -61,5 +97,5 @@ $w.onReady(() => {
   });
   const maintenanceAction=String(wixLocationFrontend.query.accountIndexAction||'').toUpperCase(),maintenanceCompany=String(wixLocationFrontend.query.accountIndexCompany||'').toUpperCase(),maintenanceGeneration=String(wixLocationFrontend.query.accountIndexGeneration||'').toLowerCase();
   const maintenance=['PLAN','STAGE','ACTIVATE'].includes(maintenanceAction)&&['NCT','GHR'].includes(maintenanceCompany)?`&accountIndexAction=${maintenanceAction}&accountIndexCompany=${maintenanceCompany}${maintenanceAction==='ACTIVATE'&&/^[a-f0-9]{32}$/.test(maintenanceGeneration)?`&accountIndexGeneration=${maintenanceGeneration}`:''}`:'';
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261113-support-standalone-dn-v1'+maintenance;
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261117-mobile-menu-icon-v1'+maintenance;
 });

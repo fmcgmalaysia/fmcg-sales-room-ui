@@ -1,3 +1,4 @@
+import { connectAccountSession } from 'public/wix-account-session.js';
 import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
@@ -113,7 +114,7 @@ $w.onReady(async function () {
   const campaignStorageKey = 'buyerWaitingCampaignLastV1';
   let waitingCampaignIndex;
   let activeBuyerRoomView = 'my';
-  let selectionImageOpen = false;
+  const downloadOccluders = new Set();
   let selectionDownloadUrl = '';
   let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
@@ -124,7 +125,7 @@ $w.onReady(async function () {
   downloadButton.link = '';
 
   function updateDownloadButtonVisibility() {
-    if (activeBuyerRoomView === 'my' && selectionDownloadUrl && !selectionImageOpen) {
+    if (activeBuyerRoomView === 'my' && selectionDownloadUrl && !downloadOccluders.size) {
       downloadButton.enable();
       downloadButton.show();
     } else downloadButton.hide();
@@ -217,6 +218,7 @@ $w.onReady(async function () {
     }
     const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
     frame.postMessage({ type: 'BUYER_ROOM_DATA', data: {
+      headerAccountMenuEnabled: true,
       customerId: result.context.customerId,
       catalogueUrl: siteBaseUrl ? siteBaseUrl + cataloguePath() : '',
       companyName: result.context.companyName,
@@ -256,8 +258,13 @@ $w.onReady(async function () {
     }
   }
 
+  const accountSession = connectAccountSession([frame], () => assistCustomerId ? '/sales-room-login' : '/buyer-room-login');
   frame.onMessage(async (event) => {
     const message = event.data || {};
+    if (message.type === 'BUYER_ROOM_LOGOUT') {
+      await accountSession.signOut();
+      return;
+    }
     if (companyAccessReady) await companyAccessReady;
     if (message.type === 'BUYER_COMPANY_SWITCH') {
       if (companyAccess?.companies.some(company => company.customerId === message.customerId)) {
@@ -273,8 +280,8 @@ $w.onReady(async function () {
       }
       return;
     }
-    if (message.type === 'BUYER_ROOM_SELECTION_IMAGE_STATE' && typeof message.open === 'boolean') {
-      selectionImageOpen = message.open;
+    if (['BUYER_ROOM_SELECTION_IMAGE_STATE', 'BUYER_ROOM_COMPANY_DIALOG_STATE', 'BUYER_ROOM_ACCOUNT_MENU_STATE'].includes(message.type) && typeof message.open === 'boolean') {
+      if (message.open) downloadOccluders.add(message.type); else downloadOccluders.delete(message.type);
       updateDownloadButtonVisibility();
       return;
     }
@@ -431,7 +438,7 @@ $w.onReady(async function () {
 
   // When Wix has already started the fixed HTML embed, keep that frame and request a fresh handshake.
   // If the embed was not configured with its website address, retain the existing dynamic load.
-  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261125-company-navigation.html';
+  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261125-company-entry.html';
   if (frame.src !== buyerRoomEmbedUrl) frame.src = buyerRoomEmbedUrl;
   else frame.postMessage({ type: 'BUYER_ROOM_HOST_READY' });
   // The shell can render while the authorized data request is in flight.
