@@ -169,7 +169,9 @@ const operations = {
 };
 // A site administrator can process only catalogue-owned images. The client supplies no source
 // URLs and obtains only counts and an opaque continuation product ID. No originals are removed.
-export const prepareCataloguePictures = webMethod(Permissions.Admin, async (after='', count=1) => {
+export const prepareCataloguePictures = webMethod(Permissions.Admin, async (after, count) => {
+  after = after ?? '';
+  count = count ?? 1;
   if (typeof after !== 'string' || after.length > 128 || !Number.isSafeInteger(count) || count < 1 || count > 6) throw Error('Invalid batch.');
   let query = wixData.query(products).isNotEmpty('image');
   if (after) query=query.gt('_id',after);
