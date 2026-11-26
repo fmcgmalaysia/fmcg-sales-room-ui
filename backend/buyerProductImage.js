@@ -21,13 +21,19 @@ export async function openBuyerImage({ companyId, selectionId }, services) {
   const payload = typeof selection.payload === 'string' ? JSON.parse(selection.payload) : selection.payload;
   if (!payload || payload.customerId !== companyId || payload.removed || !validItem(payload.productId)) throw unavailable();
   if (await services.reserveDownload(buyer, payload.productId) !== true) throw unavailable();
-  const asset = await services.getPrivateAsset(payload.productId);
+  return { url: await readBuyerPrivateOriginal(payload.productId, services) };
+}
+
+// Call only after validating the company and its current selection.
+export async function readBuyerPrivateOriginal(productId, services) {
+  const unavailable = () => new Error('This product image is unavailable for this account.');
+  const asset = await services.getPrivateAsset(productId);
   const originalId = /^wix:image:\/\/v1\/([a-zA-Z0-9_.~-]+)\//.exec(asset?.fileUrl)?.[1];
-  if (!asset || asset._id !== payload.productId || asset.status !== 'VERIFIED' || !originalId ||
+  if (!asset || asset._id !== productId || asset.status !== 'VERIFIED' || !originalId ||
       originalId !== asset.originalId || !asset.sourceId || asset.sourceId === originalId || !asset.originalHash) throw unavailable();
   const info = await services.media.getFileInfo(asset.fileUrl);
   if (info?.isPrivate !== true || info.fileUrl !== asset.fileUrl || info.hash !== asset.originalHash || info.opStatus !== 'READY') throw unavailable();
   const url = await services.media.getDownloadUrl(info.fileUrl, 1, null, null);
   if (!url || new URL(url).protocol !== 'https:') throw unavailable();
-  return { url };
+  return url;
 }

@@ -1,4 +1,4 @@
-import { openBuyerImage } from './buyerProductImage.js';
+import { openBuyerImage, readBuyerPrivateOriginal } from './buyerProductImage.js';
 import { mediaManager } from 'wix-media-backend';
 import { files } from 'wix-media.v2';
 import { elevate } from 'wix-auth';
@@ -56,9 +56,18 @@ async function load() {
   const privatePreviews = createCataloguePreviewReader({ data: wixData, media: mediaManager });
   const transitionalPreviews = createCatalogueLegacyPreview({ data: wixData });
   const addPreviews = async page => transitionalPreviews(await privatePreviews(page));
-  const selectionPreviews = async (scope, products) => {
+  const originalService = {
+    getPrivateAsset: id => wixData.get('CatalogueImageAssets', id, { suppressAuth: true, consistentRead: true }),
+    media: verifiedMedia
+  };
+  const selectionPreviews = async (scope, products, fullSize) => {
     if (!products.length) return [];
     const actor = await authorize(scope);
+    if (fullSize && products.length === 1 && actor?.customerId) {
+      const entry = products[0];
+      const image = await readBuyerPrivateOriginal(entry.id, originalService);
+      return [{ selectionId: entry.selectionId, image }];
+    }
     if (await reserveRead(actor, 'CATALOGUE_LIST', products.length) !== true ||
         await reserveCoverage(actor, 'CATALOGUE_LIST', products.map(p=>p.id)) !== true) return [];
     const entries = await addPreviews(products);
@@ -68,18 +77,17 @@ async function load() {
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),
       getSelection: id => wixData.get('WixBuyerListItems', id, { suppressAuth: true, consistentRead: true }),
-      getPrivateAsset: id => wixData.get('CatalogueImageAssets', id, { suppressAuth: true, consistentRead: true }),
+      ...originalService,
       reserveDownload: async (actor, id) => await reserveRead(actor, 'BUYER_IMAGE', 1) &&
-        await reserveCoverage(actor, 'BUYER_IMAGE', [id]),
-      media: verifiedMedia
+        await reserveCoverage(actor, 'BUYER_IMAGE', [id])
     }),
     retry: () => retryCatalogueAlerts(store, deliver) };
   expires = Date.now() + 60000;
   return cached;
 }
 
-export async function readOwnedSelectionPreviews(scope, products) {
-  return (await getCatalogueProtection()).selectionPreviews(scope, products);
+export async function readOwnedSelectionPreviews(scope, products, fullSize = false) {
+  return (await getCatalogueProtection()).selectionPreviews(scope, products, fullSize);
 }
 
 export async function processCatalogueSecurityNotifications() {

@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="build-version" content="20261120-selection-removal-requote-v1">
-<meta name="buyer-protected-images-build" content="20261127-buyer-workbook-images-v1">
+<meta name="buyer-protected-images-build" content="20261127-buyer-room-image-recovery-v1">
 <meta name="buyer-order-recovery-build" content="20261125-buyer-order-recovery-v1">
 <meta name="buyer-mobile-layout-build" content="20261123-buyer-mobile-layout-v1">
 <meta name="buyer-mobile-order-build" content="20261123-buyer-prepare-order-v6">
@@ -1348,6 +1348,8 @@ selectionRows.addEventListener('click',event=>{
 let selectionPictureId='';
 let previewCompany='';
 const previewCache=new Map(), previewPending=new Map(), previewQueue=new Set();
+const originalCache=new Map(), originalPending=new Map();
+let hoverPictureId='';
 let previewTimer=0, selectionPreviewObserver;
 function safeSmallPicture(value){
   if(typeof value!=='string')return '';
@@ -1379,6 +1381,7 @@ function bindProtectedSelectionPreview(){
   if(previewCompany!==state.customerId){
     previewCompany=state.customerId;
     previewCache.clear();previewPending.clear();previewQueue.clear();
+    originalCache.clear();originalPending.clear();hideImagePreview();
     if(selectionImageDialog.open)selectionImageDialog.close();
   }
   selectionPreviewObserver?.disconnect();
@@ -1391,15 +1394,15 @@ function bindProtectedSelectionPreview(){
       if(cached?.until>Date.now())attachSelectionPreview(entry.target,cached.image);
       else if(id&&!previewPending.has(id))previewQueue.add(id);
     }
-    if(previewQueue.size&&!previewTimer)previewTimer=setTimeout(sendPreviewBatch,75);
-  },{rootMargin:'140px'});
+    if(previewQueue.size&&!previewTimer)previewTimer=setTimeout(sendPreviewBatch,0);
+  },{rootMargin:'80px'});
   document.querySelectorAll('[data-selection-preview]').forEach(node=>selectionPreviewObserver.observe(node));
 }
 function sendPreviewBatch(){
   if(previewTimer)clearTimeout(previewTimer);
   previewTimer=0;
   if(!state.customerId||!previewQueue.size||previewPending.size)return;
-  const ids=[...previewQueue].slice(0,25);
+  const ids=[...previewQueue].slice(0,10);
   const requestId=crypto.randomUUID();
   for(const id of ids){previewQueue.delete(id);previewPending.set(id,requestId);}
   post('BUYER_ROOM_IMAGE_PREVIEWS',{ids,requestId});
@@ -1410,6 +1413,7 @@ function sendPreviewBatch(){
 }
 function receiveSelectionPreviews(message){
   if(message.customerId!==state.customerId)return;
+  if(message.fullSize===true){receiveOriginalPicture(message);return;}
   const returned=new Map((Array.isArray(message.entries)?message.entries:[]).map(row=>[row.selectionId,safeSmallPicture(row.image)]));
   for(const [id,request] of previewPending){
     if(request!==message.requestId)continue;
@@ -1417,18 +1421,58 @@ function receiveSelectionPreviews(message){
     const image=returned.get(id)||'';
     previewCache.set(id,{image,until:Date.now()+(image?55000:18000)});
     document.querySelectorAll(`[data-selection-preview="${CSS.escape(id)}"]`).forEach(node=>attachSelectionPreview(node,image));
-    if(selectionPictureId===id&&image&&!selectionImage.src){selectionImage.src=image;selectionImage.hidden=false;}
+    if(selectionPictureId===id&&image&&!selectionImage.hasAttribute('src')){selectionImage.src=image;selectionImage.hidden=false;}
   }
   bindImagePreview();
   sendPreviewBatch();
 }
+function originalPicture(id){
+  const saved=originalCache.get(id);
+  return saved?.until>Date.now()?saved.image:'';
+}
+function requestOriginalPicture(id){
+  if(!id||originalPicture(id)||originalPending.has(id))return;
+  const requestId=crypto.randomUUID();
+  originalPending.set(id,requestId);
+  post('BUYER_ROOM_IMAGE_PREVIEWS',{ids:[id],requestId,fullSize:true});
+  setTimeout(()=>{if(originalPending.get(id)===requestId)originalPending.delete(id);},13000);
+}
+function receiveOriginalPicture(message){
+  const request=[...originalPending].find(([,requestId])=>requestId===message.requestId);
+  if(!request)return;
+  const [id]=request;
+  originalPending.delete(id);
+  const candidate=Array.isArray(message.entries)?message.entries.find(entry=>entry.selectionId===id)?.image:'';
+  const image=typeof candidate==='string'&&candidate.startsWith('https://')?safeSmallPicture(candidate):'';
+  if(!image)return;
+  originalCache.set(id,{image,until:Date.now()+50000});
+  if(hoverPictureId===id)openHoverPicture(image);
+  if(selectionPictureId===id&&selectionImageDialog.open){selectionImage.src=image;selectionImage.hidden=false;}
+}
+selectionRows.addEventListener('pointerover',event=>{
+  if(event.pointerType!=='mouse'||mobileSelection.matches||selectionImageDialog.open)return;
+  const cell=event.target.closest('.selection-image-cell');
+  const thumb=cell?.querySelector('[data-selection-preview]');
+  if(!thumb||cell.contains(event.relatedTarget))return;
+  hoverPictureId=thumb.dataset.selectionPreview;
+  positionHoverPicture(event);
+  const image=originalPicture(hoverPictureId)||thumb.querySelector('img')?.src;
+  if(image)openHoverPicture(image);
+  requestOriginalPicture(hoverPictureId);
+});
+selectionRows.addEventListener('pointermove',event=>{if(hoverPictureId)positionHoverPicture(event);});
+selectionRows.addEventListener('pointerout',event=>{
+  const cell=event.target.closest('.selection-image-cell');
+  const thumb=cell?.querySelector('[data-selection-preview]');
+  if(thumb&&hoverPictureId===thumb.dataset.selectionPreview&&!cell.contains(event.relatedTarget))hideImagePreview();
+});
 function showProtectedSelectionImage(id){
   if(selectionImageDialog.open)return;
   const item=state.my.find(row=>String(row.id)===String(id));
   if(!item)return;
   selectionPictureId=String(item.id);
   const preview=previewCache.get(selectionPictureId);
-  const image=preview?.until>Date.now()?preview.image:safeSmallPicture(imageUrl(item));
+  const image=originalPicture(selectionPictureId)||(preview?.until>Date.now()?preview.image:safeSmallPicture(imageUrl(item)));
   hideImagePreview();
   selectionImage.alt=item.itemName||'Product image';
   selectionImage.hidden=!image;
@@ -1441,6 +1485,7 @@ function showProtectedSelectionImage(id){
   $('downloadSelectionImage').disabled=false;
   $('downloadSelectionImageStatus').textContent='';
   selectionImageDialog.showModal();
+  requestOriginalPicture(selectionPictureId);
   post('BUYER_ROOM_SELECTION_IMAGE_STATE',{open:true});
 }
 $('downloadSelectionImage').onclick=()=>{
@@ -1467,8 +1512,10 @@ mobileSelection.addEventListener('change',event=>{
   if(!event.matches&&mobileQtySheet.open)mobileQtySheet.close();
   if($('orderView').classList.contains('active'))renderOrder();
 });
-function hideImagePreview(){const preview=$('imagePreview');preview.classList.remove('show');preview.setAttribute('aria-hidden','true');$('imagePreviewImg').removeAttribute('src')}
-function bindImagePreview(){const preview=$('imagePreview'),previewImg=$('imagePreviewImg');document.querySelectorAll('.my-thumb[data-preview-src]').forEach(img=>{img.onmouseenter=()=>{if(mobileSelection.matches&&img.closest('#myRows'))return;previewImg.src=img.dataset.previewSrc;preview.classList.add('show');preview.setAttribute('aria-hidden','false')};img.onmousemove=e=>{const gap=14,edge=10,box=preview.getBoundingClientRect(),width=box.width||220,height=box.height||220;let left=e.clientX+gap,top=e.clientY+gap;if(left+width>innerWidth-edge)left=e.clientX-width-gap;if(top+height>innerHeight-edge)top=e.clientY-height-gap;preview.style.left=`${Math.max(edge,Math.min(left,innerWidth-width-edge))}px`;preview.style.top=`${Math.max(edge,Math.min(top,innerHeight-height-edge))}px`};img.onmouseleave=hideImagePreview})}
+function hideImagePreview(){hoverPictureId='';const preview=$('imagePreview');preview.classList.remove('show');preview.setAttribute('aria-hidden','true');$('imagePreviewImg').removeAttribute('src')}
+function openHoverPicture(image){const preview=$('imagePreview');$('imagePreviewImg').src=image;preview.classList.add('show');preview.setAttribute('aria-hidden','false')}
+function positionHoverPicture(event){const preview=$('imagePreview'),gap=14,edge=10,box=preview.getBoundingClientRect(),width=box.width||286,height=box.height||286;let left=event.clientX+gap,top=event.clientY+gap;if(left+width>innerWidth-edge)left=event.clientX-width-gap;if(top+height>innerHeight-edge)top=event.clientY-height-gap;preview.style.left=`${Math.max(edge,Math.min(left,innerWidth-width-edge))}px`;preview.style.top=`${Math.max(edge,Math.min(top,innerHeight-height-edge))}px`}
+function bindImagePreview(){document.querySelectorAll('.my-thumb[data-preview-src]').forEach(img=>{if(selectionRows.contains(img))return;img.onmouseenter=()=>openHoverPicture(img.dataset.previewSrc);img.onmousemove=positionHoverPicture;img.onmouseleave=hideImagePreview;})}
 function confirmSelectionRemoval(id){
   if(selectionRemoveDialog.open||state.pendingQuantities.has(id))return;
   const item=state.my.find(product=>String(product.id)===id);

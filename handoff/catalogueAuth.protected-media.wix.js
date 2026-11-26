@@ -471,15 +471,18 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
   return { ok: true, context: buyerPageContext(buyer), account, notifications, myList: items.filter(item => !item.removed).map(withoutBuyerOriginalImages), removed: removed.map(withoutBuyerOriginalImages), orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
 });
 
-export const getBuyerSelectionPreviews = webMethod(Permissions.SiteMember, async (ids, buyerScope = '') => {
+export const getBuyerSelectionPreviews = webMethod(Permissions.SiteMember, async (ids, buyerScope = '', fullSize = false) => {
   if (!Array.isArray(ids) || !ids.length || ids.length > 25 ||
+      (fullSize === true && ids.length !== 1) ||
       ids.some(id=>typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(id))) return [];
   const buyer = await resolveBuyerContext(buyerScope);
   const found = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId',buyer.customerId)
     .hasSome('_id',[...new Set(ids)]).limit(ids.length).find({suppressAuth:true,consistentRead:true});
-  const owned = buyerPreviewProducts(found.items,buyer.customerId,payloadData);
+  const owned = buyerPreviewProducts(fullSize === true
+    ? found.items.filter(row => !row.removed && !payloadData(row).removed)
+    : found.items,buyer.customerId,payloadData);
   const scope = ['ADMIN','STAFF'].includes(buyer.actorType) ? {assistCustomerId:buyer.customerId} : {buyerCompanyId:buyer.customerId};
-  return readOwnedSelectionPreviews(scope,owned);
+  return readOwnedSelectionPreviews(scope,owned,fullSize === true);
 });
 
 export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async (payload = {}, requestId = '', assistCustomerId = '') => {

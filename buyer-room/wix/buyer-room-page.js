@@ -322,14 +322,16 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_IMAGE_PREVIEWS') {
+      const fullSize = message.fullSize === true;
       if (!historyCustomerId || !Array.isArray(message.ids) || !message.ids.length || message.ids.length > 25 ||
+          (fullSize && message.ids.length !== 1) ||
           typeof message.requestId !== 'string' || message.requestId.length > 64) return;
       const customerId = historyCustomerId, currentScope = buyerScope();
       let entries;
-      try { entries = await getBuyerSelectionPreviews(message.ids, currentScope); }
+      try { entries = await getBuyerSelectionPreviews(message.ids, currentScope, fullSize); }
       catch (_) { entries = []; }
       if (historyCustomerId === customerId) {
-        frame.postMessage({type:'BUYER_ROOM_IMAGE_PREVIEWS_RESULT',requestId:message.requestId,customerId,entries});
+        frame.postMessage({type:'BUYER_ROOM_IMAGE_PREVIEWS_RESULT',requestId:message.requestId,customerId,entries,fullSize});
       }
       return;
     }
