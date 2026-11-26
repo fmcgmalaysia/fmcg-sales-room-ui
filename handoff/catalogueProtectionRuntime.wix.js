@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from 'crypto';
 import { mediaManager } from 'wix-media-backend';
+import { files } from 'wix-media.v2';
+import { elevate } from 'wix-auth';
 import wixData from 'wix-data';
 import { currentMember } from 'wix-members-backend';
 import { auth } from '@wix/essentials';
@@ -425,13 +427,28 @@ function createCatalogueSelectionScope({ data, getSelectionState, now = Date.now
 
 return { createCatalogueSelectionScope };
 })();
-const { verifyCatalogueImageAsset, createCataloguePreviewReader } = (() => {
+const { createVerifiedCatalogueMedia, verifyCatalogueImageAsset, createCataloguePreviewReader } = (() => {
 // Only independent, low-resolution private files may be delivered as catalogue previews.
 // Asset verification is an internal migration step. It never deletes a source file.
 const mediaId = uri => typeof uri === 'string' && /^wix:image:\/\/v1\/([a-zA-Z0-9_.~-]+)\//.exec(uri)?.[1];
 const withinPreviewBounds = info => Number.isSafeInteger(info?.width) && Number.isSafeInteger(info?.height)
   && Math.min(info.width, info.height) > 0 && Math.max(info.width, info.height) <= 320;
 const readyImage = (info, id) => info?.opStatus === 'READY' && info.mediaType === 'image' && mediaId(info.fileUrl) === id;
+// The legacy FileInfo returned by this Wix site omits opStatus, even on ready files.
+// Read processing status from the matching v2 descriptor before accepting an image.
+function createVerifiedCatalogueMedia(manager, describeFile) {
+  return {
+    getDownloadUrl: (...args) => manager.getDownloadUrl(...args),
+    async getFileInfo(uri) {
+      const id = mediaId(uri);
+      if (!id) throw Error('Invalid image reference.');
+      const [info, descriptor] = await Promise.all([manager.getFileInfo(uri), describeFile(id)]);
+      if (descriptor?._id !== id || descriptor.mediaType !== 'IMAGE' || descriptor.private !== info.isPrivate ||
+          mediaId(info.fileUrl) !== id) throw Error('Inconsistent image metadata.');
+      return { ...info, opStatus: descriptor.operationStatus };
+    }
+  };
+}
 async function verifyCatalogueImageAsset({ productId, source, original, preview }, media) {
   const ids = [source, original, preview].map(mediaId);
   if (typeof productId !== 'string' || !productId || ids.some(id => !id) || new Set(ids).size !== 3) throw Error('Three independent image files are required.');
@@ -488,7 +505,7 @@ function createCataloguePreviewReader({ data, media, now = Date.now }) {
   };
 }
 
-return { verifyCatalogueImageAsset, createCataloguePreviewReader };
+return { createVerifiedCatalogueMedia, verifyCatalogueImageAsset, createCataloguePreviewReader };
 })();
 const { buyerImageLink, openBuyerImage } = (() => {
 const buyerRoom = 'https://www.fmcgmalaysia.com/buyer-room';
@@ -628,6 +645,7 @@ return { createProtectedCatalogueRead };
 })();
 
 const collection = 'CatalogueProtection';
+const verifiedMedia = createVerifiedCatalogueMedia(mediaManager, elevate(files.getFileDescriptor));
 const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(items.patch), collection });
 const runTrigger = auth.elevate(customTrigger.runTrigger);
 const authorize = createCatalogueReadIdentity({
@@ -667,7 +685,7 @@ async function load() {
       getPrivateAsset: id => wixData.get('CatalogueImageAssets', id, { suppressAuth: true, consistentRead: true }),
       reserveDownload: async (actor, id) => await reserveRead(actor, 'BUYER_IMAGE', 1) &&
         await reserveCoverage(actor, 'BUYER_IMAGE', [id]),
-      media: mediaManager
+      media: verifiedMedia
     }),
     retry: () => retryCatalogueAlerts(store, deliver) };
   expires = Date.now() + 60000;

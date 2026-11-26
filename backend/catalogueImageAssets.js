@@ -4,6 +4,21 @@ const mediaId = uri => typeof uri === 'string' && /^wix:image:\/\/v1\/([a-zA-Z0-
 const withinPreviewBounds = info => Number.isSafeInteger(info?.width) && Number.isSafeInteger(info?.height)
   && Math.min(info.width, info.height) > 0 && Math.max(info.width, info.height) <= 320;
 const readyImage = (info, id) => info?.opStatus === 'READY' && info.mediaType === 'image' && mediaId(info.fileUrl) === id;
+// The legacy FileInfo returned by this Wix site omits opStatus, even on ready files.
+// Read processing status from the matching v2 descriptor before accepting an image.
+export function createVerifiedCatalogueMedia(manager, describeFile) {
+  return {
+    getDownloadUrl: (...args) => manager.getDownloadUrl(...args),
+    async getFileInfo(uri) {
+      const id = mediaId(uri);
+      if (!id) throw Error('Invalid image reference.');
+      const [info, descriptor] = await Promise.all([manager.getFileInfo(uri), describeFile(id)]);
+      if (descriptor?._id !== id || descriptor.mediaType !== 'IMAGE' || descriptor.private !== info.isPrivate ||
+          mediaId(info.fileUrl) !== id) throw Error('Inconsistent image metadata.');
+      return { ...info, opStatus: descriptor.operationStatus };
+    }
+  };
+}
 export async function verifyCatalogueImageAsset({ productId, source, original, preview }, media) {
   const ids = [source, original, preview].map(mediaId);
   if (typeof productId !== 'string' || !productId || ids.some(id => !id) || new Set(ids).size !== 3) throw Error('Three independent image files are required.');

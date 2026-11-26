@@ -1,6 +1,8 @@
 import { openBuyerImage } from './buyerProductImage.js';
 import { mediaManager } from 'wix-media-backend';
-import { createCataloguePreviewReader } from './catalogueImageAssets.js';
+import { files } from 'wix-media.v2';
+import { elevate } from 'wix-auth';
+import { createCataloguePreviewReader, createVerifiedCatalogueMedia } from './catalogueImageAssets.js';
 import wixData from 'wix-data';
 import { currentMember } from 'wix-members-backend';
 import { auth } from '@wix/essentials';
@@ -18,6 +20,7 @@ import { createProtectedCatalogueRead } from './protectedCatalogueRead.js';
 import { createCatalogueSelectionScope } from './catalogueSelectionScope.js';
 
 const collection = 'CatalogueProtection';
+const verifiedMedia = createVerifiedCatalogueMedia(mediaManager, elevate(files.getFileDescriptor));
 const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(items.patch), collection });
 const runTrigger = auth.elevate(customTrigger.runTrigger);
 const authorize = createCatalogueReadIdentity({
@@ -57,7 +60,7 @@ async function load() {
       getPrivateAsset: id => wixData.get('CatalogueImageAssets', id, { suppressAuth: true, consistentRead: true }),
       reserveDownload: async (actor, id) => await reserveRead(actor, 'BUYER_IMAGE', 1) &&
         await reserveCoverage(actor, 'BUYER_IMAGE', [id]),
-      media: mediaManager
+      media: verifiedMedia
     }),
     retry: () => retryCatalogueAlerts(store, deliver) };
   expires = Date.now() + 60000;

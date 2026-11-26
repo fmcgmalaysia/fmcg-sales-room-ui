@@ -1,7 +1,7 @@
 import { openBuyerImage, buyerImageLink } from '../backend/buyerProductImage.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { verifyCatalogueImageAsset, createCataloguePreviewReader } from '../backend/catalogueImageAssets.js';
+import { verifyCatalogueImageAsset, createCataloguePreviewReader, createVerifiedCatalogueMedia } from '../backend/catalogueImageAssets.js';
 
 const uri = id => 'wix:image://v1/' + id + '/test.jpg';
 const refs = { productId: 'qa-001', source: uri('old'), original: uri('hd'), preview: uri('small') };
@@ -11,6 +11,20 @@ function fixture() {
       hash: 'hash-' + width, sizeInBytes: width * 20, opStatus: 'READY' }]));
   return { records, getFileInfo: async url => records.get(url) };
 }
+test('Wix FileInfo without opStatus must match the ready v2 descriptor for the same private file', async () => {
+  const manager = fixture();
+  const original = manager.records.get(refs.original);
+  delete original.opStatus;
+  let descriptor = {_id:'hd',private:true,mediaType:'IMAGE',operationStatus:'READY'};
+  const media = createVerifiedCatalogueMedia(manager, async () => descriptor);
+  assert.equal((await media.getFileInfo(refs.original)).opStatus,'READY');
+  descriptor.operationStatus = 'PENDING';
+  assert.equal((await media.getFileInfo(refs.original)).opStatus,'PENDING');
+  descriptor.private = false;
+  await assert.rejects(media.getFileInfo(refs.original));
+  descriptor = {...descriptor,private:true,_id:'other'};
+  await assert.rejects(media.getFileInfo(refs.original));
+});
 test('migration matches original checksum, dimensions, size, privacy and processing status', async () => {
   const media = fixture();
   const verified = await verifyCatalogueImageAsset(refs, media);
