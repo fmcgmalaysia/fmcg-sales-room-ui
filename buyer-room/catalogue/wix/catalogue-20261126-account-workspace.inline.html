@@ -396,7 +396,7 @@
     function activate(id,scroll){state.activeId=id;render(true);if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);if(row){const rowBox=row.getBoundingClientRect(),listBox=rows.getBoundingClientRect();if(rowBox.top<listBox.top)rows.scrollTop-=listBox.top-rowBox.top;else if(rowBox.bottom>listBox.bottom)rows.scrollTop+=rowBox.bottom-listBox.bottom}}}
     function showDetail(p){
       if(p && (!mobile.matches || detailModal.open)){
-        if(details.has(p.id))p=details.get(p.id) || p;
+        if(details.has(p.id))p=details.get(p.id) ? {...p, ...details.get(p.id)} : p;
         else if(!detailRequests.has(p.id)){
           detailRequests.add(p.id);
           post('catalogueDetailRequest',{id:p.id,version:pageVersion});

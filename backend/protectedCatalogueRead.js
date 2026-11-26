@@ -23,7 +23,7 @@ function listItem(item) {
   };
 }
 
-export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection }) {
+export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews }) {
   const page = createCataloguePageIndex(data);
   function activeProducts() {
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
@@ -58,7 +58,8 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
       }
       const { items, afterId: nextId, previousAfterId } = await page({ term, principle, subcategories, afterId, anchorId, size, selectedIds });
       if (await reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id)) !== true) throw new Error('Catalogue access temporarily limited.');
-      return { items, afterId: nextId, previousAfterId };
+      const products = addPreviews ? await addPreviews(items) : items;
+      return { items: products, afterId: nextId, previousAfterId };
     },
 
     async principles(scope, category) {

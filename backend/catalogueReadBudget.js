@@ -21,7 +21,9 @@ export function createCatalogueReadBudget({ store, policy, onIncident, now = Dat
       const row = await store.read(key);
       const tick = Math.floor(now() / rule.bucketMs);
       const previous = row?.usage?.[action] ?? [];
-      if (previous.some(entry => entry.tick > tick)) return false;
+      if (!Number.isSafeInteger(tick) || !Array.isArray(previous) || previous.some(entry =>
+        !Number.isSafeInteger(entry?.tick) || entry.tick < 0 || entry.tick > tick ||
+        !Number.isSafeInteger(entry.units) || entry.units < 1)) return false;
       const usage = previous.filter(entry => entry.tick >= tick - rule.buckets);
       const used = usage.reduce((total, item) => total + item.units, 0);
       const denied = used + units > rule.limit;

@@ -44,6 +44,17 @@ test('a bucket transition does not immediately release quota, and restrictions e
   assert.equal(await reserve(beta, 'BUYER_IMAGE', 1), true);
 });
 
+test('malformed stored usage cannot reopen the download budget', async () => {
+  for (const invalid of [ [{tick:0}], [{tick:0, units:-5}], [{tick:'0',units:1}], {} ]) {
+    const {reserve, rows} = fixture();
+    assert.equal(await reserve(alpha, 'BUYER_IMAGE', 1), true);
+    const row = [...rows.values()][0];
+    row.usage.BUYER_IMAGE = invalid;
+    assert.equal(await reserve(alpha, 'BUYER_IMAGE', 1), false);
+    assert.equal(row.version, 1);
+  }
+});
+
 test('an unavailable ledger prevents delivery, including when the catalogue service calls it', async () => {
   const { reserve } = fixture();
   assert.equal(await reserve({}, 'CATALOGUE_LIST', 25), false);

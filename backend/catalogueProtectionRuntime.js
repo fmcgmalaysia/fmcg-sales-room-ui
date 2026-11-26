@@ -1,3 +1,6 @@
+import { openBuyerImage } from './buyerProductImage.js';
+import { mediaManager } from 'wix-media-backend';
+import { createCataloguePreviewReader } from './catalogueImageAssets.js';
 import wixData from 'wix-data';
 import { currentMember } from 'wix-members-backend';
 import { auth } from '@wix/essentials';
@@ -46,7 +49,16 @@ async function load() {
   const reserveRead = createCatalogueReadBudget({ store, policy: config.readPolicy, onIncident });
   const reserveCoverage = createCatalogueCoverage({ store, policy: config.coveragePolicy, onIncident });
   const readSelection = createCatalogueSelectionScope({ data: wixData, getSelectionState: getCatalogueSelectionState });
-  cached = { read: createProtectedCatalogueRead({ data: wixData, authorize, reserveRead, reserveCoverage, readSelection }),
+  const addPreviews = createCataloguePreviewReader({ data: wixData, media: mediaManager });
+  cached = { read: createProtectedCatalogueRead({ data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews }),
+    buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
+      authorize: buyerCompanyId => authorize({ buyerCompanyId }),
+      getSelection: id => wixData.get('WixBuyerListItems', id, { suppressAuth: true, consistentRead: true }),
+      getPrivateAsset: id => wixData.get('CatalogueImageAssets', id, { suppressAuth: true, consistentRead: true }),
+      reserveDownload: async (actor, id) => await reserveRead(actor, 'BUYER_IMAGE', 1) &&
+        await reserveCoverage(actor, 'BUYER_IMAGE', [id]),
+      media: mediaManager
+    }),
     retry: () => retryCatalogueAlerts(store, deliver) };
   expires = Date.now() + 60000;
   return cached;

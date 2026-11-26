@@ -16,6 +16,11 @@ export const listCataloguePrinciples = webMethod(Permissions.SiteMember, async (
   return read.principles(scope, subcategory);
 });
 
+export const downloadBuyerSelectionImage = webMethod(Permissions.SiteMember, async (companyId, selectionId) => {
+  const protection = await getCatalogueProtection();
+  return protection.buyerImage(companyId, selectionId);
+});
+
 export const readCatalogueSelectionCounts = webMethod(Permissions.SiteMember, async scope => {
   const { read } = await getCatalogueProtection();
   return read.selectionCounts(scope);

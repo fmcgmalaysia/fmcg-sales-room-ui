@@ -1,6 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createCatalogueRiskAlert } from '../backend/catalogueRiskAlert.js';
+import { createCatalogueRiskAlert, retryCatalogueAlerts } from '../backend/catalogueRiskAlert.js';
+
+test('scheduled retry continues other accounts after a failure and skips accepted or leased notices', async () => {
+  const rows = [{ _id: 'a', denials: { warning: {status:'RETRY',retryAfter:5} } },
+    { _id:'b', denials:{ warning:{status:'ACCEPTED'}, restricted:{status:'SENDING',retryAfter:7} } },
+    { _id:'c', denials:{ warning:{status:'PENDING',retryAfter:0} } }];
+  const attempted=[];
+  await assert.rejects(retryCatalogueAlerts({ dueAlerts: async t => { assert.equal(t,6);return rows; } },
+    async (key, type) => {attempted.push([key,type]); if(key==='a')throw Error('temporarily unavailable');},()=>6), /incomplete/);
+  assert.deepEqual(attempted,[['a','warning'],['c','warning']]);
+});
 
 function fixture(actorType) {
   let now = 1000000, fail = false;
