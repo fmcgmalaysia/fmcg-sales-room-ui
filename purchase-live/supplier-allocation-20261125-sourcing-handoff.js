@@ -142,6 +142,11 @@
       }
       const supplierLocked=locked||saved?.po||saved?.procurement?.revision&&!saved.procurement.draftPlan;
       const person='<span class="allocation-person '+(saved?.procurement?.revision&&row.supplierId===saved.supplierId?'complete':'pending')+'" '+(row.transportMode==='SELF_COLLECT'?'data-self-collect="true"':'')+' aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="3"/><path d="M4 18v-3a6 6 0 0 1 12 0v3z"/></svg><b>'+(index+1)+'</b></span>';
+      const root=rootTask(),shortfall=root.customerShortfall;
+      if(!state.batchId&&row.auto&&!row.taskId&&!row.supplierId&&shortfall?.stage==='SOURCING'&&shortfall.arranged===true&&!root.supplyAllocation?.gap){
+        const quantity=shortfall.remainder?.quantity??row.qty;
+        return '<tr data-allocation-row="'+esc(row.key)+'" class="allocation-waiting" '+(row.hidden?'hidden':'')+'><td>'+person+'</td><td><span class="allocation-readonly">Sourcing stopped 已停止采购</span></td><td><span class="allocation-readonly">Unassigned</span></td><td><span class="allocation-readonly">'+esc(quantity)+'</span></td><td colspan="10"></td></tr>';
+      }
       const suppliers=workspace().suppliers.filter(s=>state.batchId||rootTask().supplyAllocation?.gap>0||s.id===row.supplierId||!state.rows.some(other=>other.key!==row.key&&other.supplierId===s.id));
       const supplierPrompt=suppliers.some(s=>s.id===row.supplierId)?'':'<option value="" selected disabled hidden>WAITING</option>';
       const supplier='<select data-allocation-field="supplierId" aria-label="Supplier '+(index+1)+'" '+(supplierLocked?'disabled':'')+'>'+supplierPrompt+suppliers.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===row.supplierId?'selected':'')+'>'+esc(s.shortName||s.name)+'</option>').join('')+'</select>';

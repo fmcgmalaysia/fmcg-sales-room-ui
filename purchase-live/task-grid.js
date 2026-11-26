@@ -136,9 +136,9 @@
       if(active&&shortfall?.arranged&&!remainder)return '';
       if(remainder){
         const id=escape(row.id);
-        const alloc='<button class="btn" data-customer-allocate="'+id+'" data-allocation-batch="WHOLE" data-shortfall-remainder="'+escape(shortfall.revision)+'">ALLOC</button>';
-        const arrange='<button class="btn" data-sources="'+id+'">Arrange 安排</button>';
-        return activeColumns('<tr class="source-row waiting-row" data-waiting-for="'+id+'"><td></td><td></td><td></td><td class="customer-child">'+childMarker+'</td><td class="product-stack"><span class="source-label">Remainder 余量</span><small>Covered 已覆盖 '+quantity(remainder.covered)+' · To arrange 尚缺 '+quantity(remainder.missing)+'</small></td><td class="order-quantity">'+quantity(remainder.quantity)+'</td><td class="received-quantity"></td><td class="supplier-cell">'+alloc+' '+arrange+'</td><td></td><td></td><td></td><td></td><td></td></tr>');
+        const alloc='<button class="btn" style="background:#F58A00;border-color:#F58A00;color:#fff" data-customer-allocate="'+id+'" data-allocation-batch="WHOLE" data-shortfall-remainder="'+escape(shortfall.revision)+'">ALLOC</button>';
+        const supplier='<button class="supplier-plan-link" data-sources="'+id+'" aria-label="View supplier plan 查看供应商分单" title="View supplier plan">'+person('pending')+'</button>';
+        return activeColumns('<tr class="source-row waiting-row" data-waiting-for="'+id+'"><td></td><td></td><td></td><td class="customer-child">'+childMarker+'</td><td class="product-stack"><span class="source-label">Remainder 余量</span><small>Covered 已覆盖 '+quantity(remainder.covered)+' · To arrange 尚缺 '+quantity(remainder.missing)+'</small></td><td class="order-quantity">'+quantity(remainder.quantity)+'</td><td class="received-quantity"></td><td class="supplier-cell" style="white-space:nowrap">'+supplier+' '+alloc+'</td><td></td><td></td><td></td><td></td><td></td></tr>');
       }
       const unplaced=coverage(row).remaining,supply=row.supplyAllocation;
       const confirmedShort=active&&Number.isSafeInteger(supply?.gap)&&supply.gap>0&&sources(row,tasks).some(source=>source.warehouse?.hasPhysicalReceipt===true&&source.warehouse.accepted<source.procurement?.totalCtn&&(source.warehouse.issue||source.quantityCases?.some(item=>item.kind==='RECEIPT'&&item.quantity>0)));
