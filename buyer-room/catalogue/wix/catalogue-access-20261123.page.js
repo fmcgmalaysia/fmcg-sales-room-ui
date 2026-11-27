@@ -17,17 +17,18 @@ let catalogueAccountSession;
 let catalogueAccountMenuReady = false;
 let catalogueAccountMenuRequested = false;
 
-function openCatalogueAccountMenu(workspace) {
+function openCatalogueAccountMenu(header) {
+    if (catalogueOpeningStartedAt) return;
     if (!catalogueAccountMenuReady) {
         catalogueAccountMenuRequested = true;
         return;
     }
     catalogueAccountMenuRequested = false;
-    workspace.postMessage({
+    $w('#section7').customClassList.add('catalogue-account-open');
+    header.postMessage({
         type: 'catalogueAccountMenu',
         signedIn: authentication.loggedIn(),
-        name: catalogueContextMessage?.signedInName || '',
-        company: catalogueContextMessage?.sheetName || ''
+        canViewSelection: catalogueContextMessage?.mode === 'buyer' || Boolean(selectionContext?.assistCustomerId)
     });
 }
 
@@ -764,13 +765,27 @@ function setupNav() {
     $w('#imageX38').onClick(() => {
         resetCatalogueHome().catch(error => console.error('Catalogue home could not be opened', error));
     });
-    try { $w('#vectorImage7').onClick(() => openCatalogueAccountMenu(workspace)); }
+    try { $w('#vectorImage7').onClick(() => { void hideMenu(); openCatalogueAccountMenu(header); }); }
     catch (error) { /* The embedded account button remains available. */ }
 
     header.onMessage(async (event) => {
         const message = event.data || {};
         if (message.type === 'catalogueOpenAccountMenu') {
-            openCatalogueAccountMenu(workspace);
+            void hideMenu();
+            openCatalogueAccountMenu(header);
+            return;
+        }
+        if (message.type === 'catalogueAccountMenuReady') {
+            catalogueAccountMenuReady = true;
+            if (catalogueAccountMenuRequested) openCatalogueAccountMenu(header);
+            return;
+        }
+        if (message.type === 'catalogueAccountMenuClosed') {
+            $w('#section7').customClassList.remove('catalogue-account-open');
+            return;
+        }
+        if (message.type === 'catalogueAccountSignIn') {
+            wixLocationFrontend.to('/');
             return;
         }
         if (message.type === 'catalogueHeaderReady') {
@@ -859,6 +874,7 @@ function setupNav() {
 
 function setupCatalogueWorkspace(hideDesktopMenu) {
     const workspace = $w('#html5');
+    let desktopHeightClass = '';
     catalogueAccountSession = connectAccountSession([$w('#html3'), $w('#html4'), workspace], '/');
     workspace.onMessage(async (event) => {
         const message = event.data || {};
@@ -868,9 +884,15 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             }
             return;
         }
-        if (message.type === 'catalogueAccountMenuReady') {
-            catalogueAccountMenuReady = true;
-            if (catalogueAccountMenuRequested) openCatalogueAccountMenu(workspace);
+        if (message.type === 'catalogueDesktopHeight') {
+            if (!Number.isFinite(message.height) || message.height <= 0) return;
+            const step = Math.max(22, Math.min(55, Math.ceil(message.height / 24)));
+            const next = 'catalogue-height-' + step;
+            if (next === desktopHeightClass) return;
+            const classes = $w('#section6').customClassList;
+            if (desktopHeightClass) classes.remove(desktopHeightClass);
+            classes.add(next);
+            desktopHeightClass = next;
             return;
         }
         if (message.type === 'catalogueAccount') {
@@ -1034,6 +1056,7 @@ function setupFluidCatalogueLayout() {
         ['#section12', 'catalogue-native-masthead'],
         ['#imageX38', 'catalogue-home-logo'],
         ['#section7', 'catalogue-navigation-stage'],
+        ['#html3', 'catalogue-navigation-frame'],
         ['#text21', 'catalogue-nav-placeholder'],
         ['#html4', 'catalogue-compact-menu'],
         ['#section6', 'catalogue-results-stage']

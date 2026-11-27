@@ -56,6 +56,38 @@
   cursor: pointer;
 }
 
+/* Keep the navigation in place while its account dialog overlaps the content. */
+.catalogue-navigation-stage.catalogue-account-open {
+  --catalogue-account-frame-height: 192px;
+  position: relative;
+  overflow: visible !important;
+  z-index: 53;
+}
+
+.catalogue-account-open .catalogue-navigation-frame {
+  position: absolute !important;
+  top: 0;
+  inset-inline: 0;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.catalogue-account-open .catalogue-navigation-frame,
+.catalogue-account-open .catalogue-navigation-frame :is(wix-iframe, wix-iframe > div, iframe) {
+  height: var(--catalogue-account-frame-height) !important;
+  min-height: var(--catalogue-account-frame-height) !important;
+}
+
+@media (min-width: 901px) {
+  .catalogue-navigation-stage.catalogue-account-open {
+    --catalogue-account-frame-height: 152px;
+  }
+
+  .catalogue-account-open .catalogue-navigation-frame {
+    top: -18px;
+  }
+}
+
 @media (max-width: 900px) {
   /* The existing desktop masthead remains the desktop authority. */
   .catalogue-native-masthead {
@@ -88,7 +120,7 @@
 
 @media (min-width: 901px) {
   .catalogue-results-stage {
-    --catalogue-desktop-height: max(100vh, clamp(750px, 44vw + 320px, 1320px));
+    --catalogue-desktop-height: var(--catalogue-content-height, max(100vh, clamp(750px, 44vw + 320px, 1320px)));
   }
 
   .catalogue-results-stage:not(.catalogue-opening-active),
@@ -117,6 +149,42 @@
     min-height: 0 !important;
   }
 }
+
+/* Use 24px steps for the measured detail height passed by the Catalogue iframe. */
+.catalogue-results-stage.catalogue-height-22 { --catalogue-content-height: 528px; }
+.catalogue-results-stage.catalogue-height-23 { --catalogue-content-height: 552px; }
+.catalogue-results-stage.catalogue-height-24 { --catalogue-content-height: 576px; }
+.catalogue-results-stage.catalogue-height-25 { --catalogue-content-height: 600px; }
+.catalogue-results-stage.catalogue-height-26 { --catalogue-content-height: 624px; }
+.catalogue-results-stage.catalogue-height-27 { --catalogue-content-height: 648px; }
+.catalogue-results-stage.catalogue-height-28 { --catalogue-content-height: 672px; }
+.catalogue-results-stage.catalogue-height-29 { --catalogue-content-height: 696px; }
+.catalogue-results-stage.catalogue-height-30 { --catalogue-content-height: 720px; }
+.catalogue-results-stage.catalogue-height-31 { --catalogue-content-height: 744px; }
+.catalogue-results-stage.catalogue-height-32 { --catalogue-content-height: 768px; }
+.catalogue-results-stage.catalogue-height-33 { --catalogue-content-height: 792px; }
+.catalogue-results-stage.catalogue-height-34 { --catalogue-content-height: 816px; }
+.catalogue-results-stage.catalogue-height-35 { --catalogue-content-height: 840px; }
+.catalogue-results-stage.catalogue-height-36 { --catalogue-content-height: 864px; }
+.catalogue-results-stage.catalogue-height-37 { --catalogue-content-height: 888px; }
+.catalogue-results-stage.catalogue-height-38 { --catalogue-content-height: 912px; }
+.catalogue-results-stage.catalogue-height-39 { --catalogue-content-height: 936px; }
+.catalogue-results-stage.catalogue-height-40 { --catalogue-content-height: 960px; }
+.catalogue-results-stage.catalogue-height-41 { --catalogue-content-height: 984px; }
+.catalogue-results-stage.catalogue-height-42 { --catalogue-content-height: 1008px; }
+.catalogue-results-stage.catalogue-height-43 { --catalogue-content-height: 1032px; }
+.catalogue-results-stage.catalogue-height-44 { --catalogue-content-height: 1056px; }
+.catalogue-results-stage.catalogue-height-45 { --catalogue-content-height: 1080px; }
+.catalogue-results-stage.catalogue-height-46 { --catalogue-content-height: 1104px; }
+.catalogue-results-stage.catalogue-height-47 { --catalogue-content-height: 1128px; }
+.catalogue-results-stage.catalogue-height-48 { --catalogue-content-height: 1152px; }
+.catalogue-results-stage.catalogue-height-49 { --catalogue-content-height: 1176px; }
+.catalogue-results-stage.catalogue-height-50 { --catalogue-content-height: 1200px; }
+.catalogue-results-stage.catalogue-height-51 { --catalogue-content-height: 1224px; }
+.catalogue-results-stage.catalogue-height-52 { --catalogue-content-height: 1248px; }
+.catalogue-results-stage.catalogue-height-53 { --catalogue-content-height: 1272px; }
+.catalogue-results-stage.catalogue-height-54 { --catalogue-content-height: 1296px; }
+.catalogue-results-stage.catalogue-height-55 { --catalogue-content-height: 1320px; }
 
 @media (min-width: 901px) and (max-width: 1024px) {
   .catalogue-results-stage > div:nth-child(2) {

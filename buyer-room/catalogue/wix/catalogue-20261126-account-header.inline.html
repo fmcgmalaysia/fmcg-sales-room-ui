@@ -7,6 +7,8 @@
   <meta name="catalogue-header-build-version" content="2026-09-30-catalogue-buyer-room-link-v52">
   <meta name="catalogue-mobile-header-build" content="20261120-catalogue-compact-navigation-v1">
   <meta name="catalogue-layout-refinement-build" content="20261128-catalogue-layout-refinement-v1">
+  <meta name="catalogue-masthead-account-build" content="20261128-catalogue-masthead-account-v1">
+  <link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.css?v=20261126-account-menu-v1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -61,12 +63,24 @@
   .catalogue-account-entry{position:absolute;z-index:2;top:10px;right:22px;clip-path:inset(50%);min-height:44px;padding:0 12px;border:1px solid #c8d3df;border-radius:8px;background:#fff;color:var(--navy);font:inherit;cursor:pointer}
   .catalogue-account-entry:focus{clip-path:none;outline:2px solid #244b73;outline-offset:1px}
   .catalogue-account-entry svg{display:none}
+  html.catalogue-account-menu-open,
+  html.catalogue-account-menu-open body{background:transparent}
+  dialog.catalogue-account-menu.account-menu-panel{
+    top:2px;right:clamp(20px,1.56vw,31px);width:min(210px,calc(100vw - 16px));padding:5px;
+    border-color:#ccd6e0;border-radius:8px;color:var(--navy);font-size:14px
+  }
+  .catalogue-account-menu button{font-weight:650}
+  .catalogue-account-menu button:hover{background:var(--soft)}
+  @media(min-width:901px){
+    html.catalogue-account-menu-open .header{transform:translateY(18px)}
+  }
   @media(max-width:900px){
     .mobile-brand{padding-right:108px}
     .catalogue-account-entry{display:grid;place-items:center;top:5px;right:57px;width:44px;clip-path:none;padding:0;border:0;background:transparent;color:#fff}
     .catalogue-account-entry:focus{outline-color:#fff;outline-offset:-2px}
     .catalogue-account-entry span{display:none}
     .catalogue-account-entry svg{display:block;width:23px;height:23px;fill:currentColor}
+    dialog.catalogue-account-menu.account-menu-panel{top:52px;right:57px;width:min(210px,calc(100vw - 65px))}
   }
 </style>
 </head>
@@ -88,6 +102,12 @@
     <button class="catalogue-account-entry" type="button" aria-label="Account menu" aria-haspopup="dialog"><span>Account menu</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M3 21c0-4 4-7 9-7s9 3 9 7H3z"/></svg></button>
     <div class="nav-actions"><a class="buyer-room" id="buyerRoom" target="fmcgBuyerRoom" aria-disabled="true" aria-label="Open Buyer Room"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 5h2l1.5 9.1h10.4l2.1-6.3H6.1M9.2 18.5a1.2 1.2 0 1 0 0 .1M17 18.5a1.2 1.2 0 1 0 0 .1"/></svg></span><span class="label">Buyer Room</span><span class="arrow" aria-hidden="true">→</span></a></div>
   </div></header>
+  <dialog class="account-menu-panel catalogue-account-menu" id="catalogueAccountMenu" aria-label="Account">
+    <button type="button" class="account-menu-profile">View My Selection</button>
+    <button type="button" class="account-menu-logout">Log Out</button>
+    <button type="button" class="account-menu-signin" hidden>Sign In</button>
+    <p class="account-menu-message" role="status"></p>
+  </dialog>
   <script>
     const post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
     document.querySelector('.catalogue-account-entry').addEventListener('click',()=>post('catalogueOpenAccountMenu'));
@@ -151,6 +171,58 @@
       }else if(data.type==='megaState'){active=data.open?String(data.main||''):'';paint()}
     });
     const announceReady=()=>post('catalogueHeaderReady');announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
+  </script>
+  <script type="module">
+    import { requestFrameLogout } from 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/frame-logout.js?v=20261126-account-menu-v1';
+
+    const menu = document.getElementById('catalogueAccountMenu');
+    const accountEntry = document.querySelector('.catalogue-account-entry');
+    const mySelection = menu.querySelector('.account-menu-profile');
+    const logout = menu.querySelector('.account-menu-logout');
+    const signIn = menu.querySelector('.account-menu-signin');
+    const status = menu.querySelector('.account-menu-message');
+    const request = type => parent.postMessage({ type }, '*');
+    const close = () => { if (menu.open && !logout.disabled) menu.close(); };
+
+    window.addEventListener('message', event => {
+      if (event.source !== parent || event.data?.type !== 'catalogueAccountMenu' || logout.disabled) return;
+      if (menu.open) { close(); return; }
+      const guest = event.data.signedIn !== true;
+      mySelection.hidden = guest || event.data.canViewSelection !== true;
+      logout.hidden = guest;
+      signIn.hidden = !guest;
+      status.textContent = '';
+      document.documentElement.classList.add('catalogue-account-menu-open');
+      accountEntry.setAttribute('aria-expanded', 'true');
+      menu.showModal();
+      (guest ? signIn : mySelection.hidden ? logout : mySelection).focus();
+    });
+    menu.addEventListener('click', event => {
+      if (event.target !== menu) return;
+      const rect = menu.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX >= rect.right ||
+          event.clientY < rect.top || event.clientY >= rect.bottom) close();
+    });
+    menu.addEventListener('close', () => {
+      document.documentElement.classList.remove('catalogue-account-menu-open');
+      accountEntry.setAttribute('aria-expanded', 'false');
+      request('catalogueAccountMenuClosed');
+    });
+    menu.addEventListener('cancel', event => { if (logout.disabled) event.preventDefault(); });
+    window.addEventListener('blur', close);
+    mySelection.addEventListener('click', () => { close(); request('catalogueBuyerRoom'); });
+    signIn.addEventListener('click', () => request('catalogueAccountSignIn'));
+    logout.addEventListener('click', async () => {
+      logout.disabled = true;
+      status.textContent = 'Signing out…';
+      try {
+        await requestFrameLogout(() => request('catalogueAccount'));
+      } catch {
+        status.textContent = 'Could not sign out. Try again.';
+      } finally { logout.disabled = false; }
+    });
+    request('catalogueAccountMenuReady');
+    [250,1000,3000].forEach(delay => setTimeout(() => request('catalogueAccountMenuReady'), delay));
   </script>
 </body>
 </html>

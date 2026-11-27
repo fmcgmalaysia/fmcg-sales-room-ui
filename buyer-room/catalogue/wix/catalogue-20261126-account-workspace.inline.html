@@ -156,18 +156,12 @@
     white-space:normal; overflow-wrap:anywhere;
   }
   #detailPrinciple:not(:disabled){color:#24578e;font-weight:700}
-  .shell > dialog.account-menu-panel {
-    width:min(210px, calc(100vw - 16px)); padding:5px;
-    top:8px; right:8px;
-    color:var(--navy); border-color:#ccd6e0; border-radius:8px; font-size:14px;
-  }
-  .shell > .account-menu-panel button{font-weight:650}
-  .shell > .account-menu-panel button:hover{background:var(--orange-soft)}
   @media(min-width:901px){
-    .workspace > .list-panel{max-height:clamp(520px,73vh,810px)}
+    .workspace{align-content:start}
+    .workspace > .list-panel{contain:size}
     .workspace > .detail{grid-template-rows:auto auto;align-self:start;overflow:visible}
     .workspace > .detail .detail-head{min-height:72px}
-    .workspace > .detail .detail-scroll{overflow:visible}
+    .workspace > .detail .detail-scroll{overflow:visible;padding-bottom:0}
     .workspace > .detail .product-image{
       height:auto; max-width:520px; margin-inline:auto;
       aspect-ratio:1; background:#fff;
@@ -222,16 +216,9 @@
   }
 </style>
 <meta name="header-account-menu-build" content="20261126-account-menu-v1">
-<link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.css?v=20261126-account-menu-v1">
 </head>
 <body>
   <main class="shell">
-    <dialog class="account-menu-panel" id="catalogueAccountMenu" aria-label="Account">
-      <button type="button" class="account-menu-profile">View My Selection</button>
-      <button type="button" class="account-menu-logout">Log Out</button>
-      <button type="button" class="account-menu-signin" hidden>Sign In</button>
-      <p class="account-menu-message" role="status"></p>
-    </dialog>
     <section class="catalogue-opening" id="catalogueOpening" aria-labelledby="catalogueOpeningTitle" hidden>
       <div class="catalogue-opening-card">
         <div class="catalogue-opening-creative">
@@ -382,6 +369,7 @@
     const esc=v=>text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const selected=p=>state.selectedIds.has(text(p.id));
     const removed=p=>state.removedIds.has(text(p.id))&&!state.activeSelectedIds.has(text(p.id));
+    const shownAsSelected=p=>selected(p)||removed(p);
     const isFood=p=>['FOOD','FOOD & BEVERAGES'].includes(text(p.mainCategory).toUpperCase());
 
     const detailPanel=document.getElementById('detailPanel'),detailModal=document.getElementById('detailModal'),detailPrinciple=document.getElementById('detailPrinciple');
@@ -391,6 +379,18 @@
     mobileMenu.addEventListener('click',event=>{if(event.target===mobileMenu)mobileMenu.close();});
     const detailHome=detailPanel.parentElement;
     const detailScroll=detailPanel.querySelector('.detail-scroll');
+    let reportedDesktopHeight;
+    function reportDesktopHeight(){
+      if(mobile.matches||!state.products.length)return;
+      const height=Math.ceil(detailPanel.getBoundingClientRect().bottom+12);
+      if(height===reportedDesktopHeight)return;
+      reportedDesktopHeight=height;
+      post('catalogueDesktopHeight',{height});
+    }
+    const detailSizeObserver=new ResizeObserver(reportDesktopHeight);
+    detailSizeObserver.observe(detailPanel);
+    detailSizeObserver.observe(document.querySelector('.toolbar'));
+    mobile.addEventListener('change',reportDesktopHeight);
     const productImage=document.getElementById('productImage'),productZoom=document.getElementById('productZoom');
     const zoomPointer=matchMedia('(min-width:901px) and (hover:hover) and (pointer:fine)');
     document.addEventListener('contextmenu',event=>{
@@ -422,7 +422,7 @@
     zoomPointer.addEventListener('change',closeProductZoom);
     const selectButton=document.getElementById('selectButton'),selectHome=selectButton.parentElement,selectNext=selectButton.nextElementSibling;
     const previousProduct=document.getElementById('previousProduct'),nextProduct=document.getElementById('nextProduct');
-    const selectionHint=document.getElementById('selectionHint'),defaultSelectionHint=selectionHint.textContent;
+    const selectionHint=document.getElementById('selectionHint');
     let detailTouch=null;
     function openProductDetail(){
       if(!mobile.matches||detailModal.open)return;
@@ -529,19 +529,19 @@
         const message=state.selectionView?'':state.catalogueStatus||state.homeStatus;
         rows.innerHTML='<div class="empty" role="status"></div>';
         rows.firstElementChild.textContent=message==='loading'?'Loading products…':message==='failed'?'Products could not load. Refresh Catalogue to try again.':'No products match the current filter.';
-        showDetail(null);updateDetailNavigation(allItems);checkOpeningImages();return;
+        showDetail(null);updateDetailNavigation(allItems);reportDesktopHeight();checkOpeningImages();return;
       }
       if(!allItems.some(p=>p.id===state.activeId))state.activeId=allItems[0].id;
-      rows.replaceChildren(...items.map((p,index)=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p,false,index<6)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${removed(p)?'removed':selected(p)?'selected':''}">${removed(p)?'Removed':selected(p)?'Selected':'Available'}</span></span>`;b.onclick=()=>{activate(p.id,true);openProductDetail()};return b}));
-      if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);updateDetailNavigation(allItems);checkOpeningImages();}
+      rows.replaceChildren(...items.map((p,index)=>{const b=document.createElement('button'),isSelected=shownAsSelected(p);b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p,false,index<6)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${isSelected?'selected':''}">${isSelected?'Selected':'Available'}</span></span>`;b.onclick=()=>{activate(p.id,true);openProductDetail()};return b}));
+      if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);updateDetailNavigation(allItems);reportDesktopHeight();checkOpeningImages();}
     function activate(id,scroll){const items=filtered(),index=items.findIndex(p=>p.id===id);if(index>=renderLimit)renderLimit=index+40;state.activeId=id;render(true);if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);if(row){const rowBox=row.getBoundingClientRect(),listBox=rows.getBoundingClientRect();if(rowBox.top<listBox.top)rows.scrollTop-=listBox.top-rowBox.top;else if(rowBox.bottom>listBox.bottom)rows.scrollTop+=rowBox.bottom-listBox.bottom}}}
-    function showDetail(p){const button=document.getElementById('selectButton'),innerFact=document.getElementById('detailInnerFact');selectionHint.textContent=p&&removed(p)?'Open Removed in Buyer Room and restore this product to request a new quote.':defaultSelectionHint;if(!p){innerFact.hidden=true;delete productImage.dataset.source;productImage.innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';detailPrinciple.textContent='Product information will appear here.';detailPrinciple.disabled=true;['detailPack','detailEa','detailBarcode','detailInnerBarcode','detailCartonBarcode','detailCbm','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.textContent='+ Select for Quote';button.disabled=true;return}
+    function showDetail(p){const button=document.getElementById('selectButton'),innerFact=document.getElementById('detailInnerFact');selectionHint.hidden=Boolean(p&&removed(p));if(!p){innerFact.hidden=true;delete productImage.dataset.source;productImage.innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';detailPrinciple.textContent='Product information will appear here.';detailPrinciple.disabled=true;['detailPack','detailEa','detailBarcode','detailInnerBarcode','detailCartonBarcode','detailCbm','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.textContent='+ Select for Quote';button.disabled=true;return}
       const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;if(productImage.dataset.source!==p.image){productImage.dataset.source=p.image||'';productImage.innerHTML=imageMarkup(p,true);}document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
       const price=Number(p.unitPrice);document.getElementById('detailPrice').textContent=Number.isFinite(price)&&price>0?`${text(p.currency)||'USD'} ${price.toFixed(2)}`:'QUOTE REQUIRED';document.getElementById('priceUnit').textContent=Number.isFinite(price)&&price>0?'/ PC':'';
-      const wasRemoved=removed(p),isSelected=selected(p)&&!wasRemoved,hasError=state.selectionErrorIds.has(p.id);
+      const isSelected=shownAsSelected(p),hasError=state.selectionErrorIds.has(p.id);
       button.disabled=isSelected||!state.selectionReady;button.classList.toggle('selected',isSelected);
-      button.textContent=wasRemoved?'Restore in Buyer Room':isSelected?'✓ Selected':!state.selectionReady?'Loading account…':hasError?'Try Select for Quote Again':'+ Select for Quote';
-      button.onclick=()=>{if(wasRemoved)post('catalogueWorkspaceOpenRemoved',{productId:p.id});else if(!isSelected)selectProduct(p.id)}}
+      button.textContent=isSelected?'✓ Selected':!state.selectionReady?'Loading account…':hasError?'Try Select for Quote Again':'+ Select for Quote';
+      button.onclick=()=>{if(!isSelected)selectProduct(p.id)}}
     function markSelected(product){
       if(state.activeSelectedIds.has(product.id))return;
       state.selectedIds.add(product.id);
@@ -634,53 +634,6 @@
     });
     const instanceId=String(Date.now())+'-'+Math.random().toString(36).slice(2);
     const announceReady=()=>post('catalogueWorkspaceReady',{instanceId});announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
-  </script>
-  <script type="module">
-    import { requestFrameLogout } from 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/frame-logout.js?v=20261126-account-menu-v1';
-
-    const menu = document.getElementById('catalogueAccountMenu');
-    const mySelection = menu.querySelector('.account-menu-profile');
-    const logout = menu.querySelector('.account-menu-logout');
-    const signIn = menu.querySelector('.account-menu-signin');
-    const status = menu.querySelector('.account-menu-message');
-    const request = type => parent.postMessage({ type }, '*');
-    const close = () => { if (menu.open && !logout.disabled) menu.close(); };
-
-    window.addEventListener('message', event => {
-      if (event.source !== parent || event.data?.type !== 'catalogueAccountMenu' ||
-          menu.open || logout.disabled || !document.getElementById('catalogueOpening').hidden) return;
-      const guest = event.data.signedIn !== true;
-      mySelection.hidden = logout.hidden = guest;
-      signIn.hidden = !guest;
-      status.textContent = '';
-      menu.showModal();
-      (guest ? signIn : mySelection).focus();
-    });
-    menu.addEventListener('click', event => {
-      if (event.target !== menu) return;
-      const rect = menu.getBoundingClientRect();
-      if (event.clientX < rect.left || event.clientX >= rect.right ||
-          event.clientY < rect.top || event.clientY >= rect.bottom) close();
-    });
-    menu.addEventListener('cancel', event => { if (logout.disabled) event.preventDefault(); });
-    window.addEventListener('blur', close);
-    mySelection.addEventListener('click', () => {
-      close();
-      const filter = document.getElementById('selectionFilter');
-      if (!filter.classList.contains('active')) filter.click();
-      filter.focus({ preventScroll: true });
-    });
-    signIn.addEventListener('click', () => request('catalogueAccountSignIn'));
-    logout.addEventListener('click', async () => {
-      logout.disabled = true;
-      status.textContent = 'Signing out…';
-      try {
-        await requestFrameLogout(() => request('catalogueAccount'));
-      } catch {
-        status.textContent = 'Could not sign out. Try again.';
-      } finally { logout.disabled = false; }
-    });
-    request('catalogueAccountMenuReady');
   </script>
 </body>
 </html>
