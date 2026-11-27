@@ -10,7 +10,7 @@ export function createAccountButton() {
   return trigger;
 }
 
-export function mountAccountMenu(mount, { getProfile, signOut, signIn, onOpenChange, panelHost = document.body }) {
+export function mountAccountMenu(mount, { getProfile, signOut, signIn, onOpenChange, primaryAction, panelHost = document.body }) {
   const trigger = mount ? createAccountButton() : null;
   const panel = document.createElement('dialog');
   panel.className = 'account-menu-panel';
@@ -28,6 +28,10 @@ export function mountAccountMenu(mount, { getProfile, signOut, signIn, onOpenCha
   const logout = panel.querySelector('.account-menu-logout');
   const login = panel.querySelector('.account-menu-signin');
   const message = panel.querySelector('.account-menu-message');
+  if (primaryAction) {
+    profile.textContent = primaryAction.label;
+    profile.removeAttribute('aria-expanded');
+  }
   let pending = false;
 
   function positionPanel() {
@@ -43,12 +47,13 @@ export function mountAccountMenu(mount, { getProfile, signOut, signIn, onOpenCha
     if (!identity || panel.open || pending) return;
     const guest = identity.guest === true;
     name.textContent = guest ? 'Account' : identity.name;
+    name.hidden = Boolean(primaryAction) && !guest;
     details.textContent = identity.context || identity.name || '';
     profile.hidden = guest;
     logout.hidden = guest;
     login.hidden = !guest;
     details.hidden = true;
-    profile.setAttribute('aria-expanded', 'false');
+    if (!primaryAction) profile.setAttribute('aria-expanded', 'false');
     message.textContent = '';
     panel.showModal();
     trigger?.setAttribute('aria-expanded', 'true');
@@ -59,6 +64,11 @@ export function mountAccountMenu(mount, { getProfile, signOut, signIn, onOpenCha
   trigger?.addEventListener('click', open);
   login.addEventListener('click', () => { if (signIn) signIn(); });
   profile.addEventListener('click', () => {
+    if (primaryAction) {
+      panel.close();
+      primaryAction.run();
+      return;
+    }
     details.hidden = !details.hidden;
     profile.setAttribute('aria-expanded', String(!details.hidden));
   });
@@ -100,5 +110,5 @@ export function mountAccountMenu(mount, { getProfile, signOut, signIn, onOpenCha
   window.addEventListener('resize', positionPanel);
   if (trigger) mount.append(trigger);
   panelHost.append(panel);
-  return { open, trigger };
+  return { open, trigger, close: () => { if (panel.open && !pending) panel.close(); } };
 }

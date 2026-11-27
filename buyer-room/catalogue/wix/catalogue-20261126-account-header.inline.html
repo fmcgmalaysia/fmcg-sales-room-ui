@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="catalogue-header-build-version" content="2026-09-30-catalogue-buyer-room-link-v52">
   <meta name="catalogue-mobile-header-build" content="20261120-catalogue-compact-navigation-v1">
+  <meta name="catalogue-layout-refinement-build" content="20261128-catalogue-layout-refinement-v1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -49,6 +50,10 @@
       .buyer-room{border-color:#164f53;background:#164f53}
       .buyer-room:not([aria-disabled="true"]):hover{border-color:#103e42;background:#103e42}
       .buyer-room:focus-visible{outline-color:#1d7373}
+    }
+    @media(min-width:901px) and (prefers-reduced-motion:no-preference){
+      .buyer-room .arrow{transition:transform .18s ease-out}
+      .buyer-room:not([aria-disabled="true"]):is(:hover,:focus-visible) .arrow{transform:translateX(4px)}
     }
   </style>
 <meta name="header-account-menu-build" content="20261127-catalogue-top-account-v2">

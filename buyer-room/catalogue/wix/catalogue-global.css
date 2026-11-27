@@ -35,6 +35,23 @@
   background-color: #fff !important;
 }
 
+/* This static Wix heading sits above the navigation iframe on Catalogue. */
+.catalogue-navigation-stage [id="comp-mwmbejdt"] {
+  display: none !important;
+}
+
+body:has(.catalogue-results-stage) footer > section[id$="_r_comp-kbgakgyt"],
+body:has(.catalogue-results-stage) footer > section[id$="_r_comp-kbgakgyt"] > [data-testid="responsive-container-content"] {
+  height: auto !important;
+  min-height: 46px !important;
+  grid-template-rows: minmax(46px, auto) !important;
+}
+
+body:has(.catalogue-results-stage) footer [id$="_r_comp-kd5pdf7t"] {
+  align-self: center !important;
+  margin-block: 0 !important;
+}
+
 .catalogue-native-masthead .catalogue-home-logo {
   cursor: pointer;
 }
@@ -70,6 +87,20 @@
 }
 
 @media (min-width: 901px) {
+  .catalogue-results-stage {
+    --catalogue-desktop-height: max(100vh, clamp(750px, 44vw + 255px, 1320px));
+  }
+
+  .catalogue-results-stage:not(.catalogue-opening-active),
+  .catalogue-results-stage:not(.catalogue-opening-active) > div:nth-child(2),
+  .catalogue-results-stage:not(.catalogue-opening-active) div:has(> wix-iframe),
+  .catalogue-results-stage:not(.catalogue-opening-active) wix-iframe,
+  .catalogue-results-stage:not(.catalogue-opening-active) wix-iframe > div,
+  .catalogue-results-stage:not(.catalogue-opening-active) iframe {
+    height: var(--catalogue-desktop-height) !important;
+    min-height: var(--catalogue-desktop-height) !important;
+  }
+
   .catalogue-navigation-stage {
     position: relative;
     overflow: visible !important;

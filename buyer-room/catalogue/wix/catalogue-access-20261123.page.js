@@ -764,6 +764,8 @@ function setupNav() {
     $w('#imageX38').onClick(() => {
         resetCatalogueHome().catch(error => console.error('Catalogue home could not be opened', error));
     });
+    try { $w('#vectorImage7').onClick(() => openCatalogueAccountMenu(workspace)); }
+    catch (error) { /* The embedded account button remains available. */ }
 
     header.onMessage(async (event) => {
         const message = event.data || {};

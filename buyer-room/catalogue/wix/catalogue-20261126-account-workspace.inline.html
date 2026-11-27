@@ -7,6 +7,7 @@
 <meta name="catalogue-mobile-detail-build" content="20261118-catalogue-mobile-detail-v1">
 <meta name="catalogue-workroom-build" content="20261120-catalogue-compact-navigation-v1">
 <meta name="catalogue-first-entry-wait-build" content="20261128-catalogue-first-entry-wait-v1">
+<meta name="catalogue-layout-refinement-build" content="20261128-catalogue-layout-refinement-v1">
 <meta name="catalogue-mobile-columns-build" content="20261123-catalogue-mobile-columns-v3">
 <meta name="catalogue-selection-return-build" content="20261117-catalogue-selection-return-v1">
   <meta charset="utf-8">
@@ -150,6 +151,33 @@
       .detail-step:disabled{opacity:.4;cursor:default}
     }
   .pill.removed{background:#eef1f5;color:#50627d;border-color:#d2dbe8}
+  .row .name{
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+    white-space:normal; overflow-wrap:anywhere;
+  }
+  #detailPrinciple:not(:disabled){color:#24578e;font-weight:700}
+  .shell > dialog.account-menu-panel {
+    width:min(210px, calc(100vw - 16px)); padding:5px;
+    color:var(--navy); border-color:#ccd6e0; border-radius:8px; font-size:14px;
+  }
+  .shell > .account-menu-panel button{font-weight:650}
+  .shell > .account-menu-panel button:hover{background:var(--orange-soft)}
+  @media(min-width:901px){
+    .workspace > .list-panel{max-height:clamp(520px,73vh,810px)}
+    .workspace > .detail{grid-template-rows:auto auto;align-self:start;overflow:visible}
+    .workspace > .detail .detail-head{min-height:72px}
+    .workspace > .detail .detail-scroll{overflow:visible}
+    .workspace > .detail .product-image{
+      height:auto; max-width:520px; margin-inline:auto;
+      aspect-ratio:1; background:#fff;
+    }
+    .workspace > .detail .promo-carousel{max-height:440px}
+  }
+  @media(max-width:900px){
+    .detail-modal .media-wrap{width:min(100%,345px)}
+    .detail-modal .product-image{aspect-ratio:1;background:#fff}
+    .detail-modal .product-image img{inset:0;width:100%;height:100%}
+  }
   .toolbar{grid-template-columns:minmax(0,1fr) auto}
   .toolbar>.buyer-company-switch{padding:0}
   @media(max-width:900px){
@@ -194,7 +222,7 @@
 </style>
 <meta name="header-account-menu-build" content="20261126-account-menu-v1">
 <link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.css?v=20261126-account-menu-v1">
-<script type="module" src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/catalogue-workspace-account.js?v=20261126-account-menu-v1"></script>
+<script type="module" src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/catalogue-workspace-account.js?v=20261128-catalogue-layout-refinement-v1"></script>
 </head>
 <body>
   <main class="shell">
