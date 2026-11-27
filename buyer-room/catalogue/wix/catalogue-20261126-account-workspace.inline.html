@@ -162,9 +162,38 @@
     .page-nav button{min-height:40px;padding:4px 12px;border:1px solid var(--line);border-radius:6px;background:white;color:var(--navy);font:inherit;cursor:pointer}
     .page-nav button:disabled{opacity:.45;cursor:default}
 </style>
-<meta name="header-account-menu-build" content="20261126-account-menu-v1">
+<meta name="header-account-menu-build" content="20261127-catalogue-top-account-v1">
 <link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.css?v=20261126-account-menu-v1">
-<script type="module" src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/catalogue-workspace-account.js?v=20261126-account-menu-v1"></script>
+<style>.account-menu-panel .account-menu-name{display:none}</style>
+<script type="module">
+  import { mountAccountMenu } from 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.js';
+  import { requestFrameLogout } from 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/frame-logout.js';
+
+  let profile;
+  const send = message => window.parent.postMessage(message, '*');
+  const menu = mountAccountMenu(null, {
+    getProfile: () => profile,
+    panelHost: document.querySelector('.shell') || document.body,
+    signIn: () => send({ type: 'catalogueAccountSignIn' }),
+    signOut: () => requestFrameLogout(() => send({ type: 'catalogueAccount' }))
+  });
+  const selection = document.querySelector('.account-menu-panel .account-menu-profile');
+  selection.textContent = 'My Selection';
+  selection.removeAttribute('aria-expanded');
+  selection.addEventListener('click', event => {
+    event.stopImmediatePropagation();
+    selection.closest('dialog').close();
+    send({ type: 'catalogueSelectionView', view: 'ALL', fromAccountMenu: true });
+  }, { capture: true });
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent || event.data?.type !== 'catalogueAccountMenu') return;
+    const { signedIn, name, company } = event.data;
+    profile = signedIn === true ? { name: name || 'Account', context: company || '' } : { guest: true };
+    menu.open();
+    selection.removeAttribute('aria-expanded');
+  });
+  send({ type: 'catalogueAccountMenuReady' });
+</script>
 </head>
 <body>
   <main class="shell">

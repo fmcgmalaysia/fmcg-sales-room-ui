@@ -663,13 +663,12 @@ function setupNav() {
     $w('#imageX38').onClick(() => {
         resetCatalogueHome().catch(error => console.error('Catalogue home could not be opened', error));
     });
+    const accountAvatar = $w('#vectorImage7');
+    accountAvatar.accessibility.ariaLabel = 'Account menu';
+    accountAvatar.onClick(() => openCatalogueAccountMenu(workspace));
 
     header.onMessage(async (event) => {
         const message = event.data || {};
-        if (message.type === 'catalogueOpenAccountMenu') {
-            openCatalogueAccountMenu(workspace);
-            return;
-        }
         if (message.type === 'catalogueHeaderReady') {
             if (catalogueContextMessage) header.postMessage(catalogueContextMessage);
             if (catalogueMenuMessage) mega.postMessage(catalogueMenuMessage);
@@ -814,6 +813,13 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
         } else if (message.type === 'catalogueSelectionView') {
             const view = message.view;
             if (!['', 'FOOD', 'NON_FOOD', 'ALL'].includes(view)) return;
+            if (message.fromAccountMenu === true) {
+                if (catalogueContextMessage?.mode === 'preview') {
+                    openBuyerRoomWindow();
+                    return;
+                }
+                if (catalogueWorkspaceFilter.selectionView === view) return;
+            }
             if (!catalogueWorkspaceFilter.selectionView) selectionReturnFilter = catalogueWorkspaceFilter;
             await showView(view ? { selectionView: view } : selectionReturnFilter);
         } else if (message.type === 'catalogueTurnPage' && message.version === catalogueWorkspaceQueryVersion) {
