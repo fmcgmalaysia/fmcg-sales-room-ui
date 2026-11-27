@@ -49,7 +49,7 @@ let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261127-catalogue-visible-page-v1';
+const CATALOGUE_BUILD_VERSION = '20261127-catalogue-first-visit-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -58,6 +58,8 @@ let catalogueWorkspaceProducts = [];
 const recentCataloguePages = new Map();
 const RECENT_CATALOGUE_PAGE_MS = 20000;
 const MAX_RECENT_CATALOGUE_PAGES = 4;
+let preparedCataloguePage = null;
+let preparedDrinkCategory = false;
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceInstance = '';
 let thumbnailWorkspace = false;
@@ -249,6 +251,25 @@ function sendCatalogueWorkspaceData() {
     if (cataloguePageStatus === 'ready') $w('#html5').postMessage(workspaceFilterMessage());
 }
 
+function prepareCataloguePage(scope, subcategories = []) {
+    const requestedAt = Date.now();
+    return {
+        scope, subcategories, requestedAt,
+        result: listCataloguePage(scope, { subcategories, size: 25, deferImages: true }).catch(() => null)
+    };
+}
+
+function prepareDrinkCategory() {
+    if (!catalogueReadScope || cataloguePageStatus !== 'ready' || !thumbnailWorkspace || preparedDrinkCategory) return;
+    const category = catalogueMenuMessage?.items.find(item =>
+        item.mainCategory === 'FOOD' && item.title.toLowerCase().replace(/[\s-]+/g, '') === 'readytodrink');
+    if (!category?.id || catalogueWorkspaceFilter.subIds.includes(category.id)) return;
+    preparedDrinkCategory = true;
+    const key = JSON.stringify(['', [category.id], '', true]);
+    if (recentCataloguePages.get(key)?.until > Date.now()) return;
+    preparedCataloguePage = prepareCataloguePage(catalogueReadScope, [category.id]);
+}
+
 async function fetchPage(position = {}, edge = '') {
     currentPageRequest = position;
     if (!catalogueReadScope) return;
@@ -269,13 +290,20 @@ async function fetchPage(position = {}, edge = '') {
     try {
         let result = recent?.until > Date.now() ? recent.result : null;
         if (!result) {
-            const requestedAt = Date.now();
-            result = await listCataloguePage(scope, {
+            const prepared = preparedCataloguePage;
+            const usePrepared = prepared?.scope === scope && deferImages && !filter.principle &&
+                !position.afterId && key && prepared.requestedAt + RECENT_CATALOGUE_PAGE_MS > Date.now() &&
+                prepared.subcategories.length === filter.subIds.length &&
+                prepared.subcategories.every(id => filter.subIds.includes(id));
+            const requestedAt = usePrepared ? prepared.requestedAt : Date.now();
+            if (usePrepared) preparedCataloguePage = null;
+            result = usePrepared ? await prepared.result : await listCataloguePage(scope, {
                 term: filter.query, principle: filter.principle, subcategories: filter.subIds,
                 selectionView: filter.selectionView || '', size: 25,
                 deferImages, ...position
             });
             if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
+            if (!result) throw Error('Catalogue page could not be prepared.');
             if (key && result.items[0]?.image) {
                 recentCataloguePages.delete(key);
                 if (recentCataloguePages.size >= MAX_RECENT_CATALOGUE_PAGES) {
@@ -305,7 +333,11 @@ function showView({ query = '', principle = '', subIds = [], selectionView = '' 
 }
 
 function setReader(scope) {
-    if (scope !== catalogueReadScope) recentCataloguePages.clear();
+    if (scope !== catalogueReadScope) {
+        recentCataloguePages.clear();
+        preparedDrinkCategory = false;
+    }
+    if (preparedCataloguePage?.scope !== scope) preparedCataloguePage = null;
     catalogueReadScope = scope;
     if (scope) {
         if (catalogueSelectionResolved) void refreshCounts();
@@ -381,6 +413,8 @@ $w.onReady(() => {
     if (wixWindowFrontend.rendering?.env === 'backend') return;
     void (async () => {
     const assistCustomerId = getCatalogueAssistCustomerId();
+    const assistedScope = assistCustomerId ? { assistCustomerId } : null;
+    if (assistedScope && authentication.loggedIn()) preparedCataloguePage = prepareCataloguePage(assistedScope);
     const assistedSelection = assistCustomerId ? getCatalogueSelectionState(assistCustomerId).catch(() => null) : null;
     let staff;
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
@@ -390,7 +424,7 @@ $w.onReady(() => {
         if (assistCustomerId) {
             // The list revalidates the assisted company on the server. Selection
             // data separately unlocks selection actions and the company header.
-            setReader({ assistCustomerId });
+            setReader(assistedScope);
             try {
                 const selection = await assistedSelection;
                 if (!selection?.ok || selection.customerId !== assistCustomerId) {
@@ -422,6 +456,7 @@ $w.onReady(() => {
     }
 
     if (assistCustomerId) {
+        setReader(null);
         if (wixWindowFrontend.viewMode === 'Site' && (!authentication.loggedIn() || staff?.reason === 'NOT_LOGGED_IN')) {
             goToCatalogueStaffLogin(assistCustomerId);
         } else {
@@ -522,6 +557,7 @@ function setupNav() {
     const showMenu = async (main = activeMain, anchor) => {
         clearTimeout(leaveTimer);
         activeMain = main;
+        if (main === 'FOOD') prepareDrinkCategory();
         menuAnchor = Number.isFinite(anchor) ? Math.max(12, Math.min(3000, anchor)) : 12;
         if (!isOpen) await mega.expand();
         isOpen = true;
@@ -717,6 +753,7 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
         } else if (message.type === 'catalogueWorkspaceDismissMenu') {
             await hideDesktopMenu();
         } else if (message.type === 'catalogueMobileCategoriesState') {
+            if (message.open === true) prepareDrinkCategory();
             $w('#html3').postMessage({ type: 'catalogueMobileCategoriesState', open: message.open === true, returnFocus: message.returnFocus === true });
         } else if (message.type === 'catalogueWorkspaceBrowse') {
             const principle = typeof message.principle === 'string' ? message.principle.trim() : '';

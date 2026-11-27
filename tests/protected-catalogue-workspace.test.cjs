@@ -109,3 +109,33 @@ test('a recent category returns with the same image and cursor, then expires or 
   assert.equal(f.requests[4].scope.buyerCompanyId, 'QA-B');
   assert.equal(f.messages.findLast(message => message.type === 'catalogueWorkspaceData').products.length, 0);
 });
+
+test('assisted opening joins an authorized request already started for the same company', async () => {
+  const f = fixture();
+  f.run("const assisted = { assistCustomerId: 'QA-A' }; preparedCataloguePage = prepareCataloguePage(assisted)");
+  await f.send({ type: 'catalogueWorkspaceReady', instanceId: 'qa', deferredThumbnails: true });
+  assert.equal(f.requests.length, 1);
+  assert.ok(!f.messages.some(message => message.pageStatus === 'ready'));
+  f.run('setReader(assisted)');
+  assert.equal(f.requests.length, 1);
+  f.requests[0].done({ items: [{ id: 'home', image: 'https://catalogue.example/home' }], afterId: null, previousAfterId: null });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.messages.findLast(message => message.pageStatus === 'ready').products[0].id, 'home');
+});
+
+test('opening Food can prepare Ready-to-Drink once and an immediate click joins the same request', async () => {
+  const f = fixture();
+  await f.send({ type: 'catalogueWorkspaceReady', instanceId: 'qa', deferredThumbnails: true });
+  f.run("setReader({ buyerCompanyId: 'QA-A' })");
+  f.requests[0].done({ items: [{ id: 'home' }], afterId: null, previousAfterId: null });
+  await new Promise(resolve => setImmediate(resolve));
+  f.run("catalogueMenuMessage = { items: [{id:'drinks',title:'Ready-to-Drink',mainCategory:'FOOD'}] }; prepareDrinkCategory(); prepareDrinkCategory()");
+  assert.equal(f.requests.length, 2);
+  assert.deepEqual(Array.from(f.requests[1].filters.subcategories), ['drinks']);
+  assert.equal(f.messages.findLast(message => message.pageStatus === 'ready').products[0].id, 'home');
+  const opening = f.run("showView({ subIds: ['drinks'] })");
+  assert.equal(f.requests.length, 2);
+  f.requests[1].done({ items: [{ id: 'tea', image:'https://catalogue.example/tea' }], afterId: null, previousAfterId: null });
+  await opening;
+  assert.equal(f.messages.findLast(message => message.pageStatus === 'ready').products[0].id, 'tea');
+});
