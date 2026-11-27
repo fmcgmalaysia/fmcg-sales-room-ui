@@ -7,8 +7,9 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
-import { listCataloguePage, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts } from 'backend/protectedCatalogue.web.js';
+import { listCataloguePage, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts, readCatalogueThumbnails } from 'backend/protectedCatalogue.web.js';
 import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
+import { cataloguePictureProgress, continueCataloguePictures } from 'backend/cataloguePhotoMigrationAdmin.web.js';
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
 let catalogueContextMessage = null;
@@ -47,7 +48,7 @@ let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261126-catalogue-protected-pages-v1';
+const CATALOGUE_BUILD_VERSION = '20261127-catalogue-priority-images-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -55,6 +56,7 @@ let catalogueReadScope = null;
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceInstance = '';
+let thumbnailWorkspace = false;
 let catalogueSelectionLimit = 100;
 let catalogueSelectionTotal = 0;
 let catalogueSelectionResolved = false;
@@ -236,6 +238,7 @@ function sendCatalogueWorkspaceData() {
         selectionReady: catalogueSelectionResolved && Boolean(selectionContext) && Boolean(catalogueReadScope),
         buyerRoomUrl: buyerRoomUrl(), context: catalogueContextMessage, buildVersion: CATALOGUE_BUILD_VERSION,
         pageVersion: catalogueWorkspaceQueryVersion, pageStatus: cataloguePageStatus,
+        thumbnailsDeferred: thumbnailWorkspace,
         hasPrevious: cataloguePrevious !== null, hasNext: catalogueNext !== null,
         selectionView: catalogueWorkspaceFilter.selectionView || ''
     });
@@ -256,7 +259,8 @@ async function fetchPage(position = {}, edge = '') {
     try {
         const result = await listCataloguePage(scope, {
             term: filter.query, principle: filter.principle, subcategories: filter.subIds,
-            selectionView: filter.selectionView || '', size: wixWindowFrontend.formFactor === 'Mobile' ? 25 : 50, ...position
+            selectionView: filter.selectionView || '', size: 25,
+            deferImages: thumbnailWorkspace, ...position
         });
         if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
         catalogueWorkspaceProducts = result.items;
@@ -676,6 +680,7 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             if (instanceId && instanceId === catalogueWorkspaceInstance) return;
             catalogueWorkspaceInstance = instanceId;
             catalogueWorkspaceReady = true;
+            thumbnailWorkspace = message.deferredThumbnails === true;
             sendCatalogueCompanies();
             sendCatalogueWorkspaceData();
             if (!pageStarted) await fetchPage(currentPageRequest);
@@ -724,6 +729,17 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             try { product = await readCatalogueProduct(scope, id); } catch (_) {}
             if (scope === catalogueReadScope && version === catalogueWorkspaceQueryVersion) {
                 workspace.postMessage({ type: 'catalogueDetailResult', version, id, product });
+            }
+        } else if (message.type === 'catalogueThumbnailRequest') {
+            const version = catalogueWorkspaceQueryVersion, scope = catalogueReadScope;
+            const { ids, requestId } = message;
+            if (!scope || !thumbnailWorkspace || cataloguePageStatus !== 'ready' || version !== message.version ||
+                !Number.isSafeInteger(requestId) || !Array.isArray(ids) || !ids.length || ids.length > 10 ||
+                !ids.every(id => catalogueWorkspaceProducts.some(product => product.id === id))) return;
+            let images = [];
+            try { images = await readCatalogueThumbnails(scope, ids); } catch (_) { /* Keep the list usable. */ }
+            if (scope === catalogueReadScope && version === catalogueWorkspaceQueryVersion) {
+                workspace.postMessage({ type: 'catalogueThumbnailResult', version, requestId, images });
             }
         } else if (message.type === 'catalogueWorkspacePosition') {
             rememberMobileCataloguePosition(message);
@@ -858,4 +874,34 @@ $w.onReady(() => {
     setupFluidCatalogueLayout();
     if (wixWindowFrontend.rendering?.env === 'backend') return;
     setupCatalogueWorkspace(setupNav());
+});
+
+// This temporary owner view resumes the server-side cursor. The backend web
+// method independently requires a Wix administrator on every batch call.
+$w.onReady(async () => {
+    if (wixWindowFrontend.rendering?.env !== 'browser' ||
+        wixLocationFrontend.query?.adminCatalogueImageMigration !== '1') return;
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+    let errors = 0;
+    try { await cataloguePictureProgress(); } catch { return; }
+    while (errors < 3) {
+        try {
+            const batch = await continueCataloguePictures();
+            errors = 0;
+            if (!batch || !['MIGRATING','BUSY','FINISHED'].includes(batch.status)) break;
+            const progress = batch.totals || {};
+            const verified = Number(progress.VERIFIED || 0);
+            const review = Object.entries(progress).reduce((total,[id,count]) => id==='VERIFIED' ? total : total+count, 0);
+            $w('#text19').text = 'Private image migration';
+            $w('#text20').text = (batch.status === 'FINISHED' ? 'Completed' : 'Running') +
+                ' · ' + verified + ' verified · ' + review + ' to review';
+            if (batch.status === 'FINISHED') return;
+            await delay(batch.status === 'BUSY' ? 4500 : 1200);
+        } catch {
+            errors++;
+            $w('#text20').text = 'Checking the saved migration position…';
+            if (errors < 3) await delay(15000 * errors);
+        }
+    }
+    $w('#text20').text = 'Paused · Refresh to resume from the saved position';
 });

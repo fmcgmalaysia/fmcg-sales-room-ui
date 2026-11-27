@@ -15,7 +15,7 @@ import { resolveBuyerCompany } from 'backend/buyerCompanyAccess.js';
 import { createCatalogueReadIdentity } from './catalogueReadIdentity.js';
 import { createCatalogueBudgetStore } from './catalogueBudgetStore.js';
 import { createCatalogueReadBudget } from './catalogueReadBudget.js';
-import { createCatalogueCoverage } from './catalogueCoverage.js';
+import { createCatalogueCoverage, readDeliveredCatalogueIds } from './catalogueCoverage.js';
 import { createCatalogueRiskAlert, retryCatalogueAlerts } from './catalogueRiskAlert.js';
 import { createProtectedCatalogueRead } from './protectedCatalogueRead.js';
 import { createCatalogueSelectionScope } from './catalogueSelectionScope.js';
@@ -73,7 +73,11 @@ async function load() {
     const entries = await addPreviews(products);
     return entries.flatMap(entry=>entry.image ? [{ selectionId:entry.selectionId, image:entry.image }] : []);
   };
-  cached = { selectionPreviews, read: createProtectedCatalogueRead({ data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews }),
+  cached = { selectionPreviews, read: createProtectedCatalogueRead({
+      data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews,
+      deliveredIds: (actor, ids) => readDeliveredCatalogueIds(store, actor, ids, config.coveragePolicy.CATALOGUE_LIST.windowMs),
+      readPrivatePreviews: privatePreviews
+    }),
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),
       getSelection: id => wixData.get('WixBuyerListItems', id, { suppressAuth: true, consistentRead: true }),
