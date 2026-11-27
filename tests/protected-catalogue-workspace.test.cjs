@@ -9,7 +9,8 @@ function fixture() {
   const messages = [], requests = [], details = [], handlers = {};
   const $w = key => ({ postMessage: m => messages.push(m), onMessage: cb => { handlers[key] = cb; } });
   $w.onReady = () => {};
-  const context = vm.createContext({ $w, URL, console,
+  let now = 50000;
+  const context = vm.createContext({ $w, URL, console, Date: { now: () => now },
     wixLocationFrontend: { url: 'https://qa.example/catalogue' },
     wixWindowFrontend: { formFactor: 'Mobile' }, connectAccountSession() {},
     buyerCompanyPath: () => '/buyer-room', readCatalogueSelectionCounts: async () => ({ total: 0, food: 0, nonFood: 0 }),
@@ -19,7 +20,7 @@ function fixture() {
   vm.runInContext(pageSource, context);
   const run = code => vm.runInContext(code, context);
   run('setupCatalogueWorkspace(() => {})');
-  return { messages, requests, details, run, send: data => handlers['#html5']({ data }) };
+  return { messages, requests, details, run, advance: ms => { now += ms; }, send: data => handlers['#html5']({ data }) };
 }
 test('workspace waits for company, discards slower search and rejects stale detail after exit', async () => {
   const f = fixture();
@@ -61,4 +62,50 @@ test('failed page retries the same bounded view, and idle renders never fetch mo
   await retry;
   f.run('sendCatalogueWorkspaceData()');
   assert.equal(f.requests.length, 3);
+});
+
+test('the authorized page read starts before the iframe and returns with its own first image', async () => {
+  const f = fixture();
+  f.run("setReader({ assistCustomerId: 'QA-A' })");
+  assert.equal(f.requests.length, 1);
+  assert.equal(f.requests[0].filters.deferImages, true);
+  const product = { id: 'test', image: 'https://catalogue.example/first' };
+  f.requests[0].done({ items: [product], afterId: null, previousAfterId: null });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.messages.length, 0);
+  await f.send({ type: 'catalogueWorkspaceReady', instanceId: 'qa', deferredThumbnails: true });
+  const ready = f.messages.find(message => message.pageStatus === 'ready');
+  assert.equal(ready.products[0].image, product.image);
+  assert.equal(ready.selectionReady, false);
+  assert.equal(f.requests.length, 1);
+});
+
+test('a recent category returns with the same image and cursor, then expires or clears on company switch', async () => {
+  const f = fixture();
+  await f.send({ type: 'catalogueWorkspaceReady', instanceId: 'qa', deferredThumbnails: true });
+  f.run("setReader({ buyerCompanyId: 'QA-A' })");
+  const finish = (index, id, afterId = null) => f.requests[index].done({
+    items: [{ id, image: 'https://catalogue.example/' + id }], afterId, previousAfterId: null
+  });
+  finish(0, 'home');
+  await new Promise(resolve => setImmediate(resolve));
+  const drink = () => f.run("showView({ subIds: ['drinks'] })");
+  const first = drink();
+  finish(1, 'tea', 'next-tea');
+  await first;
+  const second = f.run("showView({ subIds: ['food'] })");
+  finish(2, 'rice');
+  await second;
+  await drink();
+  assert.equal(f.requests.length, 3);
+  assert.equal(f.messages.findLast(message => message.products?.length).products[0].id, 'tea');
+  assert.equal(f.run('catalogueNext'), 'next-tea');
+  f.advance(20001);
+  const expired = drink();
+  finish(3, 'coffee');
+  await expired;
+  f.run("setReader(null); setReader({ buyerCompanyId: 'QA-B' })");
+  assert.equal(f.requests.length, 5);
+  assert.equal(f.requests[4].scope.buyerCompanyId, 'QA-B');
+  assert.equal(f.messages.findLast(message => message.type === 'catalogueWorkspaceData').products.length, 0);
 });

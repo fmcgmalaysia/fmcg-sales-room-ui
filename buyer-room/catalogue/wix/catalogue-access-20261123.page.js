@@ -33,6 +33,7 @@ function openCatalogueAccountMenu(workspace) {
 
 function signOutCatalogue() {
     return catalogueAccountSession.signOut(() => {
+        setReader(null);
         if (catalogueBrowseKey) {
             try { local.removeItem(catalogueBrowseKey); } catch (error) {}
             catalogueBrowseKey = '';
@@ -48,12 +49,15 @@ let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261127-catalogue-priority-images-v1';
+const CATALOGUE_BUILD_VERSION = '20261127-catalogue-visible-page-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
 let catalogueReadScope = null;
 let catalogueWorkspaceProducts = [];
+const recentCataloguePages = new Map();
+const RECENT_CATALOGUE_PAGE_MS = 20000;
+const MAX_RECENT_CATALOGUE_PAGES = 4;
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceInstance = '';
 let thumbnailWorkspace = false;
@@ -247,21 +251,39 @@ function sendCatalogueWorkspaceData() {
 
 async function fetchPage(position = {}, edge = '') {
     currentPageRequest = position;
-    if (!catalogueReadScope || !catalogueWorkspaceReady) return;
+    if (!catalogueReadScope) return;
     const version = ++catalogueWorkspaceQueryVersion;
     const scope = catalogueReadScope;
     const filter = catalogueWorkspaceFilter;
+    const deferImages = !catalogueWorkspaceReady || thumbnailWorkspace;
+    const key = filter.query || filter.selectionView || position.anchorId ? '' :
+        JSON.stringify([filter.principle, [...filter.subIds].sort(), position.afterId || '', deferImages]);
     pageStarted = true;
-    catalogueWorkspaceProducts = [];
-    cataloguePageStatus = 'loading';
-    catalogueNext = cataloguePrevious = null;
-    sendCatalogueWorkspaceData();
+    const recent = recentCataloguePages.get(key);
+    if (!recent || recent.until <= Date.now()) {
+        catalogueWorkspaceProducts = [];
+        cataloguePageStatus = 'loading';
+        catalogueNext = cataloguePrevious = null;
+        sendCatalogueWorkspaceData();
+    }
     try {
-        const result = await listCataloguePage(scope, {
-            term: filter.query, principle: filter.principle, subcategories: filter.subIds,
-            selectionView: filter.selectionView || '', size: 25,
-            deferImages: thumbnailWorkspace, ...position
-        });
+        let result = recent?.until > Date.now() ? recent.result : null;
+        if (!result) {
+            const requestedAt = Date.now();
+            result = await listCataloguePage(scope, {
+                term: filter.query, principle: filter.principle, subcategories: filter.subIds,
+                selectionView: filter.selectionView || '', size: 25,
+                deferImages, ...position
+            });
+            if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
+            if (key && result.items[0]?.image) {
+                recentCataloguePages.delete(key);
+                if (recentCataloguePages.size >= MAX_RECENT_CATALOGUE_PAGES) {
+                    recentCataloguePages.delete(recentCataloguePages.keys().next().value);
+                }
+                recentCataloguePages.set(key, { result, until: requestedAt + RECENT_CATALOGUE_PAGE_MS });
+            }
+        }
         if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
         catalogueWorkspaceProducts = result.items;
         cataloguePrevious = result.previousAfterId;
@@ -270,6 +292,7 @@ async function fetchPage(position = {}, edge = '') {
         if (edge) catalogueWorkspaceFilter = { ...filter, edge };
     } catch (_) {
         if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
+        recentCataloguePages.clear();
         cataloguePageStatus = 'failed';
     }
     sendCatalogueWorkspaceData();
@@ -282,9 +305,10 @@ function showView({ query = '', principle = '', subIds = [], selectionView = '' 
 }
 
 function setReader(scope) {
+    if (scope !== catalogueReadScope) recentCataloguePages.clear();
     catalogueReadScope = scope;
     if (scope) {
-        void refreshCounts();
+        if (catalogueSelectionResolved) void refreshCounts();
         if (!pageStarted) void fetchPage(currentPageRequest);
     } else {
         ++countVersion;
@@ -364,6 +388,9 @@ $w.onReady(() => {
     if (staff?.authorized) {
         if (staff.customerScope?.pages && !staff.customerScope.pages.includes('CATALOGUE')) { reportCatalogueAccess('Staff Management does not allow Catalogue access.'); return; }
         if (assistCustomerId) {
+            // The list revalidates the assisted company on the server. Selection
+            // data separately unlocks selection actions and the company header.
+            setReader({ assistCustomerId });
             try {
                 const selection = await assistedSelection;
                 if (!selection?.ok || selection.customerId !== assistCustomerId) {
@@ -372,13 +399,13 @@ $w.onReady(() => {
                 try { session.setItem('catalogueAssistCustomerId', selection.customerId); } catch (_) {}
                 selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
                 sidebarSelectionState(selection);
-                setReader({ assistCustomerId: selection.customerId });
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
                     sheetName: String(selection.companyName || selection.customerId).trim(),
                     signedInName: String(staff.staffName || staff.staffId || '').trim()
                 });
             } catch (error) {
+                setReader(null);
                 try { session.removeItem('catalogueAssistCustomerId'); } catch (_) {}
                 if (!authentication.loggedIn()) goToCatalogueStaffLogin(assistCustomerId);
                 else reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
@@ -671,6 +698,7 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
         }
         if (message.type === 'BUYER_COMPANY_SWITCH') {
             if (catalogueCompanyAccess?.companies.some(company => company.customerId === message.customerId)) {
+                setReader(null);
                 wixLocationFrontend.to(buyerCompanyPath('/catalogue', message.customerId));
             }
             return;
@@ -683,7 +711,7 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             thumbnailWorkspace = message.deferredThumbnails === true;
             sendCatalogueCompanies();
             sendCatalogueWorkspaceData();
-            if (!pageStarted) await fetchPage(currentPageRequest);
+            if (!pageStarted || !thumbnailWorkspace) await fetchPage(currentPageRequest);
             if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
             if (catalogueBuyerNavigationPending) workspace.postMessage({ type: 'cataloguePrepareBuyerRoom' });
         } else if (message.type === 'catalogueWorkspaceDismissMenu') {
