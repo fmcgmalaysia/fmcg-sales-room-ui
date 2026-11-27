@@ -55,10 +55,19 @@ export function createCataloguePageIndex(data, now = Date.now) {
     return pending;
   }
 
-  return async function page({ term, principle, subcategories, afterId, anchorId, size, selectedIds }) {
+  return async function page({ term, principle, subcategories, afterId, anchorId, size, selectedIds, timing }) {
     const matching = () => subcategories.length ? active().hasSome('subCategories', subcategories) : active();
+    const mark = (key, promise) => {
+      if (!timing) return promise;
+      const started = now();
+      return promise.then(result => {
+        timing[key] = now() - started;
+        return result;
+      });
+    };
+    if (timing) timing.indexCache = cached && now() < expires ? 'hit' : pending ? 'shared' : 'build';
     const [index, categoryRows] = await Promise.all([
-      ordered(), subcategories.length ? collect(matching().fields('_id')) : null
+      mark('indexMs', ordered()), subcategories.length ? mark('categoryIdsMs', collect(matching().fields('_id'))) : null
     ]);
     const categoryIds = categoryRows && new Set(categoryRows.map(row => row._id));
     const search = term.toLowerCase(), brand = principle.toLowerCase();
@@ -70,6 +79,7 @@ export function createCataloguePageIndex(data, now = Date.now) {
     const previousAfterId = from === 0 ? null : from <= size ? '' : matches[from - size - 1].id;
     let position = from;
     const items = [];
+    const startedReading = timing ? now() : 0;
     while (items.length <= size && position < matches.length) {
       const ids = matches.slice(position, position + size + 1 - items.length).map(item => item.id);
       position += ids.length;
@@ -80,6 +90,7 @@ export function createCataloguePageIndex(data, now = Date.now) {
         if (item?.name) items.push(item);
       }
     }
+    if (timing) timing.activeProductsMs = now() - startedReading;
     return { items: items.slice(0, size), previousAfterId, afterId: items.length > size ? items[size - 1].id : null };
   };
 }

@@ -2,8 +2,15 @@ import { Permissions, webMethod } from 'wix-web-module';
 import { getCatalogueProtection } from 'backend/catalogueProtectionRuntime.js';
 
 export const listCataloguePage = webMethod(Permissions.SiteMember, async (scope, filters) => {
+  const requestStarted = Date.now();
   const { read } = await getCatalogueProtection();
-  return read.list(scope, filters);
+  const ready = Date.now();
+  const result = await read.list(scope, filters);
+  if (result.timing) {
+    result.timing.runtimeMs = ready - requestStarted;
+    result.timing.backendMs = Date.now() - requestStarted;
+  }
+  return result;
 });
 
 export const readCatalogueThumbnails = webMethod(Permissions.SiteMember, async (scope, ids) => {

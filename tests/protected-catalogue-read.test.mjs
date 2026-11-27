@@ -67,6 +67,25 @@ test('menu pages wait for one private preview batch and defer the rest', async (
   assert.equal(fullPageReads, 1);
 });
 
+test('optional stage timings are returned only to an authorized administrator', async () => {
+  const { read } = fixture(true, undefined, {
+    authorize: async actorType => ({ actorId: 'QA', customerId: 'A', actorType })
+  });
+  const first = await read.list('ADMIN', { measureTiming: true });
+  assert.equal(first.timing.indexCache, 'build');
+  for (const key of ['authorizationMs', 'readLimitMs', 'indexMs', 'activeProductsMs', 'pageMs', 'coverageMs', 'previewsMs']) {
+    assert.ok(Number.isFinite(first.timing[key]) && first.timing[key] >= 0, key);
+  }
+  assert.equal((await read.list('ADMIN', { measureTiming: true })).timing.indexCache, 'hit');
+  for (const actor of ['STAFF', 'CUSTOMER_USER']) {
+    const result = await read.list(actor, { measureTiming: true });
+    assert.equal(result.timing, undefined);
+    assert.deepEqual(result.items, first.items);
+  }
+  assert.equal((await read.list('ADMIN')).timing, undefined);
+  await assert.rejects(fixture(false).read.list('A', { measureTiming: true }), /limited/);
+});
+
 test('visible image delivery remains bounded and only signs active products already returned to this member', async () => {
   const charges = [];
   const { read } = fixture(true, undefined, {

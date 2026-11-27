@@ -30,10 +30,16 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
   }
 
-  async function allowed(scope, action, units) {
+  async function allowed(scope, action, units, timing) {
+    const identityStarted = timing ? Date.now() : 0;
     const actor = await authorize(scope);
     if (!validCatalogueReader(actor)) throw new Error('Catalogue access unavailable.');
+    const budgetStarted = timing ? Date.now() : 0;
     if (await reserveRead(actor, action, units) !== true) throw new Error('Catalogue access temporarily limited.');
+    if (timing) {
+      timing.authorizationMs = budgetStarted - identityStarted;
+      timing.readLimitMs = Date.now() - budgetStarted;
+    }
     return actor;
   }
 
@@ -51,14 +57,19 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
       if (size !== 25 && size !== 50) throw new Error('Invalid catalogue page size.');
       const view = input.selectionView ?? '';
       if (!['', 'ALL', 'FOOD', 'NON_FOOD'].includes(view)) throw new Error('Invalid selection view.');
-      const actor = await allowed(scope, 'CATALOGUE_LIST', size);
+      const timing = input.measureTiming === true ? {} : null;
+      const actor = await allowed(scope, 'CATALOGUE_LIST', size, timing);
+      const trace = actor.actorType === 'ADMIN' ? timing : null;
       let selectedIds;
       if (view) {
         const { ids, food } = await readSelection(scope, actor);
         selectedIds = view === 'FOOD' ? food : view === 'NON_FOOD' ? new Set([...ids].filter(id => !food.has(id))) : ids;
       }
-      const { items, afterId: nextId, previousAfterId } = await page({ term, principle, subcategories, afterId, anchorId, size, selectedIds });
+      const pageStarted = trace ? Date.now() : 0;
+      const { items, afterId: nextId, previousAfterId } = await page({ term, principle, subcategories, afterId, anchorId, size, selectedIds, timing: trace });
+      const coverageStarted = trace ? Date.now() : 0;
       if (await reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id)) !== true) throw new Error('Catalogue access temporarily limited.');
+      const previewsStarted = trace ? Date.now() : 0;
       let products = items;
       if (input.deferImages === true) {
         // One signing batch starts the visible list. A slow fallback for a single
@@ -68,7 +79,14 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
       } else if (addPreviews) {
         products = await addPreviews(items);
       }
-      return { items: products, afterId: nextId, previousAfterId };
+      const result = { items: products, afterId: nextId, previousAfterId };
+      if (trace) {
+        trace.pageMs = coverageStarted - pageStarted;
+        trace.coverageMs = previewsStarted - coverageStarted;
+        trace.previewsMs = Date.now() - previewsStarted;
+        result.timing = trace;
+      }
+      return result;
     },
 
     async thumbnails(scope, ids) {

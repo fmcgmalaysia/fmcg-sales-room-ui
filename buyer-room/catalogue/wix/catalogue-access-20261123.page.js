@@ -57,6 +57,7 @@ let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceInstance = '';
 let thumbnailWorkspace = false;
+let assistedContextMs;
 let catalogueSelectionLimit = 100;
 let catalogueSelectionTotal = 0;
 let catalogueSelectionResolved = false;
@@ -257,12 +258,17 @@ async function fetchPage(position = {}, edge = '') {
     catalogueNext = cataloguePrevious = null;
     sendCatalogueWorkspaceData();
     try {
+        const measureTiming = wixLocationFrontend.query?.catalogueTiming === '1';
+        const requestStarted = measureTiming ? Date.now() : 0;
         const result = await listCataloguePage(scope, {
             term: filter.query, principle: filter.principle, subcategories: filter.subIds,
             selectionView: filter.selectionView || '', size: 25,
-            deferImages: thumbnailWorkspace, ...position
+            deferImages: thumbnailWorkspace, ...position, ...(measureTiming ? { measureTiming } : {})
         });
         if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
+        if (result.timing) console.info('Catalogue timing ' + JSON.stringify({
+            firstPage: version === 1, assistedContextMs, rpcMs: Date.now() - requestStarted, ...result.timing
+        }));
         catalogueWorkspaceProducts = result.items;
         cataloguePrevious = result.previousAfterId;
         catalogueNext = result.afterId;
@@ -356,6 +362,7 @@ function goToCatalogueStaffLogin(customerId) {
 $w.onReady(() => {
     if (wixWindowFrontend.rendering?.env === 'backend') return;
     void (async () => {
+    const contextStarted = Date.now();
     const assistCustomerId = getCatalogueAssistCustomerId();
     const assistedSelection = assistCustomerId ? getCatalogueSelectionState(assistCustomerId).catch(() => null) : null;
     let staff;
@@ -372,6 +379,7 @@ $w.onReady(() => {
                 try { session.setItem('catalogueAssistCustomerId', selection.customerId); } catch (_) {}
                 selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
                 sidebarSelectionState(selection);
+                assistedContextMs = Date.now() - contextStarted;
                 setReader({ assistCustomerId: selection.customerId });
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
