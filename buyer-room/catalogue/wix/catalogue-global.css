@@ -88,7 +88,7 @@
 
 @media (min-width: 901px) {
   .catalogue-results-stage {
-    --catalogue-desktop-height: max(100vh, clamp(750px, 44vw + 255px, 1320px));
+    --catalogue-desktop-height: max(100vh, clamp(750px, 44vw + 320px, 1320px));
   }
 
   .catalogue-results-stage:not(.catalogue-opening-active),
