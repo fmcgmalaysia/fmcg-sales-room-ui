@@ -1056,7 +1056,6 @@ function setupFluidCatalogueLayout() {
         ['#section12', 'catalogue-native-masthead'],
         ['#imageX38', 'catalogue-home-logo'],
         ['#section7', 'catalogue-navigation-stage'],
-        ['#html3', 'catalogue-navigation-frame'],
         ['#text21', 'catalogue-nav-placeholder'],
         ['#html4', 'catalogue-compact-menu'],
         ['#section6', 'catalogue-results-stage']

@@ -64,7 +64,7 @@
   z-index: 53;
 }
 
-.catalogue-account-open .catalogue-navigation-frame {
+.catalogue-navigation-stage.catalogue-account-open div:has(> wix-iframe) {
   position: absolute !important;
   top: 0;
   inset-inline: 0;
@@ -72,8 +72,8 @@
   margin: 0 !important;
 }
 
-.catalogue-account-open .catalogue-navigation-frame,
-.catalogue-account-open .catalogue-navigation-frame :is(wix-iframe, wix-iframe > div, iframe) {
+.catalogue-navigation-stage.catalogue-account-open div:has(> wix-iframe),
+.catalogue-navigation-stage.catalogue-account-open :is(wix-iframe, wix-iframe > div, iframe) {
   height: var(--catalogue-account-frame-height) !important;
   min-height: var(--catalogue-account-frame-height) !important;
 }
@@ -83,7 +83,7 @@
     --catalogue-account-frame-height: 152px;
   }
 
-  .catalogue-account-open .catalogue-navigation-frame {
+  .catalogue-navigation-stage.catalogue-account-open div:has(> wix-iframe) {
     top: -18px;
   }
 }
