@@ -19,8 +19,13 @@ function fixture(changes = {}) {
 }
 
 test('both buyer companies use the same Wix member with company name from the authority', async () => {
-  const { calls, resolve } = fixture();
+  let memberReads = 0;
+  const { calls, resolve } = fixture({
+    getMember: async () => { memberReads++; return { _id: 'member1', loginEmail: 'qa@example.invalid' }; },
+    readStaff: async () => assert.fail('Buyer reads do not use the staff resolver.')
+  });
   const [a, b] = await Promise.all(['A', 'B'].map(buyerCompanyId => resolve({ buyerCompanyId })));
+  assert.equal(memberReads, 2);
   assert.equal(a.actorId, b.actorId);
   assert.equal(a.companyName, 'QA A');
   assert.equal(b.companyName, 'QA B');
@@ -30,19 +35,23 @@ test('both buyer companies use the same Wix member with company name from the au
 });
 
 test('company-free preview requires a real authorized staff member and assisted access requires the target company', async () => {
-  const { resolve } = fixture();
+  const { resolve } = fixture({
+    getMember: async () => assert.fail('Staff reads must only use the verified member from the staff resolver.')
+  });
   const preview = await resolve({ staffPreview: true });
+  assert.equal(preview.actorId, 'member1');
   assert.equal(preview.actorName, 'QA staff');
   assert.equal(preview.customerId, '');
   assert.equal(validCatalogueReader(preview), true);
   assert.equal(validCatalogueReader({ ...preview, actorType: 'CUSTOMER_USER' }), false);
   assert.equal((await resolve({ assistCustomerId: 'A' })).companyName, 'Authorized customer');
-  for (const staff of [{ authorized: false }, { authorized: true, memberId: 'other' },
+  for (const staff of [null, { authorized: false, memberId: 'member1' }, { authorized: true }, { authorized: true, memberId: ' ' },
     { authorized: true, memberId: 'member1', customerScope: { pages: ['BUYER_ROOM'] } }]) {
     await assert.rejects(fixture({ readStaff: async () => staff }).resolve({ staffPreview: true }));
   }
   await assert.rejects(fixture({ readStaffCustomer: async () => ({ customerId: 'B' }) }).resolve({ assistCustomerId: 'A' }));
   await assert.rejects(resolve({}));
+  await assert.rejects(resolve({ assistCustomerId: 'A', memberId: 'forged' }));
 });
 
 test('assisted reads recheck staff and the target company without loading selections', async () => {
@@ -78,7 +87,7 @@ test('assisted reads recheck staff and the target company without loading select
   });
 
   assert.equal((await resolve({ assistCustomerId: 'A' })).companyName, 'Company A');
-  assert.deepEqual([memberReads, staffReads, queryCalls], [1, 1, ['A']]);
+  assert.deepEqual([memberReads, staffReads, queryCalls], [0, 1, ['A']]);
   allowed = false;
   await assert.rejects(resolve({ assistCustomerId: 'A' }), /Staff access denied/);
   allowed = true;
