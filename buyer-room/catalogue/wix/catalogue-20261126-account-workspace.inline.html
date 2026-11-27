@@ -272,6 +272,11 @@
     const detailScroll=detailPanel.querySelector('.detail-scroll');
     const productImage=document.getElementById('productImage'),productZoom=document.getElementById('productZoom');
     const zoomPointer=matchMedia('(min-width:901px) and (hover:hover) and (pointer:fine)');
+    const desktopImagePointer=matchMedia('(hover:hover) and (pointer:fine)');
+    document.addEventListener('contextmenu',event=>{
+      if(desktopImagePointer.matches && event.target instanceof Element &&
+        event.target.closest('#rows .thumb img, #productImage img'))event.preventDefault();
+    });
     function closeProductZoom(){productZoom.hidden=true;}
     function zoomOffset(point, size, preview){
       if(size<=preview)return (preview-size)/2;
