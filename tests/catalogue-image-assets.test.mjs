@@ -94,3 +94,21 @@ test('only independent private previews are signed; expired cache, missing and r
   const missingRegistry = createCataloguePreviewReader({ data: { query() { throw Error('offline'); } } });
   assert.deepEqual(await missingRegistry([{id:'qa', image:refs.source}]), [{id:'qa',image:''}]);
 });
+
+test('only the requested detail receives a verified private original in the image batch', async () => {
+  const verified = await verifyCatalogueImageAsset(refs, fixture());
+  const rows = [verified, { ...verified, _id: 'source', fileUrl: refs.source }];
+  const signed = [];
+  const read = createCataloguePreviewReader({ data: { query() { return {
+    hasSome() { return this; }, eq() { return this; }, fields() { return this; },
+    limit() { return this; }, async find() { return { items: rows }; }
+  }; } }, media: { async getDownloadUrl(file) { signed.push(file); return 'https://qa.invalid/' + (file === refs.original ? 'hd' : 'small'); } } });
+  const result = await read([{ id: refs.productId }, { id: 'source' }], { detailId: refs.productId });
+  assert.equal(result[0].detailImage, 'https://qa.invalid/hd');
+  assert.equal(result[0].image, 'https://qa.invalid/small');
+  assert.equal(result[1].detailImage, undefined);
+  assert.deepEqual(signed, [refs.original, refs.preview]);
+  assert.deepEqual(await read([{ id: 'source' }], { detailId: 'source', detailOnly: true }), [{ id: 'source', image: '' }]);
+  assert.deepEqual(await read([{ id: refs.productId }], { detailId: refs.productId, detailOnly: true }),
+    [{ id: refs.productId, image: '', detailImage: 'https://qa.invalid/hd' }]);
+});

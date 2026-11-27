@@ -38,26 +38,45 @@ export async function verifyCatalogueImageAsset({ productId, source, original, p
 
 export function createCataloguePreviewReader({ data, media, now = Date.now }) {
   const cache = new Map();
-  async function sign(row) {
-    const uri = row.previewFileUrl, id = mediaId(uri);
+  async function sign(uri) {
+    const hit = cache.get(uri);
+    if (hit && hit.until > now()) return hit.url;
+    if (cache.size >= 512) cache.delete(cache.keys().next().value);
+    const entry = { until: now() + 60000 };
+    entry.url = media.getDownloadUrl(uri, 2, null, null)
+      .then(url => typeof url === 'string' && url.startsWith('https://') ? url : '')
+      .catch(() => '')
+      .then(url => {
+        if (!url && cache.get(uri) === entry) cache.delete(uri);
+        return url;
+      });
+    cache.set(uri, entry);
+    return entry.url;
+  }
+
+  async function signPreview(row) {
+    const id = mediaId(row.previewFileUrl);
     if (row.status !== 'VERIFIED' || !id || !row.sourceId || !row.originalId ||
         row.sourceId === row.originalId || id === row.sourceId || id === row.originalId ||
         !withinPreviewBounds({ width: row.previewWidth, height: row.previewHeight })) return '';
-    const hit = cache.get(uri);
-    if (hit && hit.until > now()) return hit.url;
-    const url = await media.getDownloadUrl(uri, 2, null, null);
-    if (typeof url !== 'string' || !url.startsWith('https://')) return '';
-    if (cache.size >= 512) cache.delete(cache.keys().next().value);
-    cache.set(uri, { until: now() + 60000, url });
-    return url;
+    return sign(row.previewFileUrl);
   }
-  return async products => {
+
+  async function signDetail(row) {
+    const id = mediaId(row.fileUrl);
+    if (row.status !== 'VERIFIED' || !id || id !== row.originalId || !row.sourceId ||
+        id === row.sourceId || id === mediaId(row.previewFileUrl) || !row.originalHash) return '';
+    return sign(row.fileUrl);
+  }
+
+  return async (products, { detailId = '', detailOnly = false } = {}) => {
     if (!products.length) return products;
     if (products.length > 50) throw Error('Too many catalogue previews.');
     let rows;
     try {
       const result = await data.query('CatalogueImageAssets').hasSome('_id', products.map(p => p.id))
-        .eq('status', 'VERIFIED').fields('_id', 'status', 'sourceId', 'originalId', 'previewFileUrl', 'previewWidth', 'previewHeight')
+        .eq('status', 'VERIFIED').fields('_id', 'status', 'sourceId', 'originalId', 'previewFileUrl', 'previewWidth', 'previewHeight',
+          ...(detailId ? ['fileUrl', 'originalHash'] : []))
         .limit(products.length).find({ suppressAuth: true, consistentRead: true });
       rows = result.items;
     } catch {
@@ -65,12 +84,16 @@ export function createCataloguePreviewReader({ data, media, now = Date.now }) {
       return products.map(p => ({ ...p, image: '' }));
     }
     const images = new Map();
-    for (let i = 0; i < rows.length; i += 5) {
+    const detailRow = detailId && rows.find(row => row._id === detailId && products.some(product => product.id === detailId));
+    const detailPending = detailRow ? signDetail(detailRow).catch(() => '') : '';
+    for (let i = 0; !detailOnly && i < rows.length; i += 5) {
       await Promise.all(rows.slice(i, i + 5).map(async row => {
-        try { images.set(row._id, await sign(row)); }
-        catch { /* An unavailable preview must not expose the original. */ }
+        try { images.set(row._id, await signPreview(row)); }
+        catch { /* Keep other images available if one signature fails. */ }
       }));
     }
-    return products.map(p => ({ ...p, image: images.get(p.id) || '' }));
+    const detailImage = await detailPending;
+    return products.map(p => ({ ...p, image: images.get(p.id) || '',
+      ...(detailImage && p.id === detailId ? { detailImage } : {}) }));
   };
 }

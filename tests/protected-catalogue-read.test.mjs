@@ -51,15 +51,17 @@ test('menu pages wait for one private preview batch and defer the rest', async (
       fullPageReads += 1;
       return items.map(item => ({ ...item, image: 'preview' }));
     },
-    readPrivatePreviews: async items => {
-      previewBatches.push(items.map(item => item.id));
-      return items.map(item => ({ ...item, image: 'private-preview' }));
+    readPrivatePreviews: async (items, { detailId }) => {
+      previewBatches.push([detailId, items.map(item => item.id)]);
+      return items.map(item => ({ ...item, image: 'private-preview', ...(item.id === detailId ? { detailImage: 'private-hd' } : {}) }));
     }
   });
   const first = await read.list('A', { deferImages: true });
   const second = await read.list('A', { afterId: first.afterId, deferImages: true });
   assert.deepEqual([first.items.length, second.items.length], [25, 25]);
-  assert.deepEqual(previewBatches.map(batch => [batch[0], batch.length]), [['0000', 5], ['0025', 5]]);
+  assert.deepEqual(previewBatches.map(([detailId, batch]) => [detailId, batch[0], batch.length]), [['0000', '0000', 5], ['0025', '0025', 5]]);
+  assert.equal(first.items[0].detailImage, 'private-hd');
+  assert.equal(first.items.slice(1).some(item => item.detailImage), false);
   assert.ok(first.items.slice(0, 5).every(item => item.image === 'private-preview'));
   assert.ok(first.items.slice(5).every(item => !item.image));
   assert.equal(fullPageReads, 0);
@@ -137,5 +139,18 @@ test('one detail preserves zero CBM and legacy EA without returning a source ima
   assert.equal(item.unitPrice, null);
   assert.equal(item.countryOrigin, 'MY');
   assert.ok(!('image' in item || 'internalCost' in item));
+  assert.equal(await read.detail('A', 'missing'), null);
+});
+
+test('only an already-delivered active detail may receive a signed high-resolution image', async () => {
+  const { read } = fixture(true, undefined, {
+    deliveredIds: async (actor, ids) => actor.customerId === 'A' ? ids : [],
+    readPrivatePreviews: async (items, options) => {
+      assert.deepEqual(options, { detailId: '0001', detailOnly: true });
+      return items.map(item => ({ ...item, detailImage: 'signed-private-hd' }));
+    }
+  });
+  assert.equal((await read.detail('A', '0001')).detailImage, 'signed-private-hd');
+  assert.equal((await read.detail('B', '0001')).detailImage, undefined);
   assert.equal(await read.detail('A', 'missing'), null);
 });

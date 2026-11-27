@@ -57,16 +57,17 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
         selectedIds = view === 'FOOD' ? food : view === 'NON_FOOD' ? new Set([...ids].filter(id => !food.has(id))) : ids;
       }
       const { items, afterId: nextId, previousAfterId } = await page({ term, principle, subcategories, afterId, anchorId, size, selectedIds });
-      if (await reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id)) !== true) throw new Error('Catalogue access temporarily limited.');
-      let products = items;
+      const coverage = reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id));
+      let previews = items;
       if (input.deferImages === true) {
-        // One signing batch starts the visible list. A slow fallback for a single
-        // missing preview must not hold up the initial page.
-        const first = await readPrivatePreviews(items.slice(0, FIRST_PREVIEW_COUNT));
-        products = [...first, ...items.slice(FIRST_PREVIEW_COUNT)];
+        // Sign the opening detail image in the same batch as the visible thumbnails.
+        previews = readPrivatePreviews(items.slice(0, FIRST_PREVIEW_COUNT), { detailId: items[0]?.id })
+          .then(first => [...first, ...items.slice(FIRST_PREVIEW_COUNT)]);
       } else if (addPreviews) {
-        products = await addPreviews(items);
+        previews = addPreviews(items);
       }
+      const [covered, products] = await Promise.all([coverage, previews]);
+      if (covered !== true) throw new Error('Catalogue access temporarily limited.');
       return { items: products, afterId: nextId, previousAfterId };
     },
 
@@ -105,10 +106,16 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
       const result = await activeProducts().eq('_id', id).fields(...DETAIL_FIELDS).limit(1).find(OPTIONS);
       const item = result.items[0];
       if (!item) return null;
-      if (await reserveCoverage(actor, 'CATALOGUE_DETAIL', [id]) !== true) throw new Error('Catalogue access temporarily limited.');
+      const [covered, delivered] = await Promise.all([
+        reserveCoverage(actor, 'CATALOGUE_DETAIL', [id]), deliveredIds?.(actor, [id])
+      ]);
+      if (covered !== true) throw new Error('Catalogue access temporarily limited.');
+      const [image] = delivered?.includes(id) && readPrivatePreviews
+        ? await readPrivatePreviews([{ id }], { detailId: id, detailOnly: true }) : [];
       const unitPrice = [item.unitPrice, item.pricePerUnit].map(Number).find(n => Number.isFinite(n) && n > 0);
       return {
         ...listItem(item), ea: item.ea ?? item.EA ?? item.price ?? '',
+        ...(image?.detailImage ? { detailImage: image.detailImage } : {}),
         innerBoxBarcode: String(item.innerBoxBarcode || ''), cartonBarcode: String(item.cartonBarcode || ''),
         cbmPerCtn: item.m3Ctn ?? item.cbmPerCtn ?? item.cbm ?? '', countryOrigin: String(item.countryOrigin || ''),
         shelfLife: String(item.shelflife || item.shelfLife || ''), unitPrice: unitPrice ?? null,

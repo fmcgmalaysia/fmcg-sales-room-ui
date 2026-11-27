@@ -9,6 +9,7 @@
 <meta name="catalogue-mobile-columns-build" content="20261123-catalogue-mobile-columns-v3">
 <meta name="catalogue-selection-return-build" content="20261117-catalogue-selection-return-v1">
 <meta name="catalogue-priority-images-build" content="20261127-catalogue-priority-images-v1">
+<meta name="catalogue-hd-build" content="20261127-catalogue-direct-hd-v1">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="catalogue-build-version" content="2026-10-06-catalogue-cbm-four-decimals-v52">
@@ -388,11 +389,25 @@
       mobileCategories.replaceChildren(shortcuts,...groups);
     }
     function filtered(){return state.products;}
+    function productImageUrl(p,large){
+      return (large&&(!mobile.matches||detailModal.open)&&p.detailImage)||(thumbnailsDeferred?thumbnails.get(p.id):p.image);
+    }
     function imageMarkup(p,large=false){
-      const image=thumbnailsDeferred?thumbnails.get(p.id):p.image;
-      if(image)return `<img src="${esc(image)}" ${thumbnailsDeferred?'':'loading="lazy" '}decoding="async" alt="">`;
+      const image=productImageUrl(p,large);
+      if(image)return `<img src="${esc(image)}" ${large?'fetchpriority="high" ':thumbnailsDeferred?'':'loading="lazy" '}decoding="async" alt="">`;
       if(thumbnailsDeferred&&!thumbnails.has(p.id))return '';
       return `<span class="fallback">${large?'IMAGE PENDING':'NO IMAGE'}</span>`;
+    }
+    function displayProductImage(p){
+      const src=productImageUrl(p,true);
+      if(src&&productImage.firstElementChild?.getAttribute('src')===src)return;
+      closeProductZoom();
+      productImage.innerHTML=imageMarkup(p,true);
+      if(!p.detailImage||p.detailImage!==src)return;
+      const img=productImage.querySelector('img');
+      img?.addEventListener('error',()=>{
+        if(productImage.contains(img))productImage.innerHTML=imageMarkup({...p,detailImage:''},true);
+      },{once:true});
     }
     function queueCatalogueThumbnails(){
       if(!thumbnailsDeferred||pageStatus!=='ready'||thumbnailFrame||thumbnailRequest)return;
@@ -421,7 +436,7 @@
         thumbnails.set(id,urls.get(id)||'');
         const row=rows.querySelector(`[data-id="${CSS.escape(id)}"] .thumb`);
         if(row)row.innerHTML=imageMarkup({id});
-        if(id===state.activeId)productImage.innerHTML=imageMarkup({id},true);
+        if(id===state.activeId)displayProductImage({...state.products.find(p=>p.id===id),...details.get(id),id});
       }
       thumbnailRequest=null;
       queueCatalogueThumbnails();
@@ -448,7 +463,7 @@
         }
       }
       const button=document.getElementById('selectButton'),innerFact=document.getElementById('detailInnerFact');selectionHint.textContent=p&&removed(p)?'Open Removed in Buyer Room and restore this product to request a new quote.':defaultSelectionHint;if(!p){innerFact.hidden=true;document.getElementById('productImage').innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';detailPrinciple.textContent='Product information will appear here.';detailPrinciple.disabled=true;['detailPack','detailEa','detailBarcode','detailInnerBarcode','detailCartonBarcode','detailCbm','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.textContent='+ Select for Quote';button.disabled=true;return}
-      const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;document.getElementById('productImage').innerHTML=imageMarkup(p,true);document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
+      const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;displayProductImage(p);document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
       if(details.has(p.id) && !details.get(p.id)){
         const retry=document.createElement('button');
         retry.type='button';retry.textContent='Retry product details';

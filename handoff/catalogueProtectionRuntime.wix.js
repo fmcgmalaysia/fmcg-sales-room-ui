@@ -154,6 +154,7 @@ return { createCatalogueReadBudget };
 const { catalogueCoverageKey, readDeliveredCatalogueIds, createCatalogueCoverage } = (() => {
 
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 32);
+const MAX_OBSERVED_PRODUCTS = 8000;
 const catalogueCoverageKey = (actorId, action) => hash('catalogue-coverage:' + action + ':' + actorId);
 
 async function readDeliveredCatalogueIds(store, actor, ids, windowMs, now = Date.now) {
@@ -166,7 +167,8 @@ async function readDeliveredCatalogueIds(store, actor, ids, windowMs, now = Date
 }
 
 // Called with the actual product IDs immediately before returning a response.
-// A company switch changes incident attribution but retains the member's quota.
+// A company switch retains the member's history. Daily Catalogue coverage
+// generates alerts only. The Buyer Room download quota remains enforceable.
 function createCatalogueCoverage({ store, policy, onIncident, now = Date.now }) {
   for (const action of ['CATALOGUE_LIST', 'CATALOGUE_DETAIL', 'BUYER_IMAGE']) {
     const rule = policy?.[action];
@@ -193,7 +195,7 @@ function createCatalogueCoverage({ store, policy, onIncident, now = Date.now }) 
       }
       const used = Object.keys(seen).length;
       const added = requested.filter(id => !Object.hasOwn(seen, id)).length;
-      const denied = used + added > rule.limit;
+      const denied = action === 'BUYER_IMAGE' && used + added > rule.limit;
       const severity = denied ? 'restricted' : used + added >= rule.warnAt ? 'warning' : '';
       const denials = { ...row?.denials };
       const recent = severity && denials[severity]?.at > time - rule.windowMs;
@@ -208,6 +210,12 @@ function createCatalogueCoverage({ store, policy, onIncident, now = Date.now }) 
         };
       }
       if (!denied) for (const id of requested) seen[id] = time;
+      if (action !== 'BUYER_IMAGE' && used + added > MAX_OBSERVED_PRODUCTS) {
+        const currentRequest = new Set(requested);
+        const oldest = Object.entries(seen).filter(([id]) => !currentRequest.has(id))
+          .sort((left, right) => left[1] - right[1]);
+        for (const [id] of oldest.slice(0, used + added - MAX_OBSERVED_PRODUCTS)) delete seen[id];
+      }
       if (await store.replaceIfVersion(key, row?.version ?? 0, { usage: seen, denials })) {
         if (newIncident && onIncident) await onIncident(key, severity);
         return !denied;
@@ -597,26 +605,45 @@ async function verifyCatalogueImageAsset({ productId, source, original, preview 
 
 function createCataloguePreviewReader({ data, media, now = Date.now }) {
   const cache = new Map();
-  async function sign(row) {
-    const uri = row.previewFileUrl, id = mediaId(uri);
+  async function sign(uri) {
+    const hit = cache.get(uri);
+    if (hit && hit.until > now()) return hit.url;
+    if (cache.size >= 512) cache.delete(cache.keys().next().value);
+    const entry = { until: now() + 60000 };
+    entry.url = media.getDownloadUrl(uri, 2, null, null)
+      .then(url => typeof url === 'string' && url.startsWith('https://') ? url : '')
+      .catch(() => '')
+      .then(url => {
+        if (!url && cache.get(uri) === entry) cache.delete(uri);
+        return url;
+      });
+    cache.set(uri, entry);
+    return entry.url;
+  }
+
+  async function signPreview(row) {
+    const id = mediaId(row.previewFileUrl);
     if (row.status !== 'VERIFIED' || !id || !row.sourceId || !row.originalId ||
         row.sourceId === row.originalId || id === row.sourceId || id === row.originalId ||
         !withinPreviewBounds({ width: row.previewWidth, height: row.previewHeight })) return '';
-    const hit = cache.get(uri);
-    if (hit && hit.until > now()) return hit.url;
-    const url = await media.getDownloadUrl(uri, 2, null, null);
-    if (typeof url !== 'string' || !url.startsWith('https://')) return '';
-    if (cache.size >= 512) cache.delete(cache.keys().next().value);
-    cache.set(uri, { until: now() + 60000, url });
-    return url;
+    return sign(row.previewFileUrl);
   }
-  return async products => {
+
+  async function signDetail(row) {
+    const id = mediaId(row.fileUrl);
+    if (row.status !== 'VERIFIED' || !id || id !== row.originalId || !row.sourceId ||
+        id === row.sourceId || id === mediaId(row.previewFileUrl) || !row.originalHash) return '';
+    return sign(row.fileUrl);
+  }
+
+  return async (products, { detailId = '', detailOnly = false } = {}) => {
     if (!products.length) return products;
     if (products.length > 50) throw Error('Too many catalogue previews.');
     let rows;
     try {
       const result = await data.query('CatalogueImageAssets').hasSome('_id', products.map(p => p.id))
-        .eq('status', 'VERIFIED').fields('_id', 'status', 'sourceId', 'originalId', 'previewFileUrl', 'previewWidth', 'previewHeight')
+        .eq('status', 'VERIFIED').fields('_id', 'status', 'sourceId', 'originalId', 'previewFileUrl', 'previewWidth', 'previewHeight',
+          ...(detailId ? ['fileUrl', 'originalHash'] : []))
         .limit(products.length).find({ suppressAuth: true, consistentRead: true });
       rows = result.items;
     } catch {
@@ -624,13 +651,17 @@ function createCataloguePreviewReader({ data, media, now = Date.now }) {
       return products.map(p => ({ ...p, image: '' }));
     }
     const images = new Map();
-    for (let i = 0; i < rows.length; i += 5) {
+    const detailRow = detailId && rows.find(row => row._id === detailId && products.some(product => product.id === detailId));
+    const detailPending = detailRow ? signDetail(detailRow).catch(() => '') : '';
+    for (let i = 0; !detailOnly && i < rows.length; i += 5) {
       await Promise.all(rows.slice(i, i + 5).map(async row => {
-        try { images.set(row._id, await sign(row)); }
-        catch { /* An unavailable preview must not expose the original. */ }
+        try { images.set(row._id, await signPreview(row)); }
+        catch { /* Keep other images available if one signature fails. */ }
       }));
     }
-    return products.map(p => ({ ...p, image: images.get(p.id) || '' }));
+    const detailImage = await detailPending;
+    return products.map(p => ({ ...p, image: images.get(p.id) || '',
+      ...(detailImage && p.id === detailId ? { detailImage } : {}) }));
   };
 }
 
@@ -862,16 +893,17 @@ function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCov
         selectedIds = view === 'FOOD' ? food : view === 'NON_FOOD' ? new Set([...ids].filter(id => !food.has(id))) : ids;
       }
       const { items, afterId: nextId, previousAfterId } = await page({ term, principle, subcategories, afterId, anchorId, size, selectedIds });
-      if (await reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id)) !== true) throw new Error('Catalogue access temporarily limited.');
-      let products = items;
+      const coverage = reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id));
+      let previews = items;
       if (input.deferImages === true) {
-        // One signing batch starts the visible list. A slow fallback for a single
-        // missing preview must not hold up the initial page.
-        const first = await readPrivatePreviews(items.slice(0, FIRST_PREVIEW_COUNT));
-        products = [...first, ...items.slice(FIRST_PREVIEW_COUNT)];
+        // Sign the opening detail image in the same batch as the visible thumbnails.
+        previews = readPrivatePreviews(items.slice(0, FIRST_PREVIEW_COUNT), { detailId: items[0]?.id })
+          .then(first => [...first, ...items.slice(FIRST_PREVIEW_COUNT)]);
       } else if (addPreviews) {
-        products = await addPreviews(items);
+        previews = addPreviews(items);
       }
+      const [covered, products] = await Promise.all([coverage, previews]);
+      if (covered !== true) throw new Error('Catalogue access temporarily limited.');
       return { items: products, afterId: nextId, previousAfterId };
     },
 
@@ -910,10 +942,16 @@ function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCov
       const result = await activeProducts().eq('_id', id).fields(...DETAIL_FIELDS).limit(1).find(OPTIONS);
       const item = result.items[0];
       if (!item) return null;
-      if (await reserveCoverage(actor, 'CATALOGUE_DETAIL', [id]) !== true) throw new Error('Catalogue access temporarily limited.');
+      const [covered, delivered] = await Promise.all([
+        reserveCoverage(actor, 'CATALOGUE_DETAIL', [id]), deliveredIds?.(actor, [id])
+      ]);
+      if (covered !== true) throw new Error('Catalogue access temporarily limited.');
+      const [image] = delivered?.includes(id) && readPrivatePreviews
+        ? await readPrivatePreviews([{ id }], { detailId: id, detailOnly: true }) : [];
       const unitPrice = [item.unitPrice, item.pricePerUnit].map(Number).find(n => Number.isFinite(n) && n > 0);
       return {
         ...listItem(item), ea: item.ea ?? item.EA ?? item.price ?? '',
+        ...(image?.detailImage ? { detailImage: image.detailImage } : {}),
         innerBoxBarcode: String(item.innerBoxBarcode || ''), cartonBarcode: String(item.cartonBarcode || ''),
         cbmPerCtn: item.m3Ctn ?? item.cbmPerCtn ?? item.cbm ?? '', countryOrigin: String(item.countryOrigin || ''),
         shelfLife: String(item.shelflife || item.shelfLife || ''), unitPrice: unitPrice ?? null,
