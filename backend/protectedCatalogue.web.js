@@ -1,5 +1,7 @@
 import { Permissions, webMethod } from 'wix-web-module';
-import { getCatalogueProtection } from 'backend/catalogueProtectionRuntime.js';
+import { getCatalogueProtection, readCatalogue927Products } from 'backend/catalogueProtectionRuntime.js';
+
+export const readCatalogue927 = webMethod(Permissions.SiteMember, readCatalogue927Products);
 
 export const listCataloguePage = webMethod(Permissions.SiteMember, async (scope, filters) => {
   const { read } = await getCatalogueProtection();

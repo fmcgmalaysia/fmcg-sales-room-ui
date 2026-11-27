@@ -108,6 +108,66 @@ export async function prepareCatalogueOpeningSnapshot() {
   return indexSnapshot.refreshOpening();
 }
 
+const catalogue927Fields = [
+  '_id', 'name', 'title', 'description', 'packingSize', 'ea', 'EA', 'price', 'barcode', 'unitBarcode',
+  'innerBoxBarcode', 'cartonBarcode', 'm3Ctn', 'cbmPerCtn', 'cbm', 'principle', 'brandName', 'mainCategory',
+  'image', 'countryOrigin', 'shelflife', 'shelfLife', 'pointBaseSortId', 'sortNo', 'sortNO', 'sortNumber',
+  'sortOrder', 'subCategories', 'unitPrice', 'pricePerUnit', 'currency'
+];
+
+function catalogue927Product(item) {
+  const product = {};
+  for (const field of catalogue927Fields) {
+    const value = item[field];
+    if (field === 'subCategories') {
+      product.subCategories = (Array.isArray(value) ? value : []).map(category =>
+        typeof category === 'string' ? category : category?._id).filter(id => typeof id === 'string');
+    } else if (field === 'image') {
+      const image = typeof value === 'string' ? value.trim() : '';
+      const media = /^wix:image:\/\/v1\/([\w~.-]+)\//i.exec(image)?.[1] ||
+        /^https:\/\/static\.wixstatic\.com\/media\/([\w~.-]+)$/i.exec(image)?.[1];
+      if (media && /\.(?:png|jpe?g|webp|gif|avif)$/i.test(media)) product.image = 'https://static.wixstatic.com/media/' + media;
+    } else if (typeof value === 'string' || Number.isFinite(value)) {
+      product[field] = value;
+    }
+  }
+  return product;
+}
+
+export async function readCatalogue927Products(scope, mode) {
+  if (mode !== 'FIRST' && mode !== 'FULL') throw Error('Invalid Catalogue read.');
+  await authorize(scope);
+  const options = { suppressAuth: true, consistentRead: true };
+  const active = () => wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE');
+  if (mode === 'FIRST') {
+    const opening = await indexSnapshot.readOpening();
+    if (!opening?.ids.length) return [];
+    const ids = opening.ids.slice(0, 50);
+    const page = await active().hasSome('_id', ids).include('subCategories').limit(ids.length).find(options);
+    const products = new Map(page.items.map(item => [item._id, catalogue927Product(item)]));
+    return ids.map(id => products.get(id)).filter(Boolean);
+  }
+
+  // The browser uses this snapshot for the same local filtering as Catalogue 927.
+  // Expose only the established Catalogue fields, including IDs of linked categories.
+  const query = () => active().ascending('_id').include('subCategories').limit(1000);
+  const first = await query().find(options);
+  if (!Number.isSafeInteger(first.totalCount) || first.totalCount > 10000) throw Error('Catalogue snapshot unavailable.');
+  const products = new Map(first.items.map(item => [item._id, catalogue927Product(item)]));
+  for (let offset = first.items.length; offset < first.totalCount; offset += 3000) {
+    const reads = [];
+    for (let start = offset; start < Math.min(first.totalCount, offset + 3000); start += 1000) {
+      reads.push(query().skip(start).find(options));
+    }
+    for (const page of await Promise.all(reads)) {
+      if (page.totalCount !== first.totalCount || page.partialIncludes) throw Error('Catalogue changed during loading.');
+      for (const item of page.items) products.set(item._id, catalogue927Product(item));
+    }
+  }
+  if (first.partialIncludes || products.size !== first.totalCount) throw Error('Catalogue changed during loading.');
+  return [...products.values()];
+}
+
 export async function refreshCatalogueIndexSnapshot() {
   try {
     const result = await indexSnapshot.refresh();

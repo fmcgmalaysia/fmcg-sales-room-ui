@@ -7,8 +7,8 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
-import { listCataloguePage, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts, readCatalogueThumbnails } from 'backend/protectedCatalogue.web.js';
 import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
+import { readCatalogue927, listCataloguePrinciples } from 'backend/protectedCatalogue.web.js';
 import { cataloguePictureProgress, continueCataloguePictures } from 'backend/cataloguePhotoMigrationAdmin.web.js';
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
@@ -33,7 +33,7 @@ function openCatalogueAccountMenu(workspace) {
 
 function signOutCatalogue() {
     return catalogueAccountSession.signOut(() => {
-        setReader(null);
+        resetCatalogueReader();
         if (catalogueBrowseKey) {
             try { local.removeItem(catalogueBrowseKey); } catch (error) {}
             catalogueBrowseKey = '';
@@ -49,31 +49,31 @@ let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261127-catalogue-single-authorized-opening-v1';
+const CATALOGUE_BUILD_VERSION = '20261127-catalogue-927-restore-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
-let catalogueReadScope = null;
 let catalogueWorkspaceProducts = [];
-const recentCataloguePages = new Map();
-const RECENT_CATALOGUE_PAGE_MS = 20000;
-const MAX_RECENT_CATALOGUE_PAGES = 4;
-let preparedCataloguePage = null;
-let preparedDrinkCategory = false;
+let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceInstance = '';
-let thumbnailWorkspace = false;
+let lastWorkspaceProducts = null;
+let lastWorkspaceCategoryMap = null;
+let lastWorkspaceCategoriesLoaded;
 let catalogueSelectionLimit = 100;
 let catalogueSelectionTotal = 0;
+let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
+let catalogueSubCategoryMainMap = new Map();
+let catalogueFoodProductIds = new Set();
+let catalogueFoodPrinciples = new Set();
+let catalogueProductsLoaded = false;
+let catalogueWorkspaceRead = null;
+let catalogueRestoreScope;
+let cataloguePreparedFirst;
+let catalogueWorkspaceFullReadComplete = false;
+let catalogueCategoriesLoaded = false;
 let catalogueSelectionResolved = false;
-let catalogueWorkspaceFilter = { query: '', subIds: [], principle: '', selectionView: '' };
 let catalogueWorkspaceQueryVersion = 0;
-let cataloguePageStatus = 'loading';
-let catalogueNext = null, cataloguePrevious = null;
-let catalogueCounts = null, countVersion = 0;
-let currentPageRequest = {};
-let pageStarted = false;
-let selectionReturnFilter;
 let catalogueBrowseRevision = 0;
 let catalogueBrowseSubIds = [];
 let catalogueBrowseKey = '';
@@ -149,11 +149,18 @@ async function restoreMobileCataloguePosition(customerId) {
     if (typeof query !== 'string' || query.length > 200 || typeof principle !== 'string' || principle.length > 200
         || !Array.isArray(subIds) || subIds.length > 100 || !subIds.every(id => typeof id === 'string' && /^[a-z0-9_-]{1,100}$/i.test(id))
         || typeof anchor !== 'string' || anchor.length > 100 || !Number.isInteger(offset) || offset < 0 || offset > 200) return;
-    catalogueWorkspaceFilter = { query, subIds, principle, selectionView: '' };
-    currentPageRequest = { anchorId: anchor };
-    recordCatalogueBrowse(subIds, { anchor, offset });
-    if (query) { try { $w('#input2').value = query; } catch (_) {} }
+    if (subIds.length) {
+        showCatalogueCachedView({ subIds }, { anchor, offset });
+        return;
+    }
+    if (catalogueWorkspaceQueryVersion !== 0) return;
+    catalogueWorkspaceFilter = { query, main: '', subIds: [], principle };
+    recordCatalogueBrowse([], { anchor, offset });
+    if (query) {
+        try { $w('#input2').value = query; } catch (error) {}
+    }
     publishCatalogueSearchValue();
+    sendCatalogueWorkspaceData();
 }
 
 function imageUrl(value) {
@@ -179,8 +186,12 @@ async function getPrinciplesForSub(subId) {
     if (!logoLoadPromise) logoLoadPromise = loadPrincipleLogos();
     await logoLoadPromise;
     if (principleCache.has(subId)) return principleCache.get(subId);
-    if (!catalogueReadScope) return [];
-    const names = await listCataloguePrinciples(catalogueReadScope, subId);
+    const scope = catalogueRestoreScope;
+    if (!scope) return [];
+    const names = catalogueWorkspaceFullReadComplete
+        ? catalogueWorkspaceAllProducts.filter(product => product.subCategoryIds.includes(subId)).map(product => product.principle).filter(Boolean)
+        : await listCataloguePrinciples(scope, subId);
+    if (scope !== catalogueRestoreScope) return [];
     const items = [...new Set(names)].sort((a, b) => a.localeCompare(b)).map(name => ({ name, logo: principleLogoMap.get(name.toLowerCase()) || '' }));
     principleCache.set(subId, items);
     return items;
@@ -218,140 +229,197 @@ function sidebarSelectionState(state) {
     catalogueSelectionLimit = limit;
     catalogueSelectionTotal = activeSelectedProductIds.size;
     catalogueSelectionResolved = true;
-    if (catalogueReadScope) void refreshCounts();
     sendCatalogueWorkspaceData();
 }
 
-async function refreshCounts() {
-    const scope = catalogueReadScope;
-    const version = ++countVersion;
-    catalogueCounts = null;
-    try {
-        const result = await readCatalogueSelectionCounts(scope);
-        if (version === countVersion && scope === catalogueReadScope) catalogueCounts = result;
-    } catch (_) { /* A missing count is shown as pending. */ }
-    if (version === countVersion) sendCatalogueWorkspaceData();
+function catalogueReferenceIds(value) {
+    const values = Array.isArray(value) ? value : value ? [value] : [];
+    return values.map(entry => String(entry?._id || entry || '').trim()).filter(Boolean);
+}
+
+function catalogueUnitPrice(item) {
+    const candidates = [item.unitPrice, item.pricePerUnit];
+    const value = candidates.map(Number).find(number => Number.isFinite(number) && number > 0);
+    return value || null;
+}
+
+function catalogueProductRecord(item) {
+    return {
+        id: String(item?._id || ''),
+        name: String(item?.name || item?.title || '').trim(),
+        description: String(item?.description || item?.packingSize || '').trim(),
+        // The Catalogue CMS field labelled "EA" still uses the legacy key
+        // `price`. Keep it separate from indicative unit-price fields.
+        ea: String(item?.ea ?? item?.EA ?? item?.price ?? '').trim(),
+        barcode: String(item?.barcode || item?.unitBarcode || '').trim(),
+        innerBoxBarcode: String(item?.innerBoxBarcode || '').trim(),
+        cartonBarcode: String(item?.cartonBarcode || '').trim(),
+        cbmPerCtn: String(item?.m3Ctn ?? item?.cbmPerCtn ?? item?.cbm ?? '').trim(),
+        principle: String(item?.principle || '').trim(),
+        brandName: String(item?.brandName || '').trim(),
+        mainCategory: String(item?.mainCategory || '').trim().toUpperCase(),
+        image: imageUrl(item?.image),
+        countryOrigin: String(item?.countryOrigin || '').trim(),
+        shelfLife: String(item?.shelflife || item?.shelfLife || '').trim(),
+        sortNo: item?.pointBaseSortId ?? item?.sortNo ?? item?.sortNO ?? item?.sortNumber ?? item?.sortOrder ?? '',
+        subCategoryIds: catalogueReferenceIds(item?.subCategories),
+        unitPrice: catalogueUnitPrice(item),
+        currency: String(item?.currency || 'USD').trim().toUpperCase()
+    };
+}
+
+function sortCatalogueProducts(items) {
+    const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+    return items
+        .map((item, index) => ({ item, index }))
+        .sort((left, right) => {
+            const leftBrand = String(left.item.brandName || '').trim();
+            const rightBrand = String(right.item.brandName || '').trim();
+            if (!leftBrand && rightBrand) return 1;
+            if (leftBrand && !rightBrand) return -1;
+            const brandOrder = collator.compare(leftBrand, rightBrand);
+            if (brandOrder) return brandOrder;
+            const leftRaw = String(left.item.sortNo ?? '').trim();
+            const rightRaw = String(right.item.sortNo ?? '').trim();
+            if (!leftRaw && !rightRaw) return left.index - right.index;
+            if (!leftRaw) return 1;
+            if (!rightRaw) return -1;
+            const leftNumber = Number(leftRaw);
+            const rightNumber = Number(rightRaw);
+            const order = Number.isFinite(leftNumber) && Number.isFinite(rightNumber)
+                ? leftNumber - rightNumber
+                : collator.compare(leftRaw, rightRaw);
+            return order || left.index - right.index;
+        })
+        .map(entry => entry.item);
+}
+
+function catalogueMainCategory(product) {
+    if (catalogueFoodProductIds.has(product.id) || catalogueFoodPrinciples.has(product.principle.toUpperCase())) return 'FOOD';
+    return (product.subCategoryIds || [])
+        .map(subCategoryId => catalogueSubCategoryMainMap.get(String(subCategoryId)))
+        .find(Boolean) || product.mainCategory || '';
+}
+
+function catalogueSelectionSummary() {
+    const allById = new Map(catalogueWorkspaceAllProducts.map(product => [product.id, product]));
+    const selectedProducts = sortCatalogueProducts([...activeSelectedProductIds].map(id => allById.get(id)).filter(Boolean));
+    const food = selectedProducts.filter(product => catalogueMainCategory(product).startsWith('FOOD')).length;
+    const total = activeSelectedProductIds.size;
+    return {
+        total,
+        food,
+        nonFood: Math.max(0, total - food),
+        products: selectedProducts.map(product => ({ ...product, mainCategory: catalogueMainCategory(product) }))
+    };
 }
 
 function sendCatalogueWorkspaceData() {
     if (!catalogueWorkspaceReady) return;
-    $w('#html5').postMessage({
-        type: 'catalogueWorkspaceData', products: catalogueWorkspaceProducts,
-        selectedProductIds: [...selectedProductIds], activeSelectedProductIds: [...activeSelectedProductIds],
-        removedProductIds: [...removedProductIds], selectionLimit: catalogueSelectionLimit,
-        selectionTotal: catalogueSelectionTotal, selectionFoodCount: catalogueCounts?.food,
-        selectionNonFoodCount: catalogueCounts?.nonFood, selectionCountsReady: catalogueCounts?.total === catalogueSelectionTotal,
-        selectionReady: catalogueSelectionResolved && Boolean(selectionContext) && Boolean(catalogueReadScope),
-        buyerRoomUrl: buyerRoomUrl(), context: catalogueContextMessage, buildVersion: CATALOGUE_BUILD_VERSION,
-        pageVersion: catalogueWorkspaceQueryVersion, pageStatus: cataloguePageStatus,
-        thumbnailsDeferred: thumbnailWorkspace,
-        hasPrevious: cataloguePrevious !== null, hasNext: catalogueNext !== null,
-        selectionView: catalogueWorkspaceFilter.selectionView || ''
-    });
-    if (cataloguePageStatus === 'ready') $w('#html5').postMessage(workspaceFilterMessage());
-}
-
-function prepareCataloguePage(scope, subcategories = []) {
-    const requestedAt = Date.now();
-    return {
-        scope, subcategories, requestedAt,
-        result: listCataloguePage(scope, { subcategories, size: 25, deferImages: true }).catch(() => null)
-    };
-}
-
-function prepareDrinkCategory() {
-    if (!catalogueReadScope || cataloguePageStatus !== 'ready' || !thumbnailWorkspace || preparedDrinkCategory) return;
-    const category = catalogueMenuMessage?.items.find(item =>
-        item.mainCategory === 'FOOD' && item.title.toLowerCase().replace(/[\s-]+/g, '') === 'readytodrink');
-    if (!category?.id || catalogueWorkspaceFilter.subIds.includes(category.id)) return;
-    preparedDrinkCategory = true;
-    const key = JSON.stringify(['', [category.id], '', true]);
-    if (recentCataloguePages.get(key)?.until > Date.now()) return;
-    preparedCataloguePage = prepareCataloguePage(catalogueReadScope, [category.id]);
-}
-
-async function fetchPage(position = {}, edge = '') {
-    currentPageRequest = position;
-    if (!catalogueReadScope) return;
-    const version = ++catalogueWorkspaceQueryVersion;
-    const scope = catalogueReadScope;
-    const filter = catalogueWorkspaceFilter;
-    const deferImages = !catalogueWorkspaceReady || thumbnailWorkspace;
-    const key = filter.query || filter.selectionView || position.anchorId ? '' :
-        JSON.stringify([filter.principle, [...filter.subIds].sort(), position.afterId || '', deferImages]);
-    pageStarted = true;
-    const recent = recentCataloguePages.get(key);
-    if (!recent || recent.until <= Date.now()) {
-        catalogueWorkspaceProducts = [];
-        cataloguePageStatus = 'loading';
-        catalogueNext = cataloguePrevious = null;
-        sendCatalogueWorkspaceData();
-    }
     try {
-        let result = recent?.until > Date.now() ? recent.result : null;
-        if (!result) {
-            const prepared = preparedCataloguePage;
-            const usePrepared = prepared?.scope === scope && deferImages && !filter.principle &&
-                !position.afterId && key && prepared.requestedAt + RECENT_CATALOGUE_PAGE_MS > Date.now() &&
-                prepared.subcategories.length === filter.subIds.length &&
-                prepared.subcategories.every(id => filter.subIds.includes(id));
-            const requestedAt = usePrepared ? prepared.requestedAt : Date.now();
-            if (usePrepared) preparedCataloguePage = null;
-            result = usePrepared ? await prepared.result : await listCataloguePage(scope, {
-                term: filter.query, principle: filter.principle, subcategories: filter.subIds,
-                selectionView: filter.selectionView || '', size: 25,
-                deferImages, ...position
-            });
-            if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
-            if (!result) throw Error('Catalogue page could not be prepared.');
-            if (key && result.items[0]?.image) {
-                recentCataloguePages.delete(key);
-                if (recentCataloguePages.size >= MAX_RECENT_CATALOGUE_PAGES) {
-                    recentCataloguePages.delete(recentCataloguePages.keys().next().value);
-                }
-                recentCataloguePages.set(key, { result, until: requestedAt + RECENT_CATALOGUE_PAGE_MS });
-            }
-        }
-        if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
-        catalogueWorkspaceProducts = result.items;
-        cataloguePrevious = result.previousAfterId;
-        catalogueNext = result.afterId;
-        cataloguePageStatus = 'ready';
-        if (edge) catalogueWorkspaceFilter = { ...filter, edge };
-    } catch (_) {
-        if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
-        recentCataloguePages.clear();
-        cataloguePageStatus = 'failed';
-    }
+        const refreshProducts = !catalogueWorkspaceInstance || catalogueWorkspaceProducts !== lastWorkspaceProducts ||
+            catalogueSubCategoryMainMap !== lastWorkspaceCategoryMap ||
+            catalogueCategoriesLoaded !== lastWorkspaceCategoriesLoaded;
+        const selection = catalogueSelectionSummary();
+        $w('#html5').postMessage({
+            type: 'catalogueWorkspaceData',
+            ...(refreshProducts ? { products: catalogueWorkspaceProducts.map(product => ({
+                ...product,
+                mainCategory: catalogueMainCategory(product)
+            })) } : {}),
+            selectedProductIds: [...selectedProductIds],
+            activeSelectedProductIds: [...activeSelectedProductIds],
+            removedProductIds: [...removedProductIds],
+            selectionProducts: selection.products,
+            selectionLimit: catalogueSelectionLimit,
+            selectionTotal: selection.total,
+            selectionFoodCount: selection.food,
+            selectionNonFoodCount: selection.nonFood,
+            selectionCountsReady: catalogueProductsLoaded && catalogueCategoriesLoaded && catalogueSelectionResolved,
+            selectionReady: catalogueSelectionResolved && Boolean(selectionContext),
+            catalogueStatus: catalogueWorkspaceFullReadComplete ? '' :
+                (catalogueWorkspaceFilter.homeState === 'failed' ? 'failed' : 'loading'),
+            buyerRoomUrl: buyerRoomUrl(),
+            context: catalogueContextMessage,
+            buildVersion: CATALOGUE_BUILD_VERSION
+        });
+        lastWorkspaceProducts = catalogueWorkspaceProducts;
+        lastWorkspaceCategoryMap = catalogueSubCategoryMainMap;
+        lastWorkspaceCategoriesLoaded = catalogueCategoriesLoaded;
+        $w('#html5').postMessage(workspaceFilterMessage());
+    } catch (error) {}
+}
+
+function resetCatalogueReader() {
+    catalogueRestoreScope = null;
+    cataloguePreparedFirst = null;
+    catalogueWorkspaceRead = null;
+    catalogueWorkspaceProducts = [];
+    catalogueWorkspaceAllProducts = [];
+    catalogueWorkspaceFullReadComplete = false;
+    catalogueProductsLoaded = false;
+    principleCache.clear();
     sendCatalogueWorkspaceData();
 }
 
-function showView({ query = '', principle = '', subIds = [], selectionView = '' } = {}) {
-    catalogueWorkspaceFilter = { query, principle, subIds, selectionView };
-    recordCatalogueBrowse(subIds);
-    return fetchPage();
+function prepCatalogueFirst(scope) {
+    const key = JSON.stringify(scope);
+    if (cataloguePreparedFirst?.key !== key) {
+        cataloguePreparedFirst = { key, read: readCatalogue927(scope, 'FIRST').catch(() => []) };
+    }
+    return cataloguePreparedFirst.read;
 }
 
-function setReader(scope) {
-    if (scope !== catalogueReadScope) {
-        recentCataloguePages.clear();
-        preparedDrinkCategory = false;
-    }
-    if (preparedCataloguePage?.scope !== scope) preparedCataloguePage = null;
-    catalogueReadScope = scope;
-    if (scope) {
-        if (catalogueSelectionResolved) void refreshCounts();
-        if (!pageStarted) void fetchPage(currentPageRequest);
-    } else {
-        ++countVersion;
-        ++catalogueWorkspaceQueryVersion;
-        catalogueWorkspaceProducts = [];
-        catalogueCounts = null;
-        cataloguePageStatus = 'blocked';
-        catalogueNext = cataloguePrevious = null;
-        pageStarted = false;
+function startCatalogueReader(scope) {
+    if (!scope || catalogueRestoreScope) return;
+    catalogueRestoreScope = scope;
+    void loadCatalogueWorkspaceProducts();
+}
+
+function applyCatalogueProducts(rows, complete) {
+    catalogueWorkspaceAllProducts = sortCatalogueProducts(rows.map(catalogueProductRecord).filter(item => item.id && item.name));
+    catalogueWorkspaceProducts = catalogueWorkspaceAllProducts;
+    catalogueWorkspaceFullReadComplete = complete;
+    catalogueProductsLoaded = complete;
+    rebuildCatalogueFoodMembership();
+    sendCatalogueWorkspaceData();
+}
+
+function loadCatalogueWorkspaceProducts() {
+    const scope = catalogueRestoreScope;
+    if (!scope || catalogueWorkspaceFullReadComplete) return catalogueWorkspaceRead;
+    if (!catalogueWorkspaceRead) {
+        const first = prepCatalogueFirst(scope);
+        catalogueWorkspaceRead = (async () => {
+            const rows = await first;
+            if (scope !== catalogueRestoreScope) return;
+            if (rows.length) applyCatalogueProducts(rows, false);
+            const all = await readCatalogue927(scope, 'FULL');
+            if (scope !== catalogueRestoreScope) return;
+            applyCatalogueProducts(all, true);
+        })().catch(error => {
+            if (scope !== catalogueRestoreScope) return;
+            console.error('Catalogue read did not complete', error);
+            if (!catalogueWorkspaceProducts.length) catalogueWorkspaceFilter.homeState = 'failed';
+        }).finally(() => {
+            if (scope !== catalogueRestoreScope) return;
+            catalogueWorkspaceRead = null;
+            sendCatalogueWorkspaceData();
+        });
         sendCatalogueWorkspaceData();
     }
+    return catalogueWorkspaceRead;
+}
+
+function showCatalogueCachedView({ query = '', subIds = [], principle = '', resetActive = true } = {}, position = null) {
+    ++catalogueWorkspaceQueryVersion;
+    catalogueWorkspaceFilter = { query, main: '', subIds, principle, resetActive };
+    recordCatalogueBrowse(subIds, position);
+    sendCatalogueWorkspaceData();
+}
+
+function showAllCatalogueWorkspaceProducts() {
+    showCatalogueCachedView();
 }
 
 let catalogueAccessIssue = false;
@@ -365,9 +433,9 @@ function sendCatalogueCompanies() {
     try { $w('#html5').postMessage({ type: 'BUYER_COMPANY_ACCESS', ...catalogueCompanyAccess }); } catch (_) {}
 }
 async function denyCatalogueCompanyAccess() {
-    setReader(null);
     catalogueAccessIssue = true;
     selectionContext = null;
+    resetCatalogueReader();
     catalogueCompanyAccess = { companies: [], blocked: true, denied: true };
     try { catalogueCompanyAccess.companies = (await getBuyerCompanies()).companies; } catch (_) { /* Keep the workspace blocked. */ }
     sendCatalogueCompanies();
@@ -409,51 +477,15 @@ function goToCatalogueStaffLogin(customerId) {
     wixLocationFrontend.to('/sales-room-login?next=' + encodeURIComponent(next));
 }
 
-async function startAssistedCatalogue(scope) {
-    const requestedAt = Date.now();
-    let result;
-    try {
-        result = await listCataloguePage(scope, { assistedOpening: true, size: 25, deferImages: true });
-    } catch (_) { return false; }
-    const workspace = result?.workspace;
-    const customerId = scope.assistCustomerId;
-    if (workspace?.customerId !== customerId || !workspace.staffId ||
-        !['assist', 'admin'].includes(workspace.mode) || !Array.isArray(result.items) ||
-        Date.now() - requestedAt >= RECENT_CATALOGUE_PAGE_MS) return false;
-
-    // The page and header came from the same current company authorization.
-    try { session.setItem('catalogueAssistCustomerId', customerId); } catch (_) {}
-    selectionContext = { mode: workspace.mode, assistCustomerId: customerId, staffId: workspace.staffId };
-    preparedCataloguePage = { scope, subcategories: [], requestedAt, result };
-    setReader(scope);
-    sendCatalogueContext({
-        type: 'catalogueContext', mode: workspace.mode,
-        sheetName: workspace.companyName || customerId,
-        signedInName: workspace.staffName || workspace.staffId
-    });
-
-    try {
-        const selection = await getCatalogueSelectionState(customerId);
-        if (catalogueReadScope !== scope) return true;
-        if (selection?.ok !== true || selection.customerId !== customerId) throw Error('Catalogue selection access unavailable.');
-        sidebarSelectionState(selection);
-    } catch (_) {
-        if (catalogueReadScope !== scope) return true;
-        setReader(null);
-        selectionContext = null;
-        try { session.removeItem('catalogueAssistCustomerId'); } catch (_) {}
-        if (!authentication.loggedIn()) goToCatalogueStaffLogin(customerId);
-        else reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
-    }
-    return true;
-}
-
 $w.onReady(() => {
     if (wixWindowFrontend.rendering?.env === 'backend') return;
     void (async () => {
     const assistCustomerId = getCatalogueAssistCustomerId();
-    const assistedScope = assistCustomerId ? { assistCustomerId } : null;
-    if (assistedScope && authentication.loggedIn() && await startAssistedCatalogue(assistedScope)) return;
+    const requestedBuyerCompany = !assistCustomerId && authentication.loggedIn()
+        ? selectedBuyerCompanyId(wixLocationFrontend) : '';
+    if (typeof requestedBuyerCompany === 'string' && /^CUS-[A-Za-z0-9-]{1,80}$/.test(requestedBuyerCompany)) {
+        void prepCatalogueFirst({ buyerCompanyId: requestedBuyerCompany });
+    }
     const assistedSelection = assistCustomerId ? getCatalogueSelectionState(assistCustomerId).catch(() => null) : null;
     let staff;
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
@@ -461,9 +493,6 @@ $w.onReady(() => {
     if (staff?.authorized) {
         if (staff.customerScope?.pages && !staff.customerScope.pages.includes('CATALOGUE')) { reportCatalogueAccess('Staff Management does not allow Catalogue access.'); return; }
         if (assistCustomerId) {
-            // The list revalidates the assisted company on the server. Selection
-            // data separately unlocks selection actions and the company header.
-            setReader(assistedScope);
             try {
                 const selection = await assistedSelection;
                 if (!selection?.ok || selection.customerId !== assistCustomerId) {
@@ -472,13 +501,13 @@ $w.onReady(() => {
                 try { session.setItem('catalogueAssistCustomerId', selection.customerId); } catch (_) {}
                 selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
                 sidebarSelectionState(selection);
+                startCatalogueReader({ assistCustomerId: selection.customerId });
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
                     sheetName: String(selection.companyName || selection.customerId).trim(),
                     signedInName: String(staff.staffName || staff.staffId || '').trim()
                 });
             } catch (error) {
-                setReader(null);
                 try { session.removeItem('catalogueAssistCustomerId'); } catch (_) {}
                 if (!authentication.loggedIn()) goToCatalogueStaffLogin(assistCustomerId);
                 else reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
@@ -488,14 +517,13 @@ $w.onReady(() => {
             session.removeItem('catalogueAssistCustomerId');
             selectionContext = null;
             catalogueSelectionResolved = true;
-            setReader({ staffPreview: true });
+            startCatalogueReader({ staffPreview: true });
             sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
         }
         return;
     }
 
     if (assistCustomerId) {
-        setReader(null);
         if (wixWindowFrontend.viewMode === 'Site' && (!authentication.loggedIn() || staff?.reason === 'NOT_LOGGED_IN')) {
             goToCatalogueStaffLogin(assistCustomerId);
         } else {
@@ -515,18 +543,21 @@ $w.onReady(() => {
             if (catalogueCompanyAccess.blocked) return;
             if (catalogueCompanyAccess.scoped) catalogueBuyerCompanyId = catalogueCompanyAccess.currentId;
             selectionContext = { mode: 'buyer', assistCustomerId: '' };
+            if (catalogueBuyerCompanyId) startCatalogueReader({ buyerCompanyId: catalogueBuyerCompanyId });
             const state = await loadSelectionState(selectedCatalogueScope());
             if (state?.ok !== true || !state.customerId) throw new Error('Customer Catalogue access could not be verified.');
+            startCatalogueReader({ buyerCompanyId: state.customerId });
             sendCatalogueContext({
                 type: 'catalogueContext', mode: 'buyer',
                 sheetName: String(state?.companyName || 'Buyer Account').trim(),
                 signedInName: String(state?.actorName || 'Buyer').trim()
             });
-            await restoreMobileCataloguePosition(state.customerId);
-            setReader({ buyerCompanyId: state.customerId });
+            restoreMobileCataloguePosition(state?.customerId)
+                .catch(error => console.warn('Catalogue browsing position could not be restored', error));
         } catch (error) {
             if (requestedCompanyId || catalogueBuyerCompanyId) { await denyCatalogueCompanyAccess(); return; }
             selectionContext = null;
+            resetCatalogueReader();
             local.removeItem('catalogueAccess');
             session.removeItem('catalogueAccess');
             if (wixWindowFrontend.viewMode === 'Site') {
@@ -549,7 +580,7 @@ $w.onReady(() => {
                 return;
             }
             selectionContext = null;
-            setReader(null);
+            resetCatalogueReader();
             selectedProductIds = new Set();
             activeSelectedProductIds = new Set();
             removedProductIds = new Set();
@@ -564,13 +595,34 @@ $w.onReady(() => {
 async function loadMenuData() {
     try {
         const result = await wixData.query('subCategories').ascending('mainCategory').ascending('title').fields('_id', 'mainCategory', 'title').limit(1000).find();
+        catalogueSubCategoryMainMap = new Map(result.items.map(item => [
+            String(item._id || ''),
+            String(item.mainCategory || '').trim().toUpperCase()
+        ]).filter(([id, mainCategory]) => id && mainCategory));
         sendCatalogueMenu({
             type: 'catalogueMenuData',
             items: result.items.map(item => ({ id: item._id, title: String(item.title || '').trim(), mainCategory: String(item.mainCategory || '').trim().toUpperCase() })).filter(item => item.id && item.title && item.mainCategory)
         });
+        rebuildCatalogueFoodMembership();
+        sendCatalogueWorkspaceData();
     } catch (error) {
         console.error('Catalogue menu CMS load failed', error);
         sendCatalogueMenu({ type: 'catalogueMenuData', items: [] });
+    } finally {
+        catalogueCategoriesLoaded = true;
+        sendCatalogueWorkspaceData();
+    }
+}
+
+function rebuildCatalogueFoodMembership() {
+    catalogueFoodProductIds = new Set();
+    catalogueFoodPrinciples = new Set();
+    for (const product of catalogueWorkspaceAllProducts) {
+        const category = product.subCategoryIds.map(id => catalogueSubCategoryMainMap.get(id))
+            .find(main => main?.startsWith('FOOD')) || product.mainCategory;
+        if (!category.startsWith('FOOD')) continue;
+        catalogueFoodProductIds.add(product.id);
+        if (product.principle) catalogueFoodPrinciples.add(product.principle.toUpperCase());
     }
 }
 
@@ -596,7 +648,6 @@ function setupNav() {
     const showMenu = async (main = activeMain, anchor) => {
         clearTimeout(leaveTimer);
         activeMain = main;
-        if (main === 'FOOD') prepareDrinkCategory();
         menuAnchor = Number.isFinite(anchor) ? Math.max(12, Math.min(3000, anchor)) : 12;
         if (!isOpen) await mega.expand();
         isOpen = true;
@@ -619,7 +670,7 @@ function setupNav() {
         header.postMessage({ type: 'megaState', open: false, main: activeMain });
     };
 
-    const applySearch = raw => showView({ query: String(raw || '').trim().slice(0, 120) });
+    const applySearch = raw => showCatalogueCachedView({ query: String(raw || '').trim().slice(0, 120) });
 
     // The search control is a Wix element in the same section as the header.
     // It filters the existing CMS-backed catalogue without relying on iframe sizing.
@@ -634,7 +685,7 @@ function setupNav() {
         });
     }
 
-    const applyMainCategory = async main => {
+    const applyMainCategory = async (main, resetActive = false) => {
         const items = catalogueMenuMessage && Array.isArray(catalogueMenuMessage.items)
             ? catalogueMenuMessage.items
             : [];
@@ -642,9 +693,7 @@ function setupNav() {
             .filter(item => String(item.mainCategory || '').toUpperCase() === String(main || '').toUpperCase())
             .map(item => item.id)
             .filter(Boolean);
-        if (ids.length) {
-            await showView({ subIds: ids });
-        }
+        if (ids.length) showCatalogueCachedView({ subIds: ids, resetActive });
     };
 
     const resetCatalogueHome = async () => {
@@ -653,24 +702,20 @@ function setupNav() {
         header.postMessage({ type: 'catalogueHeaderFilter', query: '' });
         void hideMenu().catch(error => console.error('Catalogue menu could not close', error));
         void wixWindowFrontend.scrollTo(0, 0).catch(() => {});
-        const revision = catalogueBrowseRevision;
-        await menuReady;
-        if (revision !== catalogueBrowseRevision) return;
-        const foodIds = (catalogueMenuMessage?.items || []).filter(item => item.mainCategory === 'FOOD').map(item => item.id);
-        if (foodIds.length) await showView({ subIds: foodIds });
-        else { ++catalogueWorkspaceQueryVersion; catalogueWorkspaceProducts = []; cataloguePageStatus = 'failed'; sendCatalogueWorkspaceData(); }
+        if (!catalogueMenuMessage) await menuReady;
+        await applyMainCategory('FOOD', true);
     };
     $w('#imageX38').onClick(() => {
         resetCatalogueHome().catch(error => console.error('Catalogue home could not be opened', error));
     });
-    const accountAvatar = $w('#vectorImage7');
-    accountAvatar.onClick(() => openCatalogueAccountMenu(workspace));
 
     header.onMessage(async (event) => {
         const message = event.data || {};
         if (message.type === 'catalogueOpenAccountMenu') {
             openCatalogueAccountMenu(workspace);
-        } else if (message.type === 'catalogueHeaderReady') {
+            return;
+        }
+        if (message.type === 'catalogueHeaderReady') {
             if (catalogueContextMessage) header.postMessage(catalogueContextMessage);
             if (catalogueMenuMessage) mega.postMessage(catalogueMenuMessage);
         } else if (message.type === 'catalogueMain') {
@@ -692,7 +737,7 @@ function setupNav() {
         } else if (message.type === 'catalogueAll') {
             await hideMenu();
             if (nativeSearch) nativeSearch.value = '';
-            await showView();
+            await showAllCatalogueWorkspaceProducts();
             publishCatalogueSearchValue();
         } else if (message.type === 'catalogueAccount') {
             await signOutCatalogue();
@@ -721,19 +766,20 @@ function setupNav() {
         } else if (message.type === 'catalogueMegaLeave') {
             leaveTimer = setTimeout(hideMenu, 420);
         } else if (message.type === 'catalogueSub') {
-            const id = message.id || catalogueMenuMessage?.items.find(item => item.title === message.sub)?.id;
-            if (id) await showView({ subIds: [id] });
-            hideMenu();
+            const id = message.id || (catalogueMenuMessage?.items || []).find(item => item.title === message.sub)?.id;
+            if (id && catalogueSubCategoryMainMap.has(id)) showCatalogueCachedView({ subIds: [id] });
+            await hideMenu();
         } else if (message.type === 'catalogueGroup') {
             const requestedIds = new Set(Array.isArray(message.ids) ? message.ids : []);
             const ids = (catalogueMenuMessage?.items || []).map(item => item.id).filter(id => requestedIds.has(id));
-            if (ids.length) await showView({ subIds: ids });
-            hideMenu();
+            if (ids.length) showCatalogueCachedView({ subIds: ids });
+            await hideMenu();
         } else if (message.type === 'cataloguePrinciple') {
             const principle = String(message.principle || '').trim();
             if (!principle) return;
-            await showView({ principle, subIds: message.subId ? [message.subId] : [] });
-            hideMenu();
+            const subIds = message.subId && catalogueSubCategoryMainMap.has(message.subId) ? [message.subId] : [];
+            showCatalogueCachedView({ subIds, principle });
+            await hideMenu();
         }
     });
 
@@ -773,7 +819,6 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
         }
         if (message.type === 'BUYER_COMPANY_SWITCH') {
             if (catalogueCompanyAccess?.companies.some(company => company.customerId === message.customerId)) {
-                setReader(null);
                 wixLocationFrontend.to(buyerCompanyPath('/catalogue', message.customerId));
             }
             return;
@@ -782,17 +827,16 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             const instanceId = typeof message.instanceId === 'string' ? message.instanceId : '';
             if (instanceId && instanceId === catalogueWorkspaceInstance) return;
             catalogueWorkspaceInstance = instanceId;
+            lastWorkspaceProducts = null;
             catalogueWorkspaceReady = true;
-            thumbnailWorkspace = message.deferredThumbnails === true;
             sendCatalogueCompanies();
-            sendCatalogueWorkspaceData();
-            if (!pageStarted || !thumbnailWorkspace) await fetchPage(currentPageRequest);
+            if (catalogueWorkspaceFullReadComplete || catalogueWorkspaceProducts.length) sendCatalogueWorkspaceData();
+            else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
             if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
             if (catalogueBuyerNavigationPending) workspace.postMessage({ type: 'cataloguePrepareBuyerRoom' });
         } else if (message.type === 'catalogueWorkspaceDismissMenu') {
             await hideDesktopMenu();
         } else if (message.type === 'catalogueMobileCategoriesState') {
-            if (message.open === true) prepareDrinkCategory();
             $w('#html3').postMessage({ type: 'catalogueMobileCategoriesState', open: message.open === true, returnFocus: message.returnFocus === true });
         } else if (message.type === 'catalogueWorkspaceBrowse') {
             const principle = typeof message.principle === 'string' ? message.principle.trim() : '';
@@ -805,53 +849,12 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             try { $w('#input2').value = ''; } catch (error) {}
             if (main || nonFood) {
                 const ids = subId ? [subId] : categories.map(item => item.id);
-                await showView({ subIds: ids });
+                showCatalogueCachedView({ subIds: ids });
                 publishCatalogueSearchValue();
                 return;
             }
-            await showView({ principle });
+            showCatalogueCachedView({ principle });
             publishCatalogueSearchValue();
-        } else if (message.type === 'catalogueSelectionView') {
-            const view = message.view;
-            if (!['', 'FOOD', 'NON_FOOD', 'ALL'].includes(view)) return;
-            if (message.fromAccountMenu === true) {
-                if (catalogueContextMessage?.mode === 'preview') {
-                    openBuyerRoomWindow();
-                    return;
-                }
-                if (catalogueWorkspaceFilter.selectionView === view) return;
-            }
-            if (!catalogueWorkspaceFilter.selectionView) selectionReturnFilter = catalogueWorkspaceFilter;
-            await showView(view ? { selectionView: view } : selectionReturnFilter);
-        } else if (message.type === 'catalogueTurnPage' && message.version === catalogueWorkspaceQueryVersion) {
-            const direction = message.direction;
-            if (direction === 'retry' && cataloguePageStatus === 'failed') await fetchPage(currentPageRequest);
-            if (cataloguePageStatus !== 'ready') return;
-            const cursor = direction === 'next' ? catalogueNext : direction === 'previous' ? cataloguePrevious : null;
-            if (cursor !== null) {
-                recordCatalogueBrowse(catalogueBrowseSubIds);
-                await fetchPage({ afterId: cursor }, direction === 'previous' ? 'last' : 'first');
-            }
-        } else if (message.type === 'catalogueDetailRequest') {
-            const version = catalogueWorkspaceQueryVersion, scope = catalogueReadScope;
-            const id = message.id;
-            if (!scope || version !== message.version || !catalogueWorkspaceProducts.some(product => product.id === id)) return;
-            let product = null;
-            try { product = await readCatalogueProduct(scope, id); } catch (_) {}
-            if (scope === catalogueReadScope && version === catalogueWorkspaceQueryVersion) {
-                workspace.postMessage({ type: 'catalogueDetailResult', version, id, product });
-            }
-        } else if (message.type === 'catalogueThumbnailRequest') {
-            const version = catalogueWorkspaceQueryVersion, scope = catalogueReadScope;
-            const { ids, requestId } = message;
-            if (!scope || !thumbnailWorkspace || cataloguePageStatus !== 'ready' || version !== message.version ||
-                !Number.isSafeInteger(requestId) || !Array.isArray(ids) || !ids.length || ids.length > 10 ||
-                !ids.every(id => catalogueWorkspaceProducts.some(product => product.id === id))) return;
-            let images = [];
-            try { images = await readCatalogueThumbnails(scope, ids); } catch (_) { /* Keep the list usable. */ }
-            if (scope === catalogueReadScope && version === catalogueWorkspaceQueryVersion) {
-                workspace.postMessage({ type: 'catalogueThumbnailResult', version, requestId, images });
-            }
         } else if (message.type === 'catalogueWorkspacePosition') {
             rememberMobileCataloguePosition(message);
         } else if (message.type === 'catalogueWorkspaceNavigate') {
@@ -866,7 +869,7 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             const productId = String(message.productId || '').trim();
             if (!productId || selectionBusyIds.has(productId)) return;
             const context = selectionContext;
-            if (!context || !catalogueSelectionResolved || !catalogueReadScope) {
+            if (!context) {
                 workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: false, productId });
                 return;
             }
@@ -891,7 +894,6 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
                 activeSelectedProductIds.add(productId);
                 removedProductIds.delete(productId);
                 catalogueSelectionTotal = activeSelectedProductIds.size;
-                void refreshCounts();
                 workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
                 sendCatalogueWorkspaceData();
             } catch (error) {
