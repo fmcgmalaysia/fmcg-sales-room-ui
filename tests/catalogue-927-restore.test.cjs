@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8').replace(/\r\n/g, '\n');
 const runtime = read('backend/catalogueProtectionRuntime.js');
@@ -88,4 +89,41 @@ test('the restored workspace sets the scoped buyer identity before displaying op
     'sendCatalogueContext({', 'applyCatalogueProducts(']
     .map(marker => buyerBoot.indexOf(marker));
   assert.ok(order[0] >= 0 && order.every((at, index) => index === 0 || at > order[index - 1]));
+});
+
+test('an authorized assisted entry waits for its first screen and remembers only that company', () => {
+  const page = read('buyer-room/catalogue/wix/catalogue-access-20261123.page.js').replace(/^import .*;\n/gm, '');
+  const classes = new Set();
+  const seen = new Map();
+  const location = { query: { assist: 'CUS-A' } };
+  let signedIn = true;
+  const $w = () => ({ customClassList: { add: name => classes.add(name), remove: name => classes.delete(name) } });
+  $w.onReady = () => {};
+  const session = { getItem: key => seen.get(key), setItem: (key, value) => seen.set(key, value) };
+  const context = vm.createContext({
+    $w, session, local: { getItem: () => null }, wixLocationFrontend: location,
+    wixWindowFrontend: { viewMode: 'Site' }, authentication: { loggedIn: () => signedIn },
+    setTimeout() {}, clearTimeout() {}
+  });
+  const run = code => vm.runInContext(code, context);
+  const isShowing = () => classes.has('catalogue-opening-active');
+  run(page);
+  run('startCatalogueOpening()');
+  assert.equal(isShowing(), true);
+  run('catalogueWorkspaceProducts = [{ id: "product" }]; catalogueCategoriesLoaded = true; catalogueSelectionResolved = true;');
+  assert.equal(run('catalogueOpeningDataReady()'), false);
+  run('selectionContext = { mode: "assist", assistCustomerId: "CUS-A" };');
+  assert.equal(run('catalogueOpeningDataReady()'), true);
+  run('finishCatalogueOpening(true); startCatalogueOpening()');
+  assert.equal(isShowing(), false);
+  location.query.assist = 'CUS-B';
+  run('startCatalogueOpening()');
+  assert.equal(isShowing(), true);
+  run('reportCatalogueAccess("Access unavailable")');
+  assert.equal(isShowing(), false);
+  assert.equal(seen.has('catalogueOpeningSeenV1:CUS-B'), false);
+  signedIn = false;
+  seen.set('catalogueAccess', 'granted');
+  run('startCatalogueOpening()');
+  assert.equal(isShowing(), false);
 });

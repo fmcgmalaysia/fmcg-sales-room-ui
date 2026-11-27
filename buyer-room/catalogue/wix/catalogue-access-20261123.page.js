@@ -34,7 +34,7 @@ function openCatalogueAccountMenu(header) {
 
 function signOutCatalogue() {
     return catalogueAccountSession.signOut(() => {
-        try { session.removeItem(CATALOGUE_OPENING_SEEN); } catch (error) {}
+        try { session.removeItem(catalogueOpeningSeenKey()); } catch (error) {}
         resetCatalogueReader();
         if (catalogueBrowseKey) {
             try { local.removeItem(catalogueBrowseKey); } catch (error) {}
@@ -362,7 +362,11 @@ function sendCatalogueWorkspaceData() {
 
 function catalogueOpeningDataReady() {
     return (catalogueWorkspaceProducts.length > 0 || catalogueWorkspaceFullReadComplete) && catalogueCategoriesLoaded &&
-        catalogueSelectionResolved && selectionContext?.mode === 'buyer';
+        catalogueSelectionResolved && (selectionContext?.mode === 'buyer' || Boolean(selectionContext?.assistCustomerId));
+}
+
+function catalogueOpeningSeenKey(assistCustomerId = getCatalogueAssistCustomerId()) {
+    return assistCustomerId ? `${CATALOGUE_OPENING_SEEN}:${assistCustomerId}` : CATALOGUE_OPENING_SEEN;
 }
 
 function catalogueOpeningSession() {
@@ -370,11 +374,12 @@ function catalogueOpeningSession() {
 }
 
 function startCatalogueOpening() {
-    if (wixWindowFrontend.viewMode !== 'Site' || getCatalogueAssistCustomerId()) return;
+    if (wixWindowFrontend.viewMode !== 'Site') return;
     try {
-        if (!authentication.loggedIn() && session.getItem('catalogueAccess') !== 'granted' &&
-            local.getItem('catalogueAccess') !== 'granted') return;
-        if (session.getItem(CATALOGUE_OPENING_SEEN) === catalogueOpeningSession()) return;
+        const assistCustomerId = getCatalogueAssistCustomerId();
+        if (!authentication.loggedIn() && (assistCustomerId || (session.getItem('catalogueAccess') !== 'granted' &&
+            local.getItem('catalogueAccess') !== 'granted'))) return;
+        if (session.getItem(catalogueOpeningSeenKey(assistCustomerId)) === catalogueOpeningSession()) return;
         catalogueOpeningStartedAt = Date.now();
         $w('#section6').customClassList.add('catalogue-opening-active');
         catalogueOpeningTimer = setTimeout(() => finishCatalogueOpening(false), CATALOGUE_OPENING_MAX_MS);
@@ -387,7 +392,7 @@ function finishCatalogueOpening(ready) {
     clearTimeout(catalogueOpeningTimer);
     try {
         $w('#section6').customClassList.remove('catalogue-opening-active');
-        if (ready) session.setItem(CATALOGUE_OPENING_SEEN, catalogueOpeningSession());
+        if (ready) session.setItem(catalogueOpeningSeenKey(), catalogueOpeningSession());
     } catch (error) {}
     if (catalogueWorkspaceReady) {
         try { $w('#html5').postMessage({ type: 'catalogueOpeningFinished' }); } catch (error) {}
@@ -494,6 +499,7 @@ async function denyCatalogueCompanyAccess() {
     sendCatalogueCompanies();
 }
 function reportCatalogueAccess(message, blocked = true) {
+    if (blocked) finishCatalogueOpening(false);
     catalogueAccessIssue = blocked;
     try { $w('#text19').text=message?'Access unavailable':String(catalogueContextMessage?.sheetName||'Catalogue'); } catch (_) {}
     try { $w('#text20').text=message||String(catalogueContextMessage?.signedInName||''); } catch (_) {}
@@ -526,6 +532,7 @@ function getCatalogueAssistCustomerId() {
 }
 
 function goToCatalogueStaffLogin(customerId) {
+    finishCatalogueOpening(false);
     const next = '/catalogue?assist=' + encodeURIComponent(customerId);
     wixLocationFrontend.to('/sales-room-login?next=' + encodeURIComponent(next));
 }
@@ -546,7 +553,6 @@ $w.onReady(() => {
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
 
     if (staff?.authorized) {
-        finishCatalogueOpening(false);
         if (staff.customerScope?.pages && !staff.customerScope.pages.includes('CATALOGUE')) { reportCatalogueAccess('Staff Management does not allow Catalogue access.'); return; }
         if (assistCustomerId) {
             try {
@@ -570,6 +576,7 @@ $w.onReady(() => {
                 return;
             }
         } else {
+            finishCatalogueOpening(false);
             session.removeItem('catalogueAssistCustomerId');
             selectionContext = null;
             catalogueSelectionResolved = true;
