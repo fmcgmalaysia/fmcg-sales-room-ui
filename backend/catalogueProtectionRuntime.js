@@ -22,10 +22,12 @@ import { createProtectedCatalogueRead } from './protectedCatalogueRead.js';
 import { createCatalogueSelectionScope } from './catalogueSelectionScope.js';
 import { createCataloguePageIndex } from './cataloguePageIndex.js';
 import { createCatalogueIndexSnapshot } from './catalogueIndexSnapshot.js';
+import { createCatalogueZoomReader } from './catalogueZoomImage.js';
 
 const collection = 'CatalogueProtection';
 const indexSnapshot = createCatalogueIndexSnapshot(wixData, collection);
 const cataloguePage = createCataloguePageIndex(wixData, Date.now, indexSnapshot.read);
+const readZoom = createCatalogueZoomReader({ data: wixData });
 const verifiedMedia = createVerifiedCatalogueMedia(mediaManager, elevate(files.getFileDescriptor));
 const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(items.patch), collection });
 const runTrigger = auth.elevate(customTrigger.runTrigger);
@@ -81,7 +83,7 @@ async function load() {
   cached = { selectionPreviews, read: createProtectedCatalogueRead({
       data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews,
       deliveredIds: (actor, ids) => readDeliveredCatalogueIds(store, actor, ids, config.coveragePolicy.CATALOGUE_LIST.windowMs),
-      readPrivatePreviews: privatePreviews, page: cataloguePage
+      readPrivatePreviews: privatePreviews, readZoom, page: cataloguePage
     }),
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),

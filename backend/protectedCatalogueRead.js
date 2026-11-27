@@ -24,7 +24,7 @@ function listItem(item) {
   };
 }
 
-export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews, deliveredIds, readPrivatePreviews, page = createCataloguePageIndex(data) }) {
+export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews, deliveredIds, readPrivatePreviews, readZoom, page = createCataloguePageIndex(data) }) {
   function activeProducts() {
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
   }
@@ -90,6 +90,15 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
       await allowed(scope, 'CATALOGUE_LIST', 1);
       const result = await activeProducts().hasSome('subCategories', [id]).limit(1000).distinct('principle', OPTIONS);
       return [...new Set(result.items.filter(name => typeof name === 'string' && name.trim()).map(name => name.trim()))];
+    },
+
+    async zoom(scope, productId) {
+      const id = boundedText(productId, 128);
+      if (!/^[A-Za-z0-9_-]+$/.test(id)) return null;
+      const actor = await allowed(scope, 'CATALOGUE_LIST', 1);
+      if (!(await deliveredIds(actor, [id])).includes(id)) return null;
+      const result = await activeProducts().eq('_id', id).fields('_id', 'image').limit(1).find(OPTIONS);
+      return result.items[0] ? readZoom(result.items[0]) : null;
     },
 
     async selectionCounts(scope) {

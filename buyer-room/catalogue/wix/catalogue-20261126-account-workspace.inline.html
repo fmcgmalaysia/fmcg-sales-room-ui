@@ -9,6 +9,7 @@
 <meta name="catalogue-mobile-columns-build" content="20261123-catalogue-mobile-columns-v3">
 <meta name="catalogue-selection-return-build" content="20261117-catalogue-selection-return-v1">
 <meta name="catalogue-priority-images-build" content="20261127-catalogue-priority-images-v1">
+<meta name="catalogue-zoom-build" content="20261127-catalogue-zoom-512-v1">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="catalogue-build-version" content="2026-10-06-catalogue-cbm-four-decimals-v52">
@@ -62,6 +63,14 @@
       .detail-scroll .fact span{overflow-wrap:anywhere}
     }
     .product-zoom{display:none}
+    .detail-image-button{display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:zoom-in}
+    .catalogue-photo-viewer{width:min(540px,calc(100% - 32px));max-height:calc(100% - 32px);padding:16px;border:1px solid var(--line);border-radius:14px;color:var(--ink);background:#fff}
+    .catalogue-photo-viewer::backdrop{background:#0b2037b8}
+    .catalogue-photo-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .catalogue-photo-heading h2{font-size:16px;line-height:1.3;margin:0}
+    .catalogue-photo-heading button{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;color:inherit;font-size:22px;cursor:pointer}
+    .catalogue-photo-viewer img{display:block;width:100%;height:min(54vh,480px);object-fit:contain}
+    .catalogue-photo-viewer p{margin:8px 0 0;font-size:14px}
     @media(min-width:901px) and (hover:hover) and (pointer:fine){
       .product-image:has(img){cursor:zoom-in}
       .facts-wrap{position:relative}
@@ -203,6 +212,11 @@
       <div id="mobileCategories"><p role="status">Loading categories…</p></div>
     </dialog>
     <dialog class="detail-modal" id="detailModal" aria-labelledby="detailName"></dialog>
+    <dialog class="catalogue-photo-viewer" id="photoViewer" aria-labelledby="photoTitle">
+      <div class="catalogue-photo-heading"><h2 id="photoTitle">Product image</h2><button id="closePhoto" type="button" aria-label="Close product image">×</button></div>
+      <img id="photoPreview" alt="">
+      <p id="photoStatus" role="status" hidden></p>
+    </dialog>
   </main>
   <script src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room/company-switch-sheet-20261125.js"></script>
 <script>
@@ -271,6 +285,52 @@
     const detailHome=detailPanel.parentElement;
     const detailScroll=detailPanel.querySelector('.detail-scroll');
     const productImage=document.getElementById('productImage'),productZoom=document.getElementById('productZoom');
+    const photoViewer=document.getElementById('photoViewer'),photoPreview=document.getElementById('photoPreview');
+    const photoTitle=document.getElementById('photoTitle'),photoStatus=document.getElementById('photoStatus');
+    let photoRequest=null,photoSequence=0;
+    document.getElementById('closePhoto').onclick=()=>photoViewer.close();
+    photoViewer.addEventListener('click',event=>{if(event.target===photoViewer)photoViewer.close();});
+    photoViewer.addEventListener('close',()=>{
+      if(photoViewer.open)return;
+      photoRequest=null;
+      photoPreview.removeAttribute('src');
+      photoPreview.removeAttribute('data-resolution');
+      productImage.querySelector('button')?.focus();
+    });
+    productImage.addEventListener('click',event=>{
+      const button=event.target.closest('.detail-image-button');
+      const image=button?.querySelector('img');
+      const product=state.products.find(item=>item.id===state.activeId);
+      if(!image?.currentSrc||!product||photoViewer.open)return;
+      photoTitle.textContent=text(product.name)||'Product image';
+      photoPreview.alt=photoTitle.textContent;
+      photoPreview.src=image.currentSrc;
+      photoStatus.textContent='Loading larger image…';
+      photoStatus.hidden=false;
+      photoRequest={id:product.id,version:pageVersion,requestId:++photoSequence};
+      closeProductZoom();
+      photoViewer.showModal();
+      post('catalogueZoomRequest',photoRequest);
+    });
+    function showCatalogueZoom(message){
+      const {version,id,requestId,jpeg}=message;
+      if(!photoViewer.open||photoRequest?.version!==version||photoRequest?.id!==id||photoRequest?.requestId!==requestId)return;
+      if(typeof jpeg!=='string'||jpeg.length>219000||!/^[A-Za-z0-9+/]+={0,2}$/.test(jpeg)){
+        photoStatus.textContent='Larger image unavailable.';
+        return;
+      }
+      const request=photoRequest;
+      const large=new Image();
+      large.src='data:image/jpeg;base64,'+jpeg;
+      large.decode().then(()=>{
+        if(photoRequest!==request||!photoViewer.open)return;
+        const edge=Math.max(large.naturalWidth,large.naturalHeight);
+        if(!edge||edge>512)throw Error('Invalid preview size');
+        photoPreview.src=large.src;
+        photoPreview.dataset.resolution=String(edge);
+        photoStatus.hidden=true;
+      }).catch(()=>{if(photoRequest===request)photoStatus.textContent='Larger image unavailable.';});
+    }
     const zoomPointer=matchMedia('(min-width:901px) and (hover:hover) and (pointer:fine)');
     function closeProductZoom(){productZoom.hidden=true;}
     function zoomOffset(point, size, preview){
@@ -389,6 +449,10 @@
       if(thumbnailsDeferred&&!thumbnails.has(p.id))return '';
       return `<span class="fallback">${large?'IMAGE PENDING':'NO IMAGE'}</span>`;
     }
+    function detailImageMarkup(product){
+      const markup=imageMarkup(product,true);
+      return markup.startsWith('<img ') ? '<button class="detail-image-button" type="button" aria-label="Enlarge product image">'+markup+'</button>' : markup;
+    }
     function queueCatalogueThumbnails(){
       if(!thumbnailsDeferred||pageStatus!=='ready'||thumbnailFrame||thumbnailRequest)return;
       thumbnailFrame=requestAnimationFrame(()=>{
@@ -416,7 +480,7 @@
         thumbnails.set(id,urls.get(id)||'');
         const row=rows.querySelector(`[data-id="${CSS.escape(id)}"] .thumb`);
         if(row)row.innerHTML=imageMarkup({id});
-        if(id===state.activeId)productImage.innerHTML=imageMarkup({id},true);
+        if(id===state.activeId)productImage.innerHTML=detailImageMarkup({id});
       }
       thumbnailRequest=null;
       queueCatalogueThumbnails();
@@ -443,7 +507,7 @@
         }
       }
       const button=document.getElementById('selectButton'),innerFact=document.getElementById('detailInnerFact');selectionHint.textContent=p&&removed(p)?'Open Removed in Buyer Room and restore this product to request a new quote.':defaultSelectionHint;if(!p){innerFact.hidden=true;document.getElementById('productImage').innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';detailPrinciple.textContent='Product information will appear here.';detailPrinciple.disabled=true;['detailPack','detailEa','detailBarcode','detailInnerBarcode','detailCartonBarcode','detailCbm','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.textContent='+ Select for Quote';button.disabled=true;return}
-      const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;document.getElementById('productImage').innerHTML=imageMarkup(p,true);document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
+      const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;productImage.innerHTML=detailImageMarkup(p);document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
       if(details.has(p.id) && !details.get(p.id)){
         const retry=document.createElement('button');
         retry.type='button';retry.textContent='Retry product details';
@@ -492,7 +556,7 @@
     rows.addEventListener('scroll',reportCataloguePosition);
     rows.addEventListener('scroll',queueCatalogueThumbnails,{passive:true});
     window.addEventListener('resize',queueCatalogueThumbnails,{passive:true});
-    document.addEventListener('keydown',e=>{if(!detailModal.open&&!mobileMenu.open&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();e.stopPropagation();move(e.key==='ArrowDown'?1:-1);post('catalogueWorkspaceNavigate')}});
+    document.addEventListener('keydown',e=>{if(!photoViewer.open&&!detailModal.open&&!mobileMenu.open&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();e.stopPropagation();move(e.key==='ArrowDown'?1:-1);post('catalogueWorkspaceNavigate')}});
     function setSelectionView(view){post('catalogueSelectionView',{view:state.selectionView===view?'':view});}
     document.getElementById('selectionFilter').onclick=()=>setSelectionView('ALL');document.getElementById('foodSelectionFilter').onclick=()=>setSelectionView('FOOD');document.getElementById('nonFoodSelectionFilter').onclick=()=>setSelectionView('NON_FOOD');document.getElementById('closeDetail').onclick=closeProductDetail;
     const promo=document.getElementById('promoCarousel'),promoSlides=[...promo.querySelectorAll('.promo-slide')],promoDots=[...promo.querySelectorAll('.promo-dot')];let promoIndex=0,promoTimer;
@@ -507,13 +571,14 @@
       }
       if(d.type==='catalogueMenuData')renderMobileCategories(d.items);
       if(d.type==='catalogueThumbnailResult')showCatalogueThumbnails(d);
+      if(d.type==='catalogueZoomResult')showCatalogueZoom(d);
       if(d.type==='catalogueDetailResult' && d.version===pageVersion && detailRequests.has(d.id)){
         details.set(d.id,d.product?.id===d.id?d.product:null);
         if(state.activeId===d.id)showDetail(state.products.find(p=>p.id===d.id));
       }
       if(d.type==='catalogueWorkspaceData'){
         if(!Number.isInteger(d.pageVersion)||d.pageVersion<pageVersion)return;
-        if(d.pageVersion!==pageVersion){details.clear();detailRequests.clear();thumbnails.clear();thumbnailRequest=null;state.activeId='';}
+        if(d.pageVersion!==pageVersion){if(photoViewer.open)photoViewer.close();details.clear();detailRequests.clear();thumbnails.clear();thumbnailRequest=null;state.activeId='';}
         pageVersion=d.pageVersion;pageStatus=d.pageStatus;
         thumbnailsDeferred=d.thumbnailsDeferred===true;
         hasPrevious=d.hasPrevious===true;hasNext=d.hasNext===true;

@@ -81,6 +81,22 @@ test('visible image delivery remains bounded and only signs active products alre
   await assert.rejects(read.thumbnails('', ['0001']), /unavailable/);
 });
 
+test('larger images require the existing read budget, an active product and prior list delivery', async () => {
+  const zoomed = [], charges = [];
+  const { read } = fixture(true, undefined, {
+    deliveredIds: async (_actor, ids) => ids.filter(id => id !== '0002'),
+    reserveRead: async (_actor, action, units) => { charges.push([action, units]); return true; },
+    readZoom: async product => { zoomed.push(product._id); return 'jpegData'; }
+  });
+  assert.equal(await read.zoom('A', '0001'), 'jpegData');
+  assert.equal(await read.zoom('A', '0002'), null);
+  assert.equal(await read.zoom('A', 'missing'), null);
+  assert.deepEqual(zoomed, ['0001']);
+  assert.deepEqual(charges, Array.from({ length: 3 }, () => ['CATALOGUE_LIST', 1]));
+  await assert.rejects(read.zoom('', '0001'), /unavailable/);
+  await assert.rejects(fixture(false).read.zoom('A', '0001'), /limited/);
+});
+
 test('selected pages and counts follow the authorized company', async () => {
   const { read } = fixture();
   assert.deepEqual(await read.selectionCounts('A'), { total: 30, food: 1, nonFood: 29 });

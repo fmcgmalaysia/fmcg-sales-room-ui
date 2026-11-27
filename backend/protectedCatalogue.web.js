@@ -16,6 +16,11 @@ export const readCatalogueProduct = webMethod(Permissions.SiteMember, async (sco
   return read.detail(scope, productId);
 });
 
+export const readCatalogueZoom = webMethod(Permissions.SiteMember, async (scope, productId) => {
+  const { read } = await getCatalogueProtection();
+  return read.zoom(scope, productId);
+});
+
 export const listCataloguePrinciples = webMethod(Permissions.SiteMember, async (scope, subcategory) => {
   const { read } = await getCatalogueProtection();
   return read.principles(scope, subcategory);
