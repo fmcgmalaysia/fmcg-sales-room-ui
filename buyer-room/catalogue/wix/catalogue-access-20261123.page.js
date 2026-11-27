@@ -53,6 +53,7 @@ const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
 let catalogueReadScope = null;
+let assistedSelectionGate = null;
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceInstance = '';
@@ -250,6 +251,7 @@ async function fetchPage(position = {}, edge = '') {
     if (!catalogueReadScope || !catalogueWorkspaceReady) return;
     const version = ++catalogueWorkspaceQueryVersion;
     const scope = catalogueReadScope;
+    const gate = assistedSelectionGate;
     const filter = catalogueWorkspaceFilter;
     pageStarted = true;
     catalogueWorkspaceProducts = [];
@@ -262,6 +264,7 @@ async function fetchPage(position = {}, edge = '') {
             selectionView: filter.selectionView || '', size: 25,
             deferImages: thumbnailWorkspace, ...position
         });
+        if (gate && !await gate) return;
         if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
         catalogueWorkspaceProducts = result.items;
         cataloguePrevious = result.previousAfterId;
@@ -269,6 +272,7 @@ async function fetchPage(position = {}, edge = '') {
         cataloguePageStatus = 'ready';
         if (edge) catalogueWorkspaceFilter = { ...filter, edge };
     } catch (_) {
+        if (gate && !await gate) return;
         if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
         cataloguePageStatus = 'failed';
     }
@@ -284,7 +288,7 @@ function showView({ query = '', principle = '', subIds = [], selectionView = '' 
 function setReader(scope) {
     catalogueReadScope = scope;
     if (scope) {
-        void refreshCounts();
+        if (!assistedSelectionGate) void refreshCounts();
         if (!pageStarted) void fetchPage(currentPageRequest);
     } else {
         ++countVersion;
@@ -364,7 +368,12 @@ $w.onReady(() => {
     if (staff?.authorized) {
         if (staff.customerScope?.pages && !staff.customerScope.pages.includes('CATALOGUE')) { reportCatalogueAccess('Staff Management does not allow Catalogue access.'); return; }
         if (assistCustomerId) {
+            let releaseSelectionGate;
+            assistedSelectionGate = new Promise(resolve => { releaseSelectionGate = resolve; });
             try {
+                // The list endpoint still checks staff, company and quotas. Keep its result
+                // behind the existing selection gate while the two reads overlap.
+                setReader({ assistCustomerId });
                 const selection = await assistedSelection;
                 if (!selection?.ok || selection.customerId !== assistCustomerId) {
                     throw new Error('Catalogue customer access could not be verified.');
@@ -372,17 +381,21 @@ $w.onReady(() => {
                 try { session.setItem('catalogueAssistCustomerId', selection.customerId); } catch (_) {}
                 selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
                 sidebarSelectionState(selection);
-                setReader({ assistCustomerId: selection.customerId });
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
                     sheetName: String(selection.companyName || selection.customerId).trim(),
                     signedInName: String(staff.staffName || staff.staffId || '').trim()
                 });
+                releaseSelectionGate(true);
             } catch (error) {
+                releaseSelectionGate(false);
+                setReader(null);
                 try { session.removeItem('catalogueAssistCustomerId'); } catch (_) {}
                 if (!authentication.loggedIn()) goToCatalogueStaffLogin(assistCustomerId);
                 else reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
                 return;
+            } finally {
+                assistedSelectionGate = null;
             }
         } else {
             session.removeItem('catalogueAssistCustomerId');
