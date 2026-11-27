@@ -10,6 +10,7 @@
 <meta name="catalogue-selection-return-build" content="20261117-catalogue-selection-return-v1">
 <meta name="catalogue-priority-images-build" content="20261127-catalogue-priority-images-v1">
 <meta name="catalogue-hd-build" content="20261127-catalogue-direct-hd-v1">
+<meta name="catalogue-zoom-build" content="20261127-catalogue-hd-zoom-no-flash-v1">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="catalogue-build-version" content="2026-10-06-catalogue-cbm-four-decimals-v52">
@@ -303,34 +304,49 @@
     const productImage=document.getElementById('productImage'),productZoom=document.getElementById('productZoom');
     const zoomPointer=matchMedia('(min-width:901px) and (hover:hover) and (pointer:fine)');
     const desktopImagePointer=matchMedia('(hover:hover) and (pointer:fine)');
+    let zoomPoint, detailPhotoId='', detailPhotoRequest, readyDetailPhoto;
     document.addEventListener('contextmenu',event=>{
       if(desktopImagePointer.matches && event.target instanceof Element &&
         event.target.closest('#rows .thumb img, #productImage img'))event.preventDefault();
     });
     function closeProductZoom(){productZoom.hidden=true;}
+    function resetProductZoom(){zoomPoint=null;closeProductZoom();}
+    function resetDetailPhoto(){
+      detailPhotoId='';
+      detailPhotoRequest=null;
+      readyDetailPhoto=null;
+      resetProductZoom();
+      productImage.replaceChildren();
+    }
     function zoomOffset(point, size, preview){
       if(size<=preview)return (preview-size)/2;
       return Math.min(0,Math.max(preview-size,preview/2-point*size));
     }
-    productImage.addEventListener('pointermove',event=>{
-      const image=productImage.querySelector('img');
-      if(!zoomPointer.matches||event.pointerType!=='mouse'||!image?.naturalWidth||!image.naturalHeight){closeProductZoom();return;}
+    function showProductZoom(point){
+      const image=readyDetailPhoto;
+      if(!zoomPointer.matches||!point||!image?.naturalWidth||!image.naturalHeight){closeProductZoom();return;}
       const bounds=image.getBoundingClientRect();
       const fit=Math.min(bounds.width/image.naturalWidth,bounds.height/image.naturalHeight);
       const width=image.naturalWidth*fit,height=image.naturalHeight*fit;
       if(!width||!height){closeProductZoom();return;}
-      const x=(event.clientX-bounds.left-(bounds.width-width)/2)/width;
-      const y=(event.clientY-bounds.top-(bounds.height-height)/2)/height;
+      const x=(point.clientX-bounds.left-(bounds.width-width)/2)/width;
+      const y=(point.clientY-bounds.top-(bounds.height-height)/2)/height;
       if(x<0||x>1||y<0||y>1){closeProductZoom();return;}
       productZoom.hidden=false;
       const zoomWidth=width*2.5,zoomHeight=height*2.5;
       productZoom.style.backgroundImage=`url(${JSON.stringify(image.currentSrc)})`;
       productZoom.style.backgroundSize=`${zoomWidth}px ${zoomHeight}px`;
       productZoom.style.backgroundPosition=`${zoomOffset(x,zoomWidth,productZoom.clientWidth)}px ${zoomOffset(y,zoomHeight,productZoom.clientHeight)}px`;
-    });
-    productImage.addEventListener('pointerleave',closeProductZoom);
-    productImage.addEventListener('pointercancel',closeProductZoom);
-    zoomPointer.addEventListener('change',closeProductZoom);
+    }
+    function trackProductZoom(event){
+      zoomPoint=event.pointerType==='mouse'?{clientX:event.clientX,clientY:event.clientY}:null;
+      showProductZoom(zoomPoint);
+    }
+    productImage.addEventListener('pointerenter',trackProductZoom);
+    productImage.addEventListener('pointermove',trackProductZoom);
+    productImage.addEventListener('pointerleave',resetProductZoom);
+    productImage.addEventListener('pointercancel',resetProductZoom);
+    zoomPointer.addEventListener('change',resetProductZoom);
     const selectButton=document.getElementById('selectButton'),selectHome=selectButton.parentElement,selectNext=selectButton.nextElementSibling;
     const previousProduct=document.getElementById('previousProduct'),nextProduct=document.getElementById('nextProduct');
     const selectionHint=document.getElementById('selectionHint'),defaultSelectionHint=selectionHint.textContent;
@@ -428,15 +444,38 @@
       return `<span class="fallback">${large?'IMAGE PENDING':'NO IMAGE'}</span>`;
     }
     function displayProductImage(p){
+      if(detailPhotoId!==p.id){
+        resetDetailPhoto();
+        detailPhotoId=p.id;
+      }
       const src=productImageUrl(p,true);
-      if(src&&productImage.firstElementChild?.getAttribute('src')===src)return;
-      closeProductZoom();
-      productImage.innerHTML=imageMarkup(p,true);
-      if(!p.detailImage||p.detailImage!==src)return;
-      const img=productImage.querySelector('img');
-      img?.addEventListener('error',()=>{
-        if(productImage.contains(img))productImage.innerHTML=imageMarkup({...p,detailImage:''},true);
-      },{once:true});
+      const original=src===p.detailImage?src:'';
+      if(!original){
+        detailPhotoRequest=null;
+        readyDetailPhoto=null;
+        closeProductZoom();
+      }
+      if(!readyDetailPhoto){
+        const thumbnail=productImageUrl(p,false);
+        const current=productImage.firstElementChild;
+        if(!current||current.getAttribute('src')!==(thumbnail||null)){
+          productImage.innerHTML=imageMarkup({...p,detailImage:''},true);
+        }
+      }
+      if(!original||detailPhotoRequest?.src===original)return;
+      const request={src:original};
+      const image=new Image();
+      detailPhotoRequest=request;
+      image.fetchPriority='high';
+      image.decoding='async';
+      image.alt='';
+      image.src=original;
+      image.decode().then(()=>{
+        if(detailPhotoRequest!==request||state.activeId!==p.id)return;
+        readyDetailPhoto=image;
+        productImage.replaceChildren(image);
+        showProductZoom(zoomPoint);
+      }).catch(()=>{ /* Keep the visible thumbnail if the original cannot be decoded. */ });
     }
     function queueCatalogueThumbnails(){
       if(!thumbnailsDeferred||pageStatus!=='ready'||thumbnailFrame||thumbnailRequest)return;
@@ -472,7 +511,6 @@
     }
     function render(preserveScroll=false){const scrollTop=rows.scrollTop,allItems=filtered(),items=allItems,pending=state.selectionCountsReady?'':'—';document.getElementById('selectionCount').textContent=state.selectionCountsReady?state.selectionTotal:pending;document.getElementById('selectionLimit').textContent=state.selectionLimit;document.getElementById('foodSelectionCount').textContent=state.selectionCountsReady?state.selectionFoodCount:pending;document.getElementById('nonFoodSelectionCount').textContent=state.selectionCountsReady?state.selectionNonFoodCount:pending;document.getElementById('selectionAllowance').textContent=`Your account allows up to ${state.selectionLimit} selected SKUs.`;document.getElementById('selectionFilter').classList.toggle('active',state.selectionView==='ALL');document.getElementById('foodSelectionFilter').classList.toggle('active',state.selectionView==='FOOD');document.getElementById('nonFoodSelectionFilter').classList.toggle('active',state.selectionView==='NON_FOOD');
       document.body.classList.toggle('selection-view',Boolean(state.selectionView));
-      closeProductZoom();
       if(!allItems.length){
         const message=pageStatus;
         rows.innerHTML='<div class="empty" role="status"></div>';
@@ -484,6 +522,7 @@
       if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);updateDetailNavigation(allItems);queueCatalogueThumbnails();}
     function activate(id,scroll){state.activeId=id;render(true);if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);if(row){const rowBox=row.getBoundingClientRect(),listBox=rows.getBoundingClientRect();if(rowBox.top<listBox.top)rows.scrollTop-=listBox.top-rowBox.top;else if(rowBox.bottom>listBox.bottom)rows.scrollTop+=rowBox.bottom-listBox.bottom}}}
     function showDetail(p){
+      if(!p)resetDetailPhoto();
       if(p && (!mobile.matches || detailModal.open)){
         if(details.has(p.id))p=details.get(p.id) ? {...p, ...details.get(p.id)} : p;
         else if(!detailRequests.has(p.id)){
@@ -562,7 +601,7 @@
       }
       if(d.type==='catalogueWorkspaceData'){
         if(!Number.isInteger(d.pageVersion)||d.pageVersion<pageVersion)return;
-        if(d.pageVersion!==pageVersion){details.clear();detailRequests.clear();thumbnails.clear();thumbnailRequest=null;state.activeId='';}
+      if(d.pageVersion!==pageVersion){resetDetailPhoto();details.clear();detailRequests.clear();thumbnails.clear();thumbnailRequest=null;state.activeId='';}
         pageVersion=d.pageVersion;pageStatus=d.pageStatus;
         thumbnailsDeferred=d.thumbnailsDeferred===true;
         hasPrevious=d.hasPrevious===true;hasNext=d.hasNext===true;
