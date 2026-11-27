@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createCatalogueReadIdentity, validCatalogueReader } from '../backend/catalogueReadIdentity.js';
+import { isWebQuotationReady } from '../backend/webQuotationCustomer.js';
 
 function fixture(changes = {}) {
   const calls = [];
@@ -11,7 +13,7 @@ function fixture(changes = {}) {
       calls.push({ member, email, scope });
       return { customer: { customerId: scope.buyerCompanyId, title: 'QA ' + scope.buyerCompanyId }, user: { title: 'QA buyer' } };
     },
-    getSelectionState: async id => ({ ok: true, customerId: id, companyName: 'Authorized customer' }), ...changes
+    readStaffCustomer: async (_staff, id) => ({ customerId: id, title: 'Authorized customer' }), ...changes
   });
   return { calls, resolve };
 }
@@ -39,6 +41,52 @@ test('company-free preview requires a real authorized staff member and assisted 
     { authorized: true, memberId: 'member1', customerScope: { pages: ['BUYER_ROOM'] } }]) {
     await assert.rejects(fixture({ readStaff: async () => staff }).resolve({ staffPreview: true }));
   }
-  await assert.rejects(fixture({ getSelectionState: async () => ({ ok: true, customerId: 'B' }) }).resolve({ assistCustomerId: 'A' }));
+  await assert.rejects(fixture({ readStaffCustomer: async () => ({ customerId: 'B' }) }).resolve({ assistCustomerId: 'A' }));
   await assert.rejects(resolve({}));
+});
+
+test('assisted reads recheck staff and the target company without loading selections', async () => {
+  const source = readFileSync(new URL('../backend/catalogueStaffCustomerAccess.js', import.meta.url), 'utf8')
+    .replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '');
+  const queryCalls = [];
+  const ready = { customerId: 'A', title: 'Company A', quotationMode: 'WEB', webQuotationStatus: 'READY',
+    lifecycleStatus: 'ACTIVE', accessStatus: 'ACTIVE' };
+  let customers = [ready];
+  let allowed = true;
+  let staffReads = 0;
+  let memberReads = 0;
+  const wixData = { query(collection) {
+    assert.equal(collection, 'WixCustomers');
+    return { eq(key, value) {
+      assert.equal(key, 'customerId');
+      queryCalls.push(value);
+      return this;
+    }, limit(size) {
+      assert.equal(size, 2);
+      return this;
+    }, find: async () => ({ items: customers }) };
+  } };
+  const readStaffCustomer = new Function('wixData', 'requireStaffCustomerAccess', 'isWebQuotationReady',
+    source + '\nreturn readCatalogueCustomerForStaff;')(wixData, (_staff, action, id) => {
+    assert.equal(action, 'CATALOGUE_VIEW');
+    if (!allowed || id !== 'A') throw Error('Staff access denied.');
+  }, isWebQuotationReady);
+  const { resolve } = fixture({
+    getMember: async () => { memberReads++; return { _id: 'member1' }; },
+    readStaff: async () => { staffReads++; return { authorized: true, memberId: 'member1' }; },
+    readStaffCustomer
+  });
+
+  assert.equal((await resolve({ assistCustomerId: 'A' })).companyName, 'Company A');
+  assert.deepEqual([memberReads, staffReads, queryCalls], [1, 1, ['A']]);
+  allowed = false;
+  await assert.rejects(resolve({ assistCustomerId: 'A' }), /Staff access denied/);
+  allowed = true;
+  await assert.rejects(resolve({ assistCustomerId: 'B' }), /Staff access denied/);
+  customers = [{ ...ready, lifecycleStatus: 'ARCHIVED' }];
+  await assert.rejects(resolve({ assistCustomerId: 'A' }), /suspended/);
+  customers = [{ ...ready, webQuotationStatus: 'PENDING' }];
+  await assert.rejects(resolve({ assistCustomerId: 'A' }), /not ready/);
+  customers = [ready, ready];
+  await assert.rejects(resolve({ assistCustomerId: 'A' }), /not found/);
 });

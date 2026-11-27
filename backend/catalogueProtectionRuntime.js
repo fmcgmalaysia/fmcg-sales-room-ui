@@ -11,6 +11,7 @@ import { items } from '@wix/data';
 import { customTrigger } from '@wix/automations';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
+import { readCatalogueCustomerForStaff } from 'backend/catalogueStaffCustomerAccess.js';
 import { resolveBuyerCompany } from 'backend/buyerCompanyAccess.js';
 import { createCatalogueReadIdentity } from './catalogueReadIdentity.js';
 import { createCatalogueBudgetStore } from './catalogueBudgetStore.js';
@@ -26,7 +27,7 @@ const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(it
 const runTrigger = auth.elevate(customTrigger.runTrigger);
 const authorize = createCatalogueReadIdentity({
   getMember: () => currentMember.getMember({ fieldsets: ['FULL'] }),
-  readStaff: getCurrentStaffContext, resolveBuyerCompany, getSelectionState: getCatalogueSelectionState
+  readStaff: getCurrentStaffContext, resolveBuyerCompany, readStaffCustomer: readCatalogueCustomerForStaff
 });
 
 let cached, expires = 0, loading;

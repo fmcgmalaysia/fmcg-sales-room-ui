@@ -3,8 +3,7 @@ import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import wixRealtimeBackend from 'wix-realtime-backend';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
-import { requireStaffCustomerAccess } from 'backend/masterStaffAccessClient.js';
-import { isWebQuotationReady } from 'backend/webQuotationCustomer.js';
+import { readCatalogueCustomerForStaff, requireCatalogueCustomerReady } from 'backend/catalogueStaffCustomerAccess.js';
 import { removedSelectionExpired } from 'backend/buyerSelectionRetention.js';
 import { resolveBuyerCompany } from 'backend/buyerCompanyAccess.js';
 
@@ -204,10 +203,7 @@ async function resolveSelectionContext_(assistCustomerId, staffAction = 'CATALOG
     actorName = normalize(selected.user.title || email);
   } else if (requestedCustomerId) {
     const staff = await requireStaff_(member);
-    const result = await wixData.query(CUSTOMER_COLLECTION).eq('customerId', requestedCustomerId).limit(2).find({ suppressAuth: true });
-    if (result.items.length !== 1) throw new Error('Customer was not found.');
-    customer = result.items[0];
-    requireStaffCustomerAccess(staff, staffAction, requestedCustomerId);
+    customer = await readCatalogueCustomerForStaff(staff, requestedCustomerId, staffAction);
     actorType = staff.canViewAllCustomers ? 'ADMIN' : 'STAFF';
     actorId = staff.staffId;
     actorName = staff.staffName;
@@ -228,12 +224,7 @@ async function resolveSelectionContext_(assistCustomerId, staffAction = 'CATALOG
     actorName = normalize(user.title || email);
   }
 
-  const lifecycleStatus = upper(customer.lifecycleStatus || customer.customerStatus);
-  const accessStatus = upper(customer.catalogueAccessStatus || customer.accessStatus || customer.customerStatus);
-  if (lifecycleStatus === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(accessStatus)) {
-    throw new Error('Catalogue access is suspended for this customer.');
-  }
-  if (!isWebQuotationReady(customer)) throw new Error('This customer web quotation workspace is not ready.');
+  if (!requestedCustomerId) requireCatalogueCustomerReady(customer);
   return {
     customerId: normalize(customer.customerId),
     companyName: normalize(customer.title),

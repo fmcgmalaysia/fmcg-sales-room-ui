@@ -10,6 +10,7 @@ import { items } from '@wix/data';
 import { customTrigger } from '@wix/automations';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
+import { readCatalogueCustomerForStaff } from 'backend/catalogueStaffCustomerAccess.js';
 import { resolveBuyerCompany } from 'backend/buyerCompanyAccess.js';
 const { validCatalogueReader, createCatalogueReadIdentity } = (() => {
 // Actor names and member IDs come only from Wix and MASTER, never from a form.
@@ -18,7 +19,7 @@ function validCatalogueReader(actor) {
     ['STAFF', 'ADMIN'].includes(actor.actorType))));
 }
 
-function createCatalogueReadIdentity({ getMember, readStaff, resolveBuyerCompany, getSelectionState }) {
+function createCatalogueReadIdentity({ getMember, readStaff, resolveBuyerCompany, readStaffCustomer }) {
   return async scope => {
     if (!scope || typeof scope !== 'object' || Array.isArray(scope) || Object.keys(scope).length !== 1) {
       throw Error('Choose a catalogue workspace.');
@@ -39,11 +40,9 @@ function createCatalogueReadIdentity({ getMember, readStaff, resolveBuyerCompany
         (staff.customerScope?.pages && !staff.customerScope.pages.includes('CATALOGUE'))) throw Error('Staff catalogue access unavailable.');
     const actor = { actorId: member._id, actorType: staff.canViewAllCustomers ? 'ADMIN' : 'STAFF', actorName: staff.staffName || '' };
     if (preview) return { ...actor, scope: 'staff-preview', customerId: '', companyName: '' };
-    // Reuse the current assisted-selection authority, which includes both
-    // CATALOGUE_VIEW for this customer and a ready quotation workspace.
-    const selection = await getSelectionState(id);
-    if (selection?.ok !== true || selection.customerId !== id) throw Error('Company access unavailable.');
-    return { ...actor, customerId: selection.customerId, companyName: selection.companyName || '' };
+    const customer = await readStaffCustomer(staff, id);
+    if (String(customer?.customerId || '').trim() !== id) throw Error('Company access unavailable.');
+    return { ...actor, customerId: id, companyName: String(customer?.title || '').trim() };
   };
 }
 
@@ -814,7 +813,7 @@ const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(it
 const runTrigger = auth.elevate(customTrigger.runTrigger);
 const authorize = createCatalogueReadIdentity({
   getMember: () => currentMember.getMember({ fieldsets: ['FULL'] }),
-  readStaff: getCurrentStaffContext, resolveBuyerCompany, getSelectionState: getCatalogueSelectionState
+  readStaff: getCurrentStaffContext, resolveBuyerCompany, readStaffCustomer: readCatalogueCustomerForStaff
 });
 
 let cached, expires = 0, loading;

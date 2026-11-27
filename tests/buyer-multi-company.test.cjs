@@ -132,7 +132,9 @@ function fixture(setupMasterTransfer = () => ({})) {
   const buyer = load('backend/catalogueAuth.web.js', { ...common, ...access, ...tokens },
     ['getBuyerCompanies', 'getCurrentBuyerContext', 'getBuyerWorkspace', 'saveBuyerQuantity', 'submitBuyerOrder',
       'createBuyerSelectionDownload', 'getBuyerOrderDetail']);
-  const catalogue = load('backend/catalogueSelection.web.js', { ...common, ...access }, ['getCatalogueSelectionState', 'addCatalogueSelection']);
+  const catalogueStaffAccess = load('backend/catalogueStaffCustomerAccess.js', common,
+    ['readCatalogueCustomerForStaff', 'requireCatalogueCustomerReady']);
+  const catalogue = load('backend/catalogueSelection.web.js', { ...common, ...access, ...catalogueStaffAccess }, ['getCatalogueSelectionState', 'addCatalogueSelection']);
   const sales = load('sales-room/wix/onboarding.web.js', { ...common, ...access, ...provisioning, ...registration, ...setupMasterTransfer(wixData) },
     ['createSalesRoomCustomer', 'addSalesRoomCustomerUser', 'reviewSalesRoomCustomerUser', 'submitSalesRoomOrder']);
   const http = load('backend/http-functions.js', { ...common, ...access, ...tokens, response: result => result,

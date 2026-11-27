@@ -4,7 +4,7 @@ export function validCatalogueReader(actor) {
     ['STAFF', 'ADMIN'].includes(actor.actorType))));
 }
 
-export function createCatalogueReadIdentity({ getMember, readStaff, resolveBuyerCompany, getSelectionState }) {
+export function createCatalogueReadIdentity({ getMember, readStaff, resolveBuyerCompany, readStaffCustomer }) {
   return async scope => {
     if (!scope || typeof scope !== 'object' || Array.isArray(scope) || Object.keys(scope).length !== 1) {
       throw Error('Choose a catalogue workspace.');
@@ -25,10 +25,8 @@ export function createCatalogueReadIdentity({ getMember, readStaff, resolveBuyer
         (staff.customerScope?.pages && !staff.customerScope.pages.includes('CATALOGUE'))) throw Error('Staff catalogue access unavailable.');
     const actor = { actorId: member._id, actorType: staff.canViewAllCustomers ? 'ADMIN' : 'STAFF', actorName: staff.staffName || '' };
     if (preview) return { ...actor, scope: 'staff-preview', customerId: '', companyName: '' };
-    // Reuse the current assisted-selection authority, which includes both
-    // CATALOGUE_VIEW for this customer and a ready quotation workspace.
-    const selection = await getSelectionState(id);
-    if (selection?.ok !== true || selection.customerId !== id) throw Error('Company access unavailable.');
-    return { ...actor, customerId: selection.customerId, companyName: selection.companyName || '' };
+    const customer = await readStaffCustomer(staff, id);
+    if (String(customer?.customerId || '').trim() !== id) throw Error('Company access unavailable.');
+    return { ...actor, customerId: id, companyName: String(customer?.title || '').trim() };
   };
 }
