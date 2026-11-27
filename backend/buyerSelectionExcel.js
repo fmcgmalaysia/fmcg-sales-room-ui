@@ -93,22 +93,18 @@ export function buildBuyerSelectionExcel(data) {
   const heading = `<row r="1" ht="28" customHeight="1">${cellText('A1', 'Open Buyer Room', 1)}${cellText('C1', `Exported ${stamp} (MYT)`, 3)}</row>`
     + `<row r="2" ht="26" customHeight="1">${headers.map((value, index) => cellText(`${String.fromCharCode(65 + index)}2`, value, 2)).join('')}</row>`;
   const imageLinks = [];
-  const companyId = String(data.customerId || '');
-  const photoOrigin = buyerRoomUrl.origin === 'https://www.fmcgmalaysia.com' && buyerRoomUrl.pathname === '/buyer-room' && !buyerRoomUrl.username && !buyerRoomUrl.password;
   const body = rows.map((item, index) => {
     const row = index + 3;
     const amountFormula = `IF(OR(E${row}="",F${row}=""),"",E${row}*F${row})`;
     let imageLink = null;
-    const selectionId = item.selectionId;
-    if (photoOrigin && /^CUS-[a-z0-9-]{1,80}$/i.test(companyId) &&
-        typeof selectionId === 'string' && /^[a-z0-9_-]{1,128}$/i.test(selectionId)) {
-      const target = new URL(buyerRoomUrl.href);
-      target.searchParams.set('company', companyId);
-      target.searchParams.set('imageSelection', selectionId);
-      imageLink = { ref: `A${row}`, id: `rId${index + 2}`, target: target.href };
-      imageLinks.push(imageLink);
-    }
-    return `<row r="${row}">${cellText(`A${row}`, imageLink ? 'View image' : '', imageLink ? 1 : 0)}${cellText(`B${row}`, item.unitBarcode, 7)}`
+    try {
+      const image = new URL(String(item.imageUrl || ''));
+      if (['https:', 'http:'].includes(image.protocol)) {
+        imageLink = { ref: `A${row}`, id: `rId${index + 2}`, target: image.toString() };
+        imageLinks.push(imageLink);
+      }
+    } catch (_) { /* Keep missing or invalid image data as plain text. */ }
+    return `<row r="${row}">${cellText(`A${row}`, item.imageUrl, imageLink ? 1 : 0)}${cellText(`B${row}`, item.unitBarcode, 7)}`
       + `${cellText(`C${row}`, item.itemName)}${cellText(`D${row}`, item.packingSize)}${cellNumber(`E${row}`, item.ea, 4)}`
       + `${cellNumber(`F${row}`, item.unitPrice, 5)}${cellFormula(`G${row}`, amountFormula, 5)}${cellNumber(`H${row}`, item.cbmPerCtn, 6)}</row>`;
   }).join('');

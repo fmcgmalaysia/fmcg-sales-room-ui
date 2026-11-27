@@ -9,7 +9,6 @@ import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportTok
 import { createBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
 import { createBuyerSelectionMediaDownload } from 'backend/buyerSelectionDownload.js';
-import { readOwnedSelectionPreviews } from 'backend/catalogueProtectionRuntime.js';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { requireStaffCustomerAccess } from 'backend/masterStaffAccessClient.js';
 import { applyWebQuotations, readMasterWebQuotationData } from 'backend/masterWebQuotationData.js';
@@ -216,32 +215,6 @@ async function resolveBuyerContext(assistCustomerId = '', staffAction = 'BUYER_R
   const isPrimary = normalize(customer.primaryUserId) === resolvedUserId || Boolean(user.primaryUser);
   return contextFromCustomer(customer, { email, name: user.title || email, type: 'CUSTOMER_USER', userId: resolvedUserId, primaryUser: isPrimary });
 }
-const sourceUrl = /^(?:wix:)?image:\/\/v1\/|^https?:\/\/static\.wixstatic\.com\/media\/[^/?#]+\.(?:jpe?g|png|webp|avif|gif|svg|bmp|heic|tiff?)(?:[/?#]|$)/i;
-const imageKeys = new Set(['image','imageurl','imageinfo','productimage','mainimage','wiximageurl','originalimage','originalimageurl','thumbnail','thumbnailurl','photo','photourl']);
-
-// Strip legacy image data from selection and order responses only. Finance amounts,
-// dates, audit history and authenticated business-document descriptors stay intact.
-function withoutBuyerOriginalImages(value) {
-  if (Array.isArray(value)) return value.map(withoutBuyerOriginalImages);
-  if (typeof value === 'string') return sourceUrl.test(value.trim()) ? '' : value;
-  if (!value || typeof value !== 'object' || Object.getPrototypeOf(value) !== Object.prototype) return value;
-  return Object.fromEntries(Object.entries(value)
-    .filter(([key])=>!imageKeys.has(key.toLowerCase()))
-    .map(([key,field])=>[key,withoutBuyerOriginalImages(field)]));
-}
-
-// Authorization occurs in the existing Buyer Room access resolver. Each selection
-// record and its stored payload must both belong to the same authorized company.
-function buyerPreviewProducts(items, customerId, decodePayload) {
-  return items.flatMap(row=>{
-    if (row.customerId !== customerId) return [];
-    const data=decodePayload(row);
-    const productId=data?.productId;
-    if (data?.customerId !== customerId || typeof productId !== 'string' || !productId) return [];
-    return [{selectionId:row._id, id:productId}];
-  });
-}
-
 async function workspaceItems(buyer) {
   const { customerId } = buyer;
   let result = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', normalize(customerId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
@@ -326,7 +299,7 @@ async function buyerOrderHistory(customerId, cursor = '') {
   }
   const page = visible.slice(0, ORDER_PAGE_SIZE);
   return {
-    orders: page.map(record => withoutBuyerOriginalImages(payloadData(record))),
+    orders: page.map(record => payloadData(record)),
     nextCursor: visible.length > ORDER_PAGE_SIZE ? normalize(page[page.length - 1].orderSortKey) : ''
   };
 }
@@ -468,21 +441,7 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
       targetGp, ...withoutPrices } = item;
     return withoutPrices;
   });
-  return { ok: true, context: buyerPageContext(buyer), account, notifications, myList: items.filter(item => !item.removed).map(withoutBuyerOriginalImages), removed: removed.map(withoutBuyerOriginalImages), orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
-});
-
-export const getBuyerSelectionPreviews = webMethod(Permissions.SiteMember, async (ids, buyerScope = '', fullSize = false) => {
-  if (!Array.isArray(ids) || !ids.length || ids.length > 25 ||
-      (fullSize === true && ids.length !== 1) ||
-      ids.some(id=>typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(id))) return [];
-  const buyer = await resolveBuyerContext(buyerScope);
-  const found = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId',buyer.customerId)
-    .hasSome('_id',[...new Set(ids)]).limit(ids.length).find({suppressAuth:true,consistentRead:true});
-  const owned = buyerPreviewProducts(fullSize === true
-    ? found.items.filter(row => !row.removed && !payloadData(row).removed)
-    : found.items,buyer.customerId,payloadData);
-  const scope = ['ADMIN','STAFF'].includes(buyer.actorType) ? {assistCustomerId:buyer.customerId} : {buyerCompanyId:buyer.customerId};
-  return readOwnedSelectionPreviews(scope,owned,fullSize === true);
+  return { ok: true, context: buyerPageContext(buyer), account, notifications, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
 });
 
 export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async (payload = {}, requestId = '', assistCustomerId = '') => {
@@ -625,7 +584,7 @@ export const getBuyerOrderDetail = webMethod(Permissions.SiteMember, async (orde
   const editHistory = audits.map(payloadData).filter(audit => normalize(audit.customerId) === buyer.customerId && normalize(audit.orderId) === normalize(orderId) && ['SALES_QTY_UPDATED', 'BUYER_REDUCED_ORDER_LINE', 'BUYER_CANCELLED_ORDER_LINE', 'BUYER_ADDED_ORDER_LINE'].includes(audit.action));
   const sourceOrder = { ...payloadData(result.items[0]), lines: lines.map(payloadData).filter(line => normalize(line.customerId) === buyer.customerId && !line.addedToOrderId).sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId))) };
   const [projected] = await withMasterQuantities(buyer.customerId, [sourceOrder]);
-  return { ok: true, customerId: buyer.customerId, order: withoutBuyerOriginalImages({ ...projected, editHistory: [...editHistory, ...(projected.masterQuantityHistory || [])] }) };
+  return { ok: true, customerId: buyer.customerId, order: { ...projected, editHistory: [...editHistory, ...(projected.masterQuantityHistory || [])] } };
 });
 async function findOwnedItem(buyer, itemId) {
   let record = null;

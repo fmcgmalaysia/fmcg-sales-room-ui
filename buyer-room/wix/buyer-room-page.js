@@ -1,7 +1,5 @@
 import { connectAccountSession } from 'public/wix-account-session.js';
 import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
-import { getBuyerSelectionPreviews } from 'backend/catalogueAuth.web';
-import { downloadBuyerSelectionImage } from 'backend/protectedCatalogue.web.js';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { local, session } from 'wix-storage-frontend';
@@ -11,28 +9,6 @@ import { getBuyerCompanies, getCurrentBuyerContext } from 'backend/catalogueAuth
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
 
 let assistCustomerId = '';
-const buyerWorkbookPhotoKey = 'buyerWorkbookPhotoV1';
-function buyerWorkbookPhotoEntry(location, storage, signedIn, now = Date.now()) {
-  const company = selectedBuyerCompanyId(location);
-  const selectionId = String(location.query?.imageSelection || '').trim();
-  const valid = entry => /^CUS-[a-z0-9-]{1,80}$/i.test(entry?.company || '') &&
-    /^[a-z0-9_-]{1,128}$/i.test(entry?.selectionId || '') &&
-    Number.isFinite(entry.expiresAt) && entry.expiresAt > now && entry.expiresAt <= now + 20 * 60000;
-  const opened = { company, selectionId, expiresAt: now + 20 * 60000 };
-  try {
-    if (company || selectionId) {
-      storage.removeItem(buyerWorkbookPhotoKey);
-      if (valid(opened) && !signedIn) storage.setItem(buyerWorkbookPhotoKey, JSON.stringify(opened));
-      return valid(opened) ? opened : null;
-    }
-    if (signedIn) {
-      const saved = JSON.parse(storage.getItem(buyerWorkbookPhotoKey) || 'null');
-      storage.removeItem(buyerWorkbookPhotoKey);
-      return valid(saved) ? saved : null;
-    }
-  } catch (_) { /* Storage unavailable; an already opened link still works. */ }
-  return valid(opened) ? opened : null;
-}
 function getAssistCustomerId() {
   // Assisted access must be explicit in the URL. Catalogue already preserves
   // the `assist` query when staff return to Buyer Room, while ignoring an old
@@ -80,14 +56,9 @@ $w.onReady(async function () {
   if (redirectingToStaffLogin) return;
   const frame = $w('#html1');
   const downloadButton = $w('#downloadExcelButton');
-  const workbookPhoto = assistCustomerId ? null :
-    buyerWorkbookPhotoEntry(wixLocationFrontend, session, authentication.loggedIn());
-  const requestedCompanyId = assistCustomerId ? '' :
-    selectedBuyerCompanyId(wixLocationFrontend) || workbookPhoto?.company || '';
+  const requestedCompanyId = assistCustomerId ? '' : selectedBuyerCompanyId(wixLocationFrontend);
   let scopedCompanyId = requestedCompanyId;
   let companyAccess;
-  let pendingImageFromWorkbook = workbookPhoto?.selectionId || '';
-  let photoBusy = false;
   const companyAccessReady = assistCustomerId || !authentication.loggedIn() ? null :
     loadBuyerCompanyAccess(getBuyerCompanies, requestedCompanyId).then(access => {
       companyAccess = access;
@@ -263,13 +234,6 @@ $w.onReady(async function () {
       pendingOrderRequestId: readOrderRequest(buyerOrderStorageKey)?.requestId || '',
       ordersNextCursor: result.ordersNextCursor || ''
     }});
-    if (pendingImageFromWorkbook) {
-      const wanted = pendingImageFromWorkbook;
-      pendingImageFromWorkbook = '';
-      if (customerId === workbookPhoto?.company && result.myList?.some(item=>String(item.id)===wanted)) {
-        frame.postMessage({type:'BUYER_ROOM_SHOW_SELECTION_IMAGE',customerId,selectionId:wanted});
-      }
-    }
     prepareSelectionDownload();
   }
 
@@ -319,38 +283,6 @@ $w.onReady(async function () {
     if (['BUYER_ROOM_SELECTION_IMAGE_STATE', 'BUYER_ROOM_COMPANY_DIALOG_STATE', 'BUYER_ROOM_ACCOUNT_MENU_STATE'].includes(message.type) && typeof message.open === 'boolean') {
       if (message.open) downloadOccluders.add(message.type); else downloadOccluders.delete(message.type);
       updateDownloadButtonVisibility();
-      return;
-    }
-    if (message.type === 'BUYER_ROOM_IMAGE_PREVIEWS') {
-      const fullSize = message.fullSize === true;
-      if (!historyCustomerId || !Array.isArray(message.ids) || !message.ids.length || message.ids.length > 25 ||
-          (fullSize && message.ids.length !== 1) ||
-          typeof message.requestId !== 'string' || message.requestId.length > 64) return;
-      const customerId = historyCustomerId, currentScope = buyerScope();
-      let entries;
-      try { entries = await getBuyerSelectionPreviews(message.ids, currentScope, fullSize); }
-      catch (_) { entries = []; }
-      if (historyCustomerId === customerId) {
-        frame.postMessage({type:'BUYER_ROOM_IMAGE_PREVIEWS_RESULT',requestId:message.requestId,customerId,entries,fullSize});
-      }
-      return;
-    }
-    if (message.type === 'BUYER_ROOM_DOWNLOAD_IMAGE') {
-      const selectionId = message.selectionId;
-      const customerId = historyCustomerId;
-      if (photoBusy || !customerId || assistCustomerId || typeof selectionId !== 'string' ||
-          !/^[a-zA-Z0-9_-]{1,128}$/.test(selectionId)) return;
-      photoBusy = true;
-      try {
-        const result = await downloadBuyerSelectionImage(customerId,selectionId);
-        if (!result?.url || !result.url.startsWith('https://')) throw Error('Image unavailable');
-        if (historyCustomerId !== customerId) return;
-        frame.postMessage({type:'BUYER_ROOM_IMAGE_DOWNLOAD_RESULT',ok:true,customerId,selectionId});
-        wixLocationFrontend.to(result.url);
-      } catch (_) {
-        frame.postMessage({type:'BUYER_ROOM_IMAGE_DOWNLOAD_RESULT',ok:false,customerId,selectionId,
-          message:'High-resolution image is currently unavailable.'});
-      } finally { photoBusy = false; }
       return;
     }
     if (message.type === 'CUSTOMER_HISTORY_FILE_OPEN') { await openHistoryFile(message); return; }
@@ -506,7 +438,7 @@ $w.onReady(async function () {
 
   // When Wix has already started the fixed HTML embed, keep that frame and request a fresh handshake.
   // If the embed was not configured with its website address, retain the existing dynamic load.
-  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261127-workbook-images.html';
+  const buyerRoomEmbedUrl = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room-20261125-company-entry.html';
   if (frame.src !== buyerRoomEmbedUrl) frame.src = buyerRoomEmbedUrl;
   else frame.postMessage({ type: 'BUYER_ROOM_HOST_READY' });
   // The shell can render while the authorized data request is in flight.
