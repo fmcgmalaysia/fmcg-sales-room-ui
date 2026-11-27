@@ -10,7 +10,7 @@ import { auth } from '@wix/essentials';
 import { items } from '@wix/data';
 import { customTrigger } from '@wix/automations';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
-import { getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
+import { getCatalogueSelectionState, readAuthorizedCatalogueSelection } from 'backend/catalogueSelection.web.js';
 import { readCatalogueCustomerForStaff } from 'backend/catalogueStaffCustomerAccess.js';
 import { resolveBuyerCompany } from 'backend/buyerCompanyAccess.js';
 import { createCatalogueReadIdentity } from './catalogueReadIdentity.js';
@@ -79,7 +79,7 @@ async function load() {
     return entries.flatMap(entry=>entry.image ? [{ selectionId:entry.selectionId, image:entry.image }] : []);
   };
   cached = { selectionPreviews, read: createProtectedCatalogueRead({
-      data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews,
+      data: wixData, authorize, reserveRead, reserveCoverage, readSelection, readInitialSelection: readAuthorizedCatalogueSelection, addPreviews,
       deliveredIds: (actor, ids) => readDeliveredCatalogueIds(store, actor, ids, config.coveragePolicy.CATALOGUE_LIST.windowMs),
       readPrivatePreviews: privatePreviews, page: cataloguePage
     }),

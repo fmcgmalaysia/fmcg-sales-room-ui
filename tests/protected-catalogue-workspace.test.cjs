@@ -6,12 +6,14 @@ const vm = require('node:vm');
 const pageSource = readFileSync(resolve(__dirname, '../buyer-room/catalogue/wix/catalogue-access-20261123.page.js'), 'utf8').replace(/^import .*;\r?$/gm, '');
 
 function fixture() {
-  const messages = [], requests = [], details = [], handlers = {};
+  const messages = [], requests = [], details = [], handlers = {}, startup = [], ready = [];
   const $w = key => ({ postMessage: m => messages.push(m), onMessage: cb => { handlers[key] = cb; } });
-  $w.onReady = () => {};
+  $w.onReady = fn => ready.push(fn);
   const context = vm.createContext({ $w, URL, console,
+    authentication: { loggedIn: () => true }, session: { setItem() {}, removeItem() {} },
     wixLocationFrontend: { url: 'https://qa.example/catalogue' },
     wixWindowFrontend: { formFactor: 'Mobile' }, connectAccountSession() {},
+    openAssistedCatalogue: id => new Promise(done => startup.push({ id, done })),
     buyerCompanyPath: () => '/buyer-room', readCatalogueSelectionCounts: async () => ({ total: 0, food: 0, nonFood: 0 }),
     listCataloguePage: (scope, filters) => new Promise(done => requests.push({ scope, filters, done })),
     readCatalogueProduct: (scope, id) => new Promise(done => details.push({ scope, id, done }))
@@ -19,8 +21,30 @@ function fixture() {
   vm.runInContext(pageSource, context);
   const run = code => vm.runInContext(code, context);
   run('setupCatalogueWorkspace(() => {})');
-  return { messages, requests, details, run, send: data => handlers['#html5']({ data }) };
+  return { messages, requests, details, run, startup, startIdentity: ready[0], send: data => handlers['#html5']({ data }) };
 }
+test('assisted open renders the combined page without issuing a duplicate request', async () => {
+  const f = fixture();
+  f.run("wixLocationFrontend.query = { assist: 'QA-A' }");
+  f.startIdentity();
+  await f.send({ type: 'catalogueWorkspaceReady', instanceId: 'qa', deferredThumbnails: true });
+  assert.equal(f.startup[0].id, 'QA-A');
+  assert.equal(f.requests.length, 0);
+  f.startup[0].done({
+    selection: { ok: true, customerId: 'QA-A', companyName: 'QA Company', activeSelectedProductIds: ['first'] },
+    staff: { id: 'TEST', name: 'QA tester' }, page: { items: [{ id: 'first' }], afterId: 'first', previousAfterId: null }
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.requests.length, 0);
+  const rendered = f.messages.findLast(m => m.type === 'catalogueWorkspaceData');
+  assert.equal(rendered.pageStatus, 'ready');
+  assert.equal(rendered.products[0].id, 'first');
+  assert.equal(rendered.context.sheetName, 'QA Company');
+  const turn = f.send({ type: 'catalogueTurnPage', version: rendered.pageVersion, direction: 'next' });
+  assert.equal(f.requests[0].filters.afterId, 'first');
+  f.requests[0].done({ items: [{ id: 'next' }], afterId: null, previousAfterId: '' });
+  await turn;
+});
 test('workspace waits for company, discards slower search and rejects stale detail after exit', async () => {
   const f = fixture();
   await f.send({ type: 'catalogueWorkspaceReady', instanceId: 'qa' });

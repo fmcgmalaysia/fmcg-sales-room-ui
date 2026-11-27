@@ -24,35 +24,37 @@ function selectionLimit_(customer) { const value = Number(customer?.selectionLim
 
 export const getCatalogueSelectionState = webMethod(
   Permissions.SiteMember,
-  async (assistCustomerId = '') => {
-    const context = await resolveSelectionContext_(assistCustomerId);
-    const items = await selectionItemsForCustomer_(context.customerId);
-    // Keep recent removals recoverable; the same durable selection can be reused after expiry.
-    const now = Date.now();
-    const selectedItems = items.filter(item => !removedSelectionExpired(selectionPayload_(item), now));
-    const activeItems = selectedItems.filter((item) => !selectionPayload_(item).removed);
-    const counts = { food: 0, household: 0, personalCare: 0, general: 0 };
-    activeItems.forEach((item) => {
-      const payload = selectionPayload_(item);
-      counts[categoryBucket_(payload.mainCategory)] += 1;
-    });
-    return Object.freeze({
-      ok: true,
-      customerId: context.customerId,
-      companyName: context.companyName,
-      actorName: context.actorName,
-      selectedProductIds: selectionProductIds_(selectedItems),
-      removedProductIds: selectionProductIds_(selectedItems.filter(item => selectionPayload_(item).removed)),
-      activeSelectedProductIds: activeItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
-      selectedBarcodes: [...new Set(selectedItems.flatMap((item) => {
-        const data = selectionPayload_(item); return [data.unitBarcode, data.originalUnitBarcode];
-      }).filter(Boolean))],
-      counts,
-      total: activeItems.length,
-      selectionLimit: context.selectionLimit
-    });
-  }
+  async (assistCustomerId = '') => readAuthorizedCatalogueSelection(await resolveSelectionContext_(assistCustomerId))
 );
+
+// Internal only. Its caller owns current-request member and company verification.
+export const readAuthorizedCatalogueSelection = async context => {
+  const items = await selectionItemsForCustomer_(context.customerId);
+  // Keep recent removals recoverable; the same durable selection can be reused after expiry.
+  const now = Date.now();
+  const selectedItems = items.filter(item => !removedSelectionExpired(selectionPayload_(item), now));
+  const activeItems = selectedItems.filter((item) => !selectionPayload_(item).removed);
+  const counts = { food: 0, household: 0, personalCare: 0, general: 0 };
+  activeItems.forEach((item) => {
+    const payload = selectionPayload_(item);
+    counts[categoryBucket_(payload.mainCategory)] += 1;
+  });
+  return Object.freeze({
+    ok: true,
+    customerId: context.customerId,
+    companyName: context.companyName,
+    actorName: context.actorName,
+    selectedProductIds: selectionProductIds_(selectedItems),
+    removedProductIds: selectionProductIds_(selectedItems.filter(item => selectionPayload_(item).removed)),
+    activeSelectedProductIds: activeItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
+    selectedBarcodes: [...new Set(selectedItems.flatMap((item) => {
+      const data = selectionPayload_(item); return [data.unitBarcode, data.originalUnitBarcode];
+    }).filter(Boolean))],
+    counts,
+    total: activeItems.length,
+    selectionLimit: selectionLimit_(context)
+  });
+};
 
 export const addCatalogueSelection = webMethod(
   Permissions.SiteMember,

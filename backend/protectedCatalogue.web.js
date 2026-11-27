@@ -6,6 +6,11 @@ export const listCataloguePage = webMethod(Permissions.SiteMember, async (scope,
   return read.list(scope, filters);
 });
 
+export const openAssistedCatalogue = webMethod(Permissions.SiteMember, async customerId => {
+  const { read } = await getCatalogueProtection();
+  return read.openAssisted(customerId);
+});
+
 export const readCatalogueThumbnails = webMethod(Permissions.SiteMember, async (scope, ids) => {
   const { read } = await getCatalogueProtection();
   return read.thumbnails(scope, ids);

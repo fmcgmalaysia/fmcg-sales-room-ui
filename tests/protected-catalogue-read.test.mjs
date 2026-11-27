@@ -43,6 +43,42 @@ test('page size, non-overlapping continuation and last page', async () => {
   }
 });
 
+test('assisted first page shares one verified company between selection and a charged 25-row page', async () => {
+  const auth = [], charges = [], selections = [], coverage = [];
+  const { read } = fixture(true, async (actor, action, ids) => {
+    coverage.push([actor.customerId, action, ids.length]);
+    return true;
+  }, {
+    authorize: async scope => {
+      auth.push(scope.assistCustomerId);
+      return { actorId: 'wix', actorType: 'STAFF', staffId: 'QA', actorName: 'Tester', customerId: 'A' };
+    },
+    reserveRead: async (actor, action, size) => { charges.push([actor.customerId, action, size]); return true; },
+    readInitialSelection: async actor => {
+      selections.push(actor.customerId);
+      return { ok: true, customerId: actor.customerId, selectedProductIds: ['0001'] };
+    },
+    readPrivatePreviews: async products => products.map(item => ({ ...item, image: 'thumbnail' }))
+  });
+  const result = await read.openAssisted('A');
+  assert.equal(result.page.items.length, 25);
+  assert.equal(result.page.items.filter(item => item.image).length, 5);
+  assert.deepEqual(result.selection.selectedProductIds, ['0001']);
+  assert.deepEqual(result.staff, { id: 'QA', name: 'Tester', admin: false });
+  assert.deepEqual(auth, ['A']);
+  assert.deepEqual(charges, [['A', 'CATALOGUE_LIST', 25]]);
+  assert.deepEqual(coverage, [['A', 'CATALOGUE_LIST', 25]]);
+  await assert.rejects(read.openAssisted('B'), /Staff catalogue access unavailable/);
+  assert.deepEqual(selections, ['A']);
+
+  const blocked = fixture(false, undefined, {
+    authorize: async () => ({ actorId: 'wix', actorType: 'ADMIN', staffId: 'QA', customerId: 'A' }),
+    readInitialSelection: async () => ({ ok: true, customerId: 'A' })
+  });
+  assert.equal((await blocked.read.openAssisted('A')).page, null);
+  assert.deepEqual(blocked.calls, []);
+});
+
 test('menu pages wait for one private preview batch and defer the rest', async () => {
   let fullPageReads = 0;
   const previewBatches = [];

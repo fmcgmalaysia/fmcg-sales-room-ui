@@ -27,6 +27,7 @@ export function createCatalogueReadIdentity({ getMember, readStaff, resolveBuyer
     if (preview) return { ...actor, scope: 'staff-preview', customerId: '', companyName: '' };
     const customer = await readStaffCustomer(staff, id);
     if (String(customer?.customerId || '').trim() !== id) throw Error('Company access unavailable.');
-    return { ...actor, customerId: id, companyName: String(customer?.title || '').trim() };
+    return { ...actor, customerId: id, companyName: String(customer?.title || '').trim(),
+      staffId: staff.staffId, selectionLimit: customer.selectionLimit };
   };
 }

@@ -9,7 +9,7 @@ import { auth } from '@wix/essentials';
 import { items } from '@wix/data';
 import { customTrigger } from '@wix/automations';
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
-import { getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
+import { getCatalogueSelectionState, readAuthorizedCatalogueSelection } from 'backend/catalogueSelection.web.js';
 import { readCatalogueCustomerForStaff } from 'backend/catalogueStaffCustomerAccess.js';
 import { resolveBuyerCompany } from 'backend/buyerCompanyAccess.js';
 const { validCatalogueReader, createCatalogueReadIdentity } = (() => {
@@ -42,7 +42,8 @@ function createCatalogueReadIdentity({ getMember, readStaff, resolveBuyerCompany
     if (preview) return { ...actor, scope: 'staff-preview', customerId: '', companyName: '' };
     const customer = await readStaffCustomer(staff, id);
     if (String(customer?.customerId || '').trim() !== id) throw Error('Company access unavailable.');
-    return { ...actor, customerId: id, companyName: String(customer?.title || '').trim() };
+    return { ...actor, customerId: id, companyName: String(customer?.title || '').trim(),
+      staffId: staff.staffId, selectionLimit: customer.selectionLimit };
   };
 }
 
@@ -829,20 +830,28 @@ function listItem(item) {
   };
 }
 
-function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews, deliveredIds, readPrivatePreviews, page = createCataloguePageIndex(data) }) {
+function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, readInitialSelection, addPreviews, deliveredIds, readPrivatePreviews, page = createCataloguePageIndex(data) }) {
   function activeProducts() {
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
   }
 
-  async function allowed(scope, action, units) {
+  async function checkedActor(scope) {
     const actor = await authorize(scope);
     if (!validCatalogueReader(actor)) throw new Error('Catalogue access unavailable.');
-    if (await reserveRead(actor, action, units) !== true) throw new Error('Catalogue access temporarily limited.');
     return actor;
   }
 
-  return {
-    async list(scope, input = {}) {
+  async function charge(actor, action, units) {
+    if (await reserveRead(actor, action, units) !== true) throw new Error('Catalogue access temporarily limited.');
+  }
+
+  async function allowed(scope, action, units) {
+    const actor = await checkedActor(scope);
+    await charge(actor, action, units);
+    return actor;
+  }
+
+  async function list(scope, input = {}) {
       const term = boundedText(input.term, 120);
       const principle = boundedText(input.principle, 150);
       const afterId = boundedText(input.afterId, 128);
@@ -861,10 +870,14 @@ function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCov
         const { ids, food } = await readSelection(scope, actor);
         selectedIds = view === 'FOOD' ? food : view === 'NON_FOOD' ? new Set([...ids].filter(id => !food.has(id))) : ids;
       }
-      const { items, afterId: nextId, previousAfterId } = await page({ term, principle, subcategories, afterId, anchorId, size, selectedIds });
+      return deliverPage(actor, { term, principle, subcategories, afterId, anchorId, size, selectedIds }, input.deferImages);
+  }
+
+  async function deliverPage(actor, input, deferImages) {
+      const { items, afterId: nextId, previousAfterId } = await page(input);
       if (await reserveCoverage(actor, 'CATALOGUE_LIST', items.map(item => item.id)) !== true) throw new Error('Catalogue access temporarily limited.');
       let products = items;
-      if (input.deferImages === true) {
+      if (deferImages === true) {
         // One signing batch starts the visible list. A slow fallback for a single
         // missing preview must not hold up the initial page.
         const first = await readPrivatePreviews(items.slice(0, FIRST_PREVIEW_COUNT));
@@ -873,6 +886,25 @@ function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCov
         products = await addPreviews(items);
       }
       return { items: products, afterId: nextId, previousAfterId };
+  }
+
+  return {
+    list,
+    async openAssisted(customerId) {
+      const id = boundedText(customerId, 160);
+      if (!id) throw Error('Choose a catalogue company.');
+      const actor = await checkedActor({ assistCustomerId: id });
+      if (!['ADMIN', 'STAFF'].includes(actor.actorType) || !actor.staffId || actor.customerId !== id) {
+        throw Error('Staff catalogue access unavailable.');
+      }
+      const [selection, firstPage] = await Promise.all([
+        readInitialSelection(actor),
+        charge(actor, 'CATALOGUE_LIST', 25).then(() => deliverPage(actor, {
+          term: '', principle: '', subcategories: [], afterId: '', anchorId: '', size: 25
+        }, true)).catch(() => null)
+      ]);
+      if (selection?.ok !== true || selection.customerId !== id) throw Error('Company selection unavailable.');
+      return { page: firstPage, selection, staff: { id: actor.staffId, name: actor.actorName, admin: actor.actorType === 'ADMIN' } };
     },
 
     async thumbnails(scope, ids) {
@@ -982,7 +1014,7 @@ async function load() {
     return entries.flatMap(entry=>entry.image ? [{ selectionId:entry.selectionId, image:entry.image }] : []);
   };
   cached = { selectionPreviews, read: createProtectedCatalogueRead({
-      data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews,
+      data: wixData, authorize, reserveRead, reserveCoverage, readSelection, readInitialSelection: readAuthorizedCatalogueSelection, addPreviews,
       deliveredIds: (actor, ids) => readDeliveredCatalogueIds(store, actor, ids, config.coveragePolicy.CATALOGUE_LIST.windowMs),
       readPrivatePreviews: privatePreviews, page: cataloguePage
     }),

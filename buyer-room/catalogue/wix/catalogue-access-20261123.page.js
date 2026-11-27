@@ -7,7 +7,7 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
-import { listCataloguePage, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts, readCatalogueThumbnails } from 'backend/protectedCatalogue.web.js';
+import { listCataloguePage, openAssistedCatalogue, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts, readCatalogueThumbnails } from 'backend/protectedCatalogue.web.js';
 import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
 import { cataloguePictureProgress, continueCataloguePictures } from 'backend/cataloguePhotoMigrationAdmin.web.js';
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
@@ -48,7 +48,7 @@ let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261127-catalogue-priority-images-v1';
+const CATALOGUE_BUILD_VERSION = '20261127-catalogue-assisted-open-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -357,49 +357,48 @@ $w.onReady(() => {
     if (wixWindowFrontend.rendering?.env === 'backend') return;
     void (async () => {
     const assistCustomerId = getCatalogueAssistCustomerId();
-    const assistedSelection = assistCustomerId ? getCatalogueSelectionState(assistCustomerId).catch(() => null) : null;
+    if (assistCustomerId) {
+        try {
+            const { selection, staff, page } = await openAssistedCatalogue(assistCustomerId);
+            if (selection?.ok !== true || selection.customerId !== assistCustomerId || !staff?.id) {
+                throw new Error('Catalogue customer access could not be verified.');
+            }
+            try { session.setItem('catalogueAssistCustomerId', selection.customerId); } catch (_) {}
+            const mode = staff.admin ? 'admin' : 'assist';
+            selectionContext = { mode, assistCustomerId: selection.customerId, staffId: staff.id };
+            sidebarSelectionState(selection);
+            const { query, principle, subIds, selectionView } = catalogueWorkspaceFilter;
+            if (!query && !principle && !subIds.length && !selectionView && (!catalogueWorkspaceReady || thumbnailWorkspace)) {
+                ++catalogueWorkspaceQueryVersion;
+                pageStarted = true;
+                catalogueWorkspaceProducts = page?.items || [];
+                catalogueNext = page?.afterId ?? null;
+                cataloguePrevious = page?.previousAfterId ?? null;
+                cataloguePageStatus = Array.isArray(page?.items) ? 'ready' : 'failed';
+            }
+            setReader({ assistCustomerId: selection.customerId });
+            sendCatalogueContext({
+                type: 'catalogueContext', mode,
+                sheetName: String(selection.companyName || selection.customerId).trim(),
+                signedInName: String(staff.name || staff.id).trim()
+            });
+        } catch (_) {
+            try { session.removeItem('catalogueAssistCustomerId'); } catch (_) {}
+            if (wixWindowFrontend.viewMode === 'Site' && !authentication.loggedIn()) goToCatalogueStaffLogin(assistCustomerId);
+            else reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
+        }
+        return;
+    }
     let staff;
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
 
     if (staff?.authorized) {
         if (staff.customerScope?.pages && !staff.customerScope.pages.includes('CATALOGUE')) { reportCatalogueAccess('Staff Management does not allow Catalogue access.'); return; }
-        if (assistCustomerId) {
-            try {
-                const selection = await assistedSelection;
-                if (!selection?.ok || selection.customerId !== assistCustomerId) {
-                    throw new Error('Catalogue customer access could not be verified.');
-                }
-                try { session.setItem('catalogueAssistCustomerId', selection.customerId); } catch (_) {}
-                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
-                sidebarSelectionState(selection);
-                setReader({ assistCustomerId: selection.customerId });
-                sendCatalogueContext({
-                    type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
-                    sheetName: String(selection.companyName || selection.customerId).trim(),
-                    signedInName: String(staff.staffName || staff.staffId || '').trim()
-                });
-            } catch (error) {
-                try { session.removeItem('catalogueAssistCustomerId'); } catch (_) {}
-                if (!authentication.loggedIn()) goToCatalogueStaffLogin(assistCustomerId);
-                else reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
-                return;
-            }
-        } else {
-            session.removeItem('catalogueAssistCustomerId');
-            selectionContext = null;
-            catalogueSelectionResolved = true;
-            setReader({ staffPreview: true });
-            sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
-        }
-        return;
-    }
-
-    if (assistCustomerId) {
-        if (wixWindowFrontend.viewMode === 'Site' && (!authentication.loggedIn() || staff?.reason === 'NOT_LOGGED_IN')) {
-            goToCatalogueStaffLogin(assistCustomerId);
-        } else {
-            reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
-        }
+        session.removeItem('catalogueAssistCustomerId');
+        selectionContext = null;
+        catalogueSelectionResolved = true;
+        setReader({ staffPreview: true });
+        sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
         return;
     }
 
