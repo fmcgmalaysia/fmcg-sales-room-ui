@@ -266,9 +266,9 @@ async function fetchPage(position = {}, edge = '') {
             deferImages: thumbnailWorkspace, ...position, ...(measureTiming ? { measureTiming } : {})
         });
         if (scope !== catalogueReadScope || version !== catalogueWorkspaceQueryVersion) return;
-        if (result.timing) console.info('Catalogue timing ' + JSON.stringify({
+        if (result.timing) $w('#text20').text = 'Catalogue timing ' + JSON.stringify({
             firstPage: version === 1, assistedContextMs, rpcMs: Date.now() - requestStarted, ...result.timing
-        }));
+        });
         catalogueWorkspaceProducts = result.items;
         cataloguePrevious = result.previousAfterId;
         catalogueNext = result.afterId;
