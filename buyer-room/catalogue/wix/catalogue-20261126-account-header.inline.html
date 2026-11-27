@@ -51,8 +51,19 @@
       .buyer-room:focus-visible{outline-color:#1d7373}
     }
   </style>
-<meta name="header-account-menu-build" content="20261126-account-menu-v1">
-<link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.css?v=20261126-account-menu-v1">
+<meta name="header-account-menu-build" content="20261127-catalogue-top-account-v2">
+<style>
+  .catalogue-account-entry{position:absolute;z-index:2;top:10px;right:22px;clip-path:inset(50%);min-height:44px;padding:0 12px;border:1px solid #c8d3df;border-radius:8px;background:#fff;color:var(--navy);font:inherit;cursor:pointer}
+  .catalogue-account-entry:focus{clip-path:none;outline:2px solid #244b73;outline-offset:1px}
+  .catalogue-account-entry svg{display:none}
+  @media(max-width:900px){
+    .mobile-brand{padding-right:108px}
+    .catalogue-account-entry{display:grid;place-items:center;top:5px;right:57px;width:44px;clip-path:none;padding:0;border:0;background:transparent;color:#fff}
+    .catalogue-account-entry:focus{outline-color:#fff;outline-offset:-2px}
+    .catalogue-account-entry span{display:none}
+    .catalogue-account-entry svg{display:block;width:23px;height:23px;fill:currentColor}
+  }
+</style>
 </head>
 <body>
   <header class="header"><div class="navrow">
@@ -69,10 +80,12 @@
       <input id="mobileSearch" type="search" aria-label="Search products, brands or categories" placeholder="Search products" autocomplete="off">
       </label>
     </div>
+    <button class="catalogue-account-entry" type="button" aria-label="Account menu" aria-haspopup="dialog"><span>Account menu</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M3 21c0-4 4-7 9-7s9 3 9 7H3z"/></svg></button>
     <div class="nav-actions"><a class="buyer-room" id="buyerRoom" target="fmcgBuyerRoom" aria-disabled="true" aria-label="Open Buyer Room"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 5h2l1.5 9.1h10.4l2.1-6.3H6.1M9.2 18.5a1.2 1.2 0 1 0 0 .1M17 18.5a1.2 1.2 0 1 0 0 .1"/></svg></span><span class="label">Buyer Room</span><span class="arrow" aria-hidden="true">→</span></a></div>
   </div></header>
   <script>
     const post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
+    document.querySelector('.catalogue-account-entry').addEventListener('click',()=>post('catalogueOpenAccountMenu'));
     const buttons=[...document.querySelectorAll('.navbtn')];const buyerRoom=document.getElementById('buyerRoom');let active='',hoverTimer,staffPreview=false,buyerRoomPending=false;
     buyerRoom.addEventListener('click',event=>{
       if(!buyerRoom.hasAttribute('href')||buyerRoomPending){event.preventDefault();return}

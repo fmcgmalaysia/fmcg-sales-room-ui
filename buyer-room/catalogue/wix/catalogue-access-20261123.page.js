@@ -664,12 +664,13 @@ function setupNav() {
         resetCatalogueHome().catch(error => console.error('Catalogue home could not be opened', error));
     });
     const accountAvatar = $w('#vectorImage7');
-    accountAvatar.accessibility.ariaLabel = 'Account menu';
     accountAvatar.onClick(() => openCatalogueAccountMenu(workspace));
 
     header.onMessage(async (event) => {
         const message = event.data || {};
-        if (message.type === 'catalogueHeaderReady') {
+        if (message.type === 'catalogueOpenAccountMenu') {
+            openCatalogueAccountMenu(workspace);
+        } else if (message.type === 'catalogueHeaderReady') {
             if (catalogueContextMessage) header.postMessage(catalogueContextMessage);
             if (catalogueMenuMessage) mega.postMessage(catalogueMenuMessage);
         } else if (message.type === 'catalogueMain') {
