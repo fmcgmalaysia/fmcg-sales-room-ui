@@ -360,7 +360,7 @@ function sendCatalogueWorkspaceData() {
 }
 
 function catalogueOpeningDataReady() {
-    return catalogueWorkspaceFullReadComplete && catalogueCategoriesLoaded &&
+    return (catalogueWorkspaceProducts.length > 0 || catalogueWorkspaceFullReadComplete) && catalogueCategoriesLoaded &&
         catalogueSelectionResolved && selectionContext?.mode === 'buyer';
 }
 
@@ -1034,6 +1034,7 @@ function setupFluidCatalogueLayout() {
         ['#section12', 'catalogue-native-masthead'],
         ['#imageX38', 'catalogue-home-logo'],
         ['#section7', 'catalogue-navigation-stage'],
+        ['#text21', 'catalogue-nav-placeholder'],
         ['#html4', 'catalogue-compact-menu'],
         ['#section6', 'catalogue-results-stage']
     ];

@@ -36,18 +36,18 @@
 }
 
 /* This static Wix heading sits above the navigation iframe on Catalogue. */
-.catalogue-navigation-stage [id="comp-mwmbejdt"] {
+.catalogue-navigation-stage .catalogue-nav-placeholder {
   display: none !important;
 }
 
-body:has(.catalogue-results-stage) footer > section[id$="_r_comp-kbgakgyt"],
-body:has(.catalogue-results-stage) footer > section[id$="_r_comp-kbgakgyt"] > [data-testid="responsive-container-content"] {
+[data-testid="responsive-container-content"]:has(> main > .catalogue-results-stage) > footer > section,
+[data-testid="responsive-container-content"]:has(> main > .catalogue-results-stage) > footer > section > [data-testid="responsive-container-content"] {
   height: auto !important;
   min-height: 46px !important;
   grid-template-rows: minmax(46px, auto) !important;
 }
 
-body:has(.catalogue-results-stage) footer [id$="_r_comp-kd5pdf7t"] {
+[data-testid="responsive-container-content"]:has(> main > .catalogue-results-stage) > footer > section > [data-testid="responsive-container-content"] > div:has(p) {
   align-self: center !important;
   margin-block: 0 !important;
 }
