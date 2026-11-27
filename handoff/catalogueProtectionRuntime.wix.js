@@ -637,7 +637,7 @@ function createCataloguePreviewReader({ data, media, now = Date.now }) {
 
 return { createVerifiedCatalogueMedia, verifyCatalogueImageAsset, createCataloguePreviewReader };
 })();
-const { cleanCatalogueJpeg, createCatalogueLegacyPreview } = (() => {
+const { previewBytes, cleanCatalogueJpeg, createCatalogueLegacyPreview } = (() => {
 
 const IMAGE_URL = /^wix:image:\/\/v1\/([\w~-]+\.(?:jpe?g|png|webp))\//i;
 const WIX_CDN = /^https:\/\/static\.wixstatic\.com\/media\/([\w~-]+\.(?:jpe?g|png|webp))$/i;
@@ -645,7 +645,7 @@ const MAX_BYTES = 24000;
 const EDGE = 128;
 const OPTIONS = { suppressAuth:true, consistentRead:true };
 
-function previewBytes(url) {
+function previewBytes(url, maxBytes = MAX_BYTES, timeout = 1200) {
   return new Promise((resolve, reject) => {
     const request = https.get(url, response => {
       if (response.statusCode !== 200 || !/^image\/jpeg\b/i.test(response.headers['content-type'] || '')) {
@@ -659,20 +659,20 @@ function previewBytes(url) {
       response.on('aborted', () => reject(Error('Preview interrupted.')));
       response.on('data', chunk => {
         size += chunk.length;
-        if (size > MAX_BYTES) response.destroy(Error('Preview is too large.'));
+        if (size > maxBytes) response.destroy(Error('Preview is too large.'));
         else chunks.push(chunk);
       });
       response.on('end', () => resolve(Buffer.concat(chunks, size)));
     });
-    request.setTimeout(1200, () => request.destroy(Error('Preview timed out.')));
+    request.setTimeout(timeout, () => request.destroy(Error('Preview timed out.')));
     request.on('error', reject);
   });
 }
 
 // Return only the JPEG picture data. Application and comment segments can contain original
 // metadata or embedded files. Reject unsupported or malformed files instead of returning them.
-function cleanCatalogueJpeg(bytes) {
-  if (!Buffer.isBuffer(bytes) || bytes.length > MAX_BYTES || bytes.length < 16 ||
+function cleanCatalogueJpeg(bytes, edge = EDGE, maxBytes = MAX_BYTES) {
+  if (!Buffer.isBuffer(bytes) || bytes.length > maxBytes || bytes.length < 16 ||
       bytes.readUInt16BE(0) !== 0xffd8 || bytes.readUInt16BE(bytes.length-2) !== 0xffd9) return '';
   const parts = [bytes.subarray(0,2)];
   let frame = 0, scans = 0;
@@ -686,7 +686,7 @@ function cleanCatalogueJpeg(bytes) {
       if (length < 8 || frame) return '';
       const height = bytes.readUInt16BE(at+5);
       const width = bytes.readUInt16BE(at+7);
-      if (!width || !height || width > EDGE || height > EDGE) return '';
+      if (!width || !height || width > edge || height > edge) return '';
       frame = marker;
     }
     if (marker === 0xda) {
@@ -760,7 +760,7 @@ function createCatalogueLegacyPreview({data, download=previewBytes, now=Date.now
   };
 }
 
-return { cleanCatalogueJpeg, createCatalogueLegacyPreview };
+return { previewBytes, cleanCatalogueJpeg, createCatalogueLegacyPreview };
 })();
 const { buyerImageLink, openBuyerImage, readBuyerPrivateOriginal } = (() => {
 const buyerRoom = 'https://www.fmcgmalaysia.com/buyer-room';
@@ -805,6 +805,96 @@ async function readBuyerPrivateOriginal(productId, services) {
 
 return { buyerImageLink, openBuyerImage, readBuyerPrivateOriginal };
 })();
+const { signedCatalogueZoomUrl, readCatalogueZoomPreview, prepareCatalogueZoomPreview } = (() => {
+
+const mediaId = uri => typeof uri === 'string' && /^wix:image:\/\/v1\/([a-zA-Z0-9_.~-]+)\//.exec(uri)?.[1];
+const maxBytes = 180000;
+
+function signedCatalogueZoomUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.username || url.password) return '';
+    const signed = url.origin === 'https://download-files.wixmp.com' &&
+      /^\/media\/[A-Za-z0-9_.~-]+\.(?:jpe?g|png|webp)$/i.test(url.pathname) && url.searchParams.get('token');
+    const wixDownload = url.origin === 'https://download-files.wix.com' &&
+      url.pathname === '/_api/download/file' && url.searchParams.get('downloadToken');
+    return signed || wixDownload ? url.href : '';
+  } catch { return ''; }
+}
+
+function matchingPreview(row) {
+  const preview = row?.zoomPreview;
+  const id = mediaId(preview?.uri);
+  if (row?.status !== 'VERIFIED' || !id || !row.originalHash || !row.originalId || !row.sourceId ||
+      preview.status !== 'READY' || preview.originalHash !== row.originalHash || !preview.hash ||
+      preview.hash === row.originalHash || [row.originalId, row.sourceId, mediaId(row.previewFileUrl)].includes(id)) return null;
+  return preview;
+}
+
+function sourceMatches(row, image) {
+  return Boolean(row?.sourceId) && (mediaId(image) === row.sourceId || image === 'https://static.wixstatic.com/media/' + row.sourceId);
+}
+
+async function readCatalogueZoomPreview(row, media, source) {
+  const preview = matchingPreview(row);
+  if (!preview || !sourceMatches(row, source)) return '';
+  const info = await media.getFileInfo(preview.uri);
+  if (info.fileUrl !== preview.uri || info.hash !== preview.hash || info.isPrivate !== true || info.opStatus !== 'READY' ||
+      info.mediaType !== 'image' || !Number.isSafeInteger(info.width) || !Number.isSafeInteger(info.height) ||
+      Math.min(info.width, info.height) < 1 || Math.max(info.width, info.height) > 512 ||
+      !Number.isSafeInteger(info.sizeInBytes) || info.sizeInBytes < 1 || info.sizeInBytes > maxBytes) return '';
+  return signedCatalogueZoomUrl(await media.getDownloadUrl(preview.uri, 1, null, null));
+}
+
+// The owner prepares a separate private image before the customer can request it.
+// The CDN is used only on the server for existing, already verified legacy media.
+async function prepareCatalogueZoomPreview(row, { media, readSource, save, upload, download = previewBytes }) {
+  if (row?.status !== 'VERIFIED' || !Number.isSafeInteger(row.version) || !row.originalHash ||
+      mediaId(row.fileUrl) !== row.originalId || !/^[\w~-]+\.(?:jpe?g|png|webp)$/i.test(row.sourceId || '')) return { status: 'UNAVAILABLE' };
+  const productImage = await readSource(row._id);
+  const expectedSource = 'https://static.wixstatic.com/media/' + row.sourceId;
+  if (!sourceMatches(row, productImage)) return { status: 'SOURCE_CHANGED' };
+  if (matchingPreview(row)) return { status: 'READY' };
+  if (row.zoomPreview?.status === 'COPYING') return { status: 'REVIEW' };
+  const original = await media.getFileInfo(row.fileUrl);
+  if (original.fileUrl !== row.fileUrl || original.isPrivate !== true || original.opStatus !== 'READY' || original.hash !== row.originalHash ||
+      !Number.isSafeInteger(original.width) || !Number.isSafeInteger(original.height) ||
+      Math.min(original.width, original.height) < 1) return { status: 'UNAVAILABLE' };
+  const edge = Math.min(512, Math.max(original.width, original.height));
+  if (row.zoomPreview?.status === 'STORED') {
+    return finishPreview(row, row.zoomPreview.uri, edge, productImage, { media, save, readSource });
+  }
+  const imageUrl = expectedSource + '/v1/fit/w_' + edge + ',h_' + edge + '/file.jpg';
+  const clean = cleanCatalogueJpeg(await download(imageUrl, maxBytes, 4000), edge, maxBytes);
+  if (!clean) return { status: 'UNAVAILABLE' };
+  const claim = { status: 'COPYING', originalHash: row.originalHash };
+  if (!await save(row, claim)) return { status: 'BUSY' };
+  const name = createHash('sha256').update(row._id + ':' + row.originalHash).digest('hex').slice(0, 32);
+  const file = await upload(Buffer.from(clean.split(',')[1], 'base64'), name + '-zoom-512.jpg');
+  if (!mediaId(file?.fileUrl)) return { status: 'REVIEW' };
+  const stored = { status: 'STORED', uri: file.fileUrl, originalHash: row.originalHash };
+  const claimed = { ...row, version: row.version + 1 };
+  if (!await save(claimed, stored)) return { status: 'REVIEW' };
+  return finishPreview({ ...row, version: row.version + 2, zoomPreview: stored }, stored.uri, edge, productImage, { media, save, readSource });
+}
+
+async function finishPreview(row, uri, edge, productImage, { media, save, readSource }) {
+  if (!mediaId(uri) || row.zoomPreview?.originalHash !== row.originalHash) return { status: 'REVIEW' };
+  let info;
+  try { info = await media.getFileInfo(uri); } catch { return { status: 'PROCESSING' }; }
+  if (info.opStatus === 'PENDING' || info.opStatus === 'PROCESSING') return { status: 'PROCESSING' };
+  const preview = { status: 'READY', uri, hash: info.hash, originalHash: row.originalHash };
+  if (!matchingPreview({ ...row, zoomPreview: preview }) || info.fileUrl !== preview.uri || info.isPrivate !== true || info.opStatus !== 'READY' ||
+      info.mediaType !== 'image' || !Number.isSafeInteger(info.sizeInBytes) || info.sizeInBytes < 1 || info.sizeInBytes > maxBytes ||
+      !Number.isSafeInteger(info.width) || !Number.isSafeInteger(info.height) ||
+      Math.min(info.width, info.height) < 1 || Math.max(info.width, info.height) !== edge ||
+      await readSource(row._id) !== productImage) return { status: 'REVIEW' };
+  const saved = await save(row, preview);
+  return saved ? { status: 'READY', width: info.width, height: info.height } : { status: 'REVIEW' };
+}
+
+return { signedCatalogueZoomUrl, readCatalogueZoomPreview, prepareCatalogueZoomPreview };
+})();
 const { createProtectedCatalogueRead } = (() => {
 
 // Internal service. The Wix web method supplies the existing company/employee
@@ -830,7 +920,7 @@ function listItem(item) {
   };
 }
 
-function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, readInitialSelection, addPreviews, deliveredIds, readPrivatePreviews, page = createCataloguePageIndex(data) }) {
+function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, readInitialSelection, addPreviews, deliveredIds, readPrivatePreviews, readZoomPreview, page = createCataloguePageIndex(data) }) {
   function activeProducts() {
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
   }
@@ -929,6 +1019,15 @@ function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCov
       return [...new Set(result.items.filter(name => typeof name === 'string' && name.trim()).map(name => name.trim()))];
     },
 
+    async zoom(scope, productId) {
+      if (typeof productId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(productId)) return '';
+      const actor = await allowed(scope, 'CATALOGUE_DETAIL', 1);
+      if (!(await deliveredIds(actor, [productId])).includes(productId)) return '';
+      const result = await activeProducts().eq('_id', productId).fields('_id', 'image').limit(1).find(OPTIONS);
+      if (!result.items.length || !await reserveCoverage(actor, 'CATALOGUE_DETAIL', [productId])) return '';
+      return readZoomPreview(productId, result.items[0].image);
+    },
+
     async selectionCounts(scope) {
       const actor = await allowed(scope, 'CATALOGUE_LIST', 1);
       const { ids, food } = await readSelection(scope, actor);
@@ -1016,7 +1115,12 @@ async function load() {
   cached = { selectionPreviews, read: createProtectedCatalogueRead({
       data: wixData, authorize, reserveRead, reserveCoverage, readSelection, readInitialSelection: readAuthorizedCatalogueSelection, addPreviews,
       deliveredIds: (actor, ids) => readDeliveredCatalogueIds(store, actor, ids, config.coveragePolicy.CATALOGUE_LIST.windowMs),
-      readPrivatePreviews: privatePreviews, page: cataloguePage
+      readPrivatePreviews: privatePreviews, page: cataloguePage,
+      readZoomPreview: async (productId, source) => {
+        const result = await wixData.query('CatalogueImageAssets').eq('_id', productId).limit(1)
+          .find({ suppressAuth: true, consistentRead: true });
+        return readCatalogueZoomPreview(result.items[0], verifiedMedia, source);
+      }
     }),
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),
@@ -1037,6 +1141,32 @@ export async function readOwnedSelectionPreviews(scope, products, fullSize = fal
 export async function processCatalogueSecurityNotifications() {
   const protection = await getCatalogueProtection();
   await protection.retry();
+}
+
+export async function prepareCatalogueZoomImage(productId) {
+  if (typeof productId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(productId)) return { status: 'UNAVAILABLE' };
+  const registry = 'CatalogueImageAssets';
+  const options = { suppressAuth: true, consistentRead: true };
+  const result = await wixData.query(registry).eq('_id', productId).limit(1).find(options);
+  const update = auth.elevate(items.patch);
+  return prepareCatalogueZoomPreview(result.items[0], {
+    media: verifiedMedia,
+    readSource: async id => {
+      const product = await wixData.get('FMCGMALAYSIA', id, options);
+      return product?.pointBaseStatus === 'ACTIVE' ? product.image : '';
+    },
+    upload: (bytes, name) => mediaManager.upload('/Protected catalogue', bytes, name, {
+      mediaOptions: { mediaType: 'image', mimeType: 'image/jpeg' },
+      metadataOptions: { isPrivate: true, isVisitorUpload: false }
+    }),
+    save: async (row, zoomPreview) => {
+      const saved = await update(registry, row._id, [
+        { fieldPath: 'version', action: 'SET_FIELD', value: row.version + 1 },
+        { fieldPath: 'zoomPreview', action: 'SET_FIELD', value: zoomPreview }
+      ], { condition: { version: { $eq: row.version }, sourceId: { $eq: row.sourceId }, status: { $eq: 'VERIFIED' } } });
+      return saved?.version === row.version + 1 && saved.zoomPreview?.status === zoomPreview.status;
+    }
+  });
 }
 
 export async function refreshCatalogueIndexSnapshot() {

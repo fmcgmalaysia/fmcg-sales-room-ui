@@ -7,7 +7,7 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web.js';
-import { listCataloguePage, openAssistedCatalogue, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts, readCatalogueThumbnails } from 'backend/protectedCatalogue.web.js';
+import { listCataloguePage, openAssistedCatalogue, readCatalogueProduct, listCataloguePrinciples, readCatalogueSelectionCounts, readCatalogueThumbnails, readCatalogueZoom } from 'backend/protectedCatalogue.web.js';
 import { getBuyerCompanies } from 'backend/catalogueAuth.web.js';
 import { cataloguePictureProgress, continueCataloguePictures } from 'backend/cataloguePhotoMigrationAdmin.web.js';
 import { loadBuyerCompanyAccess, buyerCompanyPath, selectedBuyerCompanyId } from 'public/buyerCompanyNavigation.js';
@@ -48,7 +48,7 @@ let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261127-catalogue-assisted-open-v1';
+const CATALOGUE_BUILD_VERSION = '20261127-catalogue-prepared-zoom-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -739,6 +739,16 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             try { images = await readCatalogueThumbnails(scope, ids); } catch (_) { /* Keep the list usable. */ }
             if (scope === catalogueReadScope && version === catalogueWorkspaceQueryVersion) {
                 workspace.postMessage({ type: 'catalogueThumbnailResult', version, requestId, images });
+            }
+        } else if (message.type === 'catalogueZoomRequest') {
+            const version = catalogueWorkspaceQueryVersion, scope = catalogueReadScope;
+            const { id, requestId } = message;
+            if (!scope || cataloguePageStatus !== 'ready' || version !== message.version ||
+                !Number.isSafeInteger(requestId) || !catalogueWorkspaceProducts.some(product => product.id === id)) return;
+            let image = '';
+            try { image = await readCatalogueZoom(scope, id); } catch (_) { /* Keep the standard image available. */ }
+            if (scope === catalogueReadScope && version === catalogueWorkspaceQueryVersion) {
+                workspace.postMessage({ type: 'catalogueZoomResult', version, id, requestId, image });
             }
         } else if (message.type === 'catalogueWorkspacePosition') {
             rememberMobileCataloguePosition(message);

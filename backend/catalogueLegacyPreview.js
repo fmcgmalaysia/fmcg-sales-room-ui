@@ -6,7 +6,7 @@ const MAX_BYTES = 24000;
 const EDGE = 128;
 const OPTIONS = { suppressAuth:true, consistentRead:true };
 
-function previewBytes(url) {
+export function previewBytes(url, maxBytes = MAX_BYTES, timeout = 1200) {
   return new Promise((resolve, reject) => {
     const request = https.get(url, response => {
       if (response.statusCode !== 200 || !/^image\/jpeg\b/i.test(response.headers['content-type'] || '')) {
@@ -20,20 +20,20 @@ function previewBytes(url) {
       response.on('aborted', () => reject(Error('Preview interrupted.')));
       response.on('data', chunk => {
         size += chunk.length;
-        if (size > MAX_BYTES) response.destroy(Error('Preview is too large.'));
+        if (size > maxBytes) response.destroy(Error('Preview is too large.'));
         else chunks.push(chunk);
       });
       response.on('end', () => resolve(Buffer.concat(chunks, size)));
     });
-    request.setTimeout(1200, () => request.destroy(Error('Preview timed out.')));
+    request.setTimeout(timeout, () => request.destroy(Error('Preview timed out.')));
     request.on('error', reject);
   });
 }
 
 // Return only the JPEG picture data. Application and comment segments can contain original
 // metadata or embedded files. Reject unsupported or malformed files instead of returning them.
-export function cleanCatalogueJpeg(bytes) {
-  if (!Buffer.isBuffer(bytes) || bytes.length > MAX_BYTES || bytes.length < 16 ||
+export function cleanCatalogueJpeg(bytes, edge = EDGE, maxBytes = MAX_BYTES) {
+  if (!Buffer.isBuffer(bytes) || bytes.length > maxBytes || bytes.length < 16 ||
       bytes.readUInt16BE(0) !== 0xffd8 || bytes.readUInt16BE(bytes.length-2) !== 0xffd9) return '';
   const parts = [bytes.subarray(0,2)];
   let frame = 0, scans = 0;
@@ -47,7 +47,7 @@ export function cleanCatalogueJpeg(bytes) {
       if (length < 8 || frame) return '';
       const height = bytes.readUInt16BE(at+5);
       const width = bytes.readUInt16BE(at+7);
-      if (!width || !height || width > EDGE || height > EDGE) return '';
+      if (!width || !height || width > edge || height > edge) return '';
       frame = marker;
     }
     if (marker === 0xda) {

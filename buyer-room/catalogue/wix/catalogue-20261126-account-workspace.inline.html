@@ -9,6 +9,7 @@
 <meta name="catalogue-mobile-columns-build" content="20261123-catalogue-mobile-columns-v3">
 <meta name="catalogue-selection-return-build" content="20261117-catalogue-selection-return-v1">
 <meta name="catalogue-priority-images-build" content="20261127-catalogue-priority-images-v1">
+<meta name="catalogue-zoom-build" content="20261127-catalogue-prepared-zoom-v1">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="catalogue-build-version" content="2026-10-06-catalogue-cbm-four-decimals-v52">
@@ -61,12 +62,14 @@
       .detail-scroll .facts{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}
       .detail-scroll .fact span{overflow-wrap:anywhere}
     }
-    .product-zoom{display:none}
-    @media(min-width:901px) and (hover:hover) and (pointer:fine){
-      .product-image:has(img){cursor:zoom-in}
-      .facts-wrap{position:relative}
-      .product-zoom:not([hidden]){display:block;position:absolute;inset:0 0 auto;height:clamp(132px,32vh,300px);z-index:2;pointer-events:none;background:#fff no-repeat;border:1px solid var(--line);border-radius:8px}
-    }
+    .product-image{border:0;padding:0;color:inherit}.product-image:not(:disabled){cursor:zoom-in}
+    .product-image:not(:disabled)::after{content:'+';position:absolute;right:10px;bottom:10px;width:32px;height:32px;display:grid;place-items:center;background:#fff;border:1px solid var(--line);border-radius:50%;font-size:21px;color:#243c58}
+    .zoom-dialog{max-width:min(560px,calc(100vw - 24px));width:max-content;min-width:min(320px,calc(100vw - 24px));box-sizing:border-box;padding:14px 16px;border:1px solid var(--line);border-radius:12px;color:inherit;background:#fff}
+    .zoom-dialog::backdrop{background:rgba(14,36,54,.55)}
+    .zoom-title{display:flex;align-items:center;gap:14px;justify-content:space-between}
+    .zoom-title h2{font-size:15px;margin:0}.zoom-title button{padding:6px 11px;border:1px solid var(--line);border-radius:6px;background:#fff;color:inherit;font-size:19px;cursor:pointer}
+    .zoom-stage{display:grid;place-items:center;min-height:140px;margin-top:10px;touch-action:pinch-zoom}
+    .zoom-stage img{display:block;max-width:100%;max-height:min(68vh,512px);width:auto;height:auto;object-fit:contain}
     @media(max-width:900px){
       .shell{grid-template-rows:auto minmax(0,1fr);min-height:0}
       .toolbar{grid-template-columns:minmax(0,1fr);padding:0 9px;position:relative}
@@ -181,9 +184,9 @@
         <button class="detail-close" id="closeDetail" type="button" aria-label="Close product details">×</button>
         <div class="detail-head"><div class="detail-title"><h2 class="detail-name" id="detailName">Select a product</h2><button class="principle" id="detailPrinciple" type="button" disabled>Product information will appear here.</button></div></div>
         <div class="detail-scroll">
-          <div class="media-wrap"><div class="product-image" id="productImage"><span class="fallback">Select a product</span></div><button class="primary" id="selectButton" type="button" disabled>+ Select for Quote</button><p class="cta-note" id="selectionHint">Add this product to My Selection, then review your products and request a confirmed quote in Buyer Room.</p></div>
+          <div class="media-wrap"><button class="product-image" id="productImage" type="button" aria-label="Enlarge product image" aria-haspopup="dialog" disabled><span class="fallback">Select a product</span></button><button class="primary" id="selectButton" type="button" disabled>+ Select for Quote</button><p class="cta-note" id="selectionHint">Add this product to My Selection, then review your products and request a confirmed quote in Buyer Room.</p></div>
           <div class="facts-wrap"><div class="facts"><div class="fact"><label>Packing Size</label><span id="detailPack">—</span></div><div class="fact"><label>EA / CTN</label><span id="detailEa">—</span></div><div class="fact"><label>Unit Barcode</label><span id="detailBarcode">—</span></div><div class="fact" id="detailInnerFact" hidden><label class="title-case">Inner Box Barcode</label><span id="detailInnerBarcode">—</span></div><div class="fact"><label>Carton Barcode</label><span id="detailCartonBarcode">—</span></div><div class="fact"><label>CBM / CTN</label><span id="detailCbm">—</span></div><div class="fact"><label class="title-case">Made In</label><span id="detailOrigin">—</span></div><div class="fact"><label>Shelf Life</label><span id="detailShelf">—</span></div></div>
-          <div class="price"><div class="price-label">Indicative unit price</div><div class="price-main"><strong id="detailPrice">QUOTE REQUIRED</strong><span id="priceUnit"></span></div></div><div class="product-zoom" id="productZoom" hidden aria-hidden="true"></div></div>
+          <div class="price"><div class="price-label">Indicative unit price</div><div class="price-main"><strong id="detailPrice">QUOTE REQUIRED</strong><span id="priceUnit"></span></div></div></div>
           <section class="promo-carousel" id="promoCarousel" aria-label="Member benefits">
             <div class="promo-slide active" data-promo="0"><img src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/assets/catalogue-promo-member-pricing-v1.webp?v=20260930-v46" alt="10,000 products and lowest export price guarantee for high-volume orders"></div>
             <div class="promo-slide" data-promo="1"><img src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/assets/catalogue-promo-buyer-room-v1.webp?v=20260930-v46" alt="Buyer Room with VIP pricing, ordering and documents"></div>
@@ -203,6 +206,10 @@
       <div id="mobileCategories"><p role="status">Loading categories…</p></div>
     </dialog>
     <dialog class="detail-modal" id="detailModal" aria-labelledby="detailName"></dialog>
+    <dialog class="zoom-dialog" id="productZoom" aria-labelledby="zoomName">
+      <div class="zoom-title"><h2 id="zoomName">Product image</h2><button id="closeZoom" type="button" aria-label="Close product image">×</button></div>
+      <div class="zoom-stage" id="zoomStage"><span role="status" id="zoomStatus"></span></div>
+    </dialog>
   </main>
   <script src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room/company-switch-sheet-20261125.js"></script>
 <script>
@@ -271,31 +278,38 @@
     const detailHome=detailPanel.parentElement;
     const detailScroll=detailPanel.querySelector('.detail-scroll');
     const productImage=document.getElementById('productImage'),productZoom=document.getElementById('productZoom');
-    const zoomPointer=matchMedia('(min-width:901px) and (hover:hover) and (pointer:fine)');
-    function closeProductZoom(){productZoom.hidden=true;}
-    function zoomOffset(point, size, preview){
-      if(size<=preview)return (preview-size)/2;
-      return Math.min(0,Math.max(preview-size,preview/2-point*size));
+    const zoomStage=document.getElementById('zoomStage'),zoomStatus=document.getElementById('zoomStatus'),zoomName=document.getElementById('zoomName');
+    let zoomRequest, zoomSequence=0;
+    function closeProductZoom(){if(productZoom.open)productZoom.close();}
+    document.getElementById('closeZoom').onclick=closeProductZoom;
+    productZoom.addEventListener('click',event=>{if(event.target===productZoom)closeProductZoom();});
+    productZoom.addEventListener('close',()=>{if(!productZoom.open){zoomRequest=null;zoomStage.querySelector('img')?.remove();}});
+    productImage.onclick=()=>{
+      const product=state.products.find(item=>item.id===state.activeId);
+      if(!product||pageStatus!=='ready'||productZoom.open)return;
+      zoomName.textContent=product.name||'Product image';
+      zoomStatus.textContent='Loading image…';
+      productZoom.showModal();
+      zoomRequest={id:product.id,version:pageVersion,requestId:++zoomSequence};
+      post('catalogueZoomRequest',zoomRequest);
+    };
+    async function showZoomImage(message){
+      const request=zoomRequest;
+      if(!productZoom.open||!request||message.version!==pageVersion||message.id!==request.id||message.requestId!==request.requestId)return;
+      try{
+        const url=new URL(message.image);
+        if(url.protocol!=='https:'||!['download-files.wixmp.com','download-files.wix.com'].includes(url.hostname))throw Error();
+        const image=new Image();image.alt=zoomName.textContent;image.src=url.href;
+        await image.decode();
+        if(Math.max(image.naturalWidth,image.naturalHeight)>512)throw Error();
+        if(zoomRequest!==request||!productZoom.open)return;
+        zoomStatus.textContent='';zoomStage.querySelector('img')?.remove();zoomStage.append(image);
+      }catch{if(zoomRequest===request&&productZoom.open)zoomStatus.textContent='Image preview is unavailable.';}
     }
-    productImage.addEventListener('pointermove',event=>{
-      const image=productImage.querySelector('img');
-      if(!zoomPointer.matches||event.pointerType!=='mouse'||!image?.naturalWidth||!image.naturalHeight){closeProductZoom();return;}
-      const bounds=image.getBoundingClientRect();
-      const fit=Math.min(bounds.width/image.naturalWidth,bounds.height/image.naturalHeight);
-      const width=image.naturalWidth*fit,height=image.naturalHeight*fit;
-      if(!width||!height){closeProductZoom();return;}
-      const x=(event.clientX-bounds.left-(bounds.width-width)/2)/width;
-      const y=(event.clientY-bounds.top-(bounds.height-height)/2)/height;
-      if(x<0||x>1||y<0||y>1){closeProductZoom();return;}
-      productZoom.hidden=false;
-      const zoomWidth=width*2.5,zoomHeight=height*2.5;
-      productZoom.style.backgroundImage=`url(${JSON.stringify(image.currentSrc)})`;
-      productZoom.style.backgroundSize=`${zoomWidth}px ${zoomHeight}px`;
-      productZoom.style.backgroundPosition=`${zoomOffset(x,zoomWidth,productZoom.clientWidth)}px ${zoomOffset(y,zoomHeight,productZoom.clientHeight)}px`;
-    });
-    productImage.addEventListener('pointerleave',closeProductZoom);
-    productImage.addEventListener('pointercancel',closeProductZoom);
-    zoomPointer.addEventListener('change',closeProductZoom);
+    function updateProductImage(markup){
+      productImage.innerHTML=markup;
+      productImage.disabled=!productImage.querySelector('img');
+    }
     const selectButton=document.getElementById('selectButton'),selectHome=selectButton.parentElement,selectNext=selectButton.nextElementSibling;
     const previousProduct=document.getElementById('previousProduct'),nextProduct=document.getElementById('nextProduct');
     const selectionHint=document.getElementById('selectionHint'),defaultSelectionHint=selectionHint.textContent;
@@ -416,14 +430,13 @@
         thumbnails.set(id,urls.get(id)||'');
         const row=rows.querySelector(`[data-id="${CSS.escape(id)}"] .thumb`);
         if(row)row.innerHTML=imageMarkup({id});
-        if(id===state.activeId)productImage.innerHTML=imageMarkup({id},true);
+        if(id===state.activeId)updateProductImage(imageMarkup({id},true));
       }
       thumbnailRequest=null;
       queueCatalogueThumbnails();
     }
     function render(preserveScroll=false){const scrollTop=rows.scrollTop,allItems=filtered(),items=allItems,pending=state.selectionCountsReady?'':'—';document.getElementById('selectionCount').textContent=state.selectionCountsReady?state.selectionTotal:pending;document.getElementById('selectionLimit').textContent=state.selectionLimit;document.getElementById('foodSelectionCount').textContent=state.selectionCountsReady?state.selectionFoodCount:pending;document.getElementById('nonFoodSelectionCount').textContent=state.selectionCountsReady?state.selectionNonFoodCount:pending;document.getElementById('selectionAllowance').textContent=`Your account allows up to ${state.selectionLimit} selected SKUs.`;document.getElementById('selectionFilter').classList.toggle('active',state.selectionView==='ALL');document.getElementById('foodSelectionFilter').classList.toggle('active',state.selectionView==='FOOD');document.getElementById('nonFoodSelectionFilter').classList.toggle('active',state.selectionView==='NON_FOOD');
       document.body.classList.toggle('selection-view',Boolean(state.selectionView));
-      closeProductZoom();
       if(!allItems.length){
         const message=pageStatus;
         rows.innerHTML='<div class="empty" role="status"></div>';
@@ -433,7 +446,7 @@
       if(!allItems.some(p=>p.id===state.activeId))state.activeId=allItems[0].id;
       rows.replaceChildren(...items.map(p=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${removed(p)?'removed':selected(p)?'selected':''}">${removed(p)?'Removed':selected(p)?'Selected':'Available'}</span></span>`;b.onclick=()=>{activate(p.id,true);openProductDetail()};return b}));
       if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);updateDetailNavigation(allItems);queueCatalogueThumbnails();}
-    function activate(id,scroll){state.activeId=id;render(true);if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);if(row){const rowBox=row.getBoundingClientRect(),listBox=rows.getBoundingClientRect();if(rowBox.top<listBox.top)rows.scrollTop-=listBox.top-rowBox.top;else if(rowBox.bottom>listBox.bottom)rows.scrollTop+=rowBox.bottom-listBox.bottom}}}
+    function activate(id,scroll){if(id!==state.activeId)closeProductZoom();state.activeId=id;render(true);if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);if(row){const rowBox=row.getBoundingClientRect(),listBox=rows.getBoundingClientRect();if(rowBox.top<listBox.top)rows.scrollTop-=listBox.top-rowBox.top;else if(rowBox.bottom>listBox.bottom)rows.scrollTop+=rowBox.bottom-listBox.bottom}}}
     function showDetail(p){
       if(p && (!mobile.matches || detailModal.open)){
         if(details.has(p.id))p=details.get(p.id) ? {...p, ...details.get(p.id)} : p;
@@ -442,8 +455,8 @@
           post('catalogueDetailRequest',{id:p.id,version:pageVersion});
         }
       }
-      const button=document.getElementById('selectButton'),innerFact=document.getElementById('detailInnerFact');selectionHint.textContent=p&&removed(p)?'Open Removed in Buyer Room and restore this product to request a new quote.':defaultSelectionHint;if(!p){innerFact.hidden=true;document.getElementById('productImage').innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';detailPrinciple.textContent='Product information will appear here.';detailPrinciple.disabled=true;['detailPack','detailEa','detailBarcode','detailInnerBarcode','detailCartonBarcode','detailCbm','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.textContent='+ Select for Quote';button.disabled=true;return}
-      const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;document.getElementById('productImage').innerHTML=imageMarkup(p,true);document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
+      const button=document.getElementById('selectButton'),innerFact=document.getElementById('detailInnerFact');selectionHint.textContent=p&&removed(p)?'Open Removed in Buyer Room and restore this product to request a new quote.':defaultSelectionHint;if(!p){innerFact.hidden=true;updateProductImage('<span class="fallback">Select a product</span>');document.getElementById('detailName').textContent='Select a product';detailPrinciple.textContent='Product information will appear here.';detailPrinciple.disabled=true;['detailPack','detailEa','detailBarcode','detailInnerBarcode','detailCartonBarcode','detailCbm','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.textContent='+ Select for Quote';button.disabled=true;return}
+      const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;updateProductImage(imageMarkup(p,true));document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
       if(details.has(p.id) && !details.get(p.id)){
         const retry=document.createElement('button');
         retry.type='button';retry.textContent='Retry product details';
@@ -492,7 +505,7 @@
     rows.addEventListener('scroll',reportCataloguePosition);
     rows.addEventListener('scroll',queueCatalogueThumbnails,{passive:true});
     window.addEventListener('resize',queueCatalogueThumbnails,{passive:true});
-    document.addEventListener('keydown',e=>{if(!detailModal.open&&!mobileMenu.open&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();e.stopPropagation();move(e.key==='ArrowDown'?1:-1);post('catalogueWorkspaceNavigate')}});
+    document.addEventListener('keydown',e=>{if(!detailModal.open&&!mobileMenu.open&&!productZoom.open&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();e.stopPropagation();move(e.key==='ArrowDown'?1:-1);post('catalogueWorkspaceNavigate')}});
     function setSelectionView(view){post('catalogueSelectionView',{view:state.selectionView===view?'':view});}
     document.getElementById('selectionFilter').onclick=()=>setSelectionView('ALL');document.getElementById('foodSelectionFilter').onclick=()=>setSelectionView('FOOD');document.getElementById('nonFoodSelectionFilter').onclick=()=>setSelectionView('NON_FOOD');document.getElementById('closeDetail').onclick=closeProductDetail;
     const promo=document.getElementById('promoCarousel'),promoSlides=[...promo.querySelectorAll('.promo-slide')],promoDots=[...promo.querySelectorAll('.promo-dot')];let promoIndex=0,promoTimer;
@@ -507,13 +520,14 @@
       }
       if(d.type==='catalogueMenuData')renderMobileCategories(d.items);
       if(d.type==='catalogueThumbnailResult')showCatalogueThumbnails(d);
+      if(d.type==='catalogueZoomResult')void showZoomImage(d);
       if(d.type==='catalogueDetailResult' && d.version===pageVersion && detailRequests.has(d.id)){
         details.set(d.id,d.product?.id===d.id?d.product:null);
         if(state.activeId===d.id)showDetail(state.products.find(p=>p.id===d.id));
       }
       if(d.type==='catalogueWorkspaceData'){
         if(!Number.isInteger(d.pageVersion)||d.pageVersion<pageVersion)return;
-        if(d.pageVersion!==pageVersion){details.clear();detailRequests.clear();thumbnails.clear();thumbnailRequest=null;state.activeId='';}
+        if(d.pageVersion!==pageVersion){closeProductZoom();details.clear();detailRequests.clear();thumbnails.clear();thumbnailRequest=null;state.activeId='';}
         pageVersion=d.pageVersion;pageStatus=d.pageStatus;
         thumbnailsDeferred=d.thumbnailsDeferred===true;
         hasPrevious=d.hasPrevious===true;hasNext=d.hasNext===true;

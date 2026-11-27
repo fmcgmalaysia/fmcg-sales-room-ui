@@ -24,7 +24,7 @@ function listItem(item) {
   };
 }
 
-export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, readInitialSelection, addPreviews, deliveredIds, readPrivatePreviews, page = createCataloguePageIndex(data) }) {
+export function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, readInitialSelection, addPreviews, deliveredIds, readPrivatePreviews, readZoomPreview, page = createCataloguePageIndex(data) }) {
   function activeProducts() {
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
   }
@@ -121,6 +121,15 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
       await allowed(scope, 'CATALOGUE_LIST', 1);
       const result = await activeProducts().hasSome('subCategories', [id]).limit(1000).distinct('principle', OPTIONS);
       return [...new Set(result.items.filter(name => typeof name === 'string' && name.trim()).map(name => name.trim()))];
+    },
+
+    async zoom(scope, productId) {
+      if (typeof productId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(productId)) return '';
+      const actor = await allowed(scope, 'CATALOGUE_DETAIL', 1);
+      if (!(await deliveredIds(actor, [productId])).includes(productId)) return '';
+      const result = await activeProducts().eq('_id', productId).fields('_id', 'image').limit(1).find(OPTIONS);
+      if (!result.items.length || !await reserveCoverage(actor, 'CATALOGUE_DETAIL', [productId])) return '';
+      return readZoomPreview(productId, result.items[0].image);
     },
 
     async selectionCounts(scope) {

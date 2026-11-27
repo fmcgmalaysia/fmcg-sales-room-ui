@@ -1,5 +1,5 @@
 import { Permissions, webMethod } from 'wix-web-module';
-import { getCatalogueProtection } from 'backend/catalogueProtectionRuntime.js';
+import { getCatalogueProtection, prepareCatalogueZoomImage } from 'backend/catalogueProtectionRuntime.js';
 
 export const listCataloguePage = webMethod(Permissions.SiteMember, async (scope, filters) => {
   const { read } = await getCatalogueProtection();
@@ -15,6 +15,13 @@ export const readCatalogueThumbnails = webMethod(Permissions.SiteMember, async (
   const { read } = await getCatalogueProtection();
   return read.thumbnails(scope, ids);
 });
+
+export const readCatalogueZoom = webMethod(Permissions.SiteMember, async (scope, productId) => {
+  const { read } = await getCatalogueProtection();
+  return read.zoom(scope, productId);
+});
+
+export const prepareCatalogueZoomPhoto = webMethod(Permissions.Admin, prepareCatalogueZoomImage);
 
 export const readCatalogueProduct = webMethod(Permissions.SiteMember, async (scope, productId) => {
   const { read } = await getCatalogueProtection();

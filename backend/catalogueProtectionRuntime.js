@@ -22,6 +22,7 @@ import { createProtectedCatalogueRead } from './protectedCatalogueRead.js';
 import { createCatalogueSelectionScope } from './catalogueSelectionScope.js';
 import { createCataloguePageIndex } from './cataloguePageIndex.js';
 import { createCatalogueIndexSnapshot } from './catalogueIndexSnapshot.js';
+import { prepareCatalogueZoomPreview, readCatalogueZoomPreview } from './catalogueZoomPreview.js';
 
 const collection = 'CatalogueProtection';
 const indexSnapshot = createCatalogueIndexSnapshot(wixData, collection);
@@ -81,7 +82,12 @@ async function load() {
   cached = { selectionPreviews, read: createProtectedCatalogueRead({
       data: wixData, authorize, reserveRead, reserveCoverage, readSelection, readInitialSelection: readAuthorizedCatalogueSelection, addPreviews,
       deliveredIds: (actor, ids) => readDeliveredCatalogueIds(store, actor, ids, config.coveragePolicy.CATALOGUE_LIST.windowMs),
-      readPrivatePreviews: privatePreviews, page: cataloguePage
+      readPrivatePreviews: privatePreviews, page: cataloguePage,
+      readZoomPreview: async (productId, source) => {
+        const result = await wixData.query('CatalogueImageAssets').eq('_id', productId).limit(1)
+          .find({ suppressAuth: true, consistentRead: true });
+        return readCatalogueZoomPreview(result.items[0], verifiedMedia, source);
+      }
     }),
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),
@@ -102,6 +108,32 @@ export async function readOwnedSelectionPreviews(scope, products, fullSize = fal
 export async function processCatalogueSecurityNotifications() {
   const protection = await getCatalogueProtection();
   await protection.retry();
+}
+
+export async function prepareCatalogueZoomImage(productId) {
+  if (typeof productId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(productId)) return { status: 'UNAVAILABLE' };
+  const registry = 'CatalogueImageAssets';
+  const options = { suppressAuth: true, consistentRead: true };
+  const result = await wixData.query(registry).eq('_id', productId).limit(1).find(options);
+  const update = auth.elevate(items.patch);
+  return prepareCatalogueZoomPreview(result.items[0], {
+    media: verifiedMedia,
+    readSource: async id => {
+      const product = await wixData.get('FMCGMALAYSIA', id, options);
+      return product?.pointBaseStatus === 'ACTIVE' ? product.image : '';
+    },
+    upload: (bytes, name) => mediaManager.upload('/Protected catalogue', bytes, name, {
+      mediaOptions: { mediaType: 'image', mimeType: 'image/jpeg' },
+      metadataOptions: { isPrivate: true, isVisitorUpload: false }
+    }),
+    save: async (row, zoomPreview) => {
+      const saved = await update(registry, row._id, [
+        { fieldPath: 'version', action: 'SET_FIELD', value: row.version + 1 },
+        { fieldPath: 'zoomPreview', action: 'SET_FIELD', value: zoomPreview }
+      ], { condition: { version: { $eq: row.version }, sourceId: { $eq: row.sourceId }, status: { $eq: 'VERIFIED' } } });
+      return saved?.version === row.version + 1 && saved.zoomPreview?.status === zoomPreview.status;
+    }
+  });
 }
 
 export async function refreshCatalogueIndexSnapshot() {
