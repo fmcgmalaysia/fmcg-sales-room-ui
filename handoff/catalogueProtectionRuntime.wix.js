@@ -283,7 +283,7 @@ async function retryCatalogueAlerts(store, deliver, now = Date.now) {
 
 return { createCatalogueRiskAlert, retryCatalogueAlerts };
 })();
-const { createCataloguePageIndex } = (() => {
+const { buildCatalogueIndex, createCataloguePageIndex } = (() => {
 // The Wix page previously sorted the full product list inside each browser.
 // Keep only search and ordering fields in this server-side index. Recheck the
 // current page against the active CMS rows before returning anything.
@@ -318,26 +318,32 @@ async function collect(query) {
   }
 }
 
-function createCataloguePageIndex(data, now = Date.now) {
+async function buildCatalogueIndex(data) {
+  const rows = await collect(data.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').fields(...listFields, ...sortKeys));
+  const seen = new Set();
+  return rows.map(row => {
+    const entry = listItem(row);
+    entry.sortNumber = text(sortKeys.map(key => row[key]).find(value => value != null));
+    entry.searchText = [entry.name, entry.description, entry.barcode, entry.principle, entry.brandName].join(' ').toLowerCase();
+    return entry;
+  }).filter(entry => {
+    if (!entry.id || !entry.name || seen.has(entry.id)) return false;
+    seen.add(entry.id);
+    return true;
+  }).sort(compare).map(({ id, principle, searchText }) => ({ id, principle, searchText }));
+}
+
+function createCataloguePageIndex(data, now = Date.now, readSnapshot) {
   const active = () => data.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE');
   let cached, pending, expires = 0;
   async function ordered() {
     if (cached && now() < expires) return cached;
-    if (!pending) pending = collect(active().fields(...listFields, ...sortKeys)).then(rows => {
-      const seen = new Set();
-      cached = rows.map(row => {
-        const entry = listItem(row);
-        entry.sortNumber = text(sortKeys.map(key => row[key]).find(value => value != null));
-        entry.searchText = [entry.name, entry.description, entry.barcode, entry.principle, entry.brandName].join(' ').toLowerCase();
-        return entry;
-      }).filter(entry => {
-        if (!entry.id || !entry.name || seen.has(entry.id)) return false;
-        seen.add(entry.id);
-        return true;
-      }).sort(compare);
+    if (!pending) pending = (async () => {
+      const snapshot = await readSnapshot?.();
+      cached = snapshot ?? await buildCatalogueIndex(data);
       expires = now() + 60000;
       return cached;
-    }).finally(() => { pending = null; });
+    })().finally(() => { pending = null; });
     return pending;
   }
 
@@ -370,7 +376,121 @@ function createCataloguePageIndex(data, now = Date.now) {
   };
 }
 
-return { createCataloguePageIndex };
+return { buildCatalogueIndex, createCataloguePageIndex };
+})();
+const { createCatalogueIndexSnapshot } = (() => {
+
+const options = { suppressAuth: true, consistentRead: true };
+const products = 'FMCGMALAYSIA';
+const headId = 'catalogue-index-head-v1';
+const partIds = Array.from({ length: 16 }, (_, index) => 'catalogue-index-v1-' + (index + 1));
+const maxPartBytes = 128 * 1024;
+
+function pack(entries) {
+  const parts = [];
+  let rows = [], bytes = 2;
+  for (const { id, principle, searchText } of entries) {
+    const row = JSON.stringify([id, principle, searchText]);
+    const rowBytes = Buffer.byteLength(row);
+    if (rowBytes + 2 > maxPartBytes) throw Error('Catalogue index row exceeds its storage limit.');
+    if (bytes + rowBytes + 1 > maxPartBytes) {
+      parts.push('[' + rows.join(',') + ']');
+      rows = [];
+      bytes = 2;
+    }
+    rows.push(row);
+    bytes += rowBytes + 1;
+  }
+  if (rows.length) parts.push('[' + rows.join(',') + ']');
+  if (parts.length > partIds.length) throw Error('Catalogue index exceeds its storage limit.');
+  return parts;
+}
+
+function generationFor(revision, parts) {
+  const hash = createHash('sha256').update(revision);
+  for (const part of parts) hash.update(part);
+  return hash.digest('hex');
+}
+
+function createCatalogueIndexSnapshot(data, collection) {
+  async function sourceRevision() {
+    const [latest, count] = await Promise.all([
+      data.query(products).descending('_updatedDate', '_id').fields('_id', '_updatedDate').limit(1).find(options),
+      data.query(products).eq('pointBaseStatus', 'ACTIVE').count(options)
+    ]);
+    const item = latest.items[0];
+    if (!item && count === 0) return 'empty';
+    const updated = new Date(item?._updatedDate).getTime();
+    if (!item?._id || !Number.isFinite(updated) || !Number.isSafeInteger(count) || count < 0) {
+      throw Error('Catalogue source revision unavailable.');
+    }
+    return JSON.stringify([updated, item._id, count]);
+  }
+
+  async function readRows(stamp, saved) {
+    const records = new Map(saved.items.map(item => [item._id, item]));
+    const head = records.get(headId);
+    if (head?.indexRevision !== stamp || !Number.isInteger(head.indexParts) ||
+        head.indexParts < 0 || head.indexParts > partIds.length || !Number.isSafeInteger(head.indexRows) ||
+        head.indexRows < 0) return null;
+    const parts = [];
+    const entries = [];
+    const ids = new Set();
+    for (const id of partIds.slice(0, head.indexParts)) {
+      const part = records.get(id);
+      if (part?.indexGeneration !== head.indexGeneration || typeof part.indexPayload !== 'string' ||
+          Buffer.byteLength(part.indexPayload) > maxPartBytes) return null;
+      parts.push(part.indexPayload);
+      const rows = JSON.parse(part.indexPayload);
+      if (!Array.isArray(rows)) return null;
+      for (const row of rows) {
+        if (!Array.isArray(row) || row.length !== 3 || row.some(value => typeof value !== 'string')) return null;
+        const [productId, principle, searchText] = row;
+        if (!productId || ids.has(productId)) return null;
+        ids.add(productId);
+        entries.push({ id: productId, principle, searchText });
+      }
+    }
+    return entries.length === head.indexRows && generationFor(stamp, parts) === head.indexGeneration ? entries : null;
+  }
+
+  const savedRows = () => data.query(collection).hasSome('_id', [headId, ...partIds]).limit(partIds.length + 1).find(options);
+
+  async function read() {
+    try {
+      const [stamp, stored] = await Promise.all([sourceRevision(), savedRows()]);
+      return await readRows(stamp, stored);
+    } catch {
+      return null;
+    }
+  }
+
+  async function refresh() {
+    const [revision, stored] = await Promise.all([sourceRevision(), savedRows()]);
+    const current = await readRows(revision, stored).catch(() => null);
+    if (current) return { status: 'CURRENT', count: current.length };
+    const entries = await buildCatalogueIndex(data);
+    const parts = pack(entries);
+    const generation = generationFor(revision, parts);
+    if (await sourceRevision() !== revision) return { status: 'SOURCE_CHANGED', count: 0 };
+    if (parts.length) {
+      const result = await data.bulkSave(collection, parts.map((indexPayload, index) => ({
+        _id: partIds[index], indexGeneration: generation, indexPayload
+      })), options);
+      if (result.errors?.length) throw Error('Catalogue index shards could not be saved.');
+    }
+    await data.save(collection, {
+      _id: headId, indexRevision: revision, indexGeneration: generation, indexParts: parts.length, indexRows: entries.length
+    }, options);
+    const verified = await read();
+    if (!verified) throw Error('Catalogue index readback failed.');
+    return { status: 'BUILT', count: verified.length };
+  }
+
+  return { read, refresh };
+}
+
+return { createCatalogueIndexSnapshot };
 })();
 const { createCatalogueSelectionScope } = (() => {
 // My Selection totals cover the whole company selection, including products
@@ -709,8 +829,7 @@ function listItem(item) {
   };
 }
 
-function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews, deliveredIds, readPrivatePreviews }) {
-  const page = createCataloguePageIndex(data);
+function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCoverage, readSelection, addPreviews, deliveredIds, readPrivatePreviews, page = createCataloguePageIndex(data) }) {
   function activeProducts() {
     return data.query(PRODUCT_COLLECTION).eq('pointBaseStatus', 'ACTIVE');
   }
@@ -808,6 +927,8 @@ return { createProtectedCatalogueRead };
 })();
 
 const collection = 'CatalogueProtection';
+const indexSnapshot = createCatalogueIndexSnapshot(wixData, collection);
+const cataloguePage = createCataloguePageIndex(wixData, Date.now, indexSnapshot.read);
 const verifiedMedia = createVerifiedCatalogueMedia(mediaManager, elevate(files.getFileDescriptor));
 const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(items.patch), collection });
 const runTrigger = auth.elevate(customTrigger.runTrigger);
@@ -863,7 +984,7 @@ async function load() {
   cached = { selectionPreviews, read: createProtectedCatalogueRead({
       data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews,
       deliveredIds: (actor, ids) => readDeliveredCatalogueIds(store, actor, ids, config.coveragePolicy.CATALOGUE_LIST.windowMs),
-      readPrivatePreviews: privatePreviews
+      readPrivatePreviews: privatePreviews, page: cataloguePage
     }),
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),
@@ -884,5 +1005,14 @@ export async function readOwnedSelectionPreviews(scope, products, fullSize = fal
 export async function processCatalogueSecurityNotifications() {
   const protection = await getCatalogueProtection();
   await protection.retry();
+}
+
+export async function refreshCatalogueIndexSnapshot() {
+  try {
+    const result = await indexSnapshot.refresh();
+    console.info('Catalogue index snapshot', result.status, result.count);
+  } catch {
+    console.warn('Catalogue index snapshot refresh failed. Live reads remain available.');
+  }
 }
 

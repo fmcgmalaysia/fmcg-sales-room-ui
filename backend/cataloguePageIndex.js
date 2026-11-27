@@ -32,26 +32,32 @@ async function collect(query) {
   }
 }
 
-export function createCataloguePageIndex(data, now = Date.now) {
+export async function buildCatalogueIndex(data) {
+  const rows = await collect(data.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').fields(...listFields, ...sortKeys));
+  const seen = new Set();
+  return rows.map(row => {
+    const entry = listItem(row);
+    entry.sortNumber = text(sortKeys.map(key => row[key]).find(value => value != null));
+    entry.searchText = [entry.name, entry.description, entry.barcode, entry.principle, entry.brandName].join(' ').toLowerCase();
+    return entry;
+  }).filter(entry => {
+    if (!entry.id || !entry.name || seen.has(entry.id)) return false;
+    seen.add(entry.id);
+    return true;
+  }).sort(compare).map(({ id, principle, searchText }) => ({ id, principle, searchText }));
+}
+
+export function createCataloguePageIndex(data, now = Date.now, readSnapshot) {
   const active = () => data.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE');
   let cached, pending, expires = 0;
   async function ordered() {
     if (cached && now() < expires) return cached;
-    if (!pending) pending = collect(active().fields(...listFields, ...sortKeys)).then(rows => {
-      const seen = new Set();
-      cached = rows.map(row => {
-        const entry = listItem(row);
-        entry.sortNumber = text(sortKeys.map(key => row[key]).find(value => value != null));
-        entry.searchText = [entry.name, entry.description, entry.barcode, entry.principle, entry.brandName].join(' ').toLowerCase();
-        return entry;
-      }).filter(entry => {
-        if (!entry.id || !entry.name || seen.has(entry.id)) return false;
-        seen.add(entry.id);
-        return true;
-      }).sort(compare);
+    if (!pending) pending = (async () => {
+      const snapshot = await readSnapshot?.();
+      cached = snapshot ?? await buildCatalogueIndex(data);
       expires = now() + 60000;
       return cached;
-    }).finally(() => { pending = null; });
+    })().finally(() => { pending = null; });
     return pending;
   }
 

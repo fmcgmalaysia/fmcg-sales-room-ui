@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const modules = ['catalogueReadIdentity','catalogueBudgetStore','catalogueReadBudget','catalogueCoverage',
-  'catalogueRiskAlert','cataloguePageIndex','catalogueSelectionScope','catalogueImageAssets','catalogueLegacyPreview',
+  'catalogueRiskAlert','cataloguePageIndex','catalogueIndexSnapshot','catalogueSelectionScope','catalogueImageAssets','catalogueLegacyPreview',
   'buyerProductImage','protectedCatalogueRead','catalogueProtectionRuntime'];
 const resolved = new Set(), imports = new Set();
 const parts = modules.map(name => {

@@ -20,8 +20,12 @@ import { createCatalogueCoverage, readDeliveredCatalogueIds } from './catalogueC
 import { createCatalogueRiskAlert, retryCatalogueAlerts } from './catalogueRiskAlert.js';
 import { createProtectedCatalogueRead } from './protectedCatalogueRead.js';
 import { createCatalogueSelectionScope } from './catalogueSelectionScope.js';
+import { createCataloguePageIndex } from './cataloguePageIndex.js';
+import { createCatalogueIndexSnapshot } from './catalogueIndexSnapshot.js';
 
 const collection = 'CatalogueProtection';
+const indexSnapshot = createCatalogueIndexSnapshot(wixData, collection);
+const cataloguePage = createCataloguePageIndex(wixData, Date.now, indexSnapshot.read);
 const verifiedMedia = createVerifiedCatalogueMedia(mediaManager, elevate(files.getFileDescriptor));
 const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(items.patch), collection });
 const runTrigger = auth.elevate(customTrigger.runTrigger);
@@ -77,7 +81,7 @@ async function load() {
   cached = { selectionPreviews, read: createProtectedCatalogueRead({
       data: wixData, authorize, reserveRead, reserveCoverage, readSelection, addPreviews,
       deliveredIds: (actor, ids) => readDeliveredCatalogueIds(store, actor, ids, config.coveragePolicy.CATALOGUE_LIST.windowMs),
-      readPrivatePreviews: privatePreviews
+      readPrivatePreviews: privatePreviews, page: cataloguePage
     }),
     buyerImage: (companyId, selectionId) => openBuyerImage({ companyId, selectionId }, {
       authorize: buyerCompanyId => authorize({ buyerCompanyId }),
@@ -98,4 +102,13 @@ export async function readOwnedSelectionPreviews(scope, products, fullSize = fal
 export async function processCatalogueSecurityNotifications() {
   const protection = await getCatalogueProtection();
   await protection.retry();
+}
+
+export async function refreshCatalogueIndexSnapshot() {
+  try {
+    const result = await indexSnapshot.refresh();
+    console.info('Catalogue index snapshot', result.status, result.count);
+  } catch {
+    console.warn('Catalogue index snapshot refresh failed. Live reads remain available.');
+  }
 }
