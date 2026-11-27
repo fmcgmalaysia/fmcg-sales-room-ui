@@ -6,6 +6,7 @@
 <meta name="catalogue-mobile-names-build" content="20261117-catalogue-mobile-names-v1">
 <meta name="catalogue-mobile-detail-build" content="20261118-catalogue-mobile-detail-v1">
 <meta name="catalogue-workroom-build" content="20261120-catalogue-compact-navigation-v1">
+<meta name="catalogue-first-entry-wait-build" content="20261128-catalogue-first-entry-wait-v1">
 <meta name="catalogue-mobile-columns-build" content="20261123-catalogue-mobile-columns-v3">
 <meta name="catalogue-selection-return-build" content="20261117-catalogue-selection-return-v1">
   <meta charset="utf-8">
@@ -154,6 +155,42 @@
   @media(max-width:900px){
     .toolbar:has(.buyer-company-switch:not([hidden])) .summary{overflow-x:auto;scrollbar-width:none}
   }
+  .catalogue-opening {
+    position:fixed; inset:0; z-index:1100; display:grid; place-items:safe center; overflow:auto;
+    padding:clamp(12px,3vw,30px); background:rgba(5,21,39,.76);
+    color:#fff;
+  }
+  .catalogue-opening[hidden]{display:none}
+  .catalogue-opening-card {
+    width:min(100%,820px); overflow:hidden; border-radius:14px;
+    background:#092949; box-shadow:0 20px 70px #00152f66;
+  }
+  .catalogue-opening-creative{display:grid;grid-template-columns:7fr 3fr;align-items:stretch}
+  .catalogue-opening-copy{padding:clamp(18px,4.5vw,36px);align-self:center}
+  .catalogue-opening-title {
+    margin:0; font-size:clamp(27px,4.5vw,52px); font-weight:800;
+    line-height:.99; letter-spacing:-.045em; text-transform:uppercase;
+  }
+  .catalogue-opening-title span{display:block}
+  .catalogue-opening-title .catalogue-opening-emphasis{color:#ff672d}
+  .catalogue-opening-subtitle{margin:16px 0 0;font-size:clamp(13px,1.6vw,17px);line-height:1.4}
+  .catalogue-opening-photo {
+    min-height:185px; border-inline-start:3px solid #ff672d;
+    background:#193850 url('https://fmcgmalaysia.github.io/fmcg-sales-room-ui/assets/catalogue-first-login-waiting-banner-v2.jpg') right center / 355% auto no-repeat;
+  }
+  .catalogue-opening-status {
+    display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:5px 16px;
+    padding:12px clamp(18px,4.5vw,44px); color:#edf4fc; background:#102f50;
+    border-top:1px solid #ffffff24; font-size:13px; font-weight:650;
+  }
+  .catalogue-opening-timer{font-variant-numeric:tabular-nums;color:#d4e2f0;white-space:nowrap}
+  @media(max-width:600px){
+    .catalogue-opening-creative{display:flex;flex-direction:column}
+    .catalogue-opening-copy{align-self:stretch}
+    .catalogue-opening-title{font-size:clamp(24px,8vw,42px)}
+    .catalogue-opening-subtitle{margin-top:12px}
+    .catalogue-opening-photo{min-height:clamp(62px,18dvh,112px);border-inline-start:0;border-top:2px solid #ff672d;background-position:right 43%}
+  }
 </style>
 <meta name="header-account-menu-build" content="20261126-account-menu-v1">
 <link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.css?v=20261126-account-menu-v1">
@@ -161,6 +198,21 @@
 </head>
 <body>
   <main class="shell">
+    <section class="catalogue-opening" id="catalogueOpening" aria-labelledby="catalogueOpeningTitle" hidden>
+      <div class="catalogue-opening-card">
+        <div class="catalogue-opening-creative">
+          <div class="catalogue-opening-copy">
+            <h1 class="catalogue-opening-title" id="catalogueOpeningTitle"><span>Malaysia’s</span><span class="catalogue-opening-emphasis">Trusted FMCG</span><span>Export Partner</span></h1>
+            <p class="catalogue-opening-subtitle">Professional sourcing. Reliable global shipping.</p>
+          </div>
+          <div class="catalogue-opening-photo" aria-hidden="true"></div>
+        </div>
+        <div class="catalogue-opening-status" role="status">
+          <span>Preparing your catalogue…</span>
+          <span class="catalogue-opening-timer" id="catalogueOpeningTimer" aria-hidden="true"></span>
+        </div>
+      </div>
+    </section>
     <header class="toolbar">
       <div class="summary"><button class="metric filter" id="selectionFilter" type="button">MY SELECTION <span class="metric-value"><b id="selectionCount">0</b><em>of</em><b id="selectionLimit">100</b></span></button><button class="metric filter" id="foodSelectionFilter" type="button">FOOD <b id="foodSelectionCount">0</b></button><button class="metric filter" id="nonFoodSelectionFilter" type="button">NON-FOOD <b id="nonFoodSelectionCount">0</b></button><span class="allowance" id="selectionAllowance">Your account allows up to 100 selected SKUs.</span></div>
       <div data-buyer-company-switch hidden></div>
@@ -245,6 +297,49 @@
     }
     const rows=document.getElementById('rows');
     const post=(type,payload={})=>parent.postMessage({type,...payload},'*');
+    const opening=document.getElementById('catalogueOpening');
+    const openingTimer=document.getElementById('catalogueOpeningTimer');
+    let openingStart=0, openingClock, openingReady=false, openingFrame, openingRender=0;
+
+    function setOpening(value){
+      const newStart=Number(value?.startedAt)||0;
+      if(newStart!==openingStart){
+        openingStart=newStart;
+        clearInterval(openingClock);
+        opening.hidden=!newStart;
+        if(newStart){
+          const tick=()=>{openingTimer.textContent=`Elapsed ${Math.max(0,Math.floor((Date.now()-newStart)/1000))} s`;};
+          tick();openingClock=setInterval(tick,250);
+        }
+      }
+      openingReady=Boolean(value?.ready);
+      if(openingReady)checkOpeningImages();
+    }
+
+    function checkOpeningImages(){
+      if(!openingStart||!openingReady)return;
+      openingRender++;
+      if(openingFrame)return;
+      openingFrame=requestAnimationFrame(async()=>{
+        openingFrame=0;
+        const start=openingStart, revision=openingRender;
+        if(!start||!openingReady)return;
+        const rowHeight=rows.firstElementChild?.offsetHeight;
+        const first=rowHeight&&Math.floor(rows.scrollTop/rowHeight)||0;
+        const last=rowHeight?first+Math.ceil(rows.clientHeight/rowHeight)+1:first;
+        const images=Array.from(rows.children).slice(first,last)
+          .map(row=>row.querySelector('.thumb img')).filter(Boolean);
+        const detailImage=productImage.querySelector('img');
+        if(!mobile.matches&&detailImage?.getClientRects().length)images.push(detailImage);
+        await Promise.all(images.map(image=>{
+          image.loading='eager';
+          return image.decode().catch(()=>{});
+        }));
+        if(start!==openingStart||revision!==openingRender)return;
+        openingReady=false;
+        post('catalogueOpeningReady',{startedAt:start});
+      });
+    }
     const text=v=>String(v??'').trim();
     const esc=v=>text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const selected=p=>state.selectedIds.has(text(p.id));
@@ -396,11 +491,11 @@
         const message=state.selectionView?'':state.catalogueStatus||state.homeStatus;
         rows.innerHTML='<div class="empty" role="status"></div>';
         rows.firstElementChild.textContent=message==='loading'?'Loading products…':message==='failed'?'Products could not load. Refresh Catalogue to try again.':'No products match the current filter.';
-        showDetail(null);updateDetailNavigation(allItems);return;
+        showDetail(null);updateDetailNavigation(allItems);checkOpeningImages();return;
       }
       if(!allItems.some(p=>p.id===state.activeId))state.activeId=allItems[0].id;
       rows.replaceChildren(...items.map((p,index)=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p,false,index<6)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${removed(p)?'removed':selected(p)?'selected':''}">${removed(p)?'Removed':selected(p)?'Selected':'Available'}</span></span>`;b.onclick=()=>{activate(p.id,true);openProductDetail()};return b}));
-      if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);updateDetailNavigation(allItems);}
+      if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);updateDetailNavigation(allItems);checkOpeningImages();}
     function activate(id,scroll){const items=filtered(),index=items.findIndex(p=>p.id===id);if(index>=renderLimit)renderLimit=index+40;state.activeId=id;render(true);if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);if(row){const rowBox=row.getBoundingClientRect(),listBox=rows.getBoundingClientRect();if(rowBox.top<listBox.top)rows.scrollTop-=listBox.top-rowBox.top;else if(rowBox.bottom>listBox.bottom)rows.scrollTop+=rowBox.bottom-listBox.bottom}}}
     function showDetail(p){const button=document.getElementById('selectButton'),innerFact=document.getElementById('detailInnerFact');selectionHint.textContent=p&&removed(p)?'Open Removed in Buyer Room and restore this product to request a new quote.':defaultSelectionHint;if(!p){innerFact.hidden=true;delete productImage.dataset.source;productImage.innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';detailPrinciple.textContent='Product information will appear here.';detailPrinciple.disabled=true;['detailPack','detailEa','detailBarcode','detailInnerBarcode','detailCartonBarcode','detailCbm','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.textContent='+ Select for Quote';button.disabled=true;return}
       const innerBarcode=text(p.innerBoxBarcode);innerFact.hidden=!innerBarcode;if(productImage.dataset.source!==p.image){productImage.dataset.source=p.image||'';productImage.innerHTML=imageMarkup(p,true);}document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';detailPrinciple.textContent=text(p.principle)||'—';detailPrinciple.disabled=!text(p.principle);document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailEa').textContent=text(p.ea)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailInnerBarcode').textContent=innerBarcode||'—';document.getElementById('detailCartonBarcode').textContent=text(p.cartonBarcode)||'—';document.getElementById('detailCbm').textContent=text(p.cbmPerCtn)&&Number.isFinite(Number(p.cbmPerCtn))?Number(p.cbmPerCtn).toFixed(4):'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
@@ -439,7 +534,7 @@
     }
     function move(step){const items=filtered();if(!items.length)return;const i=Math.max(0,items.findIndex(p=>p.id===state.activeId));activate(items[Math.max(0,Math.min(items.length-1,i+step))].id,true)}
     rows.addEventListener('scroll',()=>{const items=filtered();if(rows.scrollTop+rows.clientHeight>=rows.scrollHeight-160&&renderLimit<items.length){renderLimit=Math.min(items.length,renderLimit+120);render(true)}reportCataloguePosition()});
-    document.addEventListener('keydown',e=>{if(!detailModal.open&&!mobileMenu.open&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();e.stopPropagation();move(e.key==='ArrowDown'?1:-1);post('catalogueWorkspaceNavigate')}});
+    document.addEventListener('keydown',e=>{if(opening.hidden&&!detailModal.open&&!mobileMenu.open&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();e.stopPropagation();move(e.key==='ArrowDown'?1:-1);post('catalogueWorkspaceNavigate')}});
     function setSelectionView(view){state.selectionView=state.selectionView===view?'':view;renderLimit=120;render()}
     document.getElementById('selectionFilter').onclick=()=>setSelectionView('ALL');document.getElementById('foodSelectionFilter').onclick=()=>setSelectionView('FOOD');document.getElementById('nonFoodSelectionFilter').onclick=()=>setSelectionView('NON_FOOD');document.getElementById('closeDetail').onclick=closeProductDetail;
     const promo=document.getElementById('promoCarousel'),promoSlides=[...promo.querySelectorAll('.promo-slide')],promoDots=[...promo.querySelectorAll('.promo-dot')];let promoIndex=0,promoTimer;
@@ -470,7 +565,9 @@
         state.selectionCountsReady=d.selectionCountsReady!==false;state.buyerRoomUrl=text(d.buyerRoomUrl);
         state.selectionReady=d.selectionReady!==false;
         render(true);
+        setOpening(d.opening);
       }
+      if(d.type==='catalogueOpeningFinished')setOpening(null);
       if(d.type==='catalogueWorkspaceSelection'){
         const productId=text(d.productId);
         if(state.busyId!==productId||!state.pendingSelectionIds.delete(productId))return;

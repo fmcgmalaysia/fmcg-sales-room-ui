@@ -33,6 +33,7 @@ function openCatalogueAccountMenu(workspace) {
 
 function signOutCatalogue() {
     return catalogueAccountSession.signOut(() => {
+        try { session.removeItem(CATALOGUE_OPENING_SEEN); } catch (error) {}
         resetCatalogueReader();
         if (catalogueBrowseKey) {
             try { local.removeItem(catalogueBrowseKey); } catch (error) {}
@@ -50,6 +51,10 @@ let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
 const CATALOGUE_BUILD_VERSION = '20261127-catalogue-927-restore-v1';
+const CATALOGUE_OPENING_SEEN = 'catalogueOpeningSeenV1';
+const CATALOGUE_OPENING_MAX_MS = 20000;
+let catalogueOpeningStartedAt = 0;
+let catalogueOpeningTimer;
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -339,6 +344,10 @@ function sendCatalogueWorkspaceData() {
             selectionReady: catalogueSelectionResolved && Boolean(selectionContext),
             catalogueStatus: catalogueWorkspaceFullReadComplete ? '' :
                 (catalogueWorkspaceFilter.homeState === 'failed' ? 'failed' : 'loading'),
+            opening: catalogueOpeningStartedAt ? {
+                startedAt: catalogueOpeningStartedAt,
+                ready: catalogueOpeningDataReady()
+            } : null,
             buyerRoomUrl: buyerRoomUrl(),
             context: catalogueContextMessage,
             buildVersion: CATALOGUE_BUILD_VERSION
@@ -350,7 +359,42 @@ function sendCatalogueWorkspaceData() {
     } catch (error) {}
 }
 
+function catalogueOpeningDataReady() {
+    return catalogueWorkspaceFullReadComplete && catalogueCategoriesLoaded &&
+        catalogueSelectionResolved && selectionContext?.mode === 'buyer';
+}
+
+function catalogueOpeningSession() {
+    return local.getItem('siteAccountExit-v1') || 'initial';
+}
+
+function startCatalogueOpening() {
+    if (wixWindowFrontend.viewMode !== 'Site' || getCatalogueAssistCustomerId()) return;
+    try {
+        if (!authentication.loggedIn() && session.getItem('catalogueAccess') !== 'granted' &&
+            local.getItem('catalogueAccess') !== 'granted') return;
+        if (session.getItem(CATALOGUE_OPENING_SEEN) === catalogueOpeningSession()) return;
+        catalogueOpeningStartedAt = Date.now();
+        $w('#section6').customClassList.add('catalogue-opening-active');
+        catalogueOpeningTimer = setTimeout(() => finishCatalogueOpening(false), CATALOGUE_OPENING_MAX_MS);
+    } catch (error) { finishCatalogueOpening(false); }
+}
+
+function finishCatalogueOpening(ready) {
+    if (!catalogueOpeningStartedAt) return;
+    catalogueOpeningStartedAt = 0;
+    clearTimeout(catalogueOpeningTimer);
+    try {
+        $w('#section6').customClassList.remove('catalogue-opening-active');
+        if (ready) session.setItem(CATALOGUE_OPENING_SEEN, catalogueOpeningSession());
+    } catch (error) {}
+    if (catalogueWorkspaceReady) {
+        try { $w('#html5').postMessage({ type: 'catalogueOpeningFinished' }); } catch (error) {}
+    }
+}
+
 function resetCatalogueReader() {
+    finishCatalogueOpening(false);
     catalogueRestoreScope = null;
     cataloguePreparedFirst = null;
     catalogueWorkspaceRead = null;
@@ -408,6 +452,7 @@ function loadCatalogueWorkspaceProducts() {
             if (scope !== catalogueRestoreScope) return;
             console.error('Catalogue read did not complete', error);
             if (!catalogueWorkspaceProducts.length) catalogueWorkspaceFilter.homeState = 'failed';
+            finishCatalogueOpening(false);
         }).finally(() => {
             if (scope !== catalogueRestoreScope) return;
             catalogueWorkspaceRead = null;
@@ -500,6 +545,7 @@ $w.onReady(() => {
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
 
     if (staff?.authorized) {
+        finishCatalogueOpening(false);
         if (staff.customerScope?.pages && !staff.customerScope.pages.includes('CATALOGUE')) { reportCatalogueAccess('Staff Management does not allow Catalogue access.'); return; }
         if (assistCustomerId) {
             try {
@@ -549,6 +595,7 @@ $w.onReady(() => {
         try {
             catalogueCompanyAccess = await requestedCompanyAccess ||
                 await loadBuyerCompanyAccess(getBuyerCompanies, requestedCompanyId);
+            if (catalogueCompanyAccess.blocked) finishCatalogueOpening(false);
             sendCatalogueCompanies();
             if (catalogueCompanyAccess.blocked) return;
             if (catalogueCompanyAccess.scoped) catalogueBuyerCompanyId = catalogueCompanyAccess.currentId;
@@ -813,6 +860,12 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
     catalogueAccountSession = connectAccountSession([$w('#html3'), $w('#html4'), workspace], '/');
     workspace.onMessage(async (event) => {
         const message = event.data || {};
+        if (message.type === 'catalogueOpeningReady') {
+            if (message.startedAt === catalogueOpeningStartedAt && catalogueOpeningDataReady()) {
+                finishCatalogueOpening(true);
+            }
+            return;
+        }
         if (message.type === 'catalogueAccountMenuReady') {
             catalogueAccountMenuReady = true;
             if (catalogueAccountMenuRequested) openCatalogueAccountMenu(workspace);
@@ -840,7 +893,10 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             catalogueWorkspaceReady = true;
             sendCatalogueCompanies();
             if (catalogueWorkspaceFullReadComplete || catalogueWorkspaceProducts.length) sendCatalogueWorkspaceData();
-            else if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
+            else {
+                if (catalogueOpeningStartedAt) sendCatalogueWorkspaceData();
+                if (!catalogueWorkspaceRead) await loadCatalogueWorkspaceProducts();
+            }
             if (catalogueMenuMessage) workspace.postMessage(catalogueMenuMessage);
             if (catalogueBuyerNavigationPending) workspace.postMessage({ type: 'cataloguePrepareBuyerRoom' });
         } else if (message.type === 'catalogueWorkspaceDismissMenu') {
@@ -995,6 +1051,7 @@ function setupFluidCatalogueLayout() {
 $w.onReady(() => {
     setupFluidCatalogueLayout();
     if (wixWindowFrontend.rendering?.env === 'backend') return;
+    startCatalogueOpening();
     setupCatalogueWorkspace(setupNav());
 });
 

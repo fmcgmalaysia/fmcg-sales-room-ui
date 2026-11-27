@@ -141,3 +141,23 @@ iframe[src$="/buyer-login-20261123-full-html.html"] {
   margin: 0 !important;
   border: 0 !important;
 }
+
+/* Temporarily give the Catalogue workspace the viewport for its first-entry notice. */
+.catalogue-results-stage.catalogue-opening-active {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
+  overflow: hidden !important;
+}
+
+.catalogue-opening-active,
+.catalogue-opening-active > div:nth-child(2),
+.catalogue-opening-active div:has(> wix-iframe),
+.catalogue-opening-active wix-iframe,
+.catalogue-opening-active wix-iframe > div,
+.catalogue-opening-active iframe {
+  height: 100vh !important;
+  min-height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+}
