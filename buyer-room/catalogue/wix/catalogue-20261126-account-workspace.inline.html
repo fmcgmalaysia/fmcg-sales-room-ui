@@ -158,6 +158,7 @@
   #detailPrinciple:not(:disabled){color:#24578e;font-weight:700}
   .shell > dialog.account-menu-panel {
     width:min(210px, calc(100vw - 16px)); padding:5px;
+    top:8px; right:8px;
     color:var(--navy); border-color:#ccd6e0; border-radius:8px; font-size:14px;
   }
   .shell > .account-menu-panel button{font-weight:650}
@@ -204,7 +205,7 @@
   .catalogue-opening-subtitle{margin:16px 0 0;font-size:clamp(13px,1.6vw,17px);line-height:1.4}
   .catalogue-opening-photo {
     min-height:185px; border-inline-start:3px solid #ff672d;
-    background:#193850 url('https://fmcgmalaysia.github.io/fmcg-sales-room-ui/assets/catalogue-first-login-waiting-banner-v2.jpg') right center / 355% auto no-repeat;
+    background:#193850 url('https://static.wixstatic.com/media/4ecd18_52399acde1e44b17af5a9878eec74904~mv2.jpg/v1/fit/w_1200,h_675,q_82,enc_auto/catalogue-wait.jpg') right center / 355% auto no-repeat;
   }
   .catalogue-opening-status {
     display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:5px 16px;
@@ -222,10 +223,15 @@
 </style>
 <meta name="header-account-menu-build" content="20261126-account-menu-v1">
 <link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.css?v=20261126-account-menu-v1">
-<script type="module" src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/catalogue-workspace-account.js?v=20261128-catalogue-layout-refinement-v1"></script>
 </head>
 <body>
   <main class="shell">
+    <dialog class="account-menu-panel" id="catalogueAccountMenu" aria-label="Account">
+      <button type="button" class="account-menu-profile">View My Selection</button>
+      <button type="button" class="account-menu-logout">Log Out</button>
+      <button type="button" class="account-menu-signin" hidden>Sign In</button>
+      <p class="account-menu-message" role="status"></p>
+    </dialog>
     <section class="catalogue-opening" id="catalogueOpening" aria-labelledby="catalogueOpeningTitle" hidden>
       <div class="catalogue-opening-card">
         <div class="catalogue-opening-creative">
@@ -628,6 +634,53 @@
     });
     const instanceId=String(Date.now())+'-'+Math.random().toString(36).slice(2);
     const announceReady=()=>post('catalogueWorkspaceReady',{instanceId});announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
+  </script>
+  <script type="module">
+    import { requestFrameLogout } from 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/frame-logout.js?v=20261126-account-menu-v1';
+
+    const menu = document.getElementById('catalogueAccountMenu');
+    const mySelection = menu.querySelector('.account-menu-profile');
+    const logout = menu.querySelector('.account-menu-logout');
+    const signIn = menu.querySelector('.account-menu-signin');
+    const status = menu.querySelector('.account-menu-message');
+    const request = type => parent.postMessage({ type }, '*');
+    const close = () => { if (menu.open && !logout.disabled) menu.close(); };
+
+    window.addEventListener('message', event => {
+      if (event.source !== parent || event.data?.type !== 'catalogueAccountMenu' ||
+          menu.open || logout.disabled || !document.getElementById('catalogueOpening').hidden) return;
+      const guest = event.data.signedIn !== true;
+      mySelection.hidden = logout.hidden = guest;
+      signIn.hidden = !guest;
+      status.textContent = '';
+      menu.showModal();
+      (guest ? signIn : mySelection).focus();
+    });
+    menu.addEventListener('click', event => {
+      if (event.target !== menu) return;
+      const rect = menu.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX >= rect.right ||
+          event.clientY < rect.top || event.clientY >= rect.bottom) close();
+    });
+    menu.addEventListener('cancel', event => { if (logout.disabled) event.preventDefault(); });
+    window.addEventListener('blur', close);
+    mySelection.addEventListener('click', () => {
+      close();
+      const filter = document.getElementById('selectionFilter');
+      if (!filter.classList.contains('active')) filter.click();
+      filter.focus({ preventScroll: true });
+    });
+    signIn.addEventListener('click', () => request('catalogueAccountSignIn'));
+    logout.addEventListener('click', async () => {
+      logout.disabled = true;
+      status.textContent = 'Signing out…';
+      try {
+        await requestFrameLogout(() => request('catalogueAccount'));
+      } catch {
+        status.textContent = 'Could not sign out. Try again.';
+      } finally { logout.disabled = false; }
+    });
+    request('catalogueAccountMenuReady');
   </script>
 </body>
 </html>
