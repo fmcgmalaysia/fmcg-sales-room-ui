@@ -25,7 +25,7 @@ import { createCatalogueIndexSnapshot } from './catalogueIndexSnapshot.js';
 
 const collection = 'CatalogueProtection';
 const indexSnapshot = createCatalogueIndexSnapshot(wixData, collection);
-const cataloguePage = createCataloguePageIndex(wixData, Date.now, indexSnapshot.read);
+const cataloguePage = createCataloguePageIndex(wixData, Date.now, indexSnapshot.read, indexSnapshot.readOpening);
 const verifiedMedia = createVerifiedCatalogueMedia(mediaManager, elevate(files.getFileDescriptor));
 const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(items.patch), collection });
 const runTrigger = auth.elevate(customTrigger.runTrigger);
@@ -102,6 +102,10 @@ export async function readOwnedSelectionPreviews(scope, products, fullSize = fal
 export async function processCatalogueSecurityNotifications() {
   const protection = await getCatalogueProtection();
   await protection.retry();
+}
+
+export async function prepareCatalogueOpeningSnapshot() {
+  return indexSnapshot.refreshOpening();
 }
 
 export async function refreshCatalogueIndexSnapshot() {

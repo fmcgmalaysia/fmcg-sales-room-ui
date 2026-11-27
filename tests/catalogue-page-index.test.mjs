@@ -3,11 +3,16 @@ import assert from 'node:assert/strict';
 import { createCataloguePageIndex } from '../backend/cataloguePageIndex.js';
 import { createCatalogueIndexSnapshot } from '../backend/catalogueIndexSnapshot.js';
 
-function fixture(rows) {
+function fixture(rows, useOpening = false) {
   const calls = [];
   const saved = new Map();
   let time = 0;
   const data = {
+    async get(collection, id) {
+      assert.equal(collection, 'CatalogueProtection');
+      calls.push({ collection, get: id, fields: [] });
+      return saved.get(id);
+    },
     async save(collection, row) {
       assert.equal(collection, 'CatalogueProtection');
       saved.set(row._id, row);
@@ -29,7 +34,7 @@ function fixture(rows) {
         limit(n) { size = n; return this; },
         async count() { return records.length; },
         async find() {
-          calls.push({ size, fields });
+          calls.push({ collection, size, fields });
           function batch(offset) {
             return { items: records.slice(offset, offset + size).map(row => fields.length ? Object.fromEntries(fields.map(k => [k, row[k]])) : row),
               hasNext: () => offset + size < records.length, next: async () => batch(offset + size) };
@@ -40,7 +45,7 @@ function fixture(rows) {
     }
   };
   const snapshot = createCatalogueIndexSnapshot(data, 'CatalogueProtection');
-  const fetch = createCataloguePageIndex(data, () => time, snapshot.read);
+  const fetch = createCataloguePageIndex(data, () => time, snapshot.read, useOpening ? snapshot.readOpening : undefined);
   return { calls, saved, snapshot, advance: () => { time += 60001; }, page: args => fetch({ size: 25, afterId: '', term: '', principle: '', subcategories: [], ...args }) };
 }
 
@@ -110,4 +115,55 @@ test('legacy numeric brand and mixed sort fields, blanks last, stable ties and i
   advance();
   assert.equal((await page({})).items[0].id, 'z');
   await assert.rejects(page({ afterId: 'no-longer-active' }), /Refresh/);
+});
+
+test('prepared HOME and Ready-to-Drink avoid loading full index shards and use live categories', async () => {
+  const rows = Array.from({ length: 6051 }, (_, index) => ({
+    _id: 'p-' + index, name: 'Product ' + index, _updatedDate: new Date(index + 1000),
+    brandName: 'Brand', pointBaseSortId: index + 1, pointBaseStatus: 'ACTIVE',
+    subCategories: index % 2 ? ['drink'] : [], image: 'PRIVATE_SOURCE'
+  }));
+  const { calls, saved, snapshot, page } = fixture(rows, true);
+  const reference = fixture(rows);
+  assert.equal(await snapshot.readOpening(), null);
+  assert.deepEqual(await snapshot.refresh(), { status: 'BUILT', count: rows.length });
+  calls.length = 0;
+  const home = await page({ size: 50 });
+  assert.deepEqual(home, await reference.page({ size: 50 }));
+  assert.equal(home.items.length, 50);
+  assert.equal(home.afterId, 'p-49');
+  assert.deepEqual(calls.map(call => call.get || call.size).sort(), [1, 51, 'catalogue-opening-index-v1']);
+  assert.doesNotMatch(saved.get('catalogue-opening-index-v1').indexPayload, /PRIVATE_SOURCE/);
+  rows[0].subCategories.push('drink');
+  rows[1].subCategories = [];
+  calls.length = 0;
+  const drink = await page({ subcategories: ['drink'] });
+  assert.deepEqual(drink, await reference.page({ subcategories: ['drink'] }));
+  assert.equal(drink.items[0].id, 'p-0');
+  assert.ok(calls.every(call => call.get || !call.fields.includes('pointBaseSortId') && call.collection !== 'CatalogueProtection'));
+  assert.deepEqual(await page({ subcategories: ['drink'], afterId: drink.afterId }),
+    await reference.page({ subcategories: ['drink'], afterId: drink.afterId }));
+  assert.deepEqual(await page({ term: 'Product 6050' }), await reference.page({ term: 'Product 6050' }));
+});
+
+test('prepared pages fall back for sparse categories, changed sources and invalid or legacy opening data', async () => {
+  const rows = Array.from({ length: 400 }, (_, index) => ({
+    _id: 'p-' + index, name: 'Product ' + index, _updatedDate: new Date(index + 1000),
+    pointBaseSortId: index + 1, pointBaseStatus: 'ACTIVE', subCategories: index > 355 ? ['late'] : []
+  }));
+  const { saved, snapshot, page, advance } = fixture(rows, true);
+  await snapshot.refresh();
+  const id = 'catalogue-opening-index-v1';
+  const head = saved.get(id);
+  saved.set(id, { ...head, indexPayload: '["wrong",["p-0"]]' });
+  assert.equal(await snapshot.readOpening(), null);
+  assert.deepEqual(await snapshot.refreshOpening(), { status: 'BUILT', count: 320 });
+  assert.equal((await snapshot.readOpening()).ids.length, 320);
+  assert.equal((await page({ subcategories: ['late'] })).items[0].id, 'p-356');
+  rows[0].pointBaseStatus = 'INACTIVE';
+  rows[0]._updatedDate = new Date(50000);
+  assert.equal(await snapshot.readOpening(), null);
+  advance();
+  const updated = await page({});
+  assert.equal(updated.items[0].id, 'p-1');
 });

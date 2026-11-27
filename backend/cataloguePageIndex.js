@@ -47,7 +47,7 @@ export async function buildCatalogueIndex(data) {
   }).sort(compare).map(({ id, principle, searchText }) => ({ id, principle, searchText }));
 }
 
-export function createCataloguePageIndex(data, now = Date.now, readSnapshot) {
+export function createCataloguePageIndex(data, now = Date.now, readSnapshot, readOpening) {
   const active = () => data.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE');
   let cached, pending, expires = 0;
   async function ordered() {
@@ -63,6 +63,22 @@ export function createCataloguePageIndex(data, now = Date.now, readSnapshot) {
 
   return async function page({ term, principle, subcategories, afterId, anchorId, size, selectedIds }) {
     const matching = () => subcategories.length ? active().hasSome('subCategories', subcategories) : active();
+    if (readOpening && !term && !principle && !afterId && !anchorId && !selectedIds) {
+      const opening = await readOpening();
+      if (opening?.ids.length) {
+        // Filter a contiguous prefix live, so reference-only category edits cannot
+        // hide a newly assigned item that would belong on this first page.
+        const ids = subcategories.length ? opening.ids : opening.ids.slice(0, size + 1);
+        const result = await matching().hasSome('_id', ids).fields(...listFields).limit(ids.length).find(options).catch(() => null);
+        if (result) {
+          const live = new Map(result.items.map(row => [row._id, listItem(row)]));
+          const items = ids.map(id => live.get(id)).filter(item => item?.name);
+          if (items.length > size || (opening.complete && opening.ids.length === ids.length)) {
+            return { items: items.slice(0, size), previousAfterId: null, afterId: items.length > size ? items[size - 1].id : null };
+          }
+        }
+      }
+    }
     const [index, categoryRows] = await Promise.all([
       ordered(), subcategories.length ? collect(matching().fields('_id')) : null
     ]);

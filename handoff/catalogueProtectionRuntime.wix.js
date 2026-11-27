@@ -341,7 +341,7 @@ async function buildCatalogueIndex(data) {
   }).sort(compare).map(({ id, principle, searchText }) => ({ id, principle, searchText }));
 }
 
-function createCataloguePageIndex(data, now = Date.now, readSnapshot) {
+function createCataloguePageIndex(data, now = Date.now, readSnapshot, readOpening) {
   const active = () => data.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE');
   let cached, pending, expires = 0;
   async function ordered() {
@@ -357,6 +357,22 @@ function createCataloguePageIndex(data, now = Date.now, readSnapshot) {
 
   return async function page({ term, principle, subcategories, afterId, anchorId, size, selectedIds }) {
     const matching = () => subcategories.length ? active().hasSome('subCategories', subcategories) : active();
+    if (readOpening && !term && !principle && !afterId && !anchorId && !selectedIds) {
+      const opening = await readOpening();
+      if (opening?.ids.length) {
+        // Filter a contiguous prefix live, so reference-only category edits cannot
+        // hide a newly assigned item that would belong on this first page.
+        const ids = subcategories.length ? opening.ids : opening.ids.slice(0, size + 1);
+        const result = await matching().hasSome('_id', ids).fields(...listFields).limit(ids.length).find(options).catch(() => null);
+        if (result) {
+          const live = new Map(result.items.map(row => [row._id, listItem(row)]));
+          const items = ids.map(id => live.get(id)).filter(item => item?.name);
+          if (items.length > size || (opening.complete && opening.ids.length === ids.length)) {
+            return { items: items.slice(0, size), previousAfterId: null, afterId: items.length > size ? items[size - 1].id : null };
+          }
+        }
+      }
+    }
     const [index, categoryRows] = await Promise.all([
       ordered(), subcategories.length ? collect(matching().fields('_id')) : null
     ]);
@@ -391,8 +407,10 @@ const { createCatalogueIndexSnapshot } = (() => {
 const options = { suppressAuth: true, consistentRead: true };
 const products = 'FMCGMALAYSIA';
 const headId = 'catalogue-index-head-v1';
+const openingId = 'catalogue-opening-index-v1';
 const partIds = Array.from({ length: 16 }, (_, index) => 'catalogue-index-v1-' + (index + 1));
 const maxPartBytes = 128 * 1024;
+const openingPrefixSize = 320;
 
 function pack(entries) {
   const parts = [];
@@ -418,6 +436,11 @@ function generationFor(revision, parts) {
   const hash = createHash('sha256').update(revision);
   for (const part of parts) hash.update(part);
   return hash.digest('hex');
+}
+
+function openingPayload(revision, entries) {
+  const ids = entries.slice(0, openingPrefixSize).map(entry => entry.id);
+  return JSON.stringify([generationFor(revision, [JSON.stringify(ids)]), ids]);
 }
 
 function createCatalogueIndexSnapshot(data, collection) {
@@ -473,10 +496,46 @@ function createCatalogueIndexSnapshot(data, collection) {
     }
   }
 
+  async function readOpening() {
+    try {
+      const [revision, head] = await Promise.all([sourceRevision(), data.get(collection, openingId, options)]);
+      const count = head?.indexRows;
+      if (head?.indexRevision !== revision || !Number.isSafeInteger(count) || count < 0 ||
+          typeof head.indexPayload !== 'string' || Buffer.byteLength(head.indexPayload) > maxPartBytes) return null;
+      const [digest, ids] = JSON.parse(head.indexPayload);
+      if (!Array.isArray(ids) || ids.length !== Math.min(count, openingPrefixSize) ||
+          ids.some(id => typeof id !== 'string' || !id) || new Set(ids).size !== ids.length ||
+          generationFor(revision, [JSON.stringify(ids)]) !== digest) return null;
+      return { ids, complete: ids.length === count };
+    } catch {
+      return null;
+    }
+  }
+
+  async function saveOpening(revision, entries) {
+    const indexPayload = openingPayload(revision, entries);
+    const saved = await data.get(collection, openingId, options).catch(() => null);
+    if (saved?.indexRevision === revision && saved.indexRows === entries.length && saved.indexPayload === indexPayload) {
+      return { status: 'CURRENT', count: Math.min(entries.length, openingPrefixSize) };
+    }
+    if (await sourceRevision() !== revision) return { status: 'SOURCE_CHANGED', count: 0 };
+    await data.save(collection, { _id: openingId, indexRevision: revision, indexRows: entries.length, indexPayload }, options);
+    return { status: 'BUILT', count: Math.min(entries.length, openingPrefixSize) };
+  }
+
+  async function refreshOpening() {
+    const [revision, stored] = await Promise.all([sourceRevision(), savedRows()]);
+    const current = await readRows(revision, stored).catch(() => null);
+    return current ? saveOpening(revision, current) : { status: 'INDEX_UNAVAILABLE', count: 0 };
+  }
+
   async function refresh() {
     const [revision, stored] = await Promise.all([sourceRevision(), savedRows()]);
     const current = await readRows(revision, stored).catch(() => null);
-    if (current) return { status: 'CURRENT', count: current.length };
+    if (current) {
+      await saveOpening(revision, current);
+      return { status: 'CURRENT', count: current.length };
+    }
     const entries = await buildCatalogueIndex(data);
     const parts = pack(entries);
     const generation = generationFor(revision, parts);
@@ -492,10 +551,11 @@ function createCatalogueIndexSnapshot(data, collection) {
     }, options);
     const verified = await read();
     if (!verified) throw Error('Catalogue index readback failed.');
+    await saveOpening(revision, verified);
     return { status: 'BUILT', count: verified.length };
   }
 
-  return { read, refresh };
+  return { read, readOpening, refresh, refreshOpening };
 }
 
 return { createCatalogueIndexSnapshot };
@@ -966,7 +1026,7 @@ return { createProtectedCatalogueRead };
 
 const collection = 'CatalogueProtection';
 const indexSnapshot = createCatalogueIndexSnapshot(wixData, collection);
-const cataloguePage = createCataloguePageIndex(wixData, Date.now, indexSnapshot.read);
+const cataloguePage = createCataloguePageIndex(wixData, Date.now, indexSnapshot.read, indexSnapshot.readOpening);
 const verifiedMedia = createVerifiedCatalogueMedia(mediaManager, elevate(files.getFileDescriptor));
 const store = createCatalogueBudgetStore({ data: wixData, patch: auth.elevate(items.patch), collection });
 const runTrigger = auth.elevate(customTrigger.runTrigger);
@@ -1043,6 +1103,10 @@ export async function readOwnedSelectionPreviews(scope, products, fullSize = fal
 export async function processCatalogueSecurityNotifications() {
   const protection = await getCatalogueProtection();
   await protection.retry();
+}
+
+export async function prepareCatalogueOpeningSnapshot() {
+  return indexSnapshot.refreshOpening();
 }
 
 export async function refreshCatalogueIndexSnapshot() {

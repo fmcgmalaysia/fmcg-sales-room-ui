@@ -4,8 +4,10 @@ import { buildCatalogueIndex } from './cataloguePageIndex.js';
 const options = { suppressAuth: true, consistentRead: true };
 const products = 'FMCGMALAYSIA';
 const headId = 'catalogue-index-head-v1';
+const openingId = 'catalogue-opening-index-v1';
 const partIds = Array.from({ length: 16 }, (_, index) => 'catalogue-index-v1-' + (index + 1));
 const maxPartBytes = 128 * 1024;
+const openingPrefixSize = 320;
 
 function pack(entries) {
   const parts = [];
@@ -31,6 +33,11 @@ function generationFor(revision, parts) {
   const hash = createHash('sha256').update(revision);
   for (const part of parts) hash.update(part);
   return hash.digest('hex');
+}
+
+function openingPayload(revision, entries) {
+  const ids = entries.slice(0, openingPrefixSize).map(entry => entry.id);
+  return JSON.stringify([generationFor(revision, [JSON.stringify(ids)]), ids]);
 }
 
 export function createCatalogueIndexSnapshot(data, collection) {
@@ -86,10 +93,46 @@ export function createCatalogueIndexSnapshot(data, collection) {
     }
   }
 
+  async function readOpening() {
+    try {
+      const [revision, head] = await Promise.all([sourceRevision(), data.get(collection, openingId, options)]);
+      const count = head?.indexRows;
+      if (head?.indexRevision !== revision || !Number.isSafeInteger(count) || count < 0 ||
+          typeof head.indexPayload !== 'string' || Buffer.byteLength(head.indexPayload) > maxPartBytes) return null;
+      const [digest, ids] = JSON.parse(head.indexPayload);
+      if (!Array.isArray(ids) || ids.length !== Math.min(count, openingPrefixSize) ||
+          ids.some(id => typeof id !== 'string' || !id) || new Set(ids).size !== ids.length ||
+          generationFor(revision, [JSON.stringify(ids)]) !== digest) return null;
+      return { ids, complete: ids.length === count };
+    } catch {
+      return null;
+    }
+  }
+
+  async function saveOpening(revision, entries) {
+    const indexPayload = openingPayload(revision, entries);
+    const saved = await data.get(collection, openingId, options).catch(() => null);
+    if (saved?.indexRevision === revision && saved.indexRows === entries.length && saved.indexPayload === indexPayload) {
+      return { status: 'CURRENT', count: Math.min(entries.length, openingPrefixSize) };
+    }
+    if (await sourceRevision() !== revision) return { status: 'SOURCE_CHANGED', count: 0 };
+    await data.save(collection, { _id: openingId, indexRevision: revision, indexRows: entries.length, indexPayload }, options);
+    return { status: 'BUILT', count: Math.min(entries.length, openingPrefixSize) };
+  }
+
+  async function refreshOpening() {
+    const [revision, stored] = await Promise.all([sourceRevision(), savedRows()]);
+    const current = await readRows(revision, stored).catch(() => null);
+    return current ? saveOpening(revision, current) : { status: 'INDEX_UNAVAILABLE', count: 0 };
+  }
+
   async function refresh() {
     const [revision, stored] = await Promise.all([sourceRevision(), savedRows()]);
     const current = await readRows(revision, stored).catch(() => null);
-    if (current) return { status: 'CURRENT', count: current.length };
+    if (current) {
+      await saveOpening(revision, current);
+      return { status: 'CURRENT', count: current.length };
+    }
     const entries = await buildCatalogueIndex(data);
     const parts = pack(entries);
     const generation = generationFor(revision, parts);
@@ -105,8 +148,9 @@ export function createCatalogueIndexSnapshot(data, collection) {
     }, options);
     const verified = await read();
     if (!verified) throw Error('Catalogue index readback failed.');
+    await saveOpening(revision, verified);
     return { status: 'BUILT', count: verified.length };
   }
 
-  return { read, refresh };
+  return { read, readOpening, refresh, refreshOpening };
 }
