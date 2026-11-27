@@ -32,6 +32,7 @@ function fixture(rows, allow = true) {
   };
   const authorize = async scope => {
     if (!allow || scope.buyerCompanyId !== 'CUS-OWN') throw Error('Company access unavailable.');
+    return { actorType: 'CUSTOMER_USER', customerId: 'CUS-OWN', companyName: 'Test Company', actorName: 'Test Buyer' };
   };
   const indexSnapshot = { readOpening: async () => ({ ids: ['active-1', 'inactive', 'active-0'] }) };
   const load = new Function('wixData', 'authorize', 'indexSnapshot', service + '\nreturn readCatalogue927Products;');
@@ -52,7 +53,8 @@ test('927 seed keeps historical order, active products, safe images and display 
     { _id: 'active-1', pointBaseStatus: 'ACTIVE', name: 'First', image: 'https://example.invalid/photo.jpg' },
     { _id: 'inactive', pointBaseStatus: 'INACTIVE', name: 'Inactive' }
   ]);
-  const rows = await readCatalogue({ buyerCompanyId: 'CUS-OWN' }, 'FIRST');
+  const { rows, buyer } = await readCatalogue({ buyerCompanyId: 'CUS-OWN' }, 'FIRST');
+  assert.deepEqual(buyer, { companyId: 'CUS-OWN', companyName: 'Test Company', displayName: 'Test Buyer' });
   assert.deepEqual(rows.map(row => row._id), ['active-1', 'active-0']);
   assert.equal(rows[0].image, undefined);
   assert.deepEqual(rows[1].subCategories, ['ORAL']);
@@ -75,4 +77,15 @@ test('927 full view retrieves later products for local searches without paginati
   assert.match(page, /const applySearch = raw => showCatalogueCachedView/);
   assert.match(workspace, /function filtered\(\).*state\.products/);
   assert.doesNotMatch(workspace, /id="page(?:Next|Previous)"/);
+});
+
+test('the restored workspace sets the scoped buyer identity before displaying opening products', () => {
+  const source = read('buyer-room/catalogue/wix/catalogue-access-20261123.page.js');
+  const start = source.indexOf('const opening = await first;');
+  const until = source.indexOf('const all = await', start);
+  const buyerBoot = source.slice(start, until);
+  const order = ['scope !== catalogueRestoreScope', 'buyer.companyId === scope.buyerCompanyId',
+    'sendCatalogueContext({', 'applyCatalogueProducts(']
+    .map(marker => buyerBoot.indexOf(marker));
+  assert.ok(order[0] >= 0 && order.every((at, index) => index === 0 || at > order[index - 1]));
 });

@@ -365,7 +365,7 @@ function resetCatalogueReader() {
 function prepCatalogueFirst(scope) {
     const key = JSON.stringify(scope);
     if (cataloguePreparedFirst?.key !== key) {
-        cataloguePreparedFirst = { key, read: readCatalogue927(scope, 'FIRST').catch(() => []) };
+        cataloguePreparedFirst = { key, read: readCatalogue927(scope, 'FIRST').catch(() => null) };
     }
     return cataloguePreparedFirst.read;
 }
@@ -391,9 +391,16 @@ function loadCatalogueWorkspaceProducts() {
     if (!catalogueWorkspaceRead) {
         const first = prepCatalogueFirst(scope);
         catalogueWorkspaceRead = (async () => {
-            const rows = await first;
+            const opening = await first;
             if (scope !== catalogueRestoreScope) return;
-            if (rows.length) applyCatalogueProducts(rows, false);
+            const buyer = opening?.buyer;
+            if (buyer?.companyId && buyer.companyId === scope.buyerCompanyId && !catalogueContextMessage) {
+                sendCatalogueContext({
+                    type: 'catalogueContext', mode: 'buyer',
+                    sheetName: buyer.companyName || 'Buyer Account', signedInName: buyer.displayName || 'Buyer'
+                });
+            }
+            if (opening?.rows.length) applyCatalogueProducts(opening.rows, false);
             const all = await readCatalogue927(scope, 'FULL');
             if (scope !== catalogueRestoreScope) return;
             applyCatalogueProducts(all, true);
@@ -483,8 +490,10 @@ $w.onReady(() => {
     const assistCustomerId = getCatalogueAssistCustomerId();
     const requestedBuyerCompany = !assistCustomerId && authentication.loggedIn()
         ? selectedBuyerCompanyId(wixLocationFrontend) : '';
+    let requestedCompanyAccess;
     if (typeof requestedBuyerCompany === 'string' && /^CUS-[A-Za-z0-9-]{1,80}$/.test(requestedBuyerCompany)) {
         void prepCatalogueFirst({ buyerCompanyId: requestedBuyerCompany });
+        requestedCompanyAccess = loadBuyerCompanyAccess(getBuyerCompanies, requestedBuyerCompany).catch(() => null);
     }
     const assistedSelection = assistCustomerId ? getCatalogueSelectionState(assistCustomerId).catch(() => null) : null;
     let staff;
@@ -501,12 +510,12 @@ $w.onReady(() => {
                 try { session.setItem('catalogueAssistCustomerId', selection.customerId); } catch (_) {}
                 selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: selection.customerId, staffId: staff.staffId };
                 sidebarSelectionState(selection);
-                startCatalogueReader({ assistCustomerId: selection.customerId });
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
                     sheetName: String(selection.companyName || selection.customerId).trim(),
                     signedInName: String(staff.staffName || staff.staffId || '').trim()
                 });
+                startCatalogueReader({ assistCustomerId: selection.customerId });
             } catch (error) {
                 try { session.removeItem('catalogueAssistCustomerId'); } catch (_) {}
                 if (!authentication.loggedIn()) goToCatalogueStaffLogin(assistCustomerId);
@@ -517,8 +526,8 @@ $w.onReady(() => {
             session.removeItem('catalogueAssistCustomerId');
             selectionContext = null;
             catalogueSelectionResolved = true;
-            startCatalogueReader({ staffPreview: true });
             sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
+            startCatalogueReader({ staffPreview: true });
         }
         return;
     }
@@ -538,7 +547,8 @@ $w.onReady(() => {
     if (hasBuyerAccess || signedIn) {
         const requestedCompanyId = selectedBuyerCompanyId(wixLocationFrontend);
         try {
-            catalogueCompanyAccess = await loadBuyerCompanyAccess(getBuyerCompanies, requestedCompanyId);
+            catalogueCompanyAccess = await requestedCompanyAccess ||
+                await loadBuyerCompanyAccess(getBuyerCompanies, requestedCompanyId);
             sendCatalogueCompanies();
             if (catalogueCompanyAccess.blocked) return;
             if (catalogueCompanyAccess.scoped) catalogueBuyerCompanyId = catalogueCompanyAccess.currentId;
@@ -546,14 +556,13 @@ $w.onReady(() => {
             if (catalogueBuyerCompanyId) startCatalogueReader({ buyerCompanyId: catalogueBuyerCompanyId });
             const state = await loadSelectionState(selectedCatalogueScope());
             if (state?.ok !== true || !state.customerId) throw new Error('Customer Catalogue access could not be verified.');
-            startCatalogueReader({ buyerCompanyId: state.customerId });
             sendCatalogueContext({
                 type: 'catalogueContext', mode: 'buyer',
                 sheetName: String(state?.companyName || 'Buyer Account').trim(),
                 signedInName: String(state?.actorName || 'Buyer').trim()
             });
-            restoreMobileCataloguePosition(state?.customerId)
-                .catch(error => console.warn('Catalogue browsing position could not be restored', error));
+            await restoreMobileCataloguePosition(state.customerId);
+            startCatalogueReader({ buyerCompanyId: state.customerId });
         } catch (error) {
             if (requestedCompanyId || catalogueBuyerCompanyId) { await denyCatalogueCompanyAccess(); return; }
             selectionContext = null;

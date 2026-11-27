@@ -1146,16 +1146,21 @@ function catalogue927Product(item) {
 
 export async function readCatalogue927Products(scope, mode) {
   if (mode !== 'FIRST' && mode !== 'FULL') throw Error('Invalid Catalogue read.');
-  await authorize(scope);
+  const actor = await authorize(scope);
   const options = { suppressAuth: true, consistentRead: true };
   const active = () => wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE');
   if (mode === 'FIRST') {
     const opening = await indexSnapshot.readOpening();
-    if (!opening?.ids.length) return [];
-    const ids = opening.ids.slice(0, 50);
-    const page = await active().hasSome('_id', ids).include('subCategories').limit(ids.length).find(options);
-    const products = new Map(page.items.map(item => [item._id, catalogue927Product(item)]));
-    return ids.map(id => products.get(id)).filter(Boolean);
+    const ids = (opening?.ids || []).slice(0, 50);
+    let rows = [];
+    if (ids.length) {
+      const page = await active().hasSome('_id', ids).include('subCategories').limit(ids.length).find(options);
+      const products = new Map(page.items.map(item => [item._id, catalogue927Product(item)]));
+      rows = ids.map(id => products.get(id)).filter(Boolean);
+    }
+    return { rows, buyer: actor.actorType === 'CUSTOMER_USER' ? {
+      companyId: actor.customerId, companyName: actor.companyName, displayName: actor.actorName
+    } : null };
   }
 
   // The browser uses this snapshot for the same local filtering as Catalogue 927.
