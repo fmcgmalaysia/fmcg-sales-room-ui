@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { validCatalogueReader } from './catalogueReadIdentity.js';
 
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 32);
+const MAX_OBSERVED_PRODUCTS = 8000;
 export const catalogueCoverageKey = (actorId, action) => hash('catalogue-coverage:' + action + ':' + actorId);
 
 export async function readDeliveredCatalogueIds(store, actor, ids, windowMs, now = Date.now) {
@@ -14,7 +15,8 @@ export async function readDeliveredCatalogueIds(store, actor, ids, windowMs, now
 }
 
 // Called with the actual product IDs immediately before returning a response.
-// A company switch changes incident attribution but retains the member's quota.
+// A company switch retains the member's history. Daily Catalogue coverage
+// generates alerts only. The Buyer Room download quota remains enforceable.
 export function createCatalogueCoverage({ store, policy, onIncident, now = Date.now }) {
   for (const action of ['CATALOGUE_LIST', 'CATALOGUE_DETAIL', 'BUYER_IMAGE']) {
     const rule = policy?.[action];
@@ -41,7 +43,7 @@ export function createCatalogueCoverage({ store, policy, onIncident, now = Date.
       }
       const used = Object.keys(seen).length;
       const added = requested.filter(id => !Object.hasOwn(seen, id)).length;
-      const denied = used + added > rule.limit;
+      const denied = action === 'BUYER_IMAGE' && used + added > rule.limit;
       const severity = denied ? 'restricted' : used + added >= rule.warnAt ? 'warning' : '';
       const denials = { ...row?.denials };
       const recent = severity && denials[severity]?.at > time - rule.windowMs;
@@ -56,6 +58,12 @@ export function createCatalogueCoverage({ store, policy, onIncident, now = Date.
         };
       }
       if (!denied) for (const id of requested) seen[id] = time;
+      if (action !== 'BUYER_IMAGE' && used + added > MAX_OBSERVED_PRODUCTS) {
+        const currentRequest = new Set(requested);
+        const oldest = Object.entries(seen).filter(([id]) => !currentRequest.has(id))
+          .sort((left, right) => left[1] - right[1]);
+        for (const [id] of oldest.slice(0, used + added - MAX_OBSERVED_PRODUCTS)) delete seen[id];
+      }
       if (await store.replaceIfVersion(key, row?.version ?? 0, { usage: seen, denials })) {
         if (newIncident && onIncident) await onIncident(key, severity);
         return !denied;

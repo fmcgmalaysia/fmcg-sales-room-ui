@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createCatalogueCoverage, readDeliveredCatalogueIds } from '../backend/catalogueCoverage.js';
+import { catalogueCoverageKey, createCatalogueCoverage, readDeliveredCatalogueIds } from '../backend/catalogueCoverage.js';
 
 const alpha = { actorId: 'buyer', customerId: 'A', companyName: 'QA Alpha' };
 const beta = { ...alpha, customerId: 'B', companyName: 'QA Beta' };
-const action = 'CATALOGUE_DETAIL';
+const action = 'BUYER_IMAGE';
 function fixture() {
   const rows = new Map();
   let time = 60000;
@@ -47,7 +47,7 @@ test('slow unique reads trigger warning and restriction across companies; repeat
 test('thumbnail authorization reads the existing member list ledger without extending it', async () => {
   const { reserve, store, now, rows, advance } = fixture();
   await reserve(alpha, 'CATALOGUE_LIST', ['shown']);
-  await reserve(alpha, action, ['detail-only']);
+  await reserve(alpha, 'CATALOGUE_DETAIL', ['detail-only']);
   const before = structuredClone(rows);
   const delivered = member => readDeliveredCatalogueIds(store, member, ['shown', 'detail-only'], 86400000, now);
   assert.deepEqual(await delivered(alpha), ['shown']);
@@ -62,5 +62,31 @@ test('concurrent reads do not exceed the unique limit or merge different account
   const results = await Promise.all(['a', 'b', 'c', 'd'].map(id => reserve(alpha, action, [id])));
   assert.equal(results.filter(Boolean).length, 3);
   assert.equal(await reserve({ ...alpha, actorId: 'another-member' }, action, ['e']), true);
-  assert.equal(await reserve(alpha, 'BUYER_IMAGE', ['e']), true);
+  assert.equal(await reserve(alpha, 'CATALOGUE_DETAIL', ['e']), true);
+});
+
+test('list and detail continue beyond the old daily limit while keeping warnings and image grants', async () => {
+  const { reserve, store, now, rows } = fixture();
+  for (const type of ['CATALOGUE_LIST', 'CATALOGUE_DETAIL']) {
+    for (const [actor, ids] of [[alpha, ['a']], [beta, ['b', 'c']], [alpha, ['d', 'e']]]) {
+      assert.equal(await reserve(actor, type, ids), true);
+    }
+    const row = rows.get(catalogueCoverageKey(alpha.actorId, type));
+    assert.equal(Object.keys(row.usage).length, 5);
+    assert.equal(row.denials.warning.companyName, 'QA Beta');
+    assert.equal(row.denials.restricted, undefined);
+  }
+  assert.deepEqual(await readDeliveredCatalogueIds(store, alpha, ['d', 'e', 'unknown'], 86400000, now), ['d', 'e']);
+});
+
+test('large browsing histories remain bounded without turning into a daily block', async () => {
+  const { reserve, store, now, rows, advance } = fixture();
+  for (let i = 0; i < 161; i++) {
+    advance(1000);
+    const ids = Array.from({ length: 50 }, (_, j) => 'item-' + (i * 50 + j));
+    assert.equal(await reserve(alpha, 'CATALOGUE_LIST', ids), true);
+  }
+  const row = rows.get(catalogueCoverageKey(alpha.actorId, 'CATALOGUE_LIST'));
+  assert.equal(Object.keys(row.usage).length, 8000);
+  assert.deepEqual(await readDeliveredCatalogueIds(store, alpha, ['item-0', 'item-50', 'item-8049'], 86400000, now), ['item-50', 'item-8049']);
 });
