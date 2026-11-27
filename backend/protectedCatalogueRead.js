@@ -68,7 +68,15 @@ export function createProtectedCatalogueRead({ data, authorize, reserveRead, res
       }
       const [covered, products] = await Promise.all([coverage, previews]);
       if (covered !== true) throw new Error('Catalogue access temporarily limited.');
-      return { items: products, afterId: nextId, previousAfterId };
+      const result = { items: products, afterId: nextId, previousAfterId };
+      if (input.assistedOpening === true && scope?.assistCustomerId === actor.customerId && actor.staffId &&
+          ['ADMIN', 'STAFF'].includes(actor.actorType) && !term && !principle && !subcategories.length && !afterId && !anchorId && !view) {
+        result.workspace = {
+          customerId: actor.customerId, companyName: actor.companyName, staffName: actor.actorName,
+          staffId: actor.staffId, mode: actor.actorType === 'ADMIN' ? 'admin' : 'assist'
+        };
+      }
+      return result;
     },
 
     async thumbnails(scope, ids) {

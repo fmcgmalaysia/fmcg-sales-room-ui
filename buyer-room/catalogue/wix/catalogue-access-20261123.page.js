@@ -49,7 +49,7 @@ let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let removedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '20261127-catalogue-first-visit-v1';
+const CATALOGUE_BUILD_VERSION = '20261127-catalogue-single-authorized-opening-v1';
 const joinedMobileSelections = new Set();
 const MOBILE_SELECTION_FLIGHT_MS = 120000;
 const NON_FOOD_CATEGORY_KEYS = new Set(['HOUSEHOLDS', 'PERSONAL CARE', 'OTHERS']);
@@ -409,12 +409,51 @@ function goToCatalogueStaffLogin(customerId) {
     wixLocationFrontend.to('/sales-room-login?next=' + encodeURIComponent(next));
 }
 
+async function startAssistedCatalogue(scope) {
+    const requestedAt = Date.now();
+    let result;
+    try {
+        result = await listCataloguePage(scope, { assistedOpening: true, size: 25, deferImages: true });
+    } catch (_) { return false; }
+    const workspace = result?.workspace;
+    const customerId = scope.assistCustomerId;
+    if (workspace?.customerId !== customerId || !workspace.staffId ||
+        !['assist', 'admin'].includes(workspace.mode) || !Array.isArray(result.items) ||
+        Date.now() - requestedAt >= RECENT_CATALOGUE_PAGE_MS) return false;
+
+    // The page and header came from the same current company authorization.
+    try { session.setItem('catalogueAssistCustomerId', customerId); } catch (_) {}
+    selectionContext = { mode: workspace.mode, assistCustomerId: customerId, staffId: workspace.staffId };
+    preparedCataloguePage = { scope, subcategories: [], requestedAt, result };
+    setReader(scope);
+    sendCatalogueContext({
+        type: 'catalogueContext', mode: workspace.mode,
+        sheetName: workspace.companyName || customerId,
+        signedInName: workspace.staffName || workspace.staffId
+    });
+
+    try {
+        const selection = await getCatalogueSelectionState(customerId);
+        if (catalogueReadScope !== scope) return true;
+        if (selection?.ok !== true || selection.customerId !== customerId) throw Error('Catalogue selection access unavailable.');
+        sidebarSelectionState(selection);
+    } catch (_) {
+        if (catalogueReadScope !== scope) return true;
+        setReader(null);
+        selectionContext = null;
+        try { session.removeItem('catalogueAssistCustomerId'); } catch (_) {}
+        if (!authentication.loggedIn()) goToCatalogueStaffLogin(customerId);
+        else reportCatalogueAccess('Staff Management could not authorize this customer Catalogue.');
+    }
+    return true;
+}
+
 $w.onReady(() => {
     if (wixWindowFrontend.rendering?.env === 'backend') return;
     void (async () => {
     const assistCustomerId = getCatalogueAssistCustomerId();
     const assistedScope = assistCustomerId ? { assistCustomerId } : null;
-    if (assistedScope && authentication.loggedIn()) preparedCataloguePage = prepareCataloguePage(assistedScope);
+    if (assistedScope && authentication.loggedIn() && await startAssistedCatalogue(assistedScope)) return;
     const assistedSelection = assistCustomerId ? getCatalogueSelectionState(assistCustomerId).catch(() => null) : null;
     let staff;
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
@@ -820,7 +859,7 @@ function setupCatalogueWorkspace(hideDesktopMenu) {
             const productId = String(message.productId || '').trim();
             if (!productId || selectionBusyIds.has(productId)) return;
             const context = selectionContext;
-            if (!context) {
+            if (!context || !catalogueSelectionResolved || !catalogueReadScope) {
                 workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: false, productId });
                 return;
             }

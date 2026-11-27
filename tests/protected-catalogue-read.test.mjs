@@ -43,6 +43,29 @@ test('page size, non-overlapping continuation and last page', async () => {
   }
 });
 
+test('assisted opening authorizes the target once and returns only its header and bounded product page', async () => {
+  let authorized = 0;
+  const { read } = fixture(true, undefined, {
+    authorize: async scope => {
+      authorized += 1;
+      return { actorId: 'internal-member', staffId: 'QA-STAFF', actorType: scope.buyerCompanyId ? 'CUSTOMER_USER' : 'STAFF',
+        actorName: 'QA Staff', companyName: 'Company A', customerId: 'A' };
+    },
+    readPrivatePreviews: async items => items,
+  });
+  const page = await read.list({ assistCustomerId: 'A' }, { assistedOpening: true, deferImages: true });
+  assert.equal(authorized, 1);
+  assert.equal(page.items.length, 25);
+  assert.deepEqual(page.workspace, {
+    customerId: 'A', companyName: 'Company A', staffName: 'QA Staff', staffId: 'QA-STAFF', mode: 'assist'
+  });
+  assert.equal((await read.list({ assistCustomerId: 'B' }, { assistedOpening: true })).workspace, undefined);
+  assert.equal((await read.list({ buyerCompanyId: 'A' }, { assistedOpening: true })).workspace, undefined);
+  assert.equal((await read.list({ assistCustomerId: 'A' }, { assistedOpening: true, term: 'QA' })).workspace, undefined);
+  const denied = fixture(false, undefined, { authorize: async () => ({ staffId: 'QA-STAFF', actorId: 'A', customerId: 'A', actorType: 'STAFF' }) });
+  await assert.rejects(denied.read.list({ assistCustomerId: 'A' }, { assistedOpening: true }), /temporarily limited/);
+});
+
 test('menu pages wait for one private preview batch and defer the rest', async () => {
   let fullPageReads = 0;
   const previewBatches = [];

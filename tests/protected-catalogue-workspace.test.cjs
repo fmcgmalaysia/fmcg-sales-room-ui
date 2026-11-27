@@ -6,21 +6,23 @@ const vm = require('node:vm');
 const pageSource = readFileSync(resolve(__dirname, '../buyer-room/catalogue/wix/catalogue-access-20261123.page.js'), 'utf8').replace(/^import .*;\r?$/gm, '');
 
 function fixture() {
-  const messages = [], requests = [], details = [], handlers = {};
+  const messages = [], requests = [], details = [], selections = [], handlers = {};
   const $w = key => ({ postMessage: m => messages.push(m), onMessage: cb => { handlers[key] = cb; } });
   $w.onReady = () => {};
   let now = 50000;
   const context = vm.createContext({ $w, URL, console, Date: { now: () => now },
     wixLocationFrontend: { url: 'https://qa.example/catalogue' },
-    wixWindowFrontend: { formFactor: 'Mobile' }, connectAccountSession() {},
+    wixWindowFrontend: { formFactor: 'Mobile' }, connectAccountSession() {}, session: { setItem() {}, removeItem() {} },
+    authentication: { loggedIn: () => true },
     buyerCompanyPath: () => '/buyer-room', readCatalogueSelectionCounts: async () => ({ total: 0, food: 0, nonFood: 0 }),
     listCataloguePage: (scope, filters) => new Promise(done => requests.push({ scope, filters, done })),
-    readCatalogueProduct: (scope, id) => new Promise(done => details.push({ scope, id, done }))
+    readCatalogueProduct: (scope, id) => new Promise(done => details.push({ scope, id, done })),
+    getCatalogueSelectionState: companyId => new Promise(done => selections.push({ companyId, done }))
   });
   vm.runInContext(pageSource, context);
   const run = code => vm.runInContext(code, context);
   run('setupCatalogueWorkspace(() => {})');
-  return { messages, requests, details, run, advance: ms => { now += ms; }, send: data => handlers['#html5']({ data }) };
+  return { messages, requests, details, selections, run, advance: ms => { now += ms; }, send: data => handlers['#html5']({ data }) };
 }
 test('workspace waits for company, discards slower search and rejects stale detail after exit', async () => {
   const f = fixture();
@@ -138,4 +140,28 @@ test('opening Food can prepare Ready-to-Drink once and an immediate click joins 
   f.requests[1].done({ items: [{ id: 'tea', image:'https://catalogue.example/tea' }], afterId: null, previousAfterId: null });
   await opening;
   assert.equal(f.messages.findLast(message => message.pageStatus === 'ready').products[0].id, 'tea');
+});
+
+test('authorized opening publishes products before selection and rejects a stale selection response', async () => {
+  const f = fixture();
+  await f.send({ type: 'catalogueWorkspaceReady', instanceId: 'qa', deferredThumbnails: true });
+  const opening = f.run("startAssistedCatalogue({ assistCustomerId: 'QA-A' })");
+  assert.equal(f.requests[0].filters.assistedOpening, true);
+  f.requests[0].done({
+    items: [{ id: 'cola', image: 'https://catalogue.example/cola' }], afterId: null, previousAfterId: null,
+    workspace: { customerId: 'QA-A', staffId: 'QA-STAFF', staffName: 'Staff', companyName: 'Company A', mode: 'assist' }
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.requests.length, 1);
+  assert.equal(f.selections[0].companyId, 'QA-A');
+  const ready = f.messages.findLast(message => message.pageStatus === 'ready');
+  assert.equal(ready.products[0].id, 'cola');
+  assert.equal(ready.selectionReady, false);
+  await f.send({ type: 'catalogueWorkspaceSelect', productId: 'cola' });
+  assert.equal(f.messages.at(-1).ok, false);
+  f.run('setReader(null)');
+  f.selections[0].done({ ok: true, customerId: 'QA-A', selectedProductIds: ['stale'] });
+  assert.equal(await opening, true);
+  assert.equal(f.messages.at(-1).pageStatus, 'blocked');
+  assert.equal(f.messages.at(-1).selectedProductIds.length, 0);
 });

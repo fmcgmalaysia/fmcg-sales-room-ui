@@ -42,7 +42,7 @@ function createCatalogueReadIdentity({ getMember, readStaff, resolveBuyerCompany
     if (preview) return { ...actor, scope: 'staff-preview', customerId: '', companyName: '' };
     const customer = await readStaffCustomer(staff, id);
     if (String(customer?.customerId || '').trim() !== id) throw Error('Company access unavailable.');
-    return { ...actor, customerId: id, companyName: String(customer?.title || '').trim() };
+    return { ...actor, staffId: String(staff.staffId || '').trim(), customerId: id, companyName: String(customer?.title || '').trim() };
   };
 }
 
@@ -964,7 +964,15 @@ function createProtectedCatalogueRead({ data, authorize, reserveRead, reserveCov
       }
       const [covered, products] = await Promise.all([coverage, previews]);
       if (covered !== true) throw new Error('Catalogue access temporarily limited.');
-      return { items: products, afterId: nextId, previousAfterId };
+      const result = { items: products, afterId: nextId, previousAfterId };
+      if (input.assistedOpening === true && scope?.assistCustomerId === actor.customerId && actor.staffId &&
+          ['ADMIN', 'STAFF'].includes(actor.actorType) && !term && !principle && !subcategories.length && !afterId && !anchorId && !view) {
+        result.workspace = {
+          customerId: actor.customerId, companyName: actor.companyName, staffName: actor.actorName,
+          staffId: actor.staffId, mode: actor.actorType === 'ADMIN' ? 'admin' : 'assist'
+        };
+      }
+      return result;
     },
 
     async thumbnails(scope, ids) {
