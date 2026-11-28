@@ -134,6 +134,20 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         });
         assert.deepEqual(weighted, [], `Desktop quotation table weight at ${width}px`);
         assert.match(await row.locator('[data-profit] .quote-gp-number').textContent(), /^-?\d+\.\d{2}%$/);
+        const ink = await row.evaluate(element => {
+          const pick = (selector, pseudo) => getComputedStyle(element.querySelector(selector), pseudo).color;
+          return {
+            labels: [...element.querySelectorAll('.quote-unit, .quotation-history > div:first-of-type > small, .calc-margin span, .calc-target small')]
+              .map(node => getComputedStyle(node).color),
+            placeholder: pick('[data-quote-note]', '::placeholder'),
+            percent: pick('.quote-gp-number'),
+            note: pick('[data-quote-note]'),
+          };
+        });
+        assert.deepEqual([...new Set(ink.labels)], ['rgb(100, 116, 136)']);
+        assert.equal(ink.placeholder, 'rgb(100, 116, 136)');
+        assert.notEqual(ink.note, ink.placeholder);
+        assert.equal(ink.percent, 'rgb(20, 87, 220)');
         assert.equal(await row.locator('.quotation-history').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
         assert.equal(await frame.locator('.quote-history-heading').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
         assert(await row.locator('.remark-cell').evaluate(cell => cell.clientWidth) >= 155);

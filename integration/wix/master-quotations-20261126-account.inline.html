@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-gp-weight-v1">
+  <meta name="build" content="20261128-quotation-secondary-labels-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v6">
   <title>Sales Management · Quotations</title>
@@ -1124,7 +1124,17 @@
         line-height: 1.35;
       }
       .wix-quotation-workroom .quote-grid {
+        --quote-secondary-ink: #647488;
         font-family: "Quotation Table Inter", "Purchase Dashboard Inter", "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      }
+      .quote-grid tr:is([data-quote-target], .quote-find-target) { --quote-secondary-ink: #5c6b7b; }
+      .wix-quotation-workroom .quote-grid :is(.quote-unit, .quotation-history > div:first-of-type > small,
+          .calc-margin span, .calc-target small) {
+        color: var(--quote-secondary-ink);
+      }
+      .wix-quotation-workroom .quote-grid [data-quote-note][placeholder="Add note"]::placeholder {
+        color: #647488;
+        opacity: 1;
       }
       .wix-quotation-workroom .quote-grid :is(thead th, td, input, button, .product-name, .cost-cell b,
           .quote-unit, .calc-target .calc-selling, .calc-target small, [data-carton], .gp-healthy, .gp-risk) {
