@@ -71,6 +71,7 @@ test('Quotations renders while costs are pending and preserves the current custo
     const catchCost = quote.locator('#catch-cost');
     const find = quote.locator('#quote-find');
     const banner = quote.locator('#quote-cost-wait');
+    const gridTop = () => quote.locator('.quote-grid').evaluate(grid => Math.round(grid.getBoundingClientRect().top));
     const scenes = new Set();
     const readBanner = async () => {
       await banner.waitFor();
@@ -79,19 +80,30 @@ test('Quotations renders while costs are pending and preserves the current custo
     };
     const row = id => quote.locator('tr[data-row="' + id + '"]');
     await row('ALPHA-0').waitFor();
+    assert.equal(await banner.isVisible(), false);
+    const beforeBanner = await gridTop();
     await readBanner();
-    await banner.getByText('00:01', { exact: true }).waitFor({ timeout: 2500 });
-    assert.match(await banner.innerText(), /Automatically refreshing costs/);
-    assert.equal(await catchCost.innerText(), 'Checking costs…');
+    assert.equal(await gridTop(), beforeBanner);
+    assert.match(await banner.locator('time').textContent(), /^00:0[2-9]$/);
+    assert.match(await banner.innerText(), /Auto-refreshing costs/);
+    assert.equal(await catchCost.textContent(), 'Checking costs…');
     assert.equal(await row('ALPHA-0').locator('[data-mode=EA]').isEnabled(), false);
     await select.selectOption('BETA');
     await row('BETA-0').waitFor();
     await readBanner();
+    await page.setViewportSize({ width: 320, height: 850 });
+    const mobile = await banner.evaluate(element => ({
+      width: Math.round(element.getBoundingClientRect().width),
+      height: Math.round(element.getBoundingClientRect().height),
+      fits: element.scrollWidth <= element.clientWidth
+    }));
+    assert(mobile.width <= 268 && mobile.height <= 44 && mobile.fits, JSON.stringify(mobile));
+    await page.setViewportSize({ width: 1440, height: 900 });
     assert.equal(await quote.locator('table').getAttribute('aria-rowcount'), '220');
     await find.fill('BETA Product 41');
     await page.waitForFunction(() => costsWaiting('ALPHA') && costsWaiting('BETA'));
     await page.evaluate(() => finishCosts('ALPHA'));
-    assert.equal(await catchCost.innerText(), 'Checking costs…');
+    assert.equal(await catchCost.isVisible(), false);
     assert.equal(await row('ALPHA-0').count(), 0);
     await page.evaluate(() => finishCosts('BETA'));
     await quote.getByRole('button', { name: 'Catch Cost', exact: true }).waitFor();
@@ -120,6 +132,12 @@ test('Quotations renders while costs are pending and preserves the current custo
     await page.waitForFunction(() => costsWaiting('ALPHA'));
     await page.evaluate(() => finishCosts('ALPHA', 'denied'));
     await row('ALPHA-0').waitFor({ state: 'detached' });
+    assert.equal(await banner.isVisible(), false);
+    await select.selectOption('BETA');
+    await row('BETA-0').waitFor();
+    await page.waitForFunction(() => costsWaiting('BETA'));
+    await page.evaluate(() => finishCosts('BETA'));
+    await quote.getByRole('button', { name: 'Catch Cost', exact: true }).waitFor();
     assert.equal(await banner.isVisible(), false);
     assert.deepEqual(errors, []);
   } finally {

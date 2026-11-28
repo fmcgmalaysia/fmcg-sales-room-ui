@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="build" content="20261124-quotation-calculator-compact-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
-  <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v1">
+  <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v2">
   <title>Sales Management · Quotations</title>
   <style>@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype')}
@@ -981,17 +981,29 @@
 <link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.css?v=20261126-ltpos-account-v1">
 <script type="module" src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/workroom-account.js?v=20261126-ltpos-account-v1"></script>
 <style>
+  .quote-cost-slot {
+    display: grid;
+    width: min(268px, 100%);
+    min-width: 0;
+    align-items: center;
+  }
+  .quote-cost-controls, .quote-cost-wait { grid-area: 1 / 1; min-height: 44px; }
+  .quote-cost-controls { display: flex; align-items: center; gap: 8px; }
+  .quote-cost-controls [data-cost-refresh] { min-width: 0; }
+  .quote-cost-controls #catch-cost { flex: none; }
+  .quote-cost-slot:has(.quote-cost-wait:not([hidden])) .quote-cost-controls { visibility: hidden; }
   .quote-cost-wait {
     display: grid;
-    grid-template-columns: 72px minmax(0, 1fr) auto;
+    box-sizing: border-box;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 16px;
-    margin: 0 0 12px;
-    border: 1px solid #254764;
-    border-radius: 8px;
-    padding: 10px 16px 10px 10px;
-    background: #14364f;
-    color: #fff;
+    gap: 7px;
+    padding: 4px 7px;
+    border: 1px solid #c8dbee;
+    border-radius: 6px;
+    background: #f1f7fc;
+    color: #173b58;
+    line-height: 1.25;
   }
   .quote-cost-wait[hidden] { display: none; }
   .quote-cost-wait-art {
@@ -1005,20 +1017,13 @@
   .quote-cost-wait-art[data-scene="2"] { background-position: 100% 0; }
   .quote-cost-wait-art[data-scene="3"] { background-position: 0 100%; }
   .quote-cost-wait-art[data-scene="4"] { background-position: 50% 100%; }
-  .quote-cost-wait strong { display: block; font-size: 17px; line-height: 1.26; }
-  .quote-cost-wait-status { display: block; margin-top: 5px; color: #d3e4f5; font-size: 12px; }
+  .quote-cost-wait-status { display: block; font-size: 11px; font-weight: 700; }
+  .quote-cost-wait-copy { display: block; margin-top: 2px; color: #435f79; font-size: 11px; }
   .quote-cost-wait time {
-    border: 1px solid #5d7892;
-    border-radius: 5px;
-    padding: 5px 8px;
-    font-size: 13px;
+    color: #345675;
+    font-size: 11px;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
-  }
-  @media (max-width: 600px) {
-    .quote-cost-wait { grid-template-columns: 47px minmax(0, 1fr) auto; gap: 8px; padding: 8px; }
-    .quote-cost-wait strong { font-size: 14px; }
-    .quote-cost-wait-status { margin-top: 3px; font-size: 11px; }
-    .quote-cost-wait time { padding-inline: 5px; font-size: 12px; }
   }
 </style>
 </head>
@@ -1044,27 +1049,29 @@
       <span id="notice-text" role="status" aria-live="polite">Connecting to Sales Management…</span>
       <button id="notice-dismiss" type="button" aria-label="Dismiss notice">×</button>
     </div>
-    <aside class="quote-cost-wait" id="quote-cost-wait" hidden>
-      <span class="quote-cost-wait-art" aria-hidden="true"></span>
-      <div>
-        <strong data-cost-wait-copy></strong>
-        <span class="quote-cost-wait-status" role="status" data-cost-wait-status></span>
-      </div>
-      <time data-cost-wait-elapsed aria-hidden="true"></time>
-    </aside>
+    <template id="quote-cost-wait-template">
+      <aside class="quote-cost-wait" id="quote-cost-wait" hidden>
+        <span class="quote-cost-wait-art" aria-hidden="true"></span>
+        <div>
+          <span class="quote-cost-wait-status" role="status" data-cost-wait-status></span>
+          <span class="quote-cost-wait-copy" data-cost-wait-copy></span>
+        </div>
+        <time data-cost-wait-elapsed aria-hidden="true"></time>
+      </aside>
+    </template>
     <section id="content" aria-label="Quotation workroom"></section>
   </main>
 <script>/* The generator appends the approved grid and calculator. The Wix page
  * supplies scope through postMessage. This iframe never assigns a role. */
 const $ = selector => document.querySelector(selector);
 const costWaitMessages = [
-  'Thank you. Your work makes us stronger.',
-  'Together, we’re building a company the world will know.',
-  'Your hard work is seen and appreciated.',
-  'You’re an essential part of this team.',
-  'Your work makes a difference around the world.'
+  'Your work makes us stronger.',
+  'We’re building a global company.',
+  'Your effort is seen and valued.',
+  'You’re essential to this team.',
+  'You make a difference worldwide.'
 ];
-const costWaitBanner = $('#quote-cost-wait');
+const costWaitBanner = $('#quote-cost-wait-template').content.firstElementChild;
 let costWaitIndex = Math.floor(Math.random() * costWaitMessages.length);
 let costWaitKey = '', costWaitDelay, costWaitTick;
 
@@ -1085,14 +1092,15 @@ function updateCostWait(key = '', startedAt = Date.now(), automatic = false) {
     const elapsed = costWaitBanner.querySelector('[data-cost-wait-elapsed]');
     const tick = () => {
       const total = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-      elapsed.textContent = [Math.floor(total / 60), total % 60]
+      const display = [Math.floor(total / 60), total % 60]
         .map(value => String(value).padStart(2, '0')).join(':');
+      if (elapsed.textContent !== display) elapsed.textContent = display;
     };
     tick();
     costWaitBanner.hidden = false;
-    status.textContent = automatic ? 'Automatically refreshing costs…' : 'Refreshing costs…';
+    status.textContent = automatic ? 'Auto-refreshing costs…' : 'Refreshing costs…';
     costWaitTick = setInterval(tick, 250);
-  }, 350);
+  }, 2000);
 }
 const content = $('#content');
 const trustedParents = new Set(['https://www.ltpos.ai', 'https://ltpos.ai', 'https://fmcg999.wixstudio.com']);
@@ -1675,7 +1683,7 @@ async function confirmCostRead(context, start = false) {
   let first = start, delay = 1500;
   try {
     while (costAttempts.get(context) === packet && current && current.customer.customerId === context) {
-      if (customerId() === context) message(first ? 'Refreshing cost references…' : 'Confirming cost refresh automatically. You can continue editing.');
+      if (customerId() === context && first) message();
       let result;
       try { result = await api(first ? 'cost' : 'cost-status', packet, context); }
       catch {
@@ -1914,7 +1922,13 @@ function renderQuotes(scrollPosition) {
   const customerName = escapeHtml(current.customer.fullName || current.customer.name || $('#customer').selectedOptions[0]?.textContent || '');
   content.innerHTML = `<div class="toolbar quote-summary"><div>
     <div class="quote-customer"><h2>${customerName}</h2><span class="currency">${currency}</span></div>
-    <div class="toolbar-meta"><span class="muted">Current FX &nbsp; 1 ${currency} = MYR ${format(current.customer.rateToMyr)}</span><span class="muted" data-cost-refresh>Last Cost Refresh &nbsp; ${quoteDate(latestCost, true) || '—'}</span><button class="primary" id="catch-cost" ${busy || !current.canEdit || !current.rows.length ? 'disabled' : ''}>${busy ? 'Working…' : 'Catch Cost'}</button></div>
+    <div class="toolbar-meta">
+      <span class="muted">Current FX &nbsp; 1 ${currency} = MYR ${format(current.customer.rateToMyr)}</span>
+      <div class="quote-cost-slot" data-cost-slot><div class="quote-cost-controls">
+        <span class="muted" data-cost-refresh>Last Cost Refresh &nbsp; ${quoteDate(latestCost, true) || '—'}</span>
+        <button class="primary" id="catch-cost" ${busy || !current.canEdit || !current.rows.length ? 'disabled' : ''}>${busy ? 'Working…' : 'Catch Cost'}</button>
+      </div></div>
+    </div>
     </div><dl class="quote-counts"><div><dt>Total Selected</dt><dd>${current.rows.length}</dd></div><div><dt>Quoted</dt><dd id="quoted-count">${quoted}</dd></div><div><dt>Awaiting Quote</dt><dd id="awaiting-quote-count">${current.rows.length - quoted}</dd></div><div><dt>High-Risk Quotes</dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl>
     <div class="quote-find"><label for="quote-find">Find product</label>
       <div class="quote-find-field"><input id="quote-find" type="search" placeholder="Product name or barcode" autocomplete="off" aria-describedby="quote-find-result"${rows.length ? '' : ' disabled'}>
@@ -1925,6 +1939,7 @@ function renderQuotes(scrollPosition) {
     <thead><tr><th>Row</th><th>Image</th><th>Descriptions</th><th class="quote-left">History</th><th class="quote-right">Selling Price</th><th class="quote-left">Profit</th><th class="quote-right">List Cost</th><th>Discount</th><th class="quote-right">Net Cost</th><th>Remark</th><th>View Quote</th><th class="calc-cell calc-group">GP Calculator</th></tr></thead>
     <tbody>${initialQuoteRows(rows)}</tbody></table></div>` :
     `<div class="empty">${current.rows.length ? 'No matching products.' : 'Products selected in Catalogue appear here.'}</div>`);
+  $('[data-cost-slot]').append(costWaitBanner);
   mountQuoteRows(rows, scrollPosition);
 }
 async function saveDraft(row, context, keepLocal = false) {
