@@ -416,7 +416,7 @@
 }
 .quotation-controls > div { min-height: 0; overflow: hidden; }
 .quotation-controls[data-collapsed]:not(:focus-within) { grid-template-rows: 0fr; }
-.quotation-controls .quotation-title-row { margin: 0; padding: 10px 20px 0; }
+.quotation-controls .quotation-title-row { margin: 0; padding: 10px 20px 8px; }
 @media (max-width: 600px) {
   .quotation-controls .quotation-title-row { padding: 8px 12px 0; }
 }
@@ -607,6 +607,8 @@
     scrollbar-gutter: stable;
     scroll-padding-top: calc(var(--quote-summary-height, 0px) + 48px);
   }
+
+  .wix-quotation-workroom main:has(.quote-grid) { padding-block-start: 0; }
 
   .wix-quotation-workroom .quote-summary {
     position: sticky;

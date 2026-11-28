@@ -136,7 +136,8 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         assert.equal(await frame.locator('.masthead').evaluate(el => el.getBoundingClientRect().top), mastTop);
         assert.equal(await grid.evaluate(element => {
           const summary = element.previousElementSibling.getBoundingClientRect();
-          return Math.abs(element.querySelector('thead').getBoundingClientRect().top - summary.bottom) <= 1;
+          return Math.abs(element.querySelector('thead').getBoundingClientRect().top - summary.bottom) <= 1 &&
+            Math.abs(summary.top - element.closest('main').getBoundingClientRect().top) <= 1;
         }), true);
         await main.evaluate(element => { element.scrollTop -= 80; });
         await frame.locator('.quotation-controls:not([data-collapsed])').waitFor({ state: 'attached' });
