@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261124-quotation-calculator-compact-v1">
+  <meta name="build" content="20261128-quotation-columns-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v3">
   <title>Sales Management · Quotations</title>
@@ -635,9 +635,11 @@
   }
 
   .wix-quotation-workroom .quote-grid thead .calc-group {
-    background: #133650;
-    color: #fff;
-    border-inline-start: 1px solid #133650;
+    border-inline-start: 1px solid #b9cddd;
+  }
+
+  .wix-quotation-workroom .quote-grid :is(.selling-price-cell, .calc-combined) {
+    border-inline-start: 1px solid #d0dce8;
   }
 
   .wix-quotation-workroom .quote-grid thead tr:first-child th:nth-last-child(2) {
@@ -955,7 +957,7 @@
       display: grid; grid-template-columns: max-content 34px; gap: 2px 4px; align-items: center; justify-content: center;
     }
     .quote-grid .calc-stack .calc-margin { grid-area: 1 / 1; display: flex; align-items: center; width: auto; gap: 2px; }
-    .quote-grid .calc-stack .calc-margin input { flex: none; width: 46px; padding-inline: 3px; }
+    .quote-grid .calc-stack .calc-margin input { flex: none; width: 36px; padding-inline: 3px; }
     .quote-grid .calc-stack .calc-margin span, .quote-grid .calc-target small { color: #526d82; font-size: 10px; white-space: nowrap; }
     .quote-grid .calc-stack .calc-margin span { position: static; }
     .quote-grid .calc-stack .calc-target { grid-area: 2 / 1; display: flex; justify-content: end; gap: 4px; }
@@ -965,15 +967,41 @@
       .wix-quotation-workroom .quote-grid .calc-stack { grid-template-columns: max-content 44px; justify-content: end; }
       .quote-grid .calc-stack .calc-margin input { width: 60px; }
     }
-    @media (min-width: 1001px) {
+    .wix-quotation-workroom .quote-grid input:is([data-mode="EA"], [data-calc="GP"]) { appearance: textfield; }
+    .wix-quotation-workroom .quote-grid input:is([data-mode="EA"], [data-calc="GP"])::-webkit-inner-spin-button,
+    .wix-quotation-workroom .quote-grid input:is([data-mode="EA"], [data-calc="GP"])::-webkit-outer-spin-button {
+      appearance: none;
+      margin: 0;
+    }
+    .wix-quotation-workroom .quote-grid .quote-ea > input { width: 58px; padding-inline: 5px; }
+
+    @media (min-width: 769px) {
+      .wix-quotation-workroom .quote-summary .toolbar-meta {
+        display: grid;
+        grid-template-columns: max-content minmax(0, max-content) max-content;
+        justify-content: start;
+      }
+      .wix-quotation-workroom #catch-cost { white-space: nowrap; }
+      .wix-quotation-workroom .quote-grid :is(th, td, .product-name, .barcode, .packing, .quote-unit,
+          .quotation-history small, .calc-target small, .calc-margin span, .quote-label, .cost-cell small,
+          .cost-cell b, .calc-cell .update, input[type="number"]) {
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .wix-quotation-workroom .quote-grid :is(thead th, .product-name, .cost-cell b, .calc-selling,
+          .gp-healthy, .gp-risk, .calc-cell .update) { font-weight: 600; }
+      .wix-quotation-workroom .quote-grid .calc-stack { grid-template-columns: max-content 39px; column-gap: 5px; }
+    }
+    @media (min-width: 1201px) {
       .wix-quotation-workroom .quote-summary {
-        grid-template-columns: minmax(0, 440px) minmax(350px, 460px) minmax(175px, 1fr);
+        grid-template-columns: clamp(430px, 36vw, 540px) minmax(342px, 460px) minmax(175px, 1fr);
         column-gap: clamp(10px, 1.3vw, 24px);
       }
       .quote-find { width: min(100%, 310px); justify-self: end; }
     }
-    @media (min-width: 769px) and (max-width: 1000px) {
-      .quote-find { grid-column: 1 / -1; justify-self: end; width: 290px; }
+    @media (min-width: 769px) and (max-width: 1200px) {
+      .wix-quotation-workroom .quote-summary { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+      .quote-find { grid-column: 1 / -1; justify-self: end; width: min(100%, 290px); }
     }
   </style>
   
@@ -1713,7 +1741,7 @@ function paintCostReferences(updates, context) {
     const fragment = document.createElement('template');
     fragment.innerHTML = '<table><tbody>' + quoteRow(row, 1) + '</tbody></table>';
     const fresh = fragment.content.querySelector('tr');
-    for (const index of [6, 7, 8, 9]) tr.cells[index].innerHTML = fresh.cells[index].innerHTML;
+    for (const index of [4, 5, 6, 7]) tr.cells[index].innerHTML = fresh.cells[index].innerHTML;
     tr.querySelector('[data-profit]').innerHTML = profit(sellingPrice(row));
     const target = calculatorInput(row), suggestion = target ? calculatorPrice(row, target) : null;
     tr.querySelector('[data-calculated-selling]').value = suggestion ? fixed(suggestion.priceEa) : '0.00';
@@ -1957,16 +1985,16 @@ function quoteRow(row, number) {
     <td class="previous-sp quotation-history"><span class="mobile-label">History</span>
       <div title="Last invoiced selling price per carton${previous?.siDate ? ' · ' + escapeHtml(quoteDate(previous.siDate)) : ''}"><span data-previous-sp>${previous ? previousCurrency + fixed(previous.priceCtn) : '—'}</span> <small>SP</small></div>
       <div title="Last confirmed purchase net cost in MYR per carton"><span data-previous-nc>${Number.isFinite(previousPurchase?.netCostMyrCtn) ? fixed(previousPurchase.netCostMyrCtn) : '—'}</span> <small>NC</small></div></td>
-    <td><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><div class="quote-value quote-value-suffix quote-ea"><button type="button" class="quote-ea-lock" data-action="unlock-ea" aria-label="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" title="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" ${Number(price?.priceEa) > 0 ? '' : 'hidden'} ${disabled || !lockedEa ? 'disabled' : ''}>${eaLockIcon(lockedEa)}</button><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" placeholder="0.00" value="${price ? fixed(price.priceEa) : ''}" ${disabled ? 'disabled' : lockedEa ? 'readonly' : ''}><span class="quote-unit">EA</span></div>${quotationAmount(price?.priceCtn, 'CT', ' data-carton')}</td>
-    <td><span class="mobile-label">Profit</span><span data-profit>${profit(price)}</span></td>
     <td><span class="mobile-label">List cost</span>${quotationAmount(details.lpEa, 'EA')}${quotationAmount(details.lpCtn, 'CT')}</td>
     <td class="disc-cell"><span class="mobile-label">Discount</span>${quotationDiscount(1, details.disc1, true)}${quotationDiscount(2, details.disc2, true)}${quotationDiscount(3, details.disc3, false)}</td>
     <td class="cost-cell"><span class="mobile-label">Net cost per CTN</span><b class="${details.priceStale === true && Number.isFinite(row.costMyr) ? 'stale-cost' : ''}"${details.priceStale === true ? ' title="Point Base price needs verification"' : ''}>${fixed(row.costMyr)}</b><small class="${row.costError ? 'warning' : ''}" title="${escapeHtml(row.costError || row.costAt || '')}">${row.costError ? 'Check cost' : row.costAt ? '' : 'Awaiting cost'}</small></td>
     <td class="remark-cell"><span class="mobile-label">Remark</span><div class="remark-lines" title="${escapeHtml(note)}">${noteLines.map(line => `<span>${escapeHtml(line) || '&nbsp;'}</span>`).join('')}</div></td>
+    <td class="selling-price-cell"><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><div class="quote-value quote-value-suffix quote-ea"><button type="button" class="quote-ea-lock" data-action="unlock-ea" aria-label="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" title="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" ${Number(price?.priceEa) > 0 ? '' : 'hidden'} ${disabled || !lockedEa ? 'disabled' : ''}>${eaLockIcon(lockedEa)}</button><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" placeholder="0.00" value="${price ? fixed(price.priceEa) : ''}" ${disabled ? 'disabled' : lockedEa ? 'readonly' : ''}><span class="quote-unit">EA</span></div>${quotationAmount(price?.priceCtn, 'CT', ' data-carton')}</td>
+    <td><span class="mobile-label">Profit</span><span data-profit>${profit(price)}</span></td>
     <td><span class="mobile-label">View Quote</span><div class="quote-actions"><button role="switch" aria-label="Show quote for ${desc}" aria-checked="${switchOn}" class="switch" data-action="toggle" ${disabled || current.canPublish === false || (!visible && !Number.isFinite(price?.gp)) ? 'disabled' : ''}></button><span class="quote-label" aria-live="polite">${publishing ? 'Publishing…' : row.pending ? 'Confirming…' : visible ? quoteDate(row.published.publishedAt) : ''}</span></div>
     <div class="quote-actions quote-edits">${quoteResumeButton(row)}<button hidden class="update" data-action="draft" ${disabled || !dirty(row) || !price ? 'disabled' : ''}>Save draft</button>${visible ? `<button hidden class="update primary" data-action="publish" ${disabled || current.canPublish === false || !quoteChanged(row) ? 'disabled' : ''}>Update quote</button>` : ''}</div></td>
     <td class="calc-cell calc-combined"><span class="mobile-label">GP Calculator</span><div class="calc-stack">
-      <label class="calc-margin"><input aria-label="Target margin for ${desc}" data-calc="GP" type="number" step="0.01" placeholder="0.00" value="${Number.isFinite(target?.mode === 'GP' ? target.value : suggestion?.gp) ? fixed(target?.mode === 'GP' ? target.value : suggestion.gp) : ''}" ${disabled ? 'disabled' : ''}><span aria-hidden="true">% GP</span></label>
+      <label class="calc-margin"><input aria-label="Target margin for ${desc}" data-calc="GP" type="number" step="0.01" placeholder="00" value="${Number.isFinite(target?.mode === 'GP' ? target.value : suggestion?.gp) ? formatCents(target?.mode === 'GP' ? target.value : suggestion.gp) : ''}" ${disabled ? 'disabled' : ''}><span aria-hidden="true">% GP</span></label>
       <div class="calc-target"><output class="calc-selling" aria-label="Target unit price for ${desc}" data-calculated-selling>${suggestion ? fixed(suggestion.priceEa) : '0.00'}</output><small>SP</small></div>
       <button type="button" class="update primary" data-action="apply" aria-label="${calculatorMatchesPrice(price, suggestion) ? 'Calculator price applied to' : 'Apply calculator for'} ${desc}" ${calculatorMatchesPrice(price, suggestion) ? 'data-applied' : ''} ${disabled || lockedEa || !suggestion || calculatorMatchesPrice(price, suggestion) ? 'disabled' : ''}><span class="calc-apply-label">Apply</span><svg class="calc-applied-check" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 12c2 .4 3.6 1.8 5 4 2.3-4.7 5.9-8 11-10.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div></td>
@@ -1989,8 +2017,8 @@ function renderQuotes(scrollPosition) {
       <button type="button" id="quote-find-clear" aria-label="Clear product search" hidden>×</button></div>
       <span class="quote-find-result" id="quote-find-result" role="status"></span>
     </div></div>` + (rows.length ? `
-    <div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 1}"><colgroup>${[40, 60, '', 87, 93, 87, 79, 74, 76, 200, 68, 120].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
-    <thead><tr><th>Row</th><th>Image</th><th>Descriptions</th><th class="quote-left">History</th><th class="quote-right">Selling Price</th><th class="quote-left">Profit</th><th class="quote-right">List Cost</th><th>Discount</th><th class="quote-right">Net Cost</th><th>Remark</th><th>View Quote</th><th class="calc-cell calc-group">GP Calculator</th></tr></thead>
+    <div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 1}"><colgroup>${[40, 56, '', 77, 79, 74, 77, 122, 115, 86, 68, 126].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
+    <thead><tr><th>Row</th><th>Image</th><th>Descriptions</th><th class="quote-left">History</th><th class="quote-right">List Cost</th><th>Discount</th><th class="quote-right">Net Cost</th><th>Remark</th><th class="quote-right selling-price-cell">Selling Price</th><th class="quote-left">Profit</th><th>View Quote</th><th class="calc-cell calc-group">GP Calculator</th></tr></thead>
     <tbody>${initialQuoteRows(rows)}</tbody></table></div>` :
     `<div class="empty">${current.rows.length ? 'No matching products.' : 'Products selected in Catalogue appear here.'}</div>`);
   mountQuoteRows(rows, scrollPosition);
