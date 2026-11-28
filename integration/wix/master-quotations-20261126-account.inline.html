@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-task-navigation-v2">
+  <meta name="build" content="20261128-quotation-stat-cards-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v6">
   <title>Sales Management · Quotations</title>
@@ -325,9 +325,10 @@
 
 .quote-counts {
   display: grid;
-  grid-template-columns: repeat(4, minmax(85px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
   margin: 0;
-  text-align: center;
+  text-align: left;
 }
 
 .wix-quotation-workroom .quote-actions:has(.switch) {
@@ -336,26 +337,60 @@
   gap: 3px;
 }
 
-.quote-counts div {
+.quote-counts > div {
   position: relative;
-  border-left: 1px solid var(--line);
-  padding: 3px 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #e4ebf2;
+  border-radius: 7px;
+  background: #f4f7fa;
+}
+.quote-counts .quote-stat-awaiting {
+  --stat-fill: #fff4df;
+  --stat-hover: #ffebc6;
+  --stat-border: #ecce99;
+  --stat-ink: #754409;
+}
+.quote-counts .quote-stat-risk {
+  --stat-fill: #fceef1;
+  --stat-hover: #fae1e7;
+  --stat-border: #edbdc9;
+  --stat-ink: #9d203b;
+}
+.quote-counts > div:has(button:enabled) {
+  background: var(--stat-fill);
+  border-color: var(--stat-border);
+}
+.quote-counts > div:has(button:enabled:hover) { background: var(--stat-hover); }
+.quote-counts > div:has(button:focus-visible) {
+  outline: 2px solid #346ba7;
+  outline-offset: 1px;
 }
 
 .quote-counts button {
+  display: block;
   font: inherit;
   border: 0;
   padding: 0;
   min-height: 0;
   background: transparent;
-  color: #285477;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  color: inherit;
+  text-align: left;
+  white-space: nowrap;
 }
-.quote-counts button::after { position: absolute; inset: 0; content: ""; }
-.quote-counts div:has(button:enabled:hover) { background: #eef4fa; }
-.quote-counts button:focus-visible { outline: 2px solid #346ba7; outline-offset: 2px; }
-.quote-counts button:disabled { color: inherit; text-decoration: none; }
+.quote-counts button:enabled { color: var(--stat-ink); }
+.quote-counts button:enabled::before {
+  position: absolute;
+  inset: auto 10px 14px auto;
+  width: 6px;
+  height: 6px;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  content: "";
+}
+.quote-counts button:enabled::after { position: absolute; inset: 0; content: ""; }
+.quote-counts button:focus-visible { outline: 0; }
 .quote-jump-announcement {
   position: absolute;
   width: 1px;
@@ -366,7 +401,7 @@
 }
 
 .quote-counts dt { color: var(--muted); font-size: 10px; }
-.quote-counts dd { margin: 2px 0 0; font-size: 17px; font-weight: 700; }
+.quote-counts dd { margin: 2px 0 0; font-size: 17px; font-weight: 700; line-height: 1.1; }
 
 .wix-quotation-workroom {
   font-family: "Purchase Dashboard Inter", "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
@@ -770,9 +805,10 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 9px;
   }
+}
 
-  .quote-counts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .quote-counts div:first-child { border-left: 0; }
+@media (max-width: 360px) {
+  .quote-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 600px) {
@@ -818,10 +854,6 @@
 
   .wix-quotation-workroom .quote-summary {
     padding: 10px 12px;
-  }
-
-  .wix-quotation-workroom .quote-counts div {
-    padding-inline: 4px;
   }
 
   .wix-quotation-workroom #catch-cost {
@@ -1027,6 +1059,24 @@
       margin: 0;
     }
     .wix-quotation-workroom .quote-grid .quote-ea > input { width: 46px; padding-inline: 3px; }
+    @media (min-width: 601px) {
+      .wix-quotation-workroom .quote-grid thead :is(.selling-price-cell, .calc-group) {
+        text-align: center;
+      }
+      .quote-grid .quote-ea { margin-block-end: 2px; }
+      .quote-grid .quote-ea-lock { min-height: 0; }
+      .wix-quotation-workroom .quote-grid :is([data-carton], .calc-target .calc-selling) {
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 15px;
+      }
+      .wix-quotation-workroom .quote-grid :is([data-carton] + .quote-unit, .calc-target small) {
+        color: #526d82;
+        font-size: 11px;
+        font-weight: 400;
+        line-height: 15px;
+      }
+    }
     @media (max-width: 600px) {
       .wix-quotation-workroom .quote-grid .quote-ea > input { width: 54px; }
       #content[data-quote-jump-active] .quote-summary {
@@ -1448,7 +1498,7 @@ function jumpToNextQuote(button) {
   content.dataset.quoteJumpActive = '';
   holdQuoteControls = true;
   revealQuoteRow(index, match => { match.dataset.quoteTarget = kind; }, () => activeQuoteJump === target);
-  $('#quote-jump-announcement').textContent = button.textContent + ' · Row ' + String(index + 1).padStart(3, '0');
+  $('#quote-jump-announcement').textContent = button.getAttribute('aria-label') + ' · Row ' + String(index + 1).padStart(3, '0');
 }
 
 function queueQuoteWindow() {
@@ -2269,9 +2319,9 @@ function renderQuotes(scrollPosition) {
   content.innerHTML = `<div class="toolbar quote-summary"><div>
     <div class="quote-customer"><h2>${customerName}</h2><span class="currency">${currency}</span></div>
     <div class="toolbar-meta"><span class="muted">Current FX &nbsp; 1 ${currency} = MYR ${format(current.customer.rateToMyr)}</span><span class="muted" data-cost-refresh>Last Cost Refresh &nbsp; ${quoteDate(latestCost, true) || '—'}</span><button class="primary" id="catch-cost" ${busy || !current.canEdit || !current.rows.length ? 'disabled' : ''}>${busy ? 'Working…' : 'Catch Cost'}</button></div>
-    </div><dl class="quote-counts"><div><dt>Total Selected</dt><dd>${current.rows.length}</dd></div><div><dt>Quoted</dt><dd id="quoted-count">${quoted}</dd></div>
-      <div><dt><button type="button" data-quote-jump="awaiting" aria-describedby="awaiting-quote-count"${awaiting ? '' : ' disabled'}>Awaiting Quote</button></dt><dd id="awaiting-quote-count">${awaiting}</dd></div>
-      <div><dt><button type="button" data-quote-jump="risk" aria-describedby="quote-risk-count"${risk ? '' : ' disabled'}>High-Risk Quotes</button></dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl>
+    </div><dl class="quote-counts"><div><dt>Selected</dt><dd>${current.rows.length}</dd></div><div><dt>Quoted</dt><dd id="quoted-count">${quoted}</dd></div>
+      <div class="quote-stat-awaiting"><dt><button type="button" data-quote-jump="awaiting" aria-label="Awaiting Quote" aria-describedby="awaiting-quote-count"${awaiting ? '' : ' disabled'}>Awaiting</button></dt><dd id="awaiting-quote-count">${awaiting}</dd></div>
+      <div class="quote-stat-risk"><dt><button type="button" data-quote-jump="risk" aria-label="High-Risk Quotes" aria-describedby="quote-risk-count"${risk ? '' : ' disabled'}>High Risk</button></dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl>
     <span id="quote-jump-announcement" class="quote-jump-announcement" role="status"></span>
     <div class="quote-find">
       <div class="quote-find-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.5 15.5 4 4"></path></svg>

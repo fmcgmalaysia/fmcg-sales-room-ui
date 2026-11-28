@@ -72,7 +72,7 @@ async function inputFits(locator, value) {
 test('the Quotations worktable fits prices and keeps notes separate from cost refresh and brand-new quote submissions', { timeout: 35000 }, async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
-    for (const width of [1500, 1280, 1024, 800, 720, 390]) {
+    for (const width of [1500, 1280, 1024, 800, 720, 390, 320]) {
       const page = await browser.newPage({ viewport: { width, height: 750 }, isMobile: width < 500, hasTouch: width < 500 });
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
@@ -107,6 +107,14 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
           [[node.id || node.textContent, style.fontSize, style.fontWeight]];
       }));
       assert.deepEqual(differentText, [], `Taskbar typography at ${width}px`);
+      const tiles = await frame.locator('.quote-counts > div').evaluateAll(cards => cards.map(card => ({
+        top: card.getBoundingClientRect().top,
+        valueTop: card.querySelector('dd').getBoundingClientRect().top,
+        labelFits: card.querySelector('dt').scrollWidth <= card.querySelector('dt').clientWidth,
+        linkStyle: card.querySelector('button') && getComputedStyle(card.querySelector('button')).textDecorationLine,
+      })));
+      assert(tiles.every(card => card.valueTop - card.top === tiles[0].valueTop - tiles[0].top && card.labelFits));
+      assert.deepEqual(tiles.slice(2).map(card => card.linkStyle), ['none', 'none']);
       if (width >= 769) {
         assert.equal(await row.locator('.quotation-history').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
         assert.equal(await frame.locator('.quote-history-heading').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
@@ -121,6 +129,13 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         }));
         assert.notEqual(colors[7][0], colors[8][0]);
         assert.deepEqual(colors.slice(8, 12), Array(4).fill(['rgb(23, 59, 89)', 'rgb(255, 255, 255)']));
+        const priceRhythm = await row.evaluate(element => {
+          const cell = selector => Math.round(element.querySelector(selector).getBoundingClientRect().top);
+          const heading = index => getComputedStyle(element.closest('table').querySelectorAll('thead th')[index]).textAlign;
+          return { inputOffset: cell('[data-mode="EA"]') - cell('[data-calc="GP"]'),
+            valueOffset: cell('[data-carton]') - cell('.calc-target output'), headings: [heading(8), heading(12)] };
+        });
+        assert.deepEqual(priceRhythm, { inputOffset: 0, valueOffset: 0, headings: ['center', 'center'] });
       }
       await row.getByRole('button', { name: 'Unlock unit price' }).click();
       await inputFits(price, '99.99');
