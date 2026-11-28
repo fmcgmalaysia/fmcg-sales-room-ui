@@ -115,9 +115,12 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
           const lock = el.previousElementSibling.getBoundingClientRect();
           return el.getBoundingClientRect().left - lock.right <= 4;
         }));
-        const colors = await frame.locator('thead th').evaluateAll(nodes => nodes.map(el => getComputedStyle(el).backgroundColor));
-        assert.notEqual(colors[7], colors[8]);
-        assert.deepEqual(colors.slice(8, 12), Array(4).fill(colors[8]));
+        const colors = await frame.locator('thead th').evaluateAll(nodes => nodes.map(el => {
+          const style = getComputedStyle(el);
+          return [style.backgroundColor, style.color];
+        }));
+        assert.notEqual(colors[7][0], colors[8][0]);
+        assert.deepEqual(colors.slice(8, 12), Array(4).fill(['rgb(23, 59, 89)', 'rgb(255, 255, 255)']));
       }
       await row.getByRole('button', { name: 'Unlock unit price' }).click();
       await inputFits(price, '99.99');
