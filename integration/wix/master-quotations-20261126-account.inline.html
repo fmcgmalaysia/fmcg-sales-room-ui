@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-task-navigation-v1">
+  <meta name="build" content="20261128-quotation-task-navigation-v2">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v6">
   <title>Sales Management · Quotations</title>
@@ -1299,6 +1299,7 @@ const quoteJumpMatches = {
   risk: isHighRiskQuote,
 };
 let activeQuoteJump;
+let holdQuoteControls = false;
 let quoteWindow;
 let quoteFrame = 0;
 let lastQuoteScroll = 0;
@@ -1421,6 +1422,7 @@ function revealQuoteRow(index, markRow, stillCurrent) {
 }
 
 function clearQuoteJump() {
+  holdQuoteControls = false;
   if (!activeQuoteJump) return;
   activeQuoteJump = null;
   delete content.dataset.quoteJumpActive;
@@ -1444,6 +1446,7 @@ function jumpToNextQuote(button) {
   activeQuoteJump = target;
   quoteJumpCursors.set(kind, index);
   content.dataset.quoteJumpActive = '';
+  holdQuoteControls = true;
   revealQuoteRow(index, match => { match.dataset.quoteTarget = kind; }, () => activeQuoteJump === target);
   $('#quote-jump-announcement').textContent = button.textContent + ' · Row ' + String(index + 1).padStart(3, '0');
 }
@@ -1461,7 +1464,7 @@ function followQuoteScroll() {
   const viewport = desktop ? quoteScroll.clientHeight : window.innerHeight;
   const collapsed = quoteControls.hasAttribute('data-collapsed');
   // Collapsing the controls can clamp the scroll position at the end of the list.
-  if (!lastQuoteViewport || viewport === lastQuoteViewport) {
+  if (!holdQuoteControls && (!lastQuoteViewport || viewport === lastQuoteViewport)) {
     if (position <= 8 || position < lastQuoteScroll - 8) quoteControls.removeAttribute('data-collapsed');
     else if (position > lastQuoteScroll + 8 && position > 36) quoteControls.setAttribute('data-collapsed', '');
   }
@@ -1475,11 +1478,21 @@ function followQuoteScroll() {
 
 quoteScroll.addEventListener('scroll', () => { if (desktopGrid.matches) followQuoteScroll(); }, { passive: true });
 quoteScroll.addEventListener('wheel', event => {
+  holdQuoteControls = false;
   if (event.deltaY > 0 && !event.ctrlKey && !event.shiftKey && quoteScroll.scrollHeight > quoteScroll.clientHeight) {
     const active = document.activeElement;
     if (quoteControls.contains(active)) active.blur();
   }
 }, { passive: true });
+quoteScroll.addEventListener('pointerdown', event => {
+  if (!event.target.closest('[data-quote-jump]')) holdQuoteControls = false;
+});
+window.addEventListener('touchmove', () => { holdQuoteControls = false; }, { passive: true });
+window.addEventListener('keydown', event => {
+  if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(event.key)) {
+    holdQuoteControls = false;
+  }
+});
 window.addEventListener('scroll', () => { if (!desktopGrid.matches) followQuoteScroll(); }, { passive: true });
 window.addEventListener('resize', queueQuoteWindow, { passive: true });
 

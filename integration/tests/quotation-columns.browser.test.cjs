@@ -202,6 +202,7 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         });
         assert(matchPosition.top >= matchPosition.heading - 1 && matchPosition.bottom <= matchPosition.viewport + 1, JSON.stringify(matchPosition));
         const next = async (button, target, kind) => {
+          const toolbarTop = await awaiting.evaluate(el => el.getBoundingClientRect().top);
           await button.click();
           const hit = frame.locator(`tr[data-row="SELECTION-${target}"][data-quote-target="${kind}"]`);
           await hit.waitFor();
@@ -217,6 +218,7 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
             return bounds.top >= row.closest('table').querySelector('thead').getBoundingClientRect().bottom - 1 &&
               bounds.bottom <= row.closest('main').getBoundingClientRect().bottom + 1;
           }, target, { timeout: 2500 });
+          assert.equal(await awaiting.evaluate(el => el.getBoundingClientRect().top), toolbarTop);
         };
         assert.equal(await frame.locator('#awaiting-quote-count').textContent(), '2');
         assert.equal(await frame.locator('#quote-risk-count').textContent(), '2');
