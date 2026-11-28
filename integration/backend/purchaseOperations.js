@@ -191,7 +191,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(!first.task.supplierId||chosen.some(({task})=>task.supplierId!==first.task.supplierId))throw Error('One P.O. must belong to one supplier.');
         if(!s.suppliers.some(row=>row.title===first.task.supplierId))throw Error('Supplier profile is missing. Select a registered supplier.');
         if(chosen.every(({task})=>task.ourPoNumber===po&&!['NEW_INCOMING','WAITING_FOR_PO'].includes(task.purchaseStage)))throw Error('P.O. number has not changed.');
-        const used=s.workspace.tasks.filter(row=>row.po.trim().toUpperCase()===po);
+        const used=s.workspace.tasks.filter(row=>typeof row.po==='string'&&row.po.trim().toUpperCase()===po);
         if(used.some(row=>row.supplierId!==first.task.supplierId))throw Error('This P.O. is already assigned to another supplier.');
         const savedOrders=(await store.all('PurchaseOrders',{company})).filter(row=>row.company===company);
         const proposed=s.workspace.tasks.map(row=>({...row,po:input.taskIds.includes(row.id)?po:row.po}));
