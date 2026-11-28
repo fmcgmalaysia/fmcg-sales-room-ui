@@ -67,7 +67,7 @@ async function inputFits(locator, value) {
 test('the Quotations worktable fits prices and keeps notes separate from cost refresh and brand-new quote submissions', { timeout: 35000 }, async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
-    for (const width of [1500, 1280, 1024, 800, 390]) {
+    for (const width of [1500, 1280, 1024, 800, 720, 390]) {
       const page = await browser.newPage({ viewport: { width, height: 750 }, isMobile: width < 500, hasTouch: width < 500 });
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
@@ -81,6 +81,11 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
       const cost = frame.locator('#catch-cost');
       await cost.waitFor({ timeout: 5000 });
       assert.deepEqual(await frame.locator('thead th').evaluateAll(nodes => nodes.map(node => node.firstChild.textContent.trim())), headings);
+      if (width > 600) {
+        const shift = await frame.locator('#customer').evaluate(select =>
+          select.getBoundingClientRect().right - document.querySelector('.quote-summary').getBoundingClientRect().right);
+        assert(Math.abs(shift) <= 1, `Customer right edge at ${width}px: ${shift}px`);
+      }
       const row = frame.locator('[data-row="SELECTION-0"]');
       const price = row.locator('[data-mode="EA"]');
       const gp = row.locator('[data-calc="GP"]');

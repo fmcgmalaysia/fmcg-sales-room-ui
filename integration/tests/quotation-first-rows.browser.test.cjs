@@ -82,7 +82,6 @@ test('Quotations renders while costs are pending and preserves the current custo
     const catchCost = quote.locator('#catch-cost');
     const find = quote.locator('#quote-find');
     const banner = quote.locator('#quote-cost-wait');
-    const dismiss = banner.getByRole('button', { name: 'Close waiting banner' });
     const scenes = new Set();
     const readBanner = async () => {
       await banner.waitFor();
@@ -103,13 +102,13 @@ test('Quotations renders while costs are pending and preserves the current custo
       getComputedStyle(dialog, '::backdrop').backgroundColor === 'rgba(14, 35, 56, 0.56)'), true);
     assert.deepEqual(await banner.evaluate(dialog => ({
       edge: getComputedStyle(dialog.querySelector('.quote-cost-wait-content')).paddingTop,
-      close: getComputedStyle(dialog.querySelector('.quote-cost-wait-close')).position,
+      close: dialog.querySelectorAll('button').length,
       art: getComputedStyle(dialog.querySelector('.quote-cost-wait-image')).aspectRatio,
-    })), { edge: '56px', close: 'absolute', art: '1.6 / 1' });
+    })), { edge: '16px', close: 0, art: '1.6 / 1' });
     await page.evaluate(() => finishFirstGrid());
     await row('ALPHA-0').waitFor();
     await banner.locator('time').getByText('Elapsed 1 s', { exact: true }).waitFor({ timeout: 3000 });
-    await dismiss.click();
+    await page.keyboard.press('Escape');
     await banner.waitFor({ state: 'hidden' });
     assert.equal(await catchCost.textContent(), 'Checking costs…');
     assert.equal(await row('ALPHA-0').locator('[data-mode=EA]').isEnabled(), false);
@@ -124,7 +123,7 @@ test('Quotations renders while costs are pending and preserves the current custo
     }));
     assert(mobile.width <= 288 && mobile.height <= 240 && mobile.fits, JSON.stringify(mobile));
     await page.setViewportSize({ width: 1440, height: 900 });
-    await dismiss.press('Escape');
+    await page.keyboard.press('Escape');
     await banner.waitFor({ state: 'hidden' });
     assert.equal(await quote.locator('table').getAttribute('aria-rowcount'), '220');
     await find.fill('BETA Product 41');

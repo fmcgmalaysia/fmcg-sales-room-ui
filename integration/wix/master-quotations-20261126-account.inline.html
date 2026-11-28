@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-compact-history-v1">
+  <meta name="build" content="20261128-quotation-timer-alignment-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
-  <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v5">
+  <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v6">
   <title>Sales Management · Quotations</title>
   <style>@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype')}
@@ -597,6 +597,11 @@
     flex: none;
   }
 
+  .quotation-controls .quotation-title-row {
+    overflow: hidden;
+    scrollbar-gutter: stable;
+  }
+
   .wix-quotation-workroom main {
     flex: 1;
     width: 100%;
@@ -1067,7 +1072,7 @@
   .quote-cost-wait::backdrop { background: rgba(14, 35, 56, .56); }
   .quote-cost-wait-content {
     box-sizing: border-box;
-    padding: 56px 16px 16px;
+    padding: 16px;
     border: 1px solid #dce5ee;
     border-radius: 12px;
     text-align: left;
@@ -1136,23 +1141,6 @@
   @media (prefers-reduced-motion: reduce) {
     .quote-cost-wait-progress::before { animation: none; }
   }
-  .quote-cost-wait-close {
-    position: absolute;
-    inset: 6px 8px auto auto;
-    display: grid;
-    width: 44px;
-    height: 44px;
-    place-items: center;
-    padding: 0;
-    border: 0;
-    border-radius: 8px;
-    background: #eef3f8;
-    color: #15314d;
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .quote-cost-wait-close:focus-visible { outline: 2px solid #346ba7; outline-offset: 2px; }
 </style>
 </head>
 <body class="wix-quotation-workroom">
@@ -1182,7 +1170,6 @@
     <section id="content" aria-label="Quotation workroom"></section>
   </main>
   <dialog class="quote-cost-wait" id="quote-cost-wait" aria-labelledby="quote-cost-wait-status" aria-describedby="quote-cost-wait-copy">
-    <button class="quote-cost-wait-close" type="button" aria-label="Close waiting banner" autofocus>×</button>
     <div class="quote-cost-wait-content">
       <div class="quote-cost-wait-status">
         <strong id="quote-cost-wait-status" role="status"></strong>
@@ -1231,7 +1218,6 @@ function updateCostWait(key = '', startedAt = Date.now(), status = 'Refreshing c
   costWaitBanner.showModal();
   costWaitTick = setInterval(tick, 250);
 }
-costWaitBanner.querySelector('button').addEventListener('click', () => costWaitBanner.close());
 costWaitBanner.addEventListener('close', () => {
   if (!costWaitBanner.open) clearInterval(costWaitTick);
 });
