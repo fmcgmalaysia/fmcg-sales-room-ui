@@ -73,6 +73,16 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
     return revisions.append({ customerId, selectionId, expectedRevision, commandId, fingerprint, snapshot });
   }
 
+  async function currentCosts(rows) {
+    if (!readCurrentCosts || !rows.length) return null;
+    try {
+      return await readCurrentCosts([...new Set(rows.map(row => row.barcode))]);
+    } catch (error) {
+      console.error('MASTER_QUOTATION_COST_READ_FAILED', error?.code || 'UNCONFIRMED');
+      return null;
+    }
+  }
+
   return {
     async refreshScheduledCosts({ customerId, rows, costs, runDay }) {
       if (!Array.isArray(rows) || rows.some(row => row.customerId !== customerId || row.removed)) {
@@ -83,19 +93,16 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       return result;
     },
 
-    async list({ customer }, prepared) {
+    async list({ customer }, prepared, { deferCosts = false } = {}) {
       const { customerId } = customer;
       const rows = await selections(customerId, prepared);
-      const [batched, lastSales, currentCosts] = await Promise.all([
+      const [batched, lastSales, costs] = await Promise.all([
         revisions.latestFor ? revisions.latestFor(customerId, rows.map(row => row.id)) : null,
         readLastInvoicedPrices?.(customerId, rows).catch(error => {
           console.error('MASTER_QUOTATION_SI_READ_FAILED', error?.code || 'UNCONFIRMED');
           return new Map();
         }),
-        readCurrentCosts ? readCurrentCosts([...new Set(rows.map(row => row.barcode))]).catch(error => {
-          console.error('MASTER_QUOTATION_COST_READ_FAILED', error?.code || 'UNCONFIRMED');
-          return null;
-        }) : null
+        deferCosts ? null : currentCosts(rows)
       ]);
       return Promise.all(rows.map(async row => {
         const last = batched ? batched.get(row.id) : await revisions.latest(customerId, row.id);
@@ -108,10 +115,18 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
           ...(row.sortId ? { sortId: row.sortId } : {}),
           ...(Number.isFinite(row.cbmPerCtn) ? { cbmPerCtn: row.cbmPerCtn } : {}),
           ...snapshot, selectionEpoch, draft: currentDraft(snapshot, selectionEpoch),
-          ...(currentCosts ? rowSnapshot(row, currentCosts[row.barcode]) : {}),
+          ...(costs ? rowSnapshot(row, costs[row.barcode]) : {}),
           ...(readLastInvoicedPrices ? { lastSale: lastSales.get(row.barcode) ?? null } : {}),
           pending: Boolean(pending), revision: last?.revision ?? 0 };
       }));
+    },
+
+    async listCurrentCosts({ customer }, prepared) {
+      const rows = await selections(customer.customerId, prepared);
+      const costs = await currentCosts(rows);
+      return costs ? rows.map(row => ({
+        id: row.id, selectionEpoch: row.selectionEpoch || '', ...rowSnapshot(row, costs[row.barcode])
+      })) : rows.length ? null : [];
     },
 
     async catchCost({ staffId, customer }, command) {

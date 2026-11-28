@@ -2,6 +2,7 @@ import { canEnterQuotations, canQuoteManagedCustomer } from 'backend/staffManage
 
 const ACTION_POLICY = Object.freeze({
   quotes: ['VIEW', 'VIEW'],
+  'quote-current-costs': ['VIEW', 'VIEW'],
   'purchase-history': ['VIEW', 'VIEW'],
   cost: ['EDIT', 'EDIT_QUOTATION'],
   'cost-status': ['EDIT', 'EDIT_QUOTATION'],
@@ -43,15 +44,23 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readQ
     }
 
     if (typeof customerId !== 'string' || !/^[A-Za-z0-9_-]{1,120}$/.test(customerId)) return { accessDenied: true };
-    const context = action === 'quotes' && readQuoteContext ? await readQuoteContext(customerId) : null;
+    const gridRead = action === 'quotes' || action === 'quote-current-costs';
+    const context = gridRead && readQuoteContext ? await readQuoteContext(customerId) : null;
     const customer = context?.customer ?? await readCustomer(customerId, action);
     if (customer?.customerId !== customerId || !activeWebCustomer(customer) || !canQuoteManagedCustomer(record, customer)) return { accessDenied: true };
     const scope = { staffId, customer };
+    if (action === 'quote-current-costs') {
+      return { staffId, customerId, rows: await quotation.listCurrentCosts(scope, context?.selections) };
+    }
     if (action === 'quotes') {
-      const [rows, rateToMyr] = await Promise.all([quotation.list(scope, context?.selections), readRate ? readRate(customer) : customer.rateToMyr]);
+      const deferCosts = input?.deferCosts === true;
+      const [rows, rateToMyr] = await Promise.all([
+        quotation.list(scope, context?.selections, { deferCosts }),
+        readRate ? readRate(customer) : customer.rateToMyr
+      ]);
       const { preferredCurrency, fullName } = customer;
       return { staffId, customer: { customerId, preferredCurrency, rateToMyr, ...(fullName ? { fullName } : {}) }, rows,
-        canEdit: true, canPublish: true };
+        canEdit: true, canPublish: true, ...(deferCosts && rows.length ? { costsDeferred: true } : {}) };
     }
     if (action === 'purchase-history') {
       const items = await readPurchaseHistory({ record, customerId, products: input?.products ?? [] });

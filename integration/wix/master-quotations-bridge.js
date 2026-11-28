@@ -1,7 +1,7 @@
 const KEY = /^[A-Za-z0-9_-]{1,120}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DIRECTORY = new Set(['customers', 'selection-counts']);
-const ACTIONS = new Set([...DIRECTORY, 'quotes', 'purchase-history', 'cost', 'cost-status', 'draft', 'publish']);
+const ACTIONS = new Set([...DIRECTORY, 'quotes', 'quote-current-costs', 'purchase-history', 'cost', 'cost-status', 'draft', 'publish']);
 
 function editInput(action, input) {
   if (!input || typeof input.selectionId !== 'string' || !KEY.test(input.selectionId) ||
@@ -35,6 +35,7 @@ export function connectMasterQuotationFrame(frame, run) {
     const editing = action === 'draft' || action === 'publish';
     const costRead = action === 'cost' || action === 'cost-status';
     let input = editing ? editInput(action, data.input) : costRead && UUID.test(data.input?.requestId || '') ? { requestId: data.input.requestId } : undefined;
+    if (action === 'quotes' && data.input?.deferCosts === true) input = { deferCosts: true };
     if (action === 'purchase-history') {
       const products = data.input?.products;
       if (!Array.isArray(products) || products.length > 1000 || products.some(product =>

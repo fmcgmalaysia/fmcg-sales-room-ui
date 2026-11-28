@@ -4,6 +4,7 @@ const load = require('./load-master-module.cjs');
 
 const { createLastPurchaseCosts } = load('masterQuotationLastPurchase.js');
 const { createMasterQuotationActions } = load('masterQuotationAccess.js');
+const { createMasterQuotationService } = load('masterQuotationService.js');
 const barcode = '9550000000000';
 
 function database() {
@@ -112,4 +113,45 @@ test('the quotation grid uses the signed combined read once and enforces custome
   oldTransport = true;
   assert.equal((await run('quotes', 'A')).rows.length, 1);
   assert.deepEqual(calls, ['context A', 'customer A', 'enrich', 'fx']);
+});
+
+test('the authorized grid returns before Point Base, and its separate cost read cannot access other customers', async () => {
+  const customer = { customerId: 'A', preferredCurrency: 'USD', assignedStaffId: 'A',
+    quotationMode: 'WEB', webQuotationStatus: 'READY', accessStatus: 'ACTIVE' };
+  const rows = [{ id: 'SELECTION-1', customerId: 'A', barcode, selectionEpoch: 'restored' }];
+  let releaseCosts;
+  const source = new Promise(resolve => { releaseCosts = resolve; });
+  let costCalls = 0;
+  const quotation = createMasterQuotationService({
+    revisions: { latestFor: async () => new Map() },
+    readCurrentCosts: async ids => {
+      assert.deepEqual(Array.from(ids), [barcode]);
+      costCalls++;
+      return source;
+    }
+  });
+  const run = createMasterQuotationActions({
+    readIdentity: async () => ({ record: { title: 'A', role: 'STAFF', staffStatus: 'ACTIVE',
+      staffAccess: { quotationAccess: 'EDIT' } } }),
+    readQuoteContext: async id => ({ customer: { ...customer, customerId: id, assignedStaffId: id }, selections: rows }),
+    readRate: async () => 4,
+    quotation
+  });
+  let costsSettled = false;
+  const costs = run('quote-current-costs', 'A').then(result => { costsSettled = true; return result; });
+  const early = await run('quotes', 'A', { deferCosts: true });
+  assert.equal(early.costsDeferred, true);
+  assert.equal(early.rows[0].id, rows[0].id);
+  assert.equal(early.customer.rateToMyr, 4);
+  assert.equal(costCalls, 1);
+  assert.equal(costsSettled, false);
+  assert.equal((await run('quote-current-costs', 'B')).accessDenied, true);
+  assert.equal(costCalls, 1);
+  releaseCosts({});
+  const costResult = await costs;
+  assert.equal(costResult.customerId, 'A');
+  assert.equal(costResult.rows[0].selectionEpoch, 'restored');
+  assert.match(costResult.rows[0].costError, /Point Base cost unavailable/);
+  assert.equal((await run('quotes', 'A')).costsDeferred, undefined);
+  assert.equal(costCalls, 2);
 });

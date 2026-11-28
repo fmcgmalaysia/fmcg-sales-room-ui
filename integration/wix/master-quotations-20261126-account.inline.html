@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="build" content="20261124-quotation-calculator-compact-v1">
+  <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <title>Sales Management · Quotations</title>
   <style>@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype')}
@@ -1318,7 +1319,7 @@ async function loadPurchaseHistory(context, token) {
   } catch { /* History may be unavailable independently of drafts, prices and actions. */ }
 }
 
-async function refresh() {
+async function refresh({ deferCosts = false } = {}) {
   hideProductPreview();
   const token = ++generation;
   const context = customerId();
@@ -1328,22 +1329,47 @@ async function refresh() {
   content.replaceChildren();
   if (!context) return;
   try {
-    const result = await api('quotes', undefined, context);
+    const grid = api('quotes', deferCosts ? { deferCosts: true } : undefined, context);
+    const costs = deferCosts ? api('quote-current-costs', undefined, context).catch(() => null) : null;
+    const result = await grid;
     if (token !== generation) return;
     if (result?.customer?.customerId !== context || result.staffId !== staffId ||
         !/^[A-Z]{3}$/.test(result.customer.preferredCurrency) || !Array.isArray(result.rows)) {
       throw Error('The quotation workspace could not be verified.');
     }
-    current = result;
+    current = result.costsDeferred ? { ...result, canEdit: false, canPublish: false } : result;
     const option = $('#customer').selectedOptions[0];
     if (option?.value === context && !option.dataset.confirmedCount) option.textContent = customerLabel(option.dataset.name, result.rows.length);
     renderQuotes(scrollPosition);
     costButtonState();
     void loadPurchaseHistory(context, token);
-    if (costAttempts.has(context)) void confirmCostRead(context);
+    if (result.costsDeferred) void finishInitialCosts(costs, result, context, token);
+    else if (costAttempts.has(context)) void confirmCostRead(context);
   } catch (error) {
     if (token === generation) message(error.message, true);
   }
+}
+
+async function finishInitialCosts(request, result, context, token) {
+  const costs = await request;
+  if (token !== generation || current?.customer?.customerId !== context) return;
+  const confirmed = costs?.customerId === context && costs.staffId === staffId && Array.isArray(costs.rows);
+  if (confirmed) mergeCostReferences(costs.rows);
+  current = result;
+  const scroller = quoteWindow?.scroller;
+  const search = $('#quote-find');
+  const searchValue = search.value;
+  const restoreFocus = document.activeElement === search;
+  hideProductPreview();
+  renderQuotes(scroller ? { left: scroller.scrollLeft, top: scroller.scrollTop } : null);
+  const searchInput = $('#quote-find');
+  searchInput.value = searchValue;
+  $('#quote-find-clear').hidden = !searchValue;
+  if (searchValue) findQuoteRow(searchInput);
+  if (restoreFocus) searchInput.focus({ preventScroll: true });
+  costButtonState();
+  if (!confirmed) message('Current costs could not be checked. Use Catch Cost to retry.', false, true);
+  if (costAttempts.has(context)) void confirmCostRead(context);
 }
 
 async function initialize() {
@@ -1377,13 +1403,13 @@ async function initialize() {
     $('#customer').disabled = !result.customers.length;
     message(result.customers.length ? '' : 'No quotation customers are assigned to your account.');
     if (result.customers.length) {
-      await refresh();
+      await refresh({ deferCosts: true });
       void loadSelectionCounts();
     }
   } catch (error) { message(error.message, true); }
 }
 
-$('#customer').onchange = () => { unlockedEas.clear(); message(); refresh(); };
+$('#customer').onchange = () => { unlockedEas.clear(); message(); refresh({ deferCosts: true }); };
 
 function hideChangedQuote(tr) {
   if (!tr || busy || current?.canPublish === false) return;
@@ -1501,20 +1527,24 @@ function costButtonState() {
   if (!button || !current) return;
   const running = costAttempts.has(customerId());
   button.disabled = running || publishingRows.size > 0 || !current.canEdit || !current.rows.length;
-  button.textContent = running ? 'Refreshing cost…' : 'Catch Cost';
+  button.textContent = current.costsDeferred && !current.canEdit ? 'Checking costs…' : running ? 'Refreshing cost…' : 'Catch Cost';
 }
-function paintCostReferences(updates, context) {
-  if (!current || current.customer.customerId !== context || customerId() !== context) return;
+function mergeCostReferences(updates) {
   const costs = new Map(updates.map(row => [row.id, row]));
   for (const row of current.rows) {
     const cost = costs.get(row.id);
-    if (!cost) continue;
+    if (!cost || (typeof cost.selectionEpoch === 'string' && cost.selectionEpoch !== (row.selectionEpoch || ''))) continue;
     if (cost.costAt && row.costAt && cost.costAt < row.costAt) continue;
     // Never overwrite a price, revision, publication receipt or another row's edit.
     for (const name of ['costMyr', 'costAt', 'costDetails', 'costError']) {
       if (Object.prototype.hasOwnProperty.call(cost, name)) row[name] = cost[name];
     }
   }
+  return costs;
+}
+function paintCostReferences(updates, context) {
+  if (!current || current.customer.customerId !== context || customerId() !== context) return;
+  const costs = mergeCostReferences(updates);
   for (const tr of content.querySelectorAll('tr[data-row]')) {
     const row = current.rows.find(item => item.id === tr.dataset.row);
     if (!row || !costs.has(row.id)) continue;
