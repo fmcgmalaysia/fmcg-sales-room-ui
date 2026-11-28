@@ -5,6 +5,8 @@ import { calculatePlanCosting } from 'backend/purchasePlan.js';
 // Finance-only enrichment of the existing quantity projection. No stock writes,
 // new balances, reference prices, payment amounts or alternative outflow rules.
 export function sourceCost(task) {
+  if (task?.openingStock === true) return Number.isFinite(task.netCostCtn) && task.netCostCtn > 0
+    ? { status: 'CONFIRMED', unit: task.netCostCtn } : { status: 'COST_UNCONFIRMED', unit: null };
   // PO assignment confirms the source without rewriting the earlier plan event's draft flag.
   if (!task?.po || task.costCurrency !== 'MYR') return { status: 'COST_UNCONFIRMED', unit: null };
   const plan = task.procurement, saved = plan?.costing;

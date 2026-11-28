@@ -29,7 +29,8 @@ export function projectStockControlPage(context, input = {}, readAt = new Date()
     usableOnHand: row.usableOnHand, shortage: row.shortage, incoming: row.incoming, reviewRequired: row.reviewRequired,
     sources: row.sources.filter(source => source.onHand === null || source.onHand > 0 || source.shortage > 0 || source.awaitingDisposal > 0
       || source.issues.length > 0 || source.reservations.some(entry => entry.remaining > 0)).map(source => ({
-      sourceTaskId: source.sourceTaskId, po: source.po, onHand: source.onHand, usableOnHand: source.usableOnHand,
+      sourceTaskId: source.sourceTaskId, po: source.po, ...(source.sourceType ? { sourceType: source.sourceType } : {}),
+      onHand: source.onHand, usableOnHand: source.usableOnHand,
       reservedUsable: source.reservedUsable, available: source.available, isolated: source.isolated,
       awaitingDisposal: source.awaitingDisposal, physicalCustody: source.physicalCustody,
       shortage: source.shortage, ownershipBasis: source.ownershipBasis, issues: [...source.issues],

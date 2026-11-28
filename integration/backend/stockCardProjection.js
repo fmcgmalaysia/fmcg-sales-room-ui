@@ -96,12 +96,14 @@ export function projectStockCard(context) {
     const reservationKnown = issues.every(code => code === 'RESERVED_STOCK_SHORTAGE');
     const available = !issues.length ? unassigned : issues.every(code => code === 'RESERVED_STOCK_SHORTAGE') ? 0 : null;
     const row = { sourceTaskId: source.id, customerDemandTaskId: source.customerDemandTaskId || source.id,
-      po: source.po || '', received: stock.received, replacementReceived: stock.replacementReceived,
+      po: source.po || '', ...(source.openingStock === true ? { sourceType: 'OPENING_STOCK' } : {}),
+      received: stock.received, replacementReceived: stock.replacementReceived,
       dispatched: stock.shipped, excluded: stock.excluded, unresolvedHeld: stock.held,
       usableOnHand: stock.availablePhysical, reserved, unassigned, shortage, reservations,
       onHand: physical.onHand, isolated: physical.isolated, returned: physical.returned,
       awaitingDisposal: physical.awaitingDisposal, physicalCustody: physical.physicalCustody,
-      ownershipBasis: allocation ? 'PLANNER_ALLOCATION' : canResolveSource ? 'PURCHASE_CUSTOMER_SHARE' : 'REVIEW_REQUIRED',
+      ownershipBasis: allocation ? 'PLANNER_ALLOCATION' : source.openingStock === true ? 'OPENING_STOCK'
+        : canResolveSource ? 'PURCHASE_CUSTOMER_SHARE' : 'REVIEW_REQUIRED',
       outstandingClaims: reserved,
       reservedUsable: reservationKnown ? Math.min(reserved, stock.availablePhysical) : null,
       available, issues: [...new Set(issues)] };

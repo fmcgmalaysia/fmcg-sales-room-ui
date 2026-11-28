@@ -59,7 +59,7 @@ export function customerAllocationContext(workspace,activity,allocations,version
   return {id:row.id,customerId:row.customerId,company:workspace.company,barcode:row.barcode,packing:row.packing,ea:row.ea,archived:row.archived===true,demand:row.ord,batches,invoiceLocked:Boolean(row.salesInvoiceNumber),held:packingTaskHeld({...workspace,activity:guardActivity},row.id,guardedLists)>0,returnLocked:physicalOutflowQuantity(activity,{taskId:row.id},outflows)>0||shipments.some(shipment=>shipment.lines.some(line=>line.taskId===row.id))};
  });
  const unfilled=new Map(tasks.map(task=>[task.id,Math.max(0,task.demand-allocations.reduce((n,source)=>n+(source.targets.find(target=>target.taskId===task.id)?.quantity||0),0))]));
- const sources=workspace.tasks.filter(row=>row.warehouse?.hasPhysicalReceipt&&row.po&&row.supplierId).map(row=>{
+ const sources=workspace.tasks.filter(row=>row.warehouse?.hasPhysicalReceipt&&(row.openingStock===true||row.po&&row.supplierId)).map(row=>{
   const stock=stockPosition(row.id,row.warehouse.accepted,activity),saved=allocations.find(allocation=>allocation.sourceTaskId===row.id),owner=tasks.find(task=>task.id===(row.customerDemandTaskId||row.id));
   // A supplier's customer earmark is not free stock before the first explicit allocation.
   const earmarked=owner&&!saved?Math.min(unfilled.get(owner.id)||0,stock.usableReceived,Math.max(0,row.procurement?.customerCtn??((row.procurement?.totalCtn??owner.demand)-(row.procurement?.expectedExtra||0)))):0;
