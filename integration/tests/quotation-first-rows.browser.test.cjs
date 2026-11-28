@@ -27,6 +27,8 @@ const parent = `<iframe style="width:100%;height:100vh;border:0" src="${embed}">
   const costs = new Map();
   window.finishCosts = (id, mode) => costs.get(id)?.(mode);
   window.costsWaiting = id => costs.has(id);
+  let manualDone;
+  window.finishManualCost = () => manualDone();
   addEventListener('message', event => {
     const m = event.data;
     if (m?.type !== 'MASTER_QUOTATION_REQUEST' || event.origin !== 'https://quotes-fixture.invalid') return;
@@ -38,6 +40,7 @@ const parent = `<iframe style="width:100%;height:100vh;border:0" src="${embed}">
     if (m.action === 'customers') return send({ customers });
     if (m.action === 'selection-counts') return send({ counts: [] });
     if (m.action === 'purchase-history') return send({ customerId: m.customerId, items: [] });
+    if (m.action === 'cost') manualDone = () => send({ pending: false, rows: [], updated: 0, unchanged: 1, failed: 0 });
     if (m.action === 'quotes') return send({ customer, rows: customer.rows, canEdit: true, canPublish: true,
       costsDeferred: m.input?.deferCosts === true });
     if (m.action === 'quote-current-costs') costs.set(m.customerId, mode => {
@@ -67,12 +70,23 @@ test('Quotations renders while costs are pending and preserves the current custo
     const select = quote.locator('#customer');
     const catchCost = quote.locator('#catch-cost');
     const find = quote.locator('#quote-find');
+    const banner = quote.locator('#quote-cost-wait');
+    const scenes = new Set();
+    const readBanner = async () => {
+      await banner.waitFor();
+      scenes.add(await banner.locator('.quote-cost-wait-art').getAttribute('data-scene'));
+      assert.match(await banner.innerText(), /\d\d:\d\d/);
+    };
     const row = id => quote.locator('tr[data-row="' + id + '"]');
     await row('ALPHA-0').waitFor();
+    await readBanner();
+    await banner.getByText('00:01', { exact: true }).waitFor({ timeout: 2500 });
+    assert.match(await banner.innerText(), /Automatically refreshing costs/);
     assert.equal(await catchCost.innerText(), 'Checking costs…');
     assert.equal(await row('ALPHA-0').locator('[data-mode=EA]').isEnabled(), false);
     await select.selectOption('BETA');
     await row('BETA-0').waitFor();
+    await readBanner();
     assert.equal(await quote.locator('table').getAttribute('aria-rowcount'), '220');
     await find.fill('BETA Product 41');
     await page.waitForFunction(() => costsWaiting('ALPHA') && costsWaiting('BETA'));
@@ -81,21 +95,32 @@ test('Quotations renders while costs are pending and preserves the current custo
     assert.equal(await row('ALPHA-0').count(), 0);
     await page.evaluate(() => finishCosts('BETA'));
     await quote.getByRole('button', { name: 'Catch Cost', exact: true }).waitFor();
+    assert.equal(await banner.isVisible(), false);
     assert.equal(await find.inputValue(), 'BETA Product 41');
     assert.equal(await find.evaluate(input => input === document.activeElement), true);
     assert.equal(await row('BETA-41').locator('[data-mode=EA]').isEnabled(), true);
     assert.match(await row('BETA-41').innerText(), /Confirmed current cost/);
     await select.selectOption('CHARLIE');
     await row('CHARLIE-0').waitFor();
+    await readBanner();
     await page.waitForFunction(() => costsWaiting('CHARLIE'));
     await page.evaluate(() => finishCosts('CHARLIE', 'unavailable'));
     await quote.getByText('Current costs could not be checked.', { exact: false }).waitFor();
+    assert.equal(await banner.isVisible(), false);
     assert.equal(await catchCost.isEnabled(), true);
+    await catchCost.click();
+    await readBanner();
+    assert.equal(await banner.getByRole('status').innerText(), 'Refreshing costs…');
+    await page.evaluate(() => finishManualCost());
+    await banner.waitFor({ state: 'hidden' });
     await select.selectOption('ALPHA');
     await row('ALPHA-0').waitFor();
+    await readBanner();
+    assert.equal(scenes.size, 5);
     await page.waitForFunction(() => costsWaiting('ALPHA'));
     await page.evaluate(() => finishCosts('ALPHA', 'denied'));
     await row('ALPHA-0').waitFor({ state: 'detached' });
+    assert.equal(await banner.isVisible(), false);
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
