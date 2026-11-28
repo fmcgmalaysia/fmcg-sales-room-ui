@@ -1,20 +1,66 @@
 #inventoryViews{display:flex;align-items:center;gap:6px;margin:12px 24px}
 #inventoryViews button,#inventoryReport button{font:inherit;cursor:pointer;border:1px solid #b7cbdc;border-radius:5px;background:white;color:#193b54;padding:6px 12px}
 #inventoryViews button[aria-pressed=true]{background:#173a54;color:white}
-#inventoryReport{margin:12px 24px;color:#19364c}
-#inventoryReport h2{font-size:18px;margin:14px 0 7px}
-#inventoryReport .outlook-filters{display:flex;align-items:end;flex-wrap:wrap;gap:10px;margin:12px 0}
+#inventoryReport{margin:12px 24px 26px;color:#19364c;line-height:1.45}
+#inventoryReport h1{margin:0 0 8px;font-size:25px;line-height:1.2}
+#inventoryReport h2{margin:0;font-size:17px;line-height:1.25}
+#inventoryReport .outlook-filters{display:flex;align-items:end;flex-wrap:wrap;gap:8px 10px;margin:14px 0;padding:12px;background:#fff;border:1px solid #cedce7;border-radius:7px}
 #inventoryReport label,#inventoryReport small{display:block}
-#inventoryReport input{display:block;padding:6px;border:1px solid #b7cbdc;border-radius:4px}
-#inventoryReport .outlook-scroll{overflow:auto;background:white;border:1px solid #ccdae4;border-radius:5px}
-#inventoryReport table{width:100%;border-collapse:collapse;font:500 13px/1.4 Arial,sans-serif}
-#inventoryReport th,#inventoryReport td{padding:8px;text-align:right;border-bottom:1px solid #dae3e9}
+#inventoryReport .outlook-filters label{font-size:12px;font-weight:600}
+#inventoryReport input{display:block;max-width:100%;margin-top:3px;padding:6px;border:1px solid #b7cbdc;border-radius:4px;font:inherit;color:inherit}
+#inventoryReport [data-archive-status]:empty{display:none}
+#inventoryReport [data-archive-status]{margin:12px 0;color:#4b6274;font-size:13px}
+#inventoryReport .outlook-section-heading{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 14px;margin:15px 0 9px}
+#inventoryReport .outlook-section-heading>span{font-size:13px;font-weight:600;color:#4b6274}
+#inventoryReport .outlook-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+#inventoryReport .outlook-metric{min-width:0;padding:11px 13px;background:#fff;border:1px solid #cedce7;border-radius:7px}
+#inventoryReport .outlook-metric>span{font-size:12px;font-weight:600;color:#4b6274}
+#inventoryReport .outlook-metric>strong{display:block;margin-top:3px;font-size:clamp(16px,1.6vw,21px);line-height:1.2;color:#153a55;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#inventoryReport .outlook-metric>small{margin-top:4px;font-size:11px}
+#inventoryReport .outlook-currency{display:block;white-space:nowrap}
+#inventoryReport .outlook-metric .outlook-currency{white-space:normal}
+#inventoryReport .outlook-scroll{overflow:auto;max-width:100%;background:white;border:1px solid #c3d4e2;border-radius:7px}
+#inventoryReport table{width:100%;border-collapse:collapse;font-size:12px;font-weight:500;line-height:1.45}
+#inventoryReport .outlook-orders{min-width:790px}
+#inventoryReport th,#inventoryReport td{padding:9px 10px;text-align:right;border-bottom:1px solid #dae3e9;vertical-align:middle}
 #inventoryReport tr>:first-child{text-align:left}
-#inventoryReport thead,#inventoryReport tfoot{background:#dce9f2}
-#inventoryReport button[data-fold]{border:0;background:none;padding:2px;color:#174c7a;font-weight:600}
-#inventoryReport button[data-fold]::before{content:'▸';margin-right:5px}
+#inventoryReport thead{background:#d9e7f0;color:#173a54}
+#inventoryReport tfoot{background:#edf4f8;color:#193b54}
+#inventoryReport tfoot td{font-weight:650}
+#inventoryReport thead th{font-weight:650}
+#inventoryReport .outlook-orders tr>:first-child{width:32%;min-width:240px}
+#inventoryReport .outlook-orders td{font-variant-numeric:tabular-nums}
+#inventoryReport .outlook-customer{background:#fff}
+#inventoryReport .outlook-customer td{font-weight:650}
+#inventoryReport .outlook-order-row{background:#f1f6fa}
+#inventoryReport button[data-fold]{display:flex;gap:8px;align-items:baseline;width:100%;border:0;background:none;padding:3px 0;color:#174c7a;font-weight:650;text-align:left;line-height:1.35}
+#inventoryReport button[data-fold]::before{content:'▸';flex:none;width:10px}
 #inventoryReport button[data-fold][aria-expanded=true]::before{content:'▾'}
-#inventoryReport .outlook-order{padding-left:20px}
-#inventoryReport .outlook-product{padding-left:35px}
-#inventoryReport small{color:#526b7b}
+#inventoryReport button[data-fold]:hover{text-decoration:underline}
+#inventoryReport .outlook-order{padding-left:28px}
+#inventoryReport .outlook-product{padding-left:47px;font-weight:500}
+#inventoryReport small{font-size:11px;font-weight:500;color:#4b6274;overflow-wrap:anywhere}
+#inventoryReport .outlook-review,#inventoryReport .outlook-stock{border:1px solid #cedce7;border-radius:7px;background:#fff;margin:0 0 10px}
+#inventoryReport .outlook-review{background:#fff8ea;border-color:#eed6a8;color:#684517}
+#inventoryReport .outlook-stock{margin:12px 0}
+#inventoryReport details>summary{cursor:pointer;padding:9px 12px;font-size:13px}
+#inventoryReport details>summary>span{display:inline-block;margin-left:9px;font-size:12px}
+#inventoryReport .outlook-stock summary>span{font-weight:600;color:#35566f}
+#inventoryReport .outlook-stock .outlook-scroll{margin:0 8px 8px}
+#inventoryReport .outlook-stock table{min-width:460px}
+#inventoryReport .outlook-review-content{padding:0 12px 8px}
+#inventoryReport .outlook-review-group{padding:8px 0;border-top:1px solid #eed6a8}
+#inventoryReport .outlook-review-group h3{margin:0;font-size:12px;font-weight:650}
+#inventoryReport .outlook-review-group ul{list-style:none;padding:0;margin:4px 0 0}
+#inventoryReport .outlook-review-group li{display:flex;justify-content:space-between;gap:6px 14px;flex-wrap:wrap;font-size:12px}
+#inventoryReport .outlook-empty{padding:11px 12px;margin:0;color:#4b6274;font-size:13px}
+#inventoryReport :is(button,summary,.outlook-scroll):focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+@media (max-width:850px){
+  #inventoryReport .outlook-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:520px){
+  #inventoryReport{margin:12px 12px 20px}
+  #inventoryViews{margin-inline:12px;flex-wrap:wrap}
+  #inventoryReport .outlook-metric{padding:9px 10px}
+}
 #inventoryViews[hidden],#inventoryReport[hidden],#inventoryReport tr[hidden],#app[hidden]{display:none!important}

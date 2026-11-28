@@ -2117,7 +2117,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'finance-inventory-outlook-only'
         run: |
           site="$RUNNER_TEMP/finance-inventory-outlook-site"
-          node tools/stage-finance-inventory-outlook.cjs stage-live "$site"
+          node tools/stage-finance-outlook-layout.cjs stage-live "$site"
           node --check "$site/account-room/inventory-outlook.js"
           node --test integration/tests/finance-inventory-outlook.test.cjs integration/tests/finance-original-month-end.test.cjs
 
