@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-table-weight-v1">
+  <meta name="build" content="20261128-quotation-gp-weight-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v6">
   <title>Sales Management · Quotations</title>
   <style>@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype')}
 @font-face{font-family:'Quotation Table Inter';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fMZg.ttf) format('truetype')}
+@font-face{font-family:'Quotation Table Inter';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:800;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuDyYMZg.ttf) format('truetype')}
@@ -1129,6 +1130,7 @@
           .quote-unit, .calc-target .calc-selling, .calc-target small, [data-carton], .gp-healthy, .gp-risk) {
         font-weight: 500;
       }
+      .wix-quotation-workroom .quote-grid [data-profit] .quote-gp-number { font-weight: 700; }
       .wix-quotation-workroom .quote-grid .calc-stack { grid-template-columns: max-content 39px; column-gap: 5px; }
     }
     @media (min-width: 1201px) {
@@ -2221,7 +2223,7 @@ function gpTone(gp) {
 }
 function profit(price) {
   if (!Number.isFinite(price?.gp)) return '';
-  return labeledValue('GP', fixed(price.gp) + '%', gpTone(price.gp)) +
+  return labeledValue('GP', fixed(price.gp) + '%', 'quote-gp-number ' + gpTone(price.gp)) +
     labeledValue('CTN', fixed(price.profitMyr));
 }
 function isHighRiskQuote(row) {

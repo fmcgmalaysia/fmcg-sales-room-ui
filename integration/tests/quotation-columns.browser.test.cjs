@@ -127,11 +127,13 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
               .some(node => node.nodeType === 3 && node.textContent.trim());
             if (!isText || !element.getClientRects().length) return [];
             const style = getComputedStyle(element);
-            if (style.visibility !== 'visible' || style.fontWeight === '500') return [];
+            const expected = element.matches('.quote-gp-number') ? '700' : '500';
+            if (style.visibility !== 'visible' || style.fontWeight === expected) return [];
             return [[element.className || element.tagName, style.fontWeight]];
           });
         });
         assert.deepEqual(weighted, [], `Desktop quotation table weight at ${width}px`);
+        assert.match(await row.locator('[data-profit] .quote-gp-number').textContent(), /^-?\d+\.\d{2}%$/);
         assert.equal(await row.locator('.quotation-history').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
         assert.equal(await frame.locator('.quote-history-heading').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
         assert(await row.locator('.remark-cell').evaluate(cell => cell.clientWidth) >= 155);
