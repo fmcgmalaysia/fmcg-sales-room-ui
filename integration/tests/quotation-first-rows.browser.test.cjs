@@ -101,6 +101,11 @@ test('Quotations renders while costs are pending and preserves the current custo
     assert.match(await banner.innerText(), /Refreshing costs/);
     assert.equal(await banner.evaluate(dialog => dialog.matches(':modal') &&
       getComputedStyle(dialog, '::backdrop').backgroundColor === 'rgba(14, 35, 56, 0.56)'), true);
+    assert.deepEqual(await banner.evaluate(dialog => ({
+      edge: getComputedStyle(dialog.querySelector('.quote-cost-wait-content')).paddingTop,
+      close: getComputedStyle(dialog.querySelector('.quote-cost-wait-close')).position,
+      art: getComputedStyle(dialog.querySelector('.quote-cost-wait-image')).aspectRatio,
+    })), { edge: '56px', close: 'absolute', art: '1.6 / 1' });
     await page.evaluate(() => finishFirstGrid());
     await row('ALPHA-0').waitFor();
     await banner.locator('time').getByText('Elapsed 1 s', { exact: true }).waitFor({ timeout: 3000 });

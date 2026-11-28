@@ -56,7 +56,9 @@ async function inputFits(locator, value) {
     const style = getComputedStyle(input);
     const canvas = document.createElement('canvas').getContext('2d');
     canvas.font = style.font;
-    return { available: input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+    return { viewport: innerWidth, fontSize: style.fontSize, value: input.value, width: style.width,
+      tracks: getComputedStyle(input.parentElement).gridTemplateColumns,
+      available: input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
       required: canvas.measureText(input.value).width };
   });
   assert(widths.available > widths.required + 3, JSON.stringify(widths));
@@ -123,6 +125,42 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         await row.locator('input[data-quote-note][value="MOQ 50 <CTN>"]').waitFor();
         const writes = await page.evaluate(() => actions.filter(item => ['save-note', 'publish', 'draft'].includes(item.action)));
         assert.deepEqual(writes.map(item => [item.action, item.customerId, item.input.text]), [['save-note', 'A', 'MOQ 50 <CTN>']]);
+        const main = frame.locator('main');
+        const grid = frame.locator('.quote-grid');
+        assert.equal(await grid.evaluate(element => getComputedStyle(element).overflowY), 'visible');
+        assert.equal(await main.evaluate(element => getComputedStyle(element).overflowY), 'auto');
+        const mastTop = await frame.locator('.masthead').evaluate(el => el.getBoundingClientRect().top);
+        await main.evaluate(element => { element.scrollTop = 900; });
+        await frame.locator('.quotation-controls[data-collapsed]').waitFor({ state: 'attached' });
+        assert.equal(await frame.locator('.quotation-controls').evaluate(el => el.offsetHeight), 0);
+        assert.equal(await frame.locator('.masthead').evaluate(el => el.getBoundingClientRect().top), mastTop);
+        assert.equal(await grid.evaluate(element => {
+          const summary = element.previousElementSibling.getBoundingClientRect();
+          return Math.abs(element.querySelector('thead').getBoundingClientRect().top - summary.bottom) <= 1;
+        }), true);
+        await main.evaluate(element => { element.scrollTop -= 80; });
+        await frame.locator('.quotation-controls:not([data-collapsed])').waitFor({ state: 'attached' });
+        assert(await frame.locator('.quotation-controls').evaluate(el => el.offsetHeight) > 40);
+        const search = frame.locator('#quote-find');
+        await search.fill('7612000000135');
+        const match = frame.locator('tr[data-row="SELECTION-135"].quote-find-target');
+        await match.waitFor();
+        assert.equal(await frame.locator('#quote-find-result').textContent(), 'Row 136');
+        assert.equal(await search.evaluate(el => el === document.activeElement), true);
+        await page.frames().find(item => item.url() === embed).waitForFunction(() => {
+          const row = document.querySelector('tr[data-row="SELECTION-135"].quote-find-target');
+          return row && row.getBoundingClientRect().bottom <= row.closest('main').getBoundingClientRect().bottom + 1;
+        }, undefined, { timeout: 2500 });
+        const matchPosition = await match.evaluate(el => {
+          const bounds = el.getBoundingClientRect();
+          const main = el.closest('main');
+          return { top: bounds.top, bottom: bounds.bottom, rowHeight: bounds.height, viewport: main.getBoundingClientRect().bottom,
+            scroll: main.scrollTop, maxScroll: main.scrollHeight - main.clientHeight,
+            heading: el.closest('table').querySelector('thead').getBoundingClientRect().bottom };
+        });
+        assert(matchPosition.top >= matchPosition.heading - 1 && matchPosition.bottom <= matchPosition.viewport + 1, JSON.stringify(matchPosition));
+        await main.evaluate(element => { element.scrollTop -= 100; });
+        await frame.locator('.quotation-controls:not([data-collapsed])').waitFor({ state: 'attached', timeout: 4000 });
         await page.evaluate(() => { window.canEditNotes = false; });
         await select.selectOption('B');
         const readOnly = row.locator('input[data-quote-note][readonly]');
