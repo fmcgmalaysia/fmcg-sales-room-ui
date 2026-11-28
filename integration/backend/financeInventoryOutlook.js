@@ -29,14 +29,21 @@ export function outlookPeriod(company, asOf, shipmentMonth) {
   if (new Date(date).toISOString().slice(0,10)!==asOf) throw Error('Invalid closing date.');
   return date + 16*60*60*1000;
 }
-export function financeInventoryOutlook({company, orders, tasks, activity}, asOf, shipmentMonth) {
+export function outlookContextAt({company, orders, tasks, activity}, asOf, shipmentMonth) {
   const end = outlookPeriod(company, asOf, shipmentMonth);
   const events = rowsAt(activity, end).filter(e => instant(e.activityTime) < end);
   const orderRows = rowsAt(orders, end);
   const confirmedState = confirmedPurchaseState({company, tasks:rowsAt(tasks,end), activity:events});
   const workspace = projectPurchaseWorkspace({company, orders:orderRows, tasks:confirmedState.tasks, activity:events,
     confirmedState, suppliers:[], staff:{role:'FINANCE'}});
-  const context = {...workspace,activity:confirmedState.activity};
+  return {context:{...workspace,activity:confirmedState.activity},orderRows};
+}
+export function financeInventoryOutlook(raw, asOf, shipmentMonth) {
+  const {company}=raw;
+  const {context,orderRows}=outlookContextAt(raw,asOf,shipmentMonth);
+  return projectOrderOutlook(company, asOf, shipmentMonth, context, orderRows);
+}
+export function projectOrderOutlook(company, asOf, shipmentMonth, context, orderRows) {
   const card = projectStockCard(context);
   const flows = readPhysicalOutflows(context.activity);
   const desks = readSupportDesks(context.activity,company);

@@ -2,10 +2,14 @@
   const section=document.querySelector('#inventoryReport'), bar=document.querySelector('#inventoryViews');
   const app=document.querySelector('#app'),company=document.querySelector('#company');
   const asOf=section.querySelector('[type=date]'),month=section.querySelector('[type=month]'),output=section.querySelector('[data-output]');
+  const archiveStatus=section.querySelector('[data-archive-status]');
+  const openOriginal=section.querySelector('[data-original]');
+  const reviewClosing=section.querySelector('[data-review-close]');
+  const confirmClosing=section.querySelector('[data-confirm-close]');
   const today=new Date(Date.now()+8*3600000).toISOString().slice(0,10);
   asOf.value=asOf.max=today;
   const next=new Date(today.slice(0,7)+'-01T00:00:00Z');next.setUTCMonth(next.getUTCMonth()+1);month.value=next.toISOString().slice(0,7);
-  let active=false, pane='list', pending=null, timer=null;
+  let active=false, pane='list', pending=null, timer=null, revision=null;
   const fmt=n=>n==null?'Review':n.toLocaleString('en-GB');
   const money=n=>n==null?'Review':(n/100).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
   const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -33,16 +37,49 @@
   }
   function updateRows(){for(const row of output.querySelectorAll('[data-parent]')){const parent=output.querySelector('[data-fold="'+row.dataset.parent+'"]');row.hidden=parent.closest('tr').hidden||parent.getAttribute('aria-expanded')!=='true';}}
   output.addEventListener('click',e=>{const b=e.target.closest('[data-fold]');if(!b)return;b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));updateRows();});
-  function read(){
+  function completedMonthEnd(){
+    if (!asOf.value || asOf.value>=today) return false;
+    const date=new Date(asOf.value+'T00:00:00Z');
+    date.setUTCDate(date.getUTCDate()+1);
+    return date.getUTCDate()===1;
+  }
+  function paintClosing(data, saved) {
+    paint(data.outlook);
+    const summary=data.totals;
+    const rows=data.products.flatMap(p=>p.sources.map(s=>'<tr><td>'+esc(p.name)+'<small>'+esc(p.barcode)+' · '+esc(p.packing)+'</small></td><td>'+esc(s.po || s.sourceType || s.sourceTaskId)+'</td><td>'+fmt(s.onHand)+'</td><td>'+fmt(s.reservedUsable)+'</td><td>'+fmt(s.available)+'</td><td>'+money(s.valuation.valueCents)+'</td></tr>')).join('');
+    output.insertAdjacentHTML('afterbegin','<h2>'+ (saved ? 'Original closing balance' : 'Review closing balance') +'</h2><p><strong>'+fmt(summary.onHand.quantity)+' CTN · MYR '+money(summary.valuation.knownValueCents)+'</strong> · Reserved '+fmt(summary.reservedUsable.quantity)+' CTN · Available '+fmt(summary.available.quantity)+' CTN · Isolated '+fmt(summary.isolated.quantity)+' CTN</p><div class="outlook-scroll"><table><thead><tr><th>Product</th><th>Source</th><th>On hand CTN</th><th>Reserved CTN</th><th>Available CTN</th><th>Value MYR</th></tr></thead><tbody>'+rows+'</tbody></table></div><h2>Shipment outlook · '+esc(data.outlook.shipmentMonth)+'</h2>');
+    archiveStatus.textContent=saved
+      ? 'Version '+data.version+' · Confirmed by '+data.closedBy+' · '+new Date(data.closedAt).toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur'})+' MYT'
+      : 'Check the balance and source details, then select Confirm month-end to save the original.';
+  }
+  function read(kind='READ'){
     clearTimeout(timer);pending=null;
     if(!asOf.reportValidity()||!month.reportValidity()){output.replaceChildren();return;}
-    pending=crypto.randomUUID();output.textContent='Reading month-end inventory…';
-    parent.postMessage({type:'FINANCE_INVENTORY_OUTLOOK_REQUEST',company:company.value,requestId:pending,asOf:asOf.value,month:month.value},'*');
-    timer=setTimeout(()=>{pending=null;output.textContent='Outlook could not be confirmed. Select Refresh to retry.';},45000);
+    const closing=completedMonthEnd(), reviewedRevision=revision;
+    revision=null;
+    confirmClosing.hidden=true;
+    openOriginal.disabled=reviewClosing.disabled=!closing;
+    if (kind==='SAVE' && (!reviewedRevision || !closing)) return;
+    archiveStatus.textContent='';
+    pending={id:crypto.randomUUID(),kind};
+    output.textContent=kind==='SAVE'?'Saving the original closing balance…':'Reading month-end inventory…';
+    parent.postMessage({type:'FINANCE_INVENTORY_OUTLOOK_REQUEST',kind,company:company.value,requestId:pending.id,asOf:asOf.value,month:month.value,revision:reviewedRevision},'*');
+    timer=setTimeout(()=>{pending=null;output.textContent=kind==='SAVE'?'Save not confirmed. Select Open original to check.':'Outlook could not be confirmed. Select Refresh to retry.';},45000);
   }
-  window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||m?.type!=='FINANCE_INVENTORY_OUTLOOK_RESULT'||m.company!==company.value||!pending||m.requestId!==pending)return;
+  window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||m?.type!=='FINANCE_INVENTORY_OUTLOOK_RESULT'||m.company!==company.value||!pending||m.requestId!==pending.id)return;
+    const {kind}=pending;
     clearTimeout(timer);pending=null;
-    if(!m.ok){output.textContent=m.review?'Historical evidence requires review. No closing balances are shown.':'Outlook could not be confirmed. Check Finance access or refresh.';return;}
+    if(!m.ok){output.textContent=m.review?'Historical evidence requires review. No closing balances are shown.':kind==='SAVE'?'Save not confirmed. Select Open original to check, or review the balance again.':'Request unavailable. Check Finance access or try again.';return;}
+    if(kind!=='READ'){
+      const original=kind==='PREVIEW'?m.result?.original:m.result;
+      if(original?.company===company.value && original.asOf===asOf.value){paintClosing(original,true);return;}
+      const preview=m.result?.preview;
+      if(kind==='PREVIEW' && preview?.company===company.value && preview.asOf===asOf.value && /^[0-9a-f]{32}$/.test(m.result.revision||'')){
+        revision=m.result.revision;paintClosing(preview,false);confirmClosing.hidden=false;return;
+      }
+      output.textContent=kind==='ORIGINAL' && !m.result?'No original saved for this month.':'Closing balance unavailable. Select Open original to check.';
+      return;
+    }
     if(m.result?.company!==company.value||m.result?.asOf!==asOf.value||m.result?.shipmentMonth!==month.value){output.textContent='Report period changed. Select Refresh.';return;}
     paint(m.result);
   });
@@ -54,6 +91,9 @@
   bar.addEventListener('click',e=>{const b=e.target.closest('[data-pane]');if(b)show(b.dataset.pane);});
   document.addEventListener('click',e=>{const b=e.target.closest('button[data-view]');if(!b)return;active=b.dataset.view==='stock';show('list');});
   company.addEventListener('change',()=>show(pane));
-  section.querySelector('[data-read]').onclick=read;
-  asOf.onchange=month.onchange=read;
+  section.querySelector('[data-read]').onclick=()=>read();
+  openOriginal.onclick=()=>read('ORIGINAL');
+  reviewClosing.onclick=()=>read('PREVIEW');
+  confirmClosing.onclick=()=>read('SAVE');
+  asOf.onchange=month.onchange=()=>read();
 })();

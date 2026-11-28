@@ -24,7 +24,8 @@ function sample() {
   return raw;
 }
 const read=raw=>financeInventoryOutlook(raw,'2026-11-30','2026-12');
-if(require.main===module && process.argv.includes('--sample'))console.log(JSON.stringify(read(sample())));
+if(require.main===module && process.argv.includes('--sample-input'))console.log(JSON.stringify(sample()));
+else if(require.main===module && process.argv.includes('--sample'))console.log(JSON.stringify(read(sample())));
 else {
 test('Finance November close reconciles both accepted orders, reserved, outstanding POs and available lots',()=>{
  const data=read(sample());
