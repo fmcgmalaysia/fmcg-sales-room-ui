@@ -1,20 +1,15 @@
-#app .active-order-table.draft-column-layout :is(thead .btn, .customer-short, .received-age) {
-  font-weight: 600;
+/* Take precedence over the shared table and compact metadata styles only in Active Orders. */
+#app .active-order-table.draft-column-layout :is(thead th, thead th .btn),
+#app .active-order-table.draft-column-layout #taskRows :is(td, a, b, button, div, small, span, strong):not(:where(.handle, [aria-hidden="true"])) {
+  font-size: 11px !important;
+  font-weight: 500 !important;
 }
 
-/* Active Orders overrides the shared task-table emphasis only here. */
-#app .active-order-table.draft-column-layout thead th,
-#app .active-order-table.draft-column-layout #taskRows .product-stack .itemname {
-  font-weight: 600 !important;
+#app .active-order-table.draft-column-layout #taskRows :is(.draft-cost-net, .po-reference.complete) {
+  font-weight: 700 !important;
 }
 
 #app .active-order-table.draft-column-layout #taskRows :is(.barcode, .packing, .source-costing, .customer-shipment, .po-entered-time, .po-entered-by),
 #app .active-order-table.draft-column-layout #taskRows .received-age :is(.task-received-date, .task-received-actor) {
   color: #536b84;
-  font-size: 10px;
-  font-weight: 400;
-}
-
-#app .active-order-table.draft-column-layout #taskRows .gp-badge {
-  font-size: 10px;
 }

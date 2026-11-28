@@ -127,7 +127,7 @@ test('shortfall handoff and split preserve order, original PO and the four views
  const markup=window.purchaseTaskGrid.render({rows:shop.tasks,tasks:shop.tasks,customers:shop.customers,suppliers:shop.suppliers,allocations:shop.allocations,selected:new Set(),selectedSources:new Set(),expanded:new Set(),active:true,orders:[],age:()=>'',quantityCells:line=>'<td class="order-quantity">'+line.ord+' | '+line.sourcing.orderedCtn+'</td><td class="received-quantity">'+line.sourcing.receivedCtn+'</td>',drafts:new Map(),riskDeal:()=>false});
  assert.match(markup,/50 \| 55/);assert.match(markup,/FAKE-PO/);
  assert.equal((markup.match(/data-waiting-for="TASK"/g)||[]).length,1);
- assert.match(markup,/Covered 已覆盖 10 · To arrange 尚缺 10/);
+ assert.match(markup,/Covered 10 · To arrange 10/);
  const parts=deskTaskPortions(activity,desk,after).map(part=>({...part,taskId:'TASK'}));
  const support=project({company:'NCT',customers:[{id:'FAKE',name:'Fake'}],lines:[{taskId:'TASK',customerId:'FAKE',orderId:'ORDER',requested:50,allocated:40,plannedAllocated:50}]},{company:'NCT',tasks:[{taskId:'TASK',customerShortfall:after.customerShortfall}],portions:parts},{company:'NCT',desks:[desk]});
  assert.deepEqual(JSON.parse(JSON.stringify(support.orders[0].lines[0].deskPortions.map(part=>[part.desk,part.quantity,part.allocated]))),[[1,30,30],[0,20,10]]);
