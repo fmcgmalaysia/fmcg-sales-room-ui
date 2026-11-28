@@ -21,7 +21,12 @@ const parent = `<!doctype html><meta name="viewport" content="width=device-width
     id: 'SELECTION-' + index, name: 'Chocolate biscuits ' + index, barcode: String(7612000000000 + index),
     ea: 18, packing: '12G x 18', staffNote: '', costAt: stamp, costMyr: 18,
     costDetails: { lpEa: 1, lpCtn: 18, disc1: 0, disc2: 0, disc3: 0, remark: 'Supplier terms' }, revision: 1,
-    published: { enabled: true, priceEa: 99.99, priceCtn: 1799.82, currency: 'SGD' }
+    published: {
+      enabled: id !== 'A' || ![14, 135].includes(index),
+      priceEa: id === 'A' && [27, 131].includes(index) ? 0.31 : 99.99,
+      priceCtn: id === 'A' && [27, 131].includes(index) ? 5.58 : 1799.82,
+      currency: 'SGD'
+    }
   }));
   const byCustomer = { A: rowsFor('A'), B: rowsFor('B') };
   window.actions = [];
@@ -95,6 +100,13 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
       assert.equal(await search.getAttribute('placeholder'), 'Product name or barcode');
       assert.equal(await frame.locator('.quote-find label').count(), 0);
       assert.equal(await frame.locator('.quote-find-field svg').isVisible(), true);
+      const summaryText = frame.locator('.quote-summary :is(.currency, .muted, #catch-cost, dt, dt button, #quote-find)');
+      const differentText = await summaryText.evaluateAll(nodes => nodes.flatMap(node => {
+        const style = getComputedStyle(node);
+        return style.fontSize === '12px' && style.fontWeight === '500' ? [] :
+          [[node.id || node.textContent, style.fontSize, style.fontWeight]];
+      }));
+      assert.deepEqual(differentText, [], `Taskbar typography at ${width}px`);
       if (width >= 769) {
         assert.equal(await row.locator('.quotation-history').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
         assert.equal(await frame.locator('.quote-history-heading').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
@@ -142,6 +154,10 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         const select = frame.locator('#customer');
         await select.selectOption('B');
         await row.locator('input[data-quote-note][value=""]').waitFor();
+        const awaiting = frame.getByRole('button', { name: 'Awaiting Quote' });
+        const highRisk = frame.getByRole('button', { name: 'High-Risk Quotes' });
+        assert.equal(await awaiting.isDisabled(), true);
+        assert.equal(await highRisk.isDisabled(), true);
         await select.selectOption('A');
         await row.locator('input[data-quote-note][value="MOQ 50 <CTN>"]').waitFor();
         const writes = await page.evaluate(() => actions.filter(item => ['save-note', 'publish', 'draft'].includes(item.action)));
@@ -182,12 +198,51 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
             heading: el.closest('table').querySelector('thead').getBoundingClientRect().bottom };
         });
         assert(matchPosition.top >= matchPosition.heading - 1 && matchPosition.bottom <= matchPosition.viewport + 1, JSON.stringify(matchPosition));
+        const next = async (button, target, kind) => {
+          await button.click();
+          const hit = frame.locator(`tr[data-row="SELECTION-${target}"][data-quote-target="${kind}"]`);
+          await hit.waitFor();
+          assert.equal(await frame.locator('tr[data-quote-target]').count(), 1);
+          assert.equal(await hit.evaluate(el =>
+            getComputedStyle(el.querySelector('.desc-cell')).backgroundColor),
+          kind === 'risk' ? 'rgb(255, 233, 237)' : 'rgb(255, 241, 220)');
+          const quoteFrame = page.frames().find(item => item.url() === embed);
+          await quoteFrame.waitForFunction(index => {
+            const row = document.querySelector('tr[data-row="SELECTION-' + index + '"]');
+            if (!row) return false;
+            const bounds = row.getBoundingClientRect();
+            return bounds.top >= row.closest('table').querySelector('thead').getBoundingClientRect().bottom - 1 &&
+              bounds.bottom <= row.closest('main').getBoundingClientRect().bottom + 1;
+          }, target, { timeout: 2500 });
+        };
+        assert.equal(await frame.locator('#awaiting-quote-count').textContent(), '2');
+        assert.equal(await frame.locator('#quote-risk-count').textContent(), '2');
+        const number = await frame.locator('#awaiting-quote-count').boundingBox();
+        await page.mouse.click(number.x + number.width / 2, number.y + number.height / 2);
+        await frame.locator('tr[data-row="SELECTION-14"][data-quote-target="awaiting"]').waitFor();
+        await next(awaiting, 135, 'awaiting');
+        await next(awaiting, 14, 'awaiting');
+        await next(highRisk, 27, 'risk');
+        await next(highRisk, 131, 'risk');
+        await next(highRisk, 27, 'risk');
+        await search.fill('7612000000134');
+        await frame.locator('tr[data-row="SELECTION-134"].quote-find-target').waitFor();
+        assert.equal(await frame.locator('tr[data-quote-target]').count(), 0);
         await main.evaluate(element => { element.scrollTop -= 100; });
         await frame.locator('.quotation-controls:not([data-collapsed])').waitFor({ state: 'attached', timeout: 4000 });
         await page.evaluate(() => { window.canEditNotes = false; });
         await select.selectOption('B');
         const readOnly = row.locator('input[data-quote-note][readonly]');
         await readOnly.waitFor();
+      }
+      if (width === 390) {
+        const awaiting = frame.getByRole('button', { name: 'Awaiting Quote' });
+        await awaiting.tap();
+        await frame.locator('tr[data-row="SELECTION-14"][data-quote-target="awaiting"]').waitFor();
+        assert(await awaiting.evaluate(el => el.getBoundingClientRect().top < innerHeight));
+        await awaiting.tap();
+        await frame.locator('tr[data-row="SELECTION-135"][data-quote-target="awaiting"]').waitFor();
+        assert(await awaiting.evaluate(el => el.getBoundingClientRect().top < innerHeight));
       }
       assert.deepEqual(errors, []);
       await page.close();

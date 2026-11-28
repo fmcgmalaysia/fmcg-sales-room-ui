@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-timer-alignment-v1">
+  <meta name="build" content="20261128-quotation-task-navigation-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v6">
   <title>Sales Management · Quotations</title>
@@ -291,6 +291,7 @@
 }
 
 .quote-summary {
+  --quote-summary-type: 500 12px/1.35 "Purchase Dashboard Inter", "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
   display: grid;
   grid-template-columns: minmax(0, 53fr) minmax(0, 47fr);
   border-bottom: 1px solid var(--line);
@@ -336,8 +337,32 @@
 }
 
 .quote-counts div {
+  position: relative;
   border-left: 1px solid var(--line);
   padding: 3px 8px;
+}
+
+.quote-counts button {
+  font: inherit;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  background: transparent;
+  color: #285477;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.quote-counts button::after { position: absolute; inset: 0; content: ""; }
+.quote-counts div:has(button:enabled:hover) { background: #eef4fa; }
+.quote-counts button:focus-visible { outline: 2px solid #346ba7; outline-offset: 2px; }
+.quote-counts button:disabled { color: inherit; text-decoration: none; }
+.quote-jump-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .quote-counts dt { color: var(--muted); font-size: 10px; }
@@ -476,24 +501,23 @@
   flex: none;
   background: #cc1730;
   padding: 4px 8px;
-  font-size: 13px;
-  font-weight: 700;
+  font: var(--quote-summary-type);
 }
 
 .wix-quotation-workroom .quote-summary .muted {
   color: #526a83;
-  font-size: 11px;
+  font: var(--quote-summary-type);
 }
 
 .wix-quotation-workroom #catch-cost {
   min-height: 28px;
   padding: 3px 9px;
-  font-size: 11px;
+  font: var(--quote-summary-type);
 }
 
 .wix-quotation-workroom .quote-counts dt {
   color: #455b72;
-  font-size: 11px;
+  font: var(--quote-summary-type);
 }
 
 .wix-quotation-workroom .quote-counts dd {
@@ -959,13 +983,17 @@
     .quote-find-result { position: absolute; top: 100%; right: 0; font-size: 10px; }
     .quote-grid tr.quote-find-target td { background: #e7f1ff; }
     .quote-grid tr.quote-find-target td:first-child { box-shadow: inset 3px 0 #2563eb; }
+    .wix-quotation-workroom .quote-grid tr[data-quote-target="awaiting"] > td { background: #fff1dc; }
+    .wix-quotation-workroom .quote-grid tr[data-quote-target="risk"] > td { background: #ffe9ed; }
+    .quote-grid tr[data-quote-target="awaiting"] .desc-cell { box-shadow: inset 3px 0 #b86c0d; }
+    .quote-grid tr[data-quote-target="risk"] .desc-cell { box-shadow: inset 3px 0 #c71930; }
     .quote-find-field { position: relative; }
     .quote-find-field svg {
       position: absolute; inset-inline-start: 10px; top: 50%; transform: translateY(-50%);
       width: 16px; height: 16px; fill: none; stroke: #526d82; stroke-width: 1.65;
       stroke-linecap: round; pointer-events: none;
     }
-    .quote-find-field input { padding-inline: 33px 37px; font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1.35; color: #15364f; }
+    .quote-find-field input { padding-inline: 33px 37px; font: var(--quote-summary-type); color: #15364f; }
     .quote-find-field input::-webkit-search-cancel-button { display: none; }
     #quote-find-clear {
       position: absolute; inset: 4px 5px 4px auto; width: 29px; padding: 0;
@@ -1000,6 +1028,11 @@
     .wix-quotation-workroom .quote-grid .quote-ea > input { width: 46px; padding-inline: 3px; }
     @media (max-width: 600px) {
       .wix-quotation-workroom .quote-grid .quote-ea > input { width: 54px; }
+      #content[data-quote-jump-active] .quote-summary {
+        position: sticky;
+        inset-block-start: var(--quote-header-height);
+        z-index: 3;
+      }
     }
     .quote-note-editor { display: flex; align-items: center; gap: 4px; }
     .quote-note-editor input {
@@ -1258,6 +1291,13 @@ const desktopGrid = window.matchMedia('(min-width: 601px)');
 const quoteOverscan = 16;
 const quoteScroll = $('main');
 const quoteControls = $('.quotation-controls');
+const quoteHeader = $('.quotation-header');
+const quoteJumpCursors = new Map();
+const quoteJumpMatches = {
+  awaiting: row => !row.published?.enabled,
+  risk: isHighRiskQuote,
+};
+let activeQuoteJump;
 let quoteWindow;
 let quoteFrame = 0;
 let lastQuoteScroll = 0;
@@ -1267,6 +1307,7 @@ const quoteSummarySize = new ResizeObserver(updateQuoteSummaryInset);
 function updateQuoteSummaryInset() {
   const summary = $('.quote-summary');
   quoteScroll.style.setProperty('--quote-summary-height', (summary?.offsetHeight ?? 0) + 'px');
+  content.style.setProperty('--quote-header-height', quoteHeader.offsetHeight + 'px');
 }
 
 function quoteRowsOffset(body) {
@@ -1281,6 +1322,7 @@ function mountQuoteRows(rows, scrollPosition) {
   const body = content.querySelector('.quote-grid tbody');
   quoteWindow = body && { body, rows, grid: body.closest('.quote-grid'), scroller: quoteScroll };
   quoteSummarySize.disconnect();
+  quoteSummarySize.observe(quoteHeader);
   updateQuoteSummaryInset();
   if ($('.quote-summary')) quoteSummarySize.observe($('.quote-summary'));
   if (!quoteWindow) return;
@@ -1329,7 +1371,8 @@ function updateQuoteWindow(scrollTop) {
 
 function findQuoteRow(input) {
   if (!quoteWindow || !quoteWindow.body.isConnected) return;
-  const { rows, body, grid, scroller } = quoteWindow;
+  const { rows, body } = quoteWindow;
+  clearQuoteJump();
   body.querySelector('.quote-find-target')?.classList.remove('quote-find-target');
   const term = input.value.trim().toLowerCase();
   const result = $('#quote-find-result');
@@ -1341,7 +1384,15 @@ function findQuoteRow(input) {
     result.textContent = 'No match';
     return;
   }
-  if (grid.classList.contains('windowed-quote-grid')) {
+  revealQuoteRow(index, match => match.classList.add('quote-find-target'),
+    () => input.value.trim().toLowerCase() === term);
+  result.textContent = 'Row ' + String(index + 1).padStart(3, '0');
+}
+
+function revealQuoteRow(index, markRow, stillCurrent) {
+  const { rows, body, grid, scroller } = quoteWindow;
+  const windowed = grid.classList.contains('windowed-quote-grid');
+  if (windowed) {
     const rowHeight = parseFloat(getComputedStyle(grid).getPropertyValue('--quote-row-height'));
     const stickyHeight = ($('.quote-summary')?.offsetHeight ?? 0) + (grid.querySelector('thead')?.offsetHeight ?? 0);
     const top = Math.max(0, quoteRowsOffset(body) + (index - 2) * rowHeight - stickyHeight);
@@ -1349,11 +1400,12 @@ function findQuoteRow(input) {
     updateQuoteWindow(scroller.scrollTop);
   }
   const match = [...body.querySelectorAll('tr[data-row]')].find(row => row.dataset.row === rows[index].id);
-  match?.classList.add('quote-find-target');
-  if (match && grid.classList.contains('windowed-quote-grid')) {
+  if (!match) return;
+  markRow(match);
+  if (windowed) {
     // Exact positioning follows the scroll and header layout that mounted this row.
     requestAnimationFrame(() => {
-      if (!match.isConnected || input.value.trim().toLowerCase() !== term) return;
+      if (!match.isConnected || !stillCurrent()) return;
       const view = scroller.getBoundingClientRect();
       const top = view.top + ($('.quote-summary')?.offsetHeight ?? 0) + (grid.querySelector('thead')?.offsetHeight ?? 0);
       const row = match.getBoundingClientRect();
@@ -1363,9 +1415,36 @@ function findQuoteRow(input) {
       }
     });
   } else {
-    match?.scrollIntoView({ block: 'center', inline: 'nearest' });
+    match.scrollIntoView({ block: 'center', inline: 'nearest' });
   }
-  result.textContent = 'Row ' + String(index + 1).padStart(3, '0');
+}
+
+function clearQuoteJump() {
+  if (!activeQuoteJump) return;
+  activeQuoteJump = null;
+  delete content.dataset.quoteJumpActive;
+  quoteWindow?.body.querySelector('[data-quote-target]')?.removeAttribute('data-quote-target');
+  const announcement = $('#quote-jump-announcement');
+  if (announcement) announcement.textContent = '';
+}
+
+function jumpToNextQuote(button) {
+  if (!quoteWindow?.body.isConnected || button.disabled) return;
+  const kind = button.dataset.quoteJump;
+  const matches = quoteJumpMatches[kind];
+  const { rows, body } = quoteWindow;
+  const previous = quoteJumpCursors.get(kind) ?? -1;
+  let index = rows.findIndex((row, i) => i > previous && matches(row));
+  if (index === -1) index = rows.findIndex(matches);
+  if (index === -1) return;
+  clearQuoteJump();
+  body.querySelector('.quote-find-target')?.classList.remove('quote-find-target');
+  const target = { kind, id: rows[index].id };
+  activeQuoteJump = target;
+  quoteJumpCursors.set(kind, index);
+  content.dataset.quoteJumpActive = '';
+  revealQuoteRow(index, match => { match.dataset.quoteTarget = kind; }, () => activeQuoteJump === target);
+  $('#quote-jump-announcement').textContent = button.textContent + ' · Row ' + String(index + 1).padStart(3, '0');
 }
 
 function queueQuoteWindow() {
@@ -1650,7 +1729,7 @@ async function finishInitialCosts(request, result, context, token) {
   const searchInput = $('#quote-find');
   searchInput.value = searchValue;
   $('#quote-find-clear').hidden = !searchValue;
-  if (searchValue) findQuoteRow(searchInput);
+  if (searchValue && !activeQuoteJump) findQuoteRow(searchInput);
   if (restoreFocus) searchInput.focus({ preventScroll: true });
   costButtonState();
   if (!confirmed) message('Current costs could not be checked. Use Catch Cost to retry.', false, true);
@@ -1699,6 +1778,8 @@ async function initialize() {
 }
 
 $('#customer').onchange = () => {
+  clearQuoteJump();
+  quoteJumpCursors.clear();
   unlockedEas.clear();
   quoteControls.removeAttribute('data-collapsed');
   lastQuoteScroll = 0;
@@ -1900,9 +1981,7 @@ function paintCostReferences(updates, context) {
   const latest = current.rows.reduce((at, row) => row.costAt > at ? row.costAt : at, '');
   const label = content.querySelector('[data-cost-refresh]');
   if (label) label.textContent = 'Last Cost Refresh  ' + (quoteDate(latest, true) || '—');
-  const risk = riskCount();
-  $('#quote-risk-count').textContent = risk;
-  $('#quote-risk-count').classList.toggle('gp-risk', Boolean(risk));
+  updateQuoteRiskCount();
 }
 async function confirmCostRead(context, start = false) {
   if (costReaders.has(context) || !current || !staffId) return;
@@ -1966,10 +2045,8 @@ function repaintPublicationRow(row, workspace) {
   }
   const quoted = workspace.rows.filter(item => item.published?.enabled).length;
   $('#quoted-count').textContent = quoted;
-  $('#awaiting-quote-count').textContent = workspace.rows.length - quoted;
-  const risk = riskCount();
-  $('#quote-risk-count').textContent = risk;
-  $('#quote-risk-count').classList.toggle('gp-risk', Boolean(risk));
+  setQuoteJumpCount('awaiting', $('#awaiting-quote-count'), workspace.rows.length - quoted);
+  updateQuoteRiskCount();
   $('#customer').disabled = publishingRows.size > 0;
   costButtonState();
 }
@@ -2075,8 +2152,23 @@ function profit(price) {
   return labeledValue('GP', fixed(price.gp) + '%', gpTone(price.gp)) +
     labeledValue('CTN', fixed(price.profitMyr));
 }
+function isHighRiskQuote(row) {
+  return gpTone(sellingPrice(row)?.gp) === 'gp-risk';
+}
 function riskCount() {
-  return current.rows.filter(row => gpTone(sellingPrice(row)?.gp) === 'gp-risk').length;
+  return current.rows.filter(isHighRiskQuote).length;
+}
+function setQuoteJumpCount(kind, count, value) {
+  count.textContent = value;
+  count.parentElement.querySelector('[data-quote-jump]').disabled = value === 0;
+  if (activeQuoteJump?.kind === kind &&
+      !current.rows.some(row => row.id === activeQuoteJump.id && quoteJumpMatches[kind](row))) clearQuoteJump();
+}
+function updateQuoteRiskCount() {
+  const risk = riskCount();
+  const count = $('#quote-risk-count');
+  setQuoteJumpCount('risk', count, risk);
+  count.classList.toggle('gp-risk', Boolean(risk));
 }
 function quoteDate(value, withTime = false) {
   if (!value || !Number.isFinite(Date.parse(value))) return '';
@@ -2127,7 +2219,8 @@ function quoteRow(row, number) {
   const staffNote = row.staffNote ?? '';
   const editedNote = quoteNoteEdits.get(entryKey(row)) ?? staffNote;
   const noteEditable = !disabled && current.canEditNotes;
-  return `<tr aria-rowindex="${number + 1}" data-row="${escapeHtml(row.id)}" class="${dirty(row) ? 'row-dirty' : ''}">
+  const jumpMark = activeQuoteJump?.id === row.id ? ` data-quote-target="${activeQuoteJump.kind}"` : '';
+  return `<tr aria-rowindex="${number + 1}" data-row="${escapeHtml(row.id)}" class="${dirty(row) ? 'row-dirty' : ''}"${jumpMark}>
     <td class="row-number">${String(number).padStart(3, '0')}</td>
     <td class="image-cell">${image}</td>
     <td class="desc-cell"><span class="barcode">${escapeHtml(row.barcode)}</span><div class="product-name" title="${desc}">${desc}</div><span class="packing">${escapeHtml(row.packing)}</span></td>
@@ -2154,6 +2247,7 @@ function renderQuotes(scrollPosition) {
   const rows = quoteRows();
   const currency = current.customer.preferredCurrency;
   const quoted = current.rows.filter(row => row.published?.enabled).length;
+  const awaiting = current.rows.length - quoted;
   const risk = riskCount();
   const latestCost = current.rows.reduce((latest, row) => Date.parse(row.costAt) > Date.parse(latest) ||
     (!latest && Number.isFinite(Date.parse(row.costAt))) ? row.costAt : latest, '');
@@ -2161,7 +2255,10 @@ function renderQuotes(scrollPosition) {
   content.innerHTML = `<div class="toolbar quote-summary"><div>
     <div class="quote-customer"><h2>${customerName}</h2><span class="currency">${currency}</span></div>
     <div class="toolbar-meta"><span class="muted">Current FX &nbsp; 1 ${currency} = MYR ${format(current.customer.rateToMyr)}</span><span class="muted" data-cost-refresh>Last Cost Refresh &nbsp; ${quoteDate(latestCost, true) || '—'}</span><button class="primary" id="catch-cost" ${busy || !current.canEdit || !current.rows.length ? 'disabled' : ''}>${busy ? 'Working…' : 'Catch Cost'}</button></div>
-    </div><dl class="quote-counts"><div><dt>Total Selected</dt><dd>${current.rows.length}</dd></div><div><dt>Quoted</dt><dd id="quoted-count">${quoted}</dd></div><div><dt>Awaiting Quote</dt><dd id="awaiting-quote-count">${current.rows.length - quoted}</dd></div><div><dt>High-Risk Quotes</dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl>
+    </div><dl class="quote-counts"><div><dt>Total Selected</dt><dd>${current.rows.length}</dd></div><div><dt>Quoted</dt><dd id="quoted-count">${quoted}</dd></div>
+      <div><dt><button type="button" data-quote-jump="awaiting" aria-describedby="awaiting-quote-count"${awaiting ? '' : ' disabled'}>Awaiting Quote</button></dt><dd id="awaiting-quote-count">${awaiting}</dd></div>
+      <div><dt><button type="button" data-quote-jump="risk" aria-describedby="quote-risk-count"${risk ? '' : ' disabled'}>High-Risk Quotes</button></dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl>
+    <span id="quote-jump-announcement" class="quote-jump-announcement" role="status"></span>
     <div class="quote-find">
       <div class="quote-find-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.5 15.5 4 4"></path></svg>
       <input id="quote-find" type="search" aria-label="Find product" placeholder="Product name or barcode" autocomplete="off" aria-describedby="quote-find-result"${rows.length ? '' : ' disabled'}>
@@ -2195,10 +2292,7 @@ function editPrice(row, tr, next, updateEa = false) {
   const target = calculatorInput(row);
   updateCalculatorApply(row, tr, price, target ? calculatorPrice(row, target) : null);
   tr.querySelector('[data-profit]').innerHTML = profit(price);
-  const risk = riskCount();
-  const count = $('#quote-risk-count');
-  count.textContent = risk;
-  count.classList.toggle('gp-risk', Boolean(risk));
+  updateQuoteRiskCount();
   tr.classList.toggle('row-dirty', dirty(row));
   tr.querySelector('[data-action=draft]').disabled = !dirty(row) || !price;
   tr.querySelector('[data-action=toggle]').disabled = current.canPublish === false || !row.published?.enabled && !Number.isFinite(price?.gp);
@@ -2237,6 +2331,8 @@ content.addEventListener('input', event => {
   updateCalculatorApply(row, tr, sellingPrice(row), price);
 });
 content.addEventListener('click', event => {
+  const jumpButton = event.target.closest('[data-quote-jump]');
+  if (jumpButton) return jumpToNextQuote(jumpButton);
   if (event.target.id !== 'quote-find-clear') return;
   const input = $('#quote-find');
   input.value = '';
