@@ -61,6 +61,7 @@ export function customerAllocationContext(workspace,activity,allocations,version
  const unfilled=new Map(tasks.map(task=>[task.id,Math.max(0,task.demand-allocations.reduce((n,source)=>n+(source.targets.find(target=>target.taskId===task.id)?.quantity||0),0))]));
  const sources=workspace.tasks.filter(row=>row.warehouse?.hasPhysicalReceipt&&row.po&&row.supplierId).map(row=>{
   const stock=stockPosition(row.id,row.warehouse.accepted,activity),saved=allocations.find(allocation=>allocation.sourceTaskId===row.id),owner=tasks.find(task=>task.id===(row.customerDemandTaskId||row.id));
+  if(stock.gainCompanies?.some(company=>company!==workspace.company))throw Error('Stock source company mismatch.');
   // A supplier's customer earmark is not free stock before the first explicit allocation.
   const earmarked=owner&&!saved?Math.min(unfilled.get(owner.id)||0,stock.usableReceived,Math.max(0,row.procurement?.customerCtn??((row.procurement?.totalCtn??owner.demand)-(row.procurement?.expectedExtra||0)))):0;
   if(owner&&!saved)unfilled.set(owner.id,(unfilled.get(owner.id)||0)-earmarked);

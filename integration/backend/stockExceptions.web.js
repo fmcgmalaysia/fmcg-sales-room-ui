@@ -10,6 +10,7 @@ import { requireStockStaff, projectStockWorkspace } from 'backend/stockException
 import { createDepartmentMessageOperations, projectDepartmentMessages, requireMessageStaff } from 'backend/departmentMessages.js';
 import { requireAccountStaff } from 'backend/accountPurchaseReview.js';
 import { requireWarehouseStaff } from 'backend/warehouseReceiving.js';
+import { createStockCountGainOperations, projectStockCounts } from 'backend/stockCountGain.js';
 async function staffContext(company){
  const access=await readManagedCompanyAccess(company);
  if(!['PURCHASE','ACCOUNT','WAREHOUSE'].some(department=>access.enter(department,'VIEW')))throw Error('Stock workspace access is not authorized.');
@@ -18,10 +19,11 @@ async function staffContext(company){
 async function listOrders(company,staff){return projectPurchaseOrders({company,workspace:await readFulfilmentContext(company,staff),records:await fulfilmentStore.all('PurchaseOrders')});}
 const report=createStockExceptionOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
 const resolve=createStockResolutionOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,listOrders});
-export const getStockExceptions=webMethod(Permissions.SiteMember,async company=>{const staff=await staffContext(company),context=await readFulfilmentContext(company,staff),orders=projectPurchaseOrders({company,workspace:context,records:await fulfilmentStore.all('PurchaseOrders')});return projectStockWorkspace(context,orders,staff);});
+const countGain=createStockCountGainOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
+export const getStockExceptions=webMethod(Permissions.SiteMember,async company=>{const staff=await staffContext(company),context=await readFulfilmentContext(company,staff),orders=projectPurchaseOrders({company,workspace:context,records:await fulfilmentStore.all('PurchaseOrders')});const workspace=projectStockWorkspace(context,orders,staff);return staff.readStockFinancial?{...workspace,stockCounts:projectStockCounts(context,staff)}:workspace;});
 export const saveStockException=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
  const staff=await staffContext(company);
- try{return await(input?.action==='QUARANTINE'?report:resolve)({company,staff,requestId,input});}
+ try{return await(input?.action==='CONFIRM_COUNT_GAIN'?countGain:input?.action==='QUARANTINE'?report:resolve)({company,staff,requestId,input});}
  catch(error){const message=String(error?.message||''),safe=/^(Stock |Select |Enter |Cannot |Resolved |Purchase |Super Admin|Supplier|This stock|Confirm |Record supplier|Admin |Physical |A different|Finance|Warehouse |Verify |Allocate |CN |Refund |Received refunds|A save is still processing)/.test(message);return {ok:false,requestId,retryable:!safe||message.startsWith('A save is still processing'),error:safe?message:'Stock save could not be confirmed. Retry the same save. / 库存保存尚未确认，请重试同一次保存。'};}
 });
 
