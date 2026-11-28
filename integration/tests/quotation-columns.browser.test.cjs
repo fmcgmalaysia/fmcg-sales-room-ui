@@ -115,6 +115,11 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
       })));
       assert(tiles.every(card => card.valueTop - card.top === tiles[0].valueTop - tiles[0].top && card.labelFits));
       assert.deepEqual(tiles.slice(2).map(card => card.linkStyle), ['none', 'none']);
+      const jumpIcons = frame.locator('.quote-counts button:enabled .quote-jump-icon');
+      assert.equal(await jumpIcons.count(), 2);
+      assert.equal(await jumpIcons.locator('circle').count(), 4);
+      assert.equal(await jumpIcons.first().isVisible(), true);
+      assert.equal(await jumpIcons.last().isVisible(), true);
       if (width >= 769) {
         assert.equal(await row.locator('.quotation-history').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
         assert.equal(await frame.locator('.quote-history-heading').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
@@ -176,6 +181,8 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         const highRisk = frame.getByRole('button', { name: 'High-Risk Quotes' });
         assert.equal(await awaiting.isDisabled(), true);
         assert.equal(await highRisk.isDisabled(), true);
+        assert.equal(await awaiting.locator('.quote-jump-icon').isHidden(), true);
+        assert.equal(await highRisk.locator('.quote-jump-icon').isHidden(), true);
         await select.selectOption('A');
         await row.locator('input[data-quote-note][value="MOQ 50 <CTN>"]').waitFor();
         const writes = await page.evaluate(() => actions.filter(item => ['save-note', 'publish', 'draft'].includes(item.action)));

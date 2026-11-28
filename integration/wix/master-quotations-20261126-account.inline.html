@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-stat-cards-v1">
+  <meta name="build" content="20261128-quotation-locate-icon-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v6">
   <title>Sales Management · Quotations</title>
@@ -379,16 +379,18 @@
   white-space: nowrap;
 }
 .quote-counts button:enabled { color: var(--stat-ink); }
-.quote-counts button:enabled::before {
+.quote-counts .quote-jump-icon {
   position: absolute;
-  inset: auto 10px 14px auto;
-  width: 6px;
-  height: 6px;
-  border: solid currentColor;
-  border-width: 0 1.5px 1.5px 0;
-  transform: rotate(45deg);
-  content: "";
+  inset: auto 8px 9px auto;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  pointer-events: none;
 }
+.quote-counts button:disabled .quote-jump-icon { display: none; }
 .quote-counts button:enabled::after { position: absolute; inset: 0; content: ""; }
 .quote-counts button:focus-visible { outline: 0; }
 .quote-jump-announcement {
@@ -2316,12 +2318,13 @@ function renderQuotes(scrollPosition) {
   const latestCost = current.rows.reduce((latest, row) => Date.parse(row.costAt) > Date.parse(latest) ||
     (!latest && Number.isFinite(Date.parse(row.costAt))) ? row.costAt : latest, '');
   const customerName = escapeHtml(current.customer.fullName || current.customer.name || $('#customer').selectedOptions[0]?.textContent || '');
+  const jumpIcon = '<svg class="quote-jump-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6"/><circle cx="10" cy="10" r="1.5"/><path d="M10 1.5v2.5m0 12v2.5M1.5 10H4m12 0h2.5"/></svg>';
   content.innerHTML = `<div class="toolbar quote-summary"><div>
     <div class="quote-customer"><h2>${customerName}</h2><span class="currency">${currency}</span></div>
     <div class="toolbar-meta"><span class="muted">Current FX &nbsp; 1 ${currency} = MYR ${format(current.customer.rateToMyr)}</span><span class="muted" data-cost-refresh>Last Cost Refresh &nbsp; ${quoteDate(latestCost, true) || '—'}</span><button class="primary" id="catch-cost" ${busy || !current.canEdit || !current.rows.length ? 'disabled' : ''}>${busy ? 'Working…' : 'Catch Cost'}</button></div>
     </div><dl class="quote-counts"><div><dt>Selected</dt><dd>${current.rows.length}</dd></div><div><dt>Quoted</dt><dd id="quoted-count">${quoted}</dd></div>
-      <div class="quote-stat-awaiting"><dt><button type="button" data-quote-jump="awaiting" aria-label="Awaiting Quote" aria-describedby="awaiting-quote-count"${awaiting ? '' : ' disabled'}>Awaiting</button></dt><dd id="awaiting-quote-count">${awaiting}</dd></div>
-      <div class="quote-stat-risk"><dt><button type="button" data-quote-jump="risk" aria-label="High-Risk Quotes" aria-describedby="quote-risk-count"${risk ? '' : ' disabled'}>High Risk</button></dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl>
+      <div class="quote-stat-awaiting"><dt><button type="button" data-quote-jump="awaiting" aria-label="Awaiting Quote" aria-describedby="awaiting-quote-count"${awaiting ? '' : ' disabled'}>Awaiting${jumpIcon}</button></dt><dd id="awaiting-quote-count">${awaiting}</dd></div>
+      <div class="quote-stat-risk"><dt><button type="button" data-quote-jump="risk" aria-label="High-Risk Quotes" aria-describedby="quote-risk-count"${risk ? '' : ' disabled'}>High Risk${jumpIcon}</button></dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl>
     <span id="quote-jump-announcement" class="quote-jump-announcement" role="status"></span>
     <div class="quote-find">
       <div class="quote-find-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.5 15.5 4 4"></path></svg>
