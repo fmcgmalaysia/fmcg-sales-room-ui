@@ -998,10 +998,9 @@
       color: #153b59;
       font: inherit;
     }
-    .quote-note-editor input::placeholder, .quote-note-heading small { color: #526a83; }
+    .quote-note-editor input::placeholder { color: #526a83; }
     .quote-note-editor .update { flex: none; padding-inline: 5px; font: inherit; }
     .quote-note-editor [hidden] { display: none; }
-    .quote-note-heading small { margin-top: 2px; font-size: inherit; }
     @media (max-width: 768px) {
       .wix-quotation-workroom .quote-grid tr[data-row] > .quote-note-cell { grid-column: 1 / -1; }
       .quote-note-editor input { min-height: 40px; font-size: 16px; }
@@ -2136,7 +2135,7 @@ function quoteRow(row, number) {
     <td class="remark-cell"><span class="mobile-label">Remark</span><div class="remark-lines" title="${escapeHtml(note)}">${noteLines.map(line => `<span>${escapeHtml(line) || '&nbsp;'}</span>`).join('')}</div></td>
     <td class="selling-price-cell"><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><div class="quote-value quote-value-suffix quote-ea"><button type="button" class="quote-ea-lock" data-action="unlock-ea" aria-label="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" title="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" ${Number(price?.priceEa) > 0 ? '' : 'hidden'} ${disabled || !lockedEa ? 'disabled' : ''}>${eaLockIcon(lockedEa)}</button><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" placeholder="0.00" value="${price ? fixed(price.priceEa) : ''}" ${disabled ? 'disabled' : lockedEa ? 'readonly' : ''}><span class="quote-unit">EA</span></div>${quotationAmount(price?.priceCtn, 'CT', ' data-carton')}</td>
     <td><span class="mobile-label">Profit</span><span data-profit>${profit(price)}</span></td>
-    <td class="quote-note-cell"><span class="mobile-label">Note · Staff only</span><div class="quote-note-editor"><input type="text" maxlength="160" data-quote-note aria-label="Staff note for ${desc}" placeholder="${noteEditable ? 'Add note' : '—'}" value="${escapeHtml(editedNote)}" ${noteEditable ? '' : 'readonly'}><button type="button" class="update primary" data-action="save-note" aria-label="Save note for ${desc}" ${noteEditable && editedNote.trim() !== staffNote ? '' : 'hidden'}>Save</button></div></td>
+    <td class="quote-note-cell"><span class="mobile-label">Note</span><div class="quote-note-editor"><input type="text" maxlength="160" data-quote-note aria-label="Staff note for ${desc}" placeholder="${noteEditable ? 'Add note' : '—'}" value="${escapeHtml(editedNote)}" ${noteEditable ? '' : 'readonly'}><button type="button" class="update primary" data-action="save-note" aria-label="Save note for ${desc}" ${noteEditable && editedNote.trim() !== staffNote ? '' : 'hidden'}>Save</button></div></td>
     <td><span class="mobile-label">View Quote</span><div class="quote-actions"><button role="switch" aria-label="Show quote for ${desc}" aria-checked="${switchOn}" class="switch" data-action="toggle" ${disabled || current.canPublish === false || (!visible && !Number.isFinite(price?.gp)) ? 'disabled' : ''}></button><span class="quote-label" aria-live="polite">${publishing ? 'Publishing…' : row.pending ? 'Confirming…' : visible ? quoteDate(row.published.publishedAt) : ''}</span></div>
     <div class="quote-actions quote-edits">${quoteResumeButton(row)}<button hidden class="update" data-action="draft" ${disabled || !dirty(row) || !price ? 'disabled' : ''}>Save draft</button>${visible ? `<button hidden class="update primary" data-action="publish" ${disabled || current.canPublish === false || !quoteChanged(row) ? 'disabled' : ''}>Update quote</button>` : ''}</div></td>
     <td class="calc-cell calc-combined"><span class="mobile-label">GP Calculator</span><div class="calc-stack">
@@ -2164,7 +2163,7 @@ function renderQuotes(scrollPosition) {
       <span class="quote-find-result" id="quote-find-result" role="status"></span>
     </div></div>` + (rows.length ? `
     <div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 1}"><colgroup>${[40, 56, '', 77, 79, 74, 77, 122, 115, 86, 166, 68, 126].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
-    <thead><tr><th>Row</th><th>Image</th><th>Descriptions</th><th class="quote-left">History</th><th class="quote-right">List Cost</th><th>Discount</th><th class="quote-right">Net Cost</th><th>Remark</th><th class="quote-right selling-price-cell">Selling Price</th><th class="quote-left">Profit</th><th class="quote-note-heading">Note<small>Staff only</small></th><th>View Quote</th><th class="calc-cell calc-group">GP Calculator</th></tr></thead>
+    <thead><tr><th>Row</th><th>Image</th><th>Descriptions</th><th class="quote-left">History</th><th class="quote-right">List Cost</th><th>Discount</th><th class="quote-right">Net Cost</th><th>Remark</th><th class="quote-right selling-price-cell">Selling Price</th><th class="quote-left">Profit</th><th>Note</th><th>View Quote</th><th class="calc-cell calc-group">GP Calculator</th></tr></thead>
     <tbody>${initialQuoteRows(rows)}</tbody></table></div>` :
     `<div class="empty">${current.rows.length ? 'No matching products.' : 'Products selected in Catalogue appear here.'}</div>`);
   mountQuoteRows(rows, scrollPosition);
