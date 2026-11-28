@@ -1,7 +1,7 @@
 const KEY = /^[A-Za-z0-9_-]{1,120}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DIRECTORY = new Set(['customers', 'selection-counts']);
-const ACTIONS = new Set([...DIRECTORY, 'quotes', 'quote-current-costs', 'purchase-history', 'cost', 'cost-status', 'draft', 'publish']);
+const ACTIONS = new Set([...DIRECTORY, 'quotes', 'quote-current-costs', 'purchase-history', 'cost', 'cost-status', 'draft', 'save-note', 'publish']);
 
 function editInput(action, input) {
   if (!input || typeof input.selectionId !== 'string' || !KEY.test(input.selectionId) ||
@@ -16,6 +16,8 @@ function editInput(action, input) {
     write.selectionEpoch = selectionEpoch;
   }
   if (action === 'publish') return typeof input.enabled === 'boolean' ? { ...write, enabled: input.enabled } : null;
+  if (action === 'save-note') return typeof input.text === 'string' && input.text.length <= 160 && !/[\r\n]/.test(input.text)
+    ? { ...write, text: input.text } : null;
   const fields = input.input;
   if (!fields || !['EA', 'GP'].includes(fields.mode) || !Number.isFinite(fields.value)) return null;
   return { ...write, input: { mode: fields.mode, value: fields.value } };
@@ -32,7 +34,7 @@ export function connectMasterQuotationFrame(frame, run) {
 
     const { requestId, customerId, action } = data;
     const envelope = { type: 'MASTER_QUOTATION_RESULT', requestId, customerId, action };
-    const editing = action === 'draft' || action === 'publish';
+    const editing = action === 'draft' || action === 'save-note' || action === 'publish';
     const costRead = action === 'cost' || action === 'cost-status';
     let input = editing ? editInput(action, data.input) : costRead && UUID.test(data.input?.requestId || '') ? { requestId: data.input.requestId } : undefined;
     if (action === 'quotes' && data.input?.deferCosts === true) input = { deferCosts: true };

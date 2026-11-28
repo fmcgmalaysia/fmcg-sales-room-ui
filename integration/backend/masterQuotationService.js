@@ -106,7 +106,7 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       ]);
       return Promise.all(rows.map(async row => {
         const last = batched ? batched.get(row.id) : await revisions.latest(customerId, row.id);
-        const { pending, ...snapshot } = last?.snapshot || blank;
+        const { pending, staffNote, ...snapshot } = last?.snapshot || blank;
         const selectionEpoch = row.selectionEpoch || '';
         if (snapshot.published && (snapshot.published.selectionEpoch || '') !== selectionEpoch) {
           snapshot.published = { ...snapshot.published, enabled: false };
@@ -115,6 +115,7 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
           ...(row.sortId ? { sortId: row.sortId } : {}),
           ...(Number.isFinite(row.cbmPerCtn) ? { cbmPerCtn: row.cbmPerCtn } : {}),
           ...snapshot, selectionEpoch, draft: currentDraft(snapshot, selectionEpoch),
+          staffNote: staffNote?.selectionEpoch === selectionEpoch ? staffNote.text : '',
           ...(costs ? rowSnapshot(row, costs[row.barcode]) : {}),
           ...(readLastInvoicedPrices ? { lastSale: lastSales.get(row.barcode) ?? null } : {}),
           pending: Boolean(pending), revision: last?.revision ?? 0 };
@@ -147,6 +148,22 @@ export function createMasterQuotationService({ revisions, readSelections, readSe
       return result.pending ? { pending: true, missing: result.missing === true } : {
         pending: false, updated: result.updated, unchanged: result.unchanged, failed: result.failed, capturedAt: result.capturedAt
       };
+    },
+
+    async saveNote({ staffId, customer }, command) {
+      validateCommand(command);
+      const { customerId } = customer;
+      const { selectionId, revision, requestId, text } = command;
+      if (typeof text !== 'string' || text.length > 160 || /[\r\n]/.test(text)) throw Error('Enter a single-line quotation note.');
+      const row = await selection(customerId, selectionId);
+      const selectionEpoch = row.selectionEpoch || '';
+      requireSelectionEpoch(command, selectionEpoch);
+      const previous = revision === 0 ? blank : (await revisions.at(customerId, selectionId, revision))?.snapshot;
+      if (!previous || previous.pending) throw Error('The previous quotation needs confirmation.');
+      const note = text.trim();
+      const saved = await append(customerId, selectionId, revision, requestId, digest('staff-note', staffId, selectionEpoch, note),
+        { ...previous, staffNote: { text: note, selectionEpoch, updatedBy: staffId } });
+      return { revision: saved.revision, text: note };
     },
 
     async saveDraft({ staffId, customer }, command) {

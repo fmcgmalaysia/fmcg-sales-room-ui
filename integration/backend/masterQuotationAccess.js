@@ -1,4 +1,4 @@
-import { canEnterQuotations, canQuoteManagedCustomer } from 'backend/staffManagementPolicy.js';
+import { canEnterQuotations, canQuoteManagedCustomer, normalizeStaffAccess } from 'backend/staffManagementPolicy.js';
 
 const ACTION_POLICY = Object.freeze({
   quotes: ['VIEW', 'VIEW'],
@@ -7,6 +7,7 @@ const ACTION_POLICY = Object.freeze({
   cost: ['EDIT', 'EDIT_QUOTATION'],
   'cost-status': ['EDIT', 'EDIT_QUOTATION'],
   draft: ['EDIT', 'EDIT_QUOTATION'],
+  'save-note': ['EDIT', 'EDIT_QUOTATION'],
   publish: ['EDIT', 'PUBLISH_QUOTATION']
 });
 
@@ -52,6 +53,8 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readQ
     if (action === 'quote-current-costs') {
       return { staffId, customerId, rows: await quotation.listCurrentCosts(scope, context?.selections) };
     }
+    const canEditNotes = String(record.role ?? '').trim().toUpperCase() === 'SUPER ADMIN' ||
+      normalizeStaffAccess(record.staffAccess ?? {}).quotationAccess === 'EDIT';
     if (action === 'quotes') {
       const deferCosts = input?.deferCosts === true;
       const [rows, rateToMyr] = await Promise.all([
@@ -60,7 +63,7 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readQ
       ]);
       const { preferredCurrency, fullName } = customer;
       return { staffId, customer: { customerId, preferredCurrency, rateToMyr, ...(fullName ? { fullName } : {}) }, rows,
-        canEdit: true, canPublish: true, ...(deferCosts && rows.length ? { costsDeferred: true } : {}) };
+        canEdit: true, canPublish: true, canEditNotes, ...(deferCosts && rows.length ? { costsDeferred: true } : {}) };
     }
     if (action === 'purchase-history') {
       const items = await readPurchaseHistory({ record, customerId, products: input?.products ?? [] });
@@ -68,6 +71,7 @@ export function createMasterQuotationActions({ readIdentity, readCustomer, readQ
     }
     if (action === 'cost') return quotation.catchCost(scope, input);
     if (action === 'cost-status') return quotation.costResult(scope, input);
+    if (action === 'save-note') return canEditNotes ? quotation.saveNote(scope, input) : { accessDenied: true };
     if (readRate) scope.customer = { ...customer, rateToMyr: await readRate(customer) };
     if (action === 'draft') return quotation.saveDraft(scope, input);
     return quotation.publish(scope, input);

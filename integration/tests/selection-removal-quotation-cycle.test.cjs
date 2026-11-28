@@ -45,6 +45,7 @@ test('the Wix bridge preserves the restored selection epoch through draft and pu
     postMessage(message) { responses.push(message); }
   }, (action, customerId, input) => {
     assert.equal(customerId, scope.customer.customerId);
+    if (action === 'save-note') return service.saveNote(scope, input);
     return action === 'draft' ? service.saveDraft(scope, input) : service.publish(scope, input);
   });
   const submit = async (action, input) => {
@@ -67,6 +68,11 @@ test('the Wix bridge preserves the restored selection epoch through draft and pu
   assert.equal(sent.length, 1);
   assert.equal(sent[0].selectionEpoch, epoch);
   assert.equal(sent[0].priceCtn, 36);
+  assert.equal((await submit('save-note', command(publish.result.revision, { selectionEpoch: epoch, text: 'x'.repeat(161) }))).ok, false);
+  const note = await submit('save-note', command(publish.result.revision, { selectionEpoch: epoch, text: 'MOQ 50 CTN' }));
+  assert.equal(note.ok, true);
+  assert.equal(note.result.text, 'MOQ 50 CTN');
+  assert.equal(sent.length, 1);
 });
 
 test('remove hides a published selection; restore protects against stale draft and publish until a new EA is entered', async () => {
@@ -118,4 +124,37 @@ test('a lost receipt from before removal can be reconciled without republishing 
   assert.equal(afterAck.draft, null);
   assert.equal(sent[0].requestId, sent[1].requestId);
   assert.equal(sent[1].selectionEpoch, undefined);
+});
+
+test('staff notes keep the price and publication private, and follow the selection epoch and revision', async () => {
+  const { service, selection, sent, saved } = fixture();
+  assert.equal((await service.list(scope))[0].staffNote, '');
+  const noteCommand = command(0, { text: '  MOQ 50 <CTN>  ' });
+  assert.equal((await service.saveNote(scope, noteCommand)).text, 'MOQ 50 <CTN>');
+  assert.equal((await service.saveNote(scope, noteCommand)).revision, 1);
+  assert.equal(saved.size, 1);
+  assert.equal(sent.length, 0);
+  await assert.rejects(service.saveNote(scope, command(0, { text: 'Stale tab' })), /quotation changed/);
+  await assert.rejects(service.saveNote(scope, command(1, { text: 'a\nb' })), /single-line/);
+  await assert.rejects(service.saveNote({ ...scope, customer: { ...scope.customer, customerId: 'OTHER' } }, noteCommand), /unavailable/);
+
+  const draft = await service.saveDraft(scope, command(1, { input: { mode: 'EA', value: 2 } }));
+  const published = await service.publish(scope, command(draft.revision, { enabled: true }));
+  assert.equal((await service.list(scope))[0].staffNote, 'MOQ 50 <CTN>');
+  assert.equal(sent[0].priceEa, 2);
+  assert.equal(sent[0].staffNote, undefined);
+  assert.equal(JSON.stringify(sent[0]).includes('MOQ'), false);
+  await service.saveNote(scope, command(published.revision, { text: '' }));
+  const [cleared] = await service.list(scope);
+  assert.equal(cleared.staffNote, '');
+  assert.equal(cleared.published.priceEa, 2);
+  assert.equal(sent.length, 1);
+
+  await service.saveNote(scope, command(cleared.revision, { text: 'Old selection' }));
+  selection.selectionEpoch = epoch;
+  const [restored] = await service.list(scope);
+  assert.equal(restored.staffNote, '');
+  await assert.rejects(service.saveNote(scope, command(restored.revision, { text: 'Stale selection' })), /restored/);
+  await service.saveNote(scope, command(restored.revision, { text: 'New selection', selectionEpoch: epoch }));
+  assert.equal((await service.list(scope))[0].staffNote, 'New selection');
 });

@@ -155,3 +155,26 @@ test('the authorized grid returns before Point Base, and its separate cost read 
   assert.equal((await run('quotes', 'A')).costsDeferred, undefined);
   assert.equal(costCalls, 2);
 });
+
+test('saving a quotation note requires quotation edit access and assigned customer ownership', async () => {
+  const customer = { customerId: 'A', assignedStaffId: 'SALES-A', quotationMode: 'WEB', webQuotationStatus: 'READY', preferredCurrency: 'USD' };
+  let record = { title: 'SALES-A', role: 'STAFF', staffStatus: 'ACTIVE', staffAccess: { performanceAccess: 'VIEW' } };
+  const command = { text: 'MOQ 50 CTN' };
+  let saved = 0;
+  const run = createMasterQuotationActions({
+    readIdentity: async () => ({ record }), readCustomer: async id => ({ ...customer, customerId: id, assignedStaffId: id === 'A' ? 'SALES-A' : 'SALES-B' }),
+    quotation: { list: async () => [], saveNote: async (scope, input) => {
+      saved++;
+      assert.equal(scope.customer.customerId, 'A');
+      assert.equal(input, command);
+      return { revision: 1 };
+    } }
+  });
+  assert.equal((await run('quotes', 'A')).canEditNotes, false);
+  assert.equal((await run('save-note', 'A', command)).accessDenied, true);
+  record = { ...record, staffAccess: { quotationAccess: 'EDIT' } };
+  assert.equal((await run('quotes', 'A')).canEditNotes, true);
+  assert.equal((await run('save-note', 'B', command)).accessDenied, true);
+  assert.equal((await run('save-note', 'A', command)).revision, 1);
+  assert.equal(saved, 1);
+});

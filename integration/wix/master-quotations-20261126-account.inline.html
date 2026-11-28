@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-columns-v1">
+  <meta name="build" content="20261128-quotation-staff-note-banner-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v3">
   <title>Sales Management · Quotations</title>
@@ -974,6 +974,24 @@
       margin: 0;
     }
     .wix-quotation-workroom .quote-grid .quote-ea > input { width: 58px; padding-inline: 5px; }
+    .quote-note-editor { display: flex; align-items: center; gap: 4px; }
+    .quote-note-editor input {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+      min-height: 30px;
+      padding: 4px 7px;
+      color: #153b59;
+      font: inherit;
+    }
+    .quote-note-editor input::placeholder, .quote-note-heading small { color: #526a83; }
+    .quote-note-editor .update { flex: none; padding-inline: 5px; font: inherit; }
+    .quote-note-editor [hidden] { display: none; }
+    .quote-note-heading small { margin-top: 2px; font-size: inherit; }
+    @media (max-width: 768px) {
+      .wix-quotation-workroom .quote-grid tr[data-row] > .quote-note-cell { grid-column: 1 / -1; }
+      .quote-note-editor input { min-height: 40px; font-size: 16px; }
+    }
 
     @media (min-width: 769px) {
       .wix-quotation-workroom .quote-summary .toolbar-meta {
@@ -1188,6 +1206,7 @@ const costReaders = new Set();
 const publishingRows = new Set();
 const unlockedEas = new Map();
 const publicationIndicators = new Map();
+const quoteNoteEdits = new Map();
 let publicationRead;
 let current = null;
 let staffId = '';
@@ -1258,7 +1277,7 @@ function updateQuoteWindow(scrollTop) {
       else body.insertAdjacentHTML('beforeend', quoteRow(row, index + 1));
     }
   }
-  const spacer = count => `<tr class="quote-spacer" aria-hidden="true"><td colspan="12" style="height:${count * quoteRowHeight}px"></td></tr>`;
+  const spacer = count => `<tr class="quote-spacer" aria-hidden="true"><td colspan="13" style="height:${count * quoteRowHeight}px"></td></tr>`;
   if (first) body.insertAdjacentHTML('afterbegin', spacer(first));
   if (end < rows.length) body.insertAdjacentHTML('beforeend', spacer(rows.length - end));
 }
@@ -1434,6 +1453,7 @@ window.addEventListener('message', event => {
       generation++;
       current = null;
       updateCostWait();
+      quoteNoteEdits.clear();
       content.replaceChildren();
       message(m.error || 'Your staff access could not be confirmed.', true);
     }
@@ -1689,6 +1709,7 @@ content.addEventListener('click', async event => {
   }
   if (button.id === 'catch-cost') { await confirmCostRead(customerId(), true); return; }
   if (publishingRows.size) return;
+  if (action === 'save-note') { await saveQuoteNote(row, button); return; }
   const context = customerId();
   busy = true;
   button.disabled = true;
@@ -1706,6 +1727,40 @@ content.addEventListener('click', async event => {
     if (context === customerId()) await refresh();
   }
 });
+
+async function saveQuoteNote(row, button) {
+  if (!current.canEditNotes || row.pending) return;
+  const context = customerId();
+  const id = entryKey(row);
+  const text = quoteNoteEdits.get(id)?.trim();
+  if (text === undefined || text === (row.staffNote ?? '')) return;
+  const input = button.closest('.quote-note-editor').querySelector('[data-quote-note]');
+  content.inert = true;
+  $('#customer').disabled = true;
+  button.textContent = 'Saving…';
+  let confirmed = false;
+  try {
+    const revision = row.revision;
+    const result = await api('save-note', { text, selectionId: row.id, revision,
+      requestId: requestId(), selectionEpoch: row.selectionEpoch || '' }, context);
+    if (result?.revision !== revision + 1 || result.text !== text) throw Error('The note save could not be confirmed.');
+    if (unlockedEas.get(id) === revision) unlockedEas.set(id, result.revision);
+    row.revision = result.revision;
+    row.staffNote = result.text;
+    quoteNoteEdits.delete(id);
+    input.value = text;
+    button.hidden = true;
+    confirmed = true;
+    message('Note saved.');
+  } catch (error) { message(error.message, true); }
+  finally {
+    content.inert = false;
+    $('#customer').disabled = false;
+    button.textContent = 'Save';
+    if (confirmed && input.isConnected) input.focus({ preventScroll: true });
+    if (!confirmed && current?.customer.customerId === context) await refresh();
+  }
+}
 
 function rememberCosts() { writeStorage('cost-reads:' + staffId, [...costAttempts.entries()]); }
 function costButtonState() {
@@ -1978,6 +2033,9 @@ function quoteRow(row, number) {
   const previousPurchase = row.lastPurchase;
   const note = typeof details.remark === 'string' ? details.remark.trim() : '';
   const noteLines = note ? note.split(/\r?\n|\r/).slice(0, 3) : ['—'];
+  const staffNote = row.staffNote ?? '';
+  const editedNote = quoteNoteEdits.get(entryKey(row)) ?? staffNote;
+  const noteEditable = !disabled && current.canEditNotes;
   return `<tr aria-rowindex="${number + 1}" data-row="${escapeHtml(row.id)}" class="${dirty(row) ? 'row-dirty' : ''}">
     <td class="row-number">${String(number).padStart(3, '0')}</td>
     <td class="image-cell">${image}</td>
@@ -1991,6 +2049,7 @@ function quoteRow(row, number) {
     <td class="remark-cell"><span class="mobile-label">Remark</span><div class="remark-lines" title="${escapeHtml(note)}">${noteLines.map(line => `<span>${escapeHtml(line) || '&nbsp;'}</span>`).join('')}</div></td>
     <td class="selling-price-cell"><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><div class="quote-value quote-value-suffix quote-ea"><button type="button" class="quote-ea-lock" data-action="unlock-ea" aria-label="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" title="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" ${Number(price?.priceEa) > 0 ? '' : 'hidden'} ${disabled || !lockedEa ? 'disabled' : ''}>${eaLockIcon(lockedEa)}</button><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" placeholder="0.00" value="${price ? fixed(price.priceEa) : ''}" ${disabled ? 'disabled' : lockedEa ? 'readonly' : ''}><span class="quote-unit">EA</span></div>${quotationAmount(price?.priceCtn, 'CT', ' data-carton')}</td>
     <td><span class="mobile-label">Profit</span><span data-profit>${profit(price)}</span></td>
+    <td class="quote-note-cell"><span class="mobile-label">Note · Staff only</span><div class="quote-note-editor"><input type="text" maxlength="160" data-quote-note aria-label="Staff note for ${desc}" placeholder="${noteEditable ? 'Add note' : '—'}" value="${escapeHtml(editedNote)}" ${noteEditable ? '' : 'readonly'}><button type="button" class="update primary" data-action="save-note" aria-label="Save note for ${desc}" ${noteEditable && editedNote.trim() !== staffNote ? '' : 'hidden'}>Save</button></div></td>
     <td><span class="mobile-label">View Quote</span><div class="quote-actions"><button role="switch" aria-label="Show quote for ${desc}" aria-checked="${switchOn}" class="switch" data-action="toggle" ${disabled || current.canPublish === false || (!visible && !Number.isFinite(price?.gp)) ? 'disabled' : ''}></button><span class="quote-label" aria-live="polite">${publishing ? 'Publishing…' : row.pending ? 'Confirming…' : visible ? quoteDate(row.published.publishedAt) : ''}</span></div>
     <div class="quote-actions quote-edits">${quoteResumeButton(row)}<button hidden class="update" data-action="draft" ${disabled || !dirty(row) || !price ? 'disabled' : ''}>Save draft</button>${visible ? `<button hidden class="update primary" data-action="publish" ${disabled || current.canPublish === false || !quoteChanged(row) ? 'disabled' : ''}>Update quote</button>` : ''}</div></td>
     <td class="calc-cell calc-combined"><span class="mobile-label">GP Calculator</span><div class="calc-stack">
@@ -2017,8 +2076,8 @@ function renderQuotes(scrollPosition) {
       <button type="button" id="quote-find-clear" aria-label="Clear product search" hidden>×</button></div>
       <span class="quote-find-result" id="quote-find-result" role="status"></span>
     </div></div>` + (rows.length ? `
-    <div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 1}"><colgroup>${[40, 56, '', 77, 79, 74, 77, 122, 115, 86, 68, 126].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
-    <thead><tr><th>Row</th><th>Image</th><th>Descriptions</th><th class="quote-left">History</th><th class="quote-right">List Cost</th><th>Discount</th><th class="quote-right">Net Cost</th><th>Remark</th><th class="quote-right selling-price-cell">Selling Price</th><th class="quote-left">Profit</th><th>View Quote</th><th class="calc-cell calc-group">GP Calculator</th></tr></thead>
+    <div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 1}"><colgroup>${[40, 56, '', 77, 79, 74, 77, 122, 115, 86, 166, 68, 126].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
+    <thead><tr><th>Row</th><th>Image</th><th>Descriptions</th><th class="quote-left">History</th><th class="quote-right">List Cost</th><th>Discount</th><th class="quote-right">Net Cost</th><th>Remark</th><th class="quote-right selling-price-cell">Selling Price</th><th class="quote-left">Profit</th><th class="quote-note-heading">Note<small>Staff only</small></th><th>View Quote</th><th class="calc-cell calc-group">GP Calculator</th></tr></thead>
     <tbody>${initialQuoteRows(rows)}</tbody></table></div>` :
     `<div class="empty">${current.rows.length ? 'No matching products.' : 'Products selected in Catalogue appear here.'}</div>`);
   mountQuoteRows(rows, scrollPosition);
@@ -2060,10 +2119,18 @@ content.addEventListener('input', event => {
     if (!event.isComposing) findQuoteRow(event.target);
     return;
   }
-  const input = event.target.closest('[data-mode], [data-calc]');
+  const input = event.target.closest('[data-mode], [data-calc], [data-quote-note]');
   if (!input || input.disabled || input.readOnly || busy) return;
   const tr = input.closest('[data-row]');
   const row = current.rows.find(row => row.id === tr.dataset.row);
+  if (input.hasAttribute('data-quote-note')) {
+    const id = entryKey(row);
+    const changed = input.value.trim() !== (row.staffNote ?? '');
+    if (changed) quoteNoteEdits.set(id, input.value);
+    else quoteNoteEdits.delete(id);
+    tr.querySelector('[data-action=save-note]').hidden = !changed;
+    return;
+  }
   const value = input.value === '' ? null : Number(input.value);
   if (input.dataset.mode) {
     editPrice(row, tr, { mode: 'EA', value: value === null ? null : roundCents(value) });
