@@ -86,6 +86,22 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
       const gp = row.locator('[data-calc="GP"]');
       const note = row.locator('[data-quote-note]');
       const save = row.locator('[data-action="save-note"]');
+      const search = frame.getByRole('searchbox', { name: 'Find product' });
+      assert.equal(await search.getAttribute('placeholder'), 'Product name or barcode');
+      assert.equal(await frame.locator('.quote-find label').count(), 0);
+      assert.equal(await frame.locator('.quote-find-field svg').isVisible(), true);
+      if (width >= 769) {
+        assert.equal(await row.locator('.quotation-history').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
+        assert.equal(await frame.locator('.quote-history-heading').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
+        assert(await row.locator('.remark-cell').evaluate(cell => cell.clientWidth) >= 155);
+        assert(await price.evaluate(el => {
+          const lock = el.previousElementSibling.getBoundingClientRect();
+          return el.getBoundingClientRect().left - lock.right <= 4;
+        }));
+        const colors = await frame.locator('thead th').evaluateAll(nodes => nodes.map(el => getComputedStyle(el).backgroundColor));
+        assert.notEqual(colors[7], colors[8]);
+        assert.deepEqual(colors.slice(8, 12), Array(4).fill(colors[8]));
+      }
       await row.getByRole('button', { name: 'Unlock unit price' }).click();
       await inputFits(price, '99.99');
       await gp.fill('99');
@@ -130,7 +146,9 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         assert.equal(await grid.evaluate(element => getComputedStyle(element).overflowY), 'visible');
         assert.equal(await main.evaluate(element => getComputedStyle(element).overflowY), 'auto');
         const mastTop = await frame.locator('.masthead').evaluate(el => el.getBoundingClientRect().top);
-        await main.evaluate(element => { element.scrollTop = 900; });
+        await select.focus();
+        await main.hover({ position: { x: 350, y: 350 } });
+        await page.mouse.wheel(0, 900);
         await frame.locator('.quotation-controls[data-collapsed]').waitFor({ state: 'attached' });
         assert.equal(await frame.locator('.quotation-controls').evaluate(el => el.offsetHeight), 0);
         assert.equal(await frame.locator('.masthead').evaluate(el => el.getBoundingClientRect().top), mastTop);
@@ -142,7 +160,6 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         await main.evaluate(element => { element.scrollTop -= 80; });
         await frame.locator('.quotation-controls:not([data-collapsed])').waitFor({ state: 'attached' });
         assert(await frame.locator('.quotation-controls').evaluate(el => el.offsetHeight) > 40);
-        const search = frame.locator('#quote-find');
         await search.fill('7612000000135');
         const match = frame.locator('tr[data-row="SELECTION-135"].quote-find-target');
         await match.waitFor();
