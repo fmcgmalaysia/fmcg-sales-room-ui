@@ -121,6 +121,17 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
       assert.equal(await jumpIcons.first().isVisible(), true);
       assert.equal(await jumpIcons.last().isVisible(), true);
       if (width >= 769) {
+        const weighted = await frame.locator('.quote-grid').evaluate(table => {
+          return [...table.querySelectorAll('thead th, tbody tr[data-row] *')].flatMap(element => {
+            const isText = element.matches('input') || [...element.childNodes]
+              .some(node => node.nodeType === 3 && node.textContent.trim());
+            if (!isText || !element.getClientRects().length) return [];
+            const style = getComputedStyle(element);
+            if (style.visibility !== 'visible' || style.fontWeight === '500') return [];
+            return [[element.className || element.tagName, style.fontWeight]];
+          });
+        });
+        assert.deepEqual(weighted, [], `Desktop quotation table weight at ${width}px`);
         assert.equal(await row.locator('.quotation-history').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
         assert.equal(await frame.locator('.quote-history-heading').evaluate(cell => getComputedStyle(cell).textAlign), 'right');
         assert(await row.locator('.remark-cell').evaluate(cell => cell.clientWidth) >= 155);

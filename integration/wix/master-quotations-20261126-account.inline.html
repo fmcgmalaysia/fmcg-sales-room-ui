@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-locate-icon-v1">
+  <meta name="build" content="20261128-quotation-table-weight-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v6">
   <title>Sales Management · Quotations</title>
   <style>@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype')}
+@font-face{font-family:'Quotation Table Inter';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:800;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuDyYMZg.ttf) format('truetype')}
@@ -1121,8 +1122,13 @@
         font-size: 11px;
         line-height: 1.35;
       }
-      .wix-quotation-workroom .quote-grid :is(thead th, .product-name, .cost-cell b, .calc-selling,
-          .gp-healthy, .gp-risk, .calc-cell .update) { font-weight: 600; }
+      .wix-quotation-workroom .quote-grid {
+        font-family: "Quotation Table Inter", "Purchase Dashboard Inter", "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      }
+      .wix-quotation-workroom .quote-grid :is(thead th, td, input, button, .product-name, .cost-cell b,
+          .quote-unit, .calc-target .calc-selling, .calc-target small, [data-carton], .gp-healthy, .gp-risk) {
+        font-weight: 500;
+      }
       .wix-quotation-workroom .quote-grid .calc-stack { grid-template-columns: max-content 39px; column-gap: 5px; }
     }
     @media (min-width: 1201px) {
