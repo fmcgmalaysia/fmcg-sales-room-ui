@@ -19,6 +19,7 @@ import { allocationOriginInfo } from 'backend/allocationOriginInfo.js';
 import { readSupportDesks } from 'backend/supportDesk.js';
 import { deskTaskPortions } from 'backend/shortloadResolutionModel.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
+import { projectOpeningStockSources } from 'backend/openingStockState.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -140,6 +141,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
   // Resolve existing automatic customer earmarks only from verified physical
   // receipts. Legacy quantities without receipt evidence retain their review path.
+  rows.push(...projectOpeningStockSources(company,activity));
   const physicalAllocation=customerAllocationContext({company,tasks:rows},activity,allocations,'');
   const automatic=physicalAllocation.sources.filter(source=>(source.implicit||source.automaticDelta>0)&&source.targets.length).map(source=>({...allocations.find(row=>row.sourceTaskId===source.id),sourceTaskId:source.id,revision:allocations.find(row=>row.sourceTaskId===source.id)?.revision||'',targets:source.targets.map(({protectedQuantity,...target})=>target),automatic:true}));
   allocations=allocations.filter(source=>!automatic.some(auto=>auto.sourceTaskId===source.sourceTaskId)).concat(automatic);

@@ -1,0 +1,31 @@
+<dialog id="opening-stock-dialog" aria-labelledby="opening-stock-title">
+  <form novalidate>
+    <div class="dialog-heading">
+      <div><h2 id="opening-stock-title">Opening Stock</h2><p>Record the cutover count for this warehouse company.</p></div>
+      <button type="button" name="close" aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <div class="tools"><label>Unit barcode <input name="barcode" inputmode="numeric" pattern="[0-9]{6,24}" maxlength="24" required></label>
+        <button type="button" name="preview">Check stock</button></div>
+      <p data-product></p><p data-quantities></p>
+      <fieldset data-count-fields hidden>
+        <legend>Physical count</legend>
+        <div class="tools">
+          <label>Counted cartons <input name="counted" type="number" min="0" max="999999" step="1" required></label>
+          <label>Counted at (MYT) <input name="countedAt" type="datetime-local" required></label>
+        </div>
+        <label><input type="checkbox" name="countConfirmed" required> I have excluded unposted deliveries and confirmed that any cartons to add are sellable and uncommitted.</label>
+      </fieldset>
+      <fieldset data-cost-fields hidden>
+        <legend>Count and cost evidence</legend>
+        <div class="tools">
+          <label>Reference <input name="reference" maxlength="120" required></label>
+          <label>Cost per CTN (MYR) <input name="unitCost" type="number" min="0.0001" max="999999.9999" step="0.0001"></label>
+        </div>
+        <p class="footnote">Leave cost blank if it still needs verification.</p>
+      </fieldset>
+      <p data-feedback role="status" aria-live="polite"></p>
+    </div>
+    <footer><button type="button" name="retry" hidden>Retry same save</button><button type="submit" class="primary" name="save" hidden>Post opening stock</button></footer>
+  </form>
+</dialog>
