@@ -161,6 +161,12 @@ test('the Quotations worktable fits prices and keeps notes separate from cost re
         }));
         assert.notEqual(colors[7][0], colors[8][0]);
         assert.deepEqual(colors.slice(8, 12), Array(4).fill(['rgb(23, 59, 89)', 'rgb(255, 255, 255)']));
+        const topEdges = await frame.locator('thead th').evaluateAll(nodes =>
+          nodes.map(node => getComputedStyle(node).boxShadow));
+        assert.deepEqual(topEdges.slice(8, 12), Array(4).fill('rgb(23, 59, 89) 0px -1px 0px 0px'));
+        assert.equal(topEdges[7], 'none');
+        assert.equal(topEdges[12], 'none');
+        assert.match(await frame.locator('.quote-summary').evaluate(node => getComputedStyle(node).boxShadow), /inset/);
         const priceRhythm = await row.evaluate(element => {
           const cell = selector => Math.round(element.querySelector(selector).getBoundingClientRect().top);
           const heading = index => getComputedStyle(element.closest('table').querySelectorAll('thead th')[index]).textAlign;

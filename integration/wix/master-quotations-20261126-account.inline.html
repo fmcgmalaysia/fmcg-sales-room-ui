@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="20261128-quotation-secondary-labels-v1">
+  <meta name="build" content="20261128-quotation-dark-header-seam-v1">
   <meta name="quotation-load-build" content="20261128-quotation-first-rows-v1">
   <meta name="quotation-cost-wait-build" content="20261128-quotation-cost-wait-v6">
   <title>Sales Management · Quotations</title>
@@ -720,6 +720,7 @@
   .wix-quotation-workroom .quote-grid thead .quote-edit-heading {
     background: #173b59;
     color: #fff;
+    box-shadow: 0 -1px 0 #173b59;
   }
 
   .wix-quotation-workroom .quote-grid :is(.quotation-history, .quote-history-heading) {
@@ -1110,7 +1111,7 @@
     @media (min-width: 769px) {
       .wix-quotation-workroom main:has(.quote-grid) { padding-inline: 12px; }
       .wix-quotation-workroom .quotation-controls .quotation-title-row { padding-inline: 12px; }
-      .wix-quotation-workroom .quote-summary { box-shadow: 0 2px 0 #dce6ef; }
+      .wix-quotation-workroom .quote-summary { box-shadow: inset 0 -1px 0 #dce6ef; }
       .wix-quotation-workroom .quote-summary .toolbar-meta {
         display: grid;
         grid-template-columns: max-content minmax(0, max-content) max-content;
