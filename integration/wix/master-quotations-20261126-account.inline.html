@@ -1,0 +1,1870 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="build" content="20261124-quotation-calculator-compact-v1">
+  <title>Sales Management · Quotations</title>
+  <style>@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype')}
+@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype')}
+@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf) format('truetype')}
+@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:800;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuDyYMZg.ttf) format('truetype')}
+:root{font-family:Arial,sans-serif;color:#16364f;background:#f3f6f9;font-size:14px;--blue:#2563eb;--line:#c9d9e6;--muted:#667e93}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button,a,input,select{touch-action:manipulation}button,select{cursor:pointer}button{border:1px solid #bdd0e1;border-radius:5px;padding:9px 13px;background:white;color:#245b8e;font-weight:600;min-height:38px}button:disabled{background:#e8edf2;color:#8493a2;cursor:default;border-color:#d7e0e8}button:focus-visible,a:focus-visible{outline:3px solid #6da8f6;outline-offset:3px}input,select{border:1px solid #bdcfe0;border-radius:5px;background:white;color:#173850;padding:9px 11px;min-height:38px}input:focus{outline:2px solid #93baf5;outline-offset:0}input[type=number]{font-variant-numeric:tabular-nums;width:100%;min-width:70px;text-align:right}button.primary{background:#2563eb;color:white;border-color:#2563eb}button.primary:disabled{background:#e8edf2;color:#8493a2;border-color:#d7e0e8}
+.qa-bar{display:flex;gap:10px;align-items:center;justify-content:space-between;background:#e5eef7;color:#42627c;padding:7px 24px;font-size:11px}.qa-bar label{display:flex;align-items:center;gap:8px}.qa-bar select{font-size:12px;min-height:28px;padding:4px 8px}.masthead{display:flex;align-items:center;gap:20px;background:#163c59;color:white;padding:12px 24px;flex-wrap:wrap}.masthead strong{font-size:26px;letter-spacing:-.5px}.department{font-size:15px;border-left:1px solid #658198;padding-left:20px}.masthead #company{margin-left:auto;width:105px}.header-bottom{display:flex;align-items:center;gap:16px}.header-bottom input{width:260px;background:#f7faff}.header-bottom span{white-space:nowrap;font-size:12px}#menu{display:none}nav{display:flex;gap:26px;padding:0 24px;background:white;border-bottom:1px solid var(--line)}nav a{color:#23435f;text-decoration:none;font-weight:600;padding:16px 2px;border-bottom:3px solid transparent}nav a.active{border-color:#346ba7;color:#346ba7}main{padding:24px;max-width:1700px;margin:auto}.page-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}h1{font-size:25px;margin:0 0 6px;letter-spacing:-.4px}h2{font-size:17px;margin:0}p{margin:5px 0;color:var(--muted);line-height:1.5}.customer-control{font-size:12px;color:var(--muted);display:grid;gap:5px;min-width:240px}.customer-control select{font-size:14px;background:#fff5e7;border-color:#eac896}#notice:empty{display:none}#notice{padding:11px 14px;border-radius:5px;background:#e8f0ff;color:#245baa;margin:0 0 14px;line-height:1.5}#notice.error{background:#fff0f1;color:#b4192e}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 17px;background:white;border:1px solid var(--line);border-bottom:0;border-radius:7px 7px 0 0}.toolbar-meta{display:flex;align-items:center;gap:14px}.currency{background:#e8f0ff;color:#265c9a;padding:5px 9px;border-radius:4px;font-weight:600}.muted{color:var(--muted);font-size:12px}.table-wrap{border:1px solid var(--line);border-radius:0 0 7px 7px;background:white}table{border-collapse:collapse;width:100%;table-layout:fixed}th{background:#d4e1eb;color:#183e5c;font-size:12px;text-align:left;font-weight:600;padding:12px 14px}th small{font-size:10px;font-weight:400;display:block;margin-top:4px}td{padding:14px;border-bottom:1px solid #d9e5ee;vertical-align:middle;font-size:13px}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#f8fbfe}th:nth-child(1){width:31%}th:nth-child(2){width:13%}th:nth-child(3){width:13%}th:nth-child(4){width:13%}th:nth-child(5){width:13%}th:nth-child(6){width:17%}.product-name{font-size:13px;font-weight:600;color:#153b59;line-height:1.45}.barcode,.packing{display:block;font-size:11px;color:#647e96;line-height:1.65}.product-name+small{display:block}.value{font-weight:600;font-size:14px}.cost-cell small{display:block;margin-top:5px;font-size:10px;color:#6f879a}.cost-cell .warning{color:#bb6411}.input-label{display:none}.field-note{display:block;margin-top:6px;font-size:10px;color:#70869a}.quote-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.switch{width:40px;min-height:23px;height:23px;border:0;border-radius:20px;background:#bdcad7;padding:3px;display:inline-flex;align-items:center;flex-shrink:0}.switch::before{content:'';height:17px;width:17px;border-radius:50%;background:white;box-shadow:0 1px 3px #1234;transition:transform .15s}.switch[aria-checked=true]{background:#2563eb}.switch[aria-checked=true]::before{transform:translateX(17px)}.quote-label{font-size:11px;color:#6c8193}.update{padding:6px 8px;min-height:29px;font-size:11px}.live-price{font-size:11px;color:#356da5;margin-top:9px}.row-dirty{background:#fffaf1}.gp-negative{color:#d01930}.empty{padding:50px 20px;text-align:center;background:white;border:1px solid var(--line);border-radius:7px;color:#647e96}.empty button{margin-top:16px}.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.product-card{padding:22px;background:white;border:1px solid var(--line);border-radius:7px;display:flex;flex-direction:column;gap:8px}.product-card button{align-self:flex-start;margin-top:auto}.product-card h2{font-size:17px;line-height:1.45}.product-card p{font-size:12px}.buyer-list{display:grid;gap:12px}.buyer-item{display:grid;grid-template-columns:minmax(0,1fr) 140px 120px;gap:20px;align-items:center;padding:18px;background:white;border:1px solid var(--line);border-radius:6px}.buyer-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:18px}.orders{padding:18px;background:#eaf2fc;border:1px solid #c4d8eb;border-radius:6px;margin-top:20px}.orders p{color:#254f76}.status-tag{padding:4px 7px;border-radius:4px;background:#fff0d8;color:#97570a;font-size:11px}.mobile-label{display:none}
+@media(min-width:1000px){thead{position:sticky;top:0;z-index:2}}
+@media(max-width:1050px){.header-bottom{width:100%;justify-content:space-between}.header-bottom input{width:65%}main{padding:18px}.table-wrap{overflow-x:auto}table{min-width:870px}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.qa-bar{padding:6px 12px;flex-wrap:wrap;font-size:10px}.qa-bar label{margin-left:auto}.masthead{padding:12px;gap:12px}.masthead strong{font-size:22px}.department{display:none}.masthead #company{min-height:42px;width:88px}#menu{display:block;color:white;background:transparent;border-color:#7791a7;font-size:21px;min-width:44px;min-height:42px;padding:4px 9px}.header-bottom{gap:12px}.header-bottom input{width:calc(100% - 88px);font-size:16px;min-height:44px}.header-bottom span{font-size:12px}nav{display:none;padding:7px 12px;gap:0;flex-direction:column}nav.open{display:flex}nav a{padding:12px;border-bottom:0;border-left:3px solid transparent}nav a.active{border-left-color:#346ba7;background:#eef4fb}main{padding:18px 12px}.page-title{display:block;margin-bottom:14px}h1{font-size:23px}.page-title p{font-size:12px}.customer-control{margin-top:14px}.customer-control select{font-size:16px;min-height:44px}.toolbar{padding:12px;gap:8px}.toolbar-meta{gap:7px;flex-wrap:wrap}.toolbar .muted{font-size:11px}.toolbar button{min-height:44px;white-space:nowrap}.table-wrap{overflow:visible;border:0;background:transparent}table{display:block;min-width:0}thead{display:none}tbody{display:grid;gap:12px}tr{display:grid;grid-template-columns:1fr 1fr;background:white;border:1px solid var(--line);border-radius:6px;overflow:hidden}td{padding:12px;border-bottom:0;min-width:0}td:first-child{grid-column:1/-1;border-bottom:1px solid #dce6ef;background:#f8fbfd}.product-name{font-size:15px}.barcode,.packing{font-size:12px}.input-label,.mobile-label{display:block;font-size:12px;color:#607b93;margin-bottom:7px}input[type=number]{font-size:16px;min-height:44px}.field-note{font-size:11px}.cost-cell .value{font-size:18px}.cost-cell small{font-size:11px}.quote-actions{padding-top:3px;gap:9px}.switch{width:48px;height:30px;min-height:30px;padding:4px;position:relative}.switch::before{width:22px;height:22px}.switch::after{content:'';position:absolute;inset:-7px 0}.switch[aria-checked=true]::before{transform:translateX(18px)}.update{font-size:12px;min-height:44px}.live-price{font-size:12px;line-height:1.5}.quote-label{font-size:12px}.product-grid{grid-template-columns:1fr}.product-card{padding:18px}.product-card button{min-height:44px}.buyer-item{grid-template-columns:1fr 90px;gap:14px;padding:14px}.buyer-item>div:first-child{grid-column:1/-1}.buyer-actions{flex-wrap:wrap}.buyer-actions button{min-height:44px;flex:1}.orders{overflow-wrap:anywhere}.status-tag{font-size:12px}}
+
+.quote-grid {
+  --quote-row-height: 56px;
+  overflow-x: auto;
+  contain: inline-size;
+}
+
+.quote-grid table {
+  width: max(100%, 1370px);
+  min-width: 0;
+}
+
+.quote-grid :is(th, td) {
+  width: auto;
+  padding: 3px 5px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.quote-grid th {
+  padding-block: 7px;
+}
+
+.quote-grid th small {
+  margin-top: 2px;
+}
+
+.quote-grid td {
+  height: 44px;
+  color: #183651;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-grid tbody tr:nth-child(even):not(.row-dirty) {
+  background: #f8fbfe;
+}
+
+.quote-grid .product-name {
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quote-grid :is(.barcode, .packing, .cost-cell small) {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.quote-grid .image-cell, .quote-grid .row-number {
+  text-align: center;
+}
+
+.quote-product-preview {
+  position: fixed;
+  z-index: 25;
+  display: block;
+  width: min(200px, calc(100vw - 20px));
+  height: min(200px, calc(100vh - 20px));
+  padding: 8px;
+  pointer-events: none;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+  box-shadow: 0 5px 20px #153b5933;
+}
+
+.quote-product-preview[hidden] {
+  display: none;
+}
+
+.quote-grid .demo-thumb {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 36px;
+  font-size: 21px;
+}
+
+.quote-grid .move-row {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  min-height: 25px;
+  width: 17px;
+  font-size: 19px;
+  cursor: grab;
+}
+
+.quote-grid .quote-value {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 4px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.quote-grid .disc-cell .quote-value {
+  grid-template-columns: 12px minmax(0, 1fr) .8em;
+  column-gap: 0;
+}
+
+.quote-grid .disc-cell .quote-value > :last-child {
+  text-align: left;
+}
+
+.quote-grid .quote-value-suffix {
+  grid-template-columns: minmax(0, 1fr) 16px;
+}
+
+.quote-grid .quote-value-suffix > span:empty + .quote-unit {
+  visibility: hidden;
+}
+
+.quote-grid .quote-unit {
+  color: #667382;
+  font-size: 9px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.quote-grid .previous-sp {
+  color: #657488;
+  white-space: nowrap;
+}
+
+.quote-grid .previous-sp small, .quote-grid .quote-label {
+  display: block;
+  font-variant-numeric: normal;
+  font-size: 10px;
+}
+
+.quote-grid .quote-left {
+  text-align: left;
+}
+
+.quote-grid .quote-right {
+  text-align: right;
+}
+
+.quote-grid .remark-cell {
+  overflow-wrap: anywhere;
+}
+
+.quote-grid .gp-risk, .quote-counts .gp-risk, .quote-grid .stale-cost {
+  color: #c71930;
+  font-weight: 600;
+}
+
+.quote-grid .gp-healthy {
+  color: #245caf;
+  font-weight: 600;
+}
+
+.quote-grid .desc-cell {
+  padding-right: 12px;
+}
+
+.quote-grid .cost-cell b {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quote-grid input[type=number] {
+  min-width: 0;
+  min-height: 21px;
+  padding: 1px 4px;
+  font-size: 11px;
+  border-radius: 3px;
+  appearance: textfield;
+}
+
+.quote-grid input::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+.quote-grid .calc-cell {
+  background: #eef5fc;
+}
+
+.quote-grid .calc-cell input {
+  width: 100%;
+  font-size: 10px;
+  padding-inline: 3px;
+  text-align: right;
+}
+
+.quote-grid .calc-cell input::placeholder {
+  color: #657488;
+}
+
+.wix-quotation-workroom .calc-margin {
+  display: inline-grid;
+  position: relative;
+  width: 100%;
+}
+
+.wix-quotation-workroom .calc-margin input {
+  padding-inline-end: 13px;
+}
+
+.wix-quotation-workroom .calc-margin span {
+  position: absolute;
+  inset-inline-end: 4px;
+  align-self: center;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.quote-grid .calc-group {
+  text-align: center;
+  padding-block: 4px;
+  border-bottom: 1px solid var(--line);
+  background: #133858;
+  color: white;
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.quote-grid .calc-headings th {
+  padding-block: 3px;
+  font-size: 10px;
+}
+
+.quote-grid .quote-actions {
+  gap: 3px;
+}
+
+.quote-grid .quote-edits {
+  margin-top: 3px;
+}
+
+.quote-grid .update {
+  min-height: 16px;
+  padding: 1px 4px;
+  font-size: 9px;
+}
+
+.quote-grid .calc-cell .update {
+  min-height: 23px;
+  font-size: 9px;
+  padding-inline: 3px;
+}
+
+.quote-grid .switch {
+  width: 30px;
+  height: 17px;
+  min-height: 17px;
+  padding: 2px;
+}
+
+.quote-grid .switch::before {
+  width: 13px;
+  height: 13px;
+}
+
+.quote-grid .switch[aria-checked=true]::before {
+  transform: translateX(13px);
+}
+
+.masthead .header-bottom {
+  margin-left: auto;
+}
+
+.wix-quotation-workroom .masthead .header-bottom {
+  width: auto;
+}
+
+.quote-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 53fr) minmax(0, 47fr);
+  border-bottom: 1px solid var(--line);
+  border-radius: 7px;
+  margin-bottom: 10px;
+  padding: 9px 12px;
+}
+
+.quote-customer {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.quote-customer h2 {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+
+.quote-customer .currency {
+  border-radius: 0;
+  background: #c71930;
+  color: white;
+}
+
+.quote-summary .toolbar-meta {
+  gap: 6px 12px;
+  flex-wrap: wrap;
+}
+
+.quote-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(85px, 1fr));
+  margin: 0;
+  text-align: center;
+}
+
+.wix-quotation-workroom .quote-actions:has(.switch) {
+  align-items: center;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.quote-counts div {
+  border-left: 1px solid var(--line);
+  padding: 3px 8px;
+}
+
+.quote-counts dt { color: var(--muted); font-size: 10px; }
+.quote-counts dd { margin: 2px 0 0; font-size: 17px; font-weight: 700; }
+
+.wix-quotation-workroom {
+  font-family: "Purchase Dashboard Inter", "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+  font-size: 11px;
+  background: #f3f6f9;
+  color: #203047;
+}
+
+.wix-quotation-workroom .quotation-header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 4;
+}
+
+.wix-quotation-workroom .masthead {
+  min-height: 49px;
+  padding: 0 24px;
+  gap: 18px;
+  background: #133858;
+  flex-wrap: nowrap;
+}
+
+.wix-quotation-workroom .masthead strong {
+  font-size: 20px;
+  letter-spacing: .3px;
+}
+
+.wix-quotation-workroom .department {
+  display: block;
+  border-color: #446781;
+  padding-inline-start: 18px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.wix-quotation-workroom #staff {
+  font-size: 11px;
+}
+
+.wix-quotation-workroom .quotation-nav {
+  display: flex;
+  flex-direction: row;
+  height: 42px;
+  padding: 0 20px;
+  border-bottom: 1px solid #bdcddd;
+  background: white;
+}
+
+.wix-quotation-workroom .quotation-nav [aria-current] {
+  display: flex;
+  align-items: center;
+  padding: 2px 2px 0;
+  border-bottom: 3px solid #3766a2;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3766a2;
+}
+
+.wix-quotation-workroom .quotation-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
+.wix-quotation-workroom .quotation-heading {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 26px;
+  letter-spacing: 0;
+}
+
+.wix-quotation-workroom .customer-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  color: #40617e;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.wix-quotation-workroom .masthead .header-bottom {
+  margin-left: auto;
+}
+
+.wix-quotation-workroom #customer {
+  width: clamp(190px, 19vw, 280px);
+  min-height: 32px;
+  padding: 3px 8px;
+  border-color: #bdcfe0;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wix-quotation-workroom main,
+.wix-quotation-workroom main:has(.quote-grid) {
+  padding: 18px 20px 14px;
+}
+
+.wix-quotation-workroom .quote-summary {
+  padding: 12px 16px;
+}
+
+.wix-quotation-workroom .quote-customer {
+  margin-bottom: 7px;
+}
+
+.wix-quotation-workroom .quote-customer h2 {
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.wix-quotation-workroom .quote-customer .currency {
+  flex: none;
+  background: #cc1730;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wix-quotation-workroom .quote-summary .muted {
+  color: #526a83;
+  font-size: 11px;
+}
+
+.wix-quotation-workroom #catch-cost {
+  min-height: 28px;
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+.wix-quotation-workroom .quote-counts dt {
+  color: #455b72;
+  font-size: 11px;
+}
+
+.wix-quotation-workroom .quote-counts dd {
+  font-size: 20px;
+}
+
+.wix-quotation-workroom .quote-grid .image-cell {
+  padding: 1px 2px 2px;
+}
+
+.wix-quotation-workroom .quote-grid .product-thumb {
+  width: 100%;
+  height: calc(var(--quote-row-height) - 4px);
+  object-fit: contain;
+}
+
+.wix-quotation-workroom .quote-grid .quote-unit {
+  font-size: 10px;
+}
+
+.wix-quotation-workroom .quote-grid .quote-value-suffix > input {
+  width: calc(5ch + 10px);
+  justify-self: end;
+}
+
+.wix-quotation-workroom .quote-grid .quote-value-suffix > [data-carton] + .quote-unit {
+  visibility: visible;
+}
+
+.wix-quotation-workroom .quote-grid tbody tr.row-dirty {
+  background: transparent;
+}
+
+.wix-quotation-workroom .quote-grid tbody tr.row-dirty:nth-child(even) {
+  background: #f8fbfe;
+}
+
+.wix-quotation-workroom .quote-grid .cost-cell,
+.wix-quotation-workroom .quote-grid .calc-selling {
+  text-align: right;
+}
+
+.wix-quotation-workroom .quote-grid .calc-selling {
+  display: block;
+  font-weight: 600;
+}
+
+.wix-quotation-workroom .quote-grid td.calc-cell {
+  background: #f7f9fc;
+}
+
+.wix-quotation-workroom .quote-grid .cost-cell .stale-cost {
+  color: #e51b2b;
+  font-size: 12px;
+}
+
+.wix-quotation-workroom #notice.cost-warning {
+  color: #795000;
+  background: #fff2dc;
+}
+
+.wix-quotation-workroom .quote-grid .gp-healthy {
+  color: #1457dc;
+  font-weight: 700;
+}
+
+.wix-quotation-workroom .calc-applied-check,
+.wix-quotation-workroom [data-applied] .calc-apply-label {
+  display: none;
+}
+
+.wix-quotation-workroom [data-applied] .calc-applied-check {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: auto;
+}
+
+.wix-quotation-workroom .quote-grid [data-applied]:disabled {
+  color: #1457dc;
+  background: #e8f0fe;
+  border-color: #c4d7f8;
+  opacity: 1;
+}
+
+.wix-quotation-workroom .quote-grid .disc-cell .quote-value {
+  grid-template-columns: 12px 5ch .8em;
+  column-gap: 0;
+  justify-content: end;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 601px) {
+  .wix-quotation-workroom {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+  }
+
+  .wix-quotation-workroom .quotation-header {
+    flex: none;
+  }
+
+  .wix-quotation-workroom main,
+  .wix-quotation-workroom #content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .wix-quotation-workroom #content:has(.quote-grid) {
+    overflow: hidden;
+  }
+
+  .wix-quotation-workroom .quote-summary {
+    flex: none;
+  }
+
+  .wix-quotation-workroom .quote-grid {
+    overflow: auto;
+    overscroll-behavior: contain;
+    scroll-padding-top: 48px;
+    min-height: 0;
+    border-radius: 6px;
+  }
+
+  .wix-quotation-workroom .quote-grid:focus-visible {
+    outline: 2px solid #346ba7;
+    outline-offset: 1px;
+  }
+
+  .wix-quotation-workroom .quote-grid table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .wix-quotation-workroom .quote-grid thead {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    box-shadow: 0 1px 0 #abc2d8;
+  }
+
+  .wix-quotation-workroom .quote-grid thead th {
+    background: #d2dfea;
+    color: #203047;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .wix-quotation-workroom .quote-grid thead .calc-group {
+    background: #133650;
+    color: #fff;
+    border-inline-start: 1px solid #133650;
+  }
+
+  .wix-quotation-workroom .quote-grid thead tr:first-child th:nth-last-child(2) {
+    text-align: center;
+    white-space: normal;
+  }
+
+  .wix-quotation-workroom .quote-grid thead .calc-headings th {
+    background: #edf3f8;
+  }
+
+  .wix-quotation-workroom .quote-grid .calc-cell:nth-last-child(3) {
+    border-inline-start: 1px solid #c2d2e1;
+  }
+
+  .wix-quotation-workroom .quote-grid :is(th, td) {
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+
+  .wix-quotation-workroom .quote-grid :is(.row-number, .previous-sp, .disc-cell, .calc-group),
+  .wix-quotation-workroom .quote-grid .calc-headings th {
+    font-size: 11px;
+  }
+
+  .wix-quotation-workroom .quote-grid input[type=number] {
+    min-height: 25px;
+    font-size: 11px;
+  }
+
+  .wix-quotation-workroom .quote-grid .calc-cell .update {
+    min-height: 25px;
+    padding-inline: 2px;
+    font-size: 10px;
+  }
+
+  .wix-quotation-workroom .quote-grid :is(thead th:nth-child(-n+2), td.row-number) {
+    text-align: center;
+  }
+
+  .wix-quotation-workroom .quote-grid tbody tr[data-row] > td {
+    height: var(--quote-row-height);
+  }
+
+  .wix-quotation-workroom .quote-grid .cost-cell small {
+    white-space: nowrap;
+  }
+
+  .windowed-quote-grid table {
+    overflow-anchor: none;
+  }
+
+  .windowed-quote-grid .remark-cell {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .windowed-quote-grid .quote-spacer td {
+    height: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  main:has(.quote-grid) {
+    max-width: none;
+    padding: 12px;
+  }
+
+  main:has(.quote-grid) .toolbar {
+    padding: 9px 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .quote-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .quote-counts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .quote-counts div:first-child { border-left: 0; }
+}
+
+@media (max-width: 600px) {
+  .wix-quotation-workroom :is(.masthead, .quotation-nav) {
+    padding-inline: 12px;
+    gap: 10px;
+  }
+
+  .wix-quotation-workroom .masthead strong {
+    font-size: 16px;
+  }
+
+  .wix-quotation-workroom .department {
+    padding-inline-start: 10px;
+    font-size: 12px;
+  }
+
+  .wix-quotation-workroom .masthead {
+    flex-wrap: wrap;
+    padding-block: 10px;
+  }
+
+  .wix-quotation-workroom .masthead .header-bottom {
+    margin-left: auto;
+  }
+
+  .wix-quotation-workroom .customer-control {
+    flex: 1 1 160px;
+    justify-content: flex-end;
+  }
+
+  .wix-quotation-workroom #customer {
+    width: min(100%, 180px);
+    min-height: 38px;
+    margin-block: 3px;
+    font-size: 16px;
+  }
+
+  .wix-quotation-workroom main,
+  .wix-quotation-workroom main:has(.quote-grid) {
+    padding: 12px;
+  }
+
+  .wix-quotation-workroom .quote-summary {
+    padding: 10px 12px;
+  }
+
+  .wix-quotation-workroom .quote-counts div {
+    padding-inline: 4px;
+  }
+
+  .wix-quotation-workroom #catch-cost {
+    min-height: 44px;
+  }
+
+  .wix-quotation-workroom .quote-grid tr[data-row] {
+    grid-template-columns: 60px minmax(0, 1fr) minmax(0, 1fr) 60px;
+    position: relative;
+  }
+
+  .wix-quotation-workroom .quote-grid tr[data-row] > td {
+    grid-column: span 2;
+  }
+
+  .wix-quotation-workroom .quote-grid td.row-number {
+    position: absolute;
+    inset: 2px auto auto 3px;
+    padding: 0;
+    font-size: 9px;
+    background: #f1f5f9;
+    color: #526a83;
+  }
+
+  .wix-quotation-workroom .quote-grid tr[data-row] > td.image-cell {
+    grid-column: 1;
+    align-self: center;
+    padding-top: 11px;
+  }
+
+  .wix-quotation-workroom .quote-grid tr[data-row] > td.desc-cell {
+    grid-column: 2 / -1;
+    align-content: center;
+  }
+
+  .wix-quotation-workroom .quote-grid td.calc-cell {
+    padding-inline: 5px;
+  }
+
+  .wix-quotation-workroom .quote-grid tr[data-row] > td.calc-cell:nth-last-child(3) {
+    grid-column: 1;
+  }
+
+  .wix-quotation-workroom .quote-grid tr[data-row] > td.calc-cell:nth-last-child(2) {
+    grid-column: 2 / 4;
+  }
+
+  .wix-quotation-workroom .quote-grid tr[data-row] > td.calc-cell:last-child {
+    grid-column: 4;
+    align-content: end;
+  }
+
+  .masthead #menu {
+    margin-left: auto;
+  }
+  .quote-grid {
+    overflow: visible;
+  }
+
+  .quote-grid table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .quote-grid colgroup {
+    display: none;
+  }
+
+  .quote-grid td, .quote-grid td:first-child {
+    height: auto;
+    padding: 6px 9px;
+    font-size: 12px;
+    background: transparent;
+    border: 0;
+  }
+
+  .quote-grid .move-cell {
+    display: none;
+  }
+
+  .quote-grid .row-number, .quote-grid .image-cell {
+    text-align: left;
+  }
+
+  .quote-grid .desc-cell {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .quote-grid .product-name {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+  }
+
+  .quote-grid input[type=number] {
+    min-height: 40px;
+    font-size: 16px;
+  }
+
+  .quote-grid .calc-cell input {
+    width: min(100%, 88px);
+    font-size: 16px;
+  }
+
+  .quote-grid .quote-unit {
+    font-size: 10px;
+  }
+
+  .quote-grid .update, .quote-grid .calc-cell .update {
+    min-height: 44px;
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  .quote-grid .switch {
+    margin: 12px 7px 12px 0;
+  }
+}
+
+.product-thumb{width:100%;height:38px;object-fit:contain;display:block} .empty-thumb{color:#64748b}
+.wix-quotation-workroom .quote-grid .quote-ea{grid-template-columns:16px minmax(0,1fr) 16px;column-gap:3px}.wix-quotation-workroom .quote-grid .quote-ea>input{grid-column:2;max-width:100%;min-width:0;box-sizing:border-box}.quote-ea>.quote-unit{grid-column:3}.quote-ea-lock{grid-column:1;display:grid;place-items:center;width:16px;height:24px;padding:1px;background:transparent;border:0;border-radius:4px;color:#315c82;cursor:pointer}.quote-ea-lock[hidden]{display:none}.quote-ea-lock:disabled{color:#708397;cursor:default}.quote-ea-lock:not(:disabled):hover,.quote-ea-lock:focus-visible{background:#e3edf7}.quote-ea-lock svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+    .wix-quotation-workroom #notice:not([hidden]) {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    #notice[hidden], #notice-dismiss[hidden] { display: none; }
+    #notice-dismiss {
+      flex: none;
+      min-width: 32px;
+      min-height: 32px;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      color: inherit;
+      background: transparent;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    #notice-dismiss:hover { background: rgba(21, 54, 79, .1); }
+    .quote-find {
+      display: grid;
+      grid-template-areas: "label result" "field field";
+      grid-template-columns: auto 1fr;
+      gap: 4px 12px;
+      align-items: center;
+      color: #294965;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .quote-find input {
+      grid-area: field;
+      width: 100%;
+      min-width: 0;
+      min-height: 36px;
+      padding: 6px 9px;
+      border: 1px solid #bdcfe0;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+    }
+    .quote-find-result { grid-area: result; justify-self: end; font-size: 11px; }
+    .quote-grid tr.quote-find-target td { background: #e7f1ff; }
+    .quote-grid tr.quote-find-target td:first-child { box-shadow: inset 3px 0 #2563eb; }
+    .quote-find > label { grid-area: label; }
+    .quote-find-field { grid-area: field; position: relative; }
+    .quote-find-field input { padding-inline-end: 37px; font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1.35; color: #15364f; }
+    .quote-find-field input::-webkit-search-cancel-button { display: none; }
+    #quote-find-clear {
+      position: absolute; inset: 4px 5px 4px auto; width: 29px; padding: 0;
+      border: 0; border-radius: 4px; background: transparent; color: #486680; font-family: inherit; font-size: 18px; font-weight: 600; line-height: 1;
+    }
+    #quote-find-clear:hover { background: #eef4fa; }
+    .quote-grid .quotation-history div { white-space: nowrap; line-height: 1.38; }
+    .quote-grid .quotation-history small { display: inline; color: #526d82; font-size: 10px; }
+    .quote-grid .remark-lines { max-width: 100%; line-height: 1.3; }
+    .quote-grid .remark-lines > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wix-quotation-workroom .quote-grid .calc-combined { padding-inline: 3px; }
+    .wix-quotation-workroom .quote-grid .calc-stack {
+      display: grid; grid-template-columns: max-content 34px; gap: 2px 4px; align-items: center; justify-content: center;
+    }
+    .quote-grid .calc-stack .calc-margin { grid-area: 1 / 1; display: flex; align-items: center; width: auto; gap: 2px; }
+    .quote-grid .calc-stack .calc-margin input { flex: none; width: 46px; padding-inline: 3px; }
+    .quote-grid .calc-stack .calc-margin span, .quote-grid .calc-target small { color: #526d82; font-size: 10px; white-space: nowrap; }
+    .quote-grid .calc-stack .calc-margin span { position: static; }
+    .quote-grid .calc-stack .calc-target { grid-area: 2 / 1; display: flex; justify-content: end; gap: 4px; }
+    .quote-grid .calc-stack .update { grid-area: 1 / 2 / 3 / 3; }
+    @media(max-width: 768px) {
+      .wix-quotation-workroom .quote-grid tr[data-row] > td.calc-combined:last-child { grid-column: 1 / -1; }
+      .wix-quotation-workroom .quote-grid .calc-stack { grid-template-columns: max-content 44px; justify-content: end; }
+      .quote-grid .calc-stack .calc-margin input { width: 60px; }
+    }
+    @media (min-width: 1001px) {
+      .wix-quotation-workroom .quote-summary {
+        grid-template-columns: minmax(0, 440px) minmax(350px, 460px) minmax(175px, 1fr);
+        column-gap: clamp(10px, 1.3vw, 24px);
+      }
+      .quote-find { width: min(100%, 310px); justify-self: end; }
+    }
+    @media (min-width: 769px) and (max-width: 1000px) {
+      .quote-find { grid-column: 1 / -1; justify-self: end; width: 290px; }
+    }
+  </style>
+  
+<link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/master-shared/workroom-masthead.css?v=20261125-master-masthead-v1"><meta name="header-account-menu-build" content="20261126-ltpos-account-v1">
+<link rel="stylesheet" href="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/account-menu.css?v=20261126-ltpos-account-v1">
+<script type="module" src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-menu/workroom-account.js?v=20261126-ltpos-account-v1"></script>
+</head>
+<body class="wix-quotation-workroom">
+  <div class="quotation-header">
+    <header class="masthead" data-master-workroom-header>
+      <strong><img data-ltpos-brand-mark src="https://static.wixstatic.com/media/4ecd18_e1d405185f9a4efdbb867f139f234848~mv2.png" width="192" height="192" alt="" style="width:1.27em;height:.83em;object-fit:cover;vertical-align:-.095em;margin-inline-end:.35em">MASTER</strong>
+      <span class="department">Sales Management</span>
+      <div class="header-bottom">
+        <span id="staff"></span>
+      </div>
+    </header>
+    <nav class="quotation-nav" aria-label="Sales Management">
+      <span aria-current="page">Quotations</span>
+    </nav>
+  </div>
+  <main>
+    <div class="quotation-title-row">
+      <h1 class="quotation-heading">Quotations</h1>
+      <div class="customer-control"><label for="customer">Customer</label><select id="customer" disabled></select></div>
+    </div>
+    <div id="notice">
+      <span id="notice-text" role="status" aria-live="polite">Connecting to Sales Management…</span>
+      <button id="notice-dismiss" type="button" aria-label="Dismiss notice">×</button>
+    </div>
+    <section id="content" aria-label="Quotation workroom"></section>
+  </main>
+<script>/* The generator appends the approved grid and calculator. The Wix page
+ * supplies scope through postMessage. This iframe never assigns a role. */
+const $ = selector => document.querySelector(selector);
+const content = $('#content');
+const trustedParents = new Set(['https://www.ltpos.ai', 'https://ltpos.ai', 'https://fmcg999.wixstudio.com']);
+const referrerOrigin = document.referrer ? new URL(document.referrer).origin : '';
+let trustedParent = trustedParents.has(referrerOrigin) ? referrerOrigin : '';
+const requests = new Map();
+const calculator = new Map();
+const publicationAttempts = new Map();
+const costAttempts = new Map();
+const costReaders = new Set();
+const publishingRows = new Set();
+const unlockedEas = new Map();
+const publicationIndicators = new Map();
+let publicationRead;
+let current = null;
+let staffId = '';
+let generation = 0;
+let busy = false;
+let drafts = {};
+
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, value =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[value]);
+const format = value => value == null ? '—' : new Intl.NumberFormat('en', { maximumFractionDigits: 6 }).format(value);
+const customerId = () => $('#customer').value;
+const key = id => JSON.stringify([staffId, customerId(), id]);
+const entryKey = row => row.selectionEpoch ? JSON.stringify([staffId, customerId(), row.id, row.selectionEpoch]) : key(row.id);
+const requestId = () => crypto.randomUUID();
+const compareSortIds = new Intl.Collator('en', { numeric: true, sensitivity: 'base' }).compare;
+const formatCents = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 2 }).format;
+const roundCents = value => Number(formatCents(value));
+const calculatorPrice = (row, input) => draftPrice(row, input, roundCents);
+const calculatorMatchesPrice = (price, suggestion) => suggestion?.priceEa > 0 && price?.priceEa > 0 &&
+  roundCents(price.priceEa) === suggestion.priceEa;
+const desktopGrid = window.matchMedia('(min-width: 601px)');
+const quoteOverscan = 16;
+let quoteWindow;
+let quoteFrame = 0;
+
+function initialQuoteRows(rows) {
+  return desktopGrid.matches && rows.length > 120 ? '' : rows.map((row, index) => quoteRow(row, index + 1)).join('');
+}
+
+function mountQuoteRows(rows, scrollPosition) {
+  const body = content.querySelector('.quote-grid tbody');
+  quoteWindow = body && { body, rows, scroller: body.closest('.quote-grid') };
+  if (!quoteWindow) return;
+  updateQuoteWindow(scrollPosition?.top);
+  if (desktopGrid.matches && scrollPosition) {
+    quoteWindow.scroller.scrollTo(scrollPosition.left, scrollPosition.top);
+  }
+}
+
+function updateQuoteWindow(scrollTop) {
+  if (!quoteWindow || !quoteWindow.body.isConnected) return;
+  const { body, rows, scroller } = quoteWindow;
+  if (rows.length <= 120) return;
+  const virtual = desktopGrid.matches;
+  scroller.classList.toggle('windowed-quote-grid', virtual);
+  const quoteRowHeight = parseFloat(getComputedStyle(scroller).getPropertyValue('--quote-row-height'));
+  const first = virtual ? Math.min(rows.length - 1,
+    Math.max(0, Math.floor((scrollTop ?? scroller.scrollTop) / quoteRowHeight) - quoteOverscan)) : 0;
+  const end = virtual ? Math.min(rows.length, first + Math.ceil(scroller.clientHeight / quoteRowHeight) + quoteOverscan * 2) : rows.length;
+  if (quoteWindow.first === first && quoteWindow.end === end) return;
+  quoteWindow.first = first;
+  quoteWindow.end = end;
+
+  const active = body.contains(document.activeElement) ? document.activeElement : null;
+  const retained = new Map([...body.querySelectorAll('tr[data-row]')].map(row => [row.dataset.row, row]));
+  const wanted = new Set(rows.slice(first, end).map(row => row.id));
+  if (active && !wanted.has(active.closest('[data-row]').dataset.row)) active.blur();
+  for (const [id, element] of retained) if (!wanted.has(id)) element.remove();
+  for (const spacer of body.querySelectorAll('.quote-spacer')) spacer.remove();
+
+  let anchor = body.firstElementChild;
+  for (let index = first; index < end; index++) {
+    const row = rows[index];
+    const element = retained.get(row.id);
+    if (element === anchor && element) anchor = anchor.nextElementSibling;
+    else if (!element) {
+      if (anchor) anchor.insertAdjacentHTML('beforebegin', quoteRow(row, index + 1));
+      else body.insertAdjacentHTML('beforeend', quoteRow(row, index + 1));
+    }
+  }
+  const spacer = count => `<tr class="quote-spacer" aria-hidden="true"><td colspan="12" style="height:${count * quoteRowHeight}px"></td></tr>`;
+  if (first) body.insertAdjacentHTML('afterbegin', spacer(first));
+  if (end < rows.length) body.insertAdjacentHTML('beforeend', spacer(rows.length - end));
+}
+
+function findQuoteRow(input) {
+  if (!quoteWindow || !quoteWindow.body.isConnected) return;
+  const { rows, body, scroller } = quoteWindow;
+  body.querySelector('.quote-find-target')?.classList.remove('quote-find-target');
+  const term = input.value.trim().toLowerCase();
+  const result = $('#quote-find-result');
+  result.textContent = '';
+  if (!term) return;
+  const index = rows.findIndex(row => [row.name, row.barcode].some(value =>
+    String(value ?? '').toLowerCase().includes(term)));
+  if (index === -1) {
+    result.textContent = 'No match';
+    return;
+  }
+  if (scroller.classList.contains('windowed-quote-grid')) {
+    const rowHeight = parseFloat(getComputedStyle(scroller).getPropertyValue('--quote-row-height'));
+    const top = Math.max(0, (index - 2) * rowHeight);
+    scroller.scrollTop = top;
+    updateQuoteWindow(scroller.scrollTop);
+  }
+  const match = [...body.querySelectorAll('tr[data-row]')].find(row => row.dataset.row === rows[index].id);
+  match?.classList.add('quote-find-target');
+  if (!scroller.classList.contains('windowed-quote-grid')) {
+    match?.scrollIntoView({ block: 'center', inline: 'nearest' });
+  }
+  result.textContent = 'Row ' + String(index + 1).padStart(3, '0');
+}
+
+function queueQuoteWindow() {
+  if (quoteFrame) return;
+  quoteFrame = requestAnimationFrame(() => {
+    quoteFrame = 0;
+    updateQuoteWindow();
+  });
+}
+content.addEventListener('scroll', queueQuoteWindow, { capture: true, passive: true });
+window.addEventListener('resize', queueQuoteWindow, { passive: true });
+
+function quoteRows() {
+  const withSortId = [];
+  const withoutSortId = [];
+  for (const row of current.rows) {
+    (row.sortId ? withSortId : withoutSortId).push(row);
+  }
+  withSortId.sort((left, right) => compareSortIds(left.sortId, right.sortId));
+  return withSortId.concat(withoutSortId);
+}
+
+function sellingPrice(row) {
+  const local = drafts[entryKey(row)];
+  if (!local && row.published?.enabled) return draftPrice(row, { mode: 'EA', value: row.published.priceEa });
+  return draftPrice(row);
+}
+
+function eaLocked(row) {
+  return Boolean(row.published?.enabled && Number(sellingPrice(row)?.priceEa) > 0 && (!unlockedEas.has(entryKey(row)) || unlockedEas.get(entryKey(row)) !== row.revision));
+}
+
+function updateCalculatorApply(row, tr, price, suggestion) {
+  const button = tr.querySelector('[data-action=apply]');
+  const applied = calculatorMatchesPrice(price, suggestion);
+  button.toggleAttribute('data-applied', applied);
+  button.setAttribute('aria-label', `${applied ? 'Calculator price applied to' : 'Apply calculator for'} ${row.name}`);
+  button.disabled = applied || !suggestion || !current.canEdit || row.pending || busy || eaLocked(row);
+}
+
+function readStorage(name, fallback) {
+  try { return JSON.parse(localStorage.getItem('master-quotations-v1:' + name)) ?? fallback; }
+  catch { return fallback; }
+}
+function writeStorage(name, value) {
+  try { localStorage.setItem('master-quotations-v1:' + name, JSON.stringify(value)); }
+  catch { /* Remain usable if storage is unavailable in a framed browser. */ }
+}
+function remember() { writeStorage('drafts:' + staffId, drafts); }
+function rememberPublications() { writeStorage('publishes:' + staffId, [...publicationAttempts.entries()]); }
+function currentPublicationAttempt(row) {
+  const packet = publicationAttempts.get(key(row.id));
+  return packet && (row.pending || (packet.selectionEpoch || '') === (row.selectionEpoch || '')) ? packet : null;
+}
+function quoteResumeButton(row) {
+  return current.canEdit && current.canPublish !== false && !publishingRows.has(row.id) && currentPublicationAttempt(row)
+    ? '<button class="update primary" data-action="resume">Confirm status</button>' : '';
+}
+function message(value = '', error = false, warning = false) {
+  const notice = $('#notice');
+  $('#notice-text').textContent = value;
+  notice.hidden = !value;
+  notice.classList.toggle('error', error);
+  notice.classList.toggle('cost-warning', warning);
+  $('#notice-dismiss').hidden = !value;
+}
+$('#notice-dismiss').addEventListener('click', () => message());
+
+function productImage(value) {
+  try {
+    const url = new URL(value);
+    if (url.origin === 'https://static.wixstatic.com' && url.pathname.startsWith('/media/')) {
+      return '<img class="product-thumb" loading="lazy" width="58" height="52" alt="" src="' + escapeHtml(url.href) + '">';
+    }
+  } catch { /* Unknown product image. */ }
+  return '<span class="empty-thumb">—</span>';
+}
+
+const productPreview = document.createElement('img');
+productPreview.className = 'quote-product-preview';
+productPreview.alt = '';
+productPreview.hidden = true;
+document.body.append(productPreview);
+let previewThumbnail;
+
+function hideProductPreview() {
+  if (!previewThumbnail) return;
+  previewThumbnail = null;
+  productPreview.hidden = true;
+  productPreview.removeAttribute('src');
+}
+
+content.addEventListener('pointerover', event => {
+  const thumbnail = event.target.closest('.product-thumb');
+  if (event.pointerType !== 'mouse' || !thumbnail || thumbnail === previewThumbnail) return;
+  previewThumbnail = thumbnail;
+  productPreview.src = thumbnail.currentSrc || thumbnail.src;
+  productPreview.hidden = false;
+  const anchor = thumbnail.getBoundingClientRect();
+  const { width, height } = productPreview.getBoundingClientRect();
+  const gap = 10;
+  const nextToImage = anchor.right + gap + width <= innerWidth - gap
+    ? anchor.right + gap : anchor.left - width - gap;
+  productPreview.style.left = Math.max(gap, Math.min(nextToImage, innerWidth - width - gap)) + 'px';
+  productPreview.style.top = Math.max(gap, Math.min(anchor.top - 18, innerHeight - height - gap)) + 'px';
+});
+content.addEventListener('pointerout', event => {
+  if (event.target === previewThumbnail) hideProductPreview();
+});
+window.addEventListener('scroll', hideProductPreview, { capture: true, passive: true });
+window.addEventListener('resize', hideProductPreview, { passive: true });
+
+function api(action, input, context = customerId()) {
+  if (parent === window) return Promise.reject(Error('Open Quotations from the MASTER workroom.'));
+  if (!trustedParent && (referrerOrigin || action !== 'customers')) {
+    return Promise.reject(Error('Open Quotations from the MASTER workroom.'));
+  }
+  const id = requestId();
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      requests.delete(id);
+      reject(Error('The response could not be confirmed. Retry the same action.'));
+    }, 35000);
+    requests.set(id, { action, context, resolve, reject, timer });
+    const message = { type: 'MASTER_QUOTATION_REQUEST', requestId: id, action, customerId: context, input };
+    if (trustedParent) parent.postMessage(message, trustedParent);
+    else for (const origin of trustedParents) parent.postMessage(message, origin);
+  });
+}
+
+window.addEventListener('message', event => {
+  if (event.source !== parent || !trustedParents.has(event.origin) || (trustedParent && event.origin !== trustedParent)) return;
+  const m = event.data;
+  if (m?.type !== 'MASTER_QUOTATION_RESULT') return;
+  const pending = requests.get(m.requestId);
+  if (!pending || m.action !== pending.action || m.customerId !== pending.context) return;
+  trustedParent = event.origin;
+  requests.delete(m.requestId);
+  clearTimeout(pending.timer);
+  if (m.ok === true) pending.resolve(m.result);
+  else {
+    if (m.accessDenied === true && (!pending.context || pending.context === customerId())) {
+      generation++;
+      current = null;
+      content.replaceChildren();
+      message(m.error || 'Your staff access could not be confirmed.', true);
+    }
+    pending.reject(Error(m.error || 'The quotation action could not be confirmed.'));
+  }
+});
+
+function customerLabel(name, selectionCount) {
+  return Number.isSafeInteger(selectionCount) && selectionCount >= 0
+    ? `${name} (${selectionCount.toLocaleString('en')})`
+    : name;
+}
+
+async function loadSelectionCounts() {
+  try {
+    const result = await api('selection-counts', undefined, '');
+    if (result?.staffId !== staffId || !Array.isArray(result.counts)) return;
+    const options = new Map(Array.from($('#customer').options, option => [option.value, option]));
+    for (const row of result.counts) {
+      const option = options.get(row.customerId);
+      if (option && Number.isSafeInteger(row.selectionCount) && row.selectionCount >= 0) {
+        option.textContent = customerLabel(option.dataset.name, row.selectionCount);
+        option.dataset.confirmedCount = 'true';
+      }
+    }
+  } catch { /* Quotation actions stay available if the directory count cannot be confirmed. */ }
+}
+
+const purchaseHistoryKey = row => row.barcode + '|' + row.ea;
+
+async function loadPurchaseHistory(context, token) {
+  const products = new Map(current.rows.filter(row => /^[0-9]{6,22}$/.test(row.barcode || '') &&
+    Number.isSafeInteger(row.ea) && row.ea > 0).map(({ barcode, ea }) => [purchaseHistoryKey({ barcode, ea }), { barcode, ea }]));
+  if (!products.size) return;
+  try {
+    const items = [...products.values()];
+    const requests = [];
+    for (let i = 0; i < items.length; i += 1000) {
+      requests.push(api('purchase-history', { products: items.slice(i, i + 1000) }, context));
+    }
+    const results = await Promise.all(requests);
+    if (token !== generation || current?.customer?.customerId !== context) return;
+    if (results.some(result => result?.staffId !== staffId || result.customerId !== context || !Array.isArray(result.items))) return;
+    const byProduct = new Map(results.flatMap(result => result.items).filter(item =>
+      products.has(purchaseHistoryKey(item)) && Number.isFinite(item.netCostMyrCtn) && item.netCostMyrCtn > 0
+    ).map(item => [purchaseHistoryKey(item), item]));
+    const displayed = new Map(Array.from(quoteWindow?.body.querySelectorAll('tr[data-row]') || [], element => [element.dataset.row, element]));
+    for (const row of current.rows) {
+      row.lastPurchase = byProduct.get(purchaseHistoryKey(row)) || null;
+      const value = displayed.get(row.id)?.querySelector('[data-previous-nc]');
+      if (value) value.textContent = row.lastPurchase ? fixed(row.lastPurchase.netCostMyrCtn) : '—';
+    }
+  } catch { /* History may be unavailable independently of drafts, prices and actions. */ }
+}
+
+async function refresh() {
+  hideProductPreview();
+  const token = ++generation;
+  const context = customerId();
+  const scrollPosition = quoteWindow && current?.customer?.customerId === context
+    ? { left: quoteWindow.scroller.scrollLeft, top: quoteWindow.scroller.scrollTop } : null;
+  current = null;
+  content.replaceChildren();
+  if (!context) return;
+  try {
+    const result = await api('quotes', undefined, context);
+    if (token !== generation) return;
+    if (result?.customer?.customerId !== context || result.staffId !== staffId ||
+        !/^[A-Z]{3}$/.test(result.customer.preferredCurrency) || !Array.isArray(result.rows)) {
+      throw Error('The quotation workspace could not be verified.');
+    }
+    current = result;
+    const option = $('#customer').selectedOptions[0];
+    if (option?.value === context && !option.dataset.confirmedCount) option.textContent = customerLabel(option.dataset.name, result.rows.length);
+    renderQuotes(scrollPosition);
+    costButtonState();
+    void loadPurchaseHistory(context, token);
+    if (costAttempts.has(context)) void confirmCostRead(context);
+  } catch (error) {
+    if (token === generation) message(error.message, true);
+  }
+}
+
+async function initialize() {
+  try {
+    const result = await api('customers', undefined, '');
+    if (typeof result.staffId !== 'string' || !result.staffId || !Array.isArray(result.customers)) {
+      throw Error('Staff access could not be confirmed.');
+    }
+    staffId = result.staffId;
+    drafts = readStorage('drafts:' + staffId, {});
+    const remembered = readStorage('publishes:' + staffId, []);
+    if (Array.isArray(remembered)) {
+      for (const entry of remembered) if (Array.isArray(entry) && typeof entry[0] === 'string' && entry[1]?.requestId) publicationAttempts.set(...entry);
+    }
+    const costReads = readStorage('cost-reads:' + staffId, []);
+    if (Array.isArray(costReads)) for (const entry of costReads) {
+      if (!Array.isArray(entry) || entry.length !== 2) continue;
+      const [context, packet] = entry;
+      if (result.customers.some(row => row.customerId === context) && /^[a-f0-9-]{36}$/i.test(packet?.requestId || '')) costAttempts.set(context, packet);
+    }
+    $('#staff').textContent = result.staffName || '';
+    const customerOptions = [...result.customers].sort((left, right) =>
+      left.name.localeCompare(right.name, 'en', { sensitivity: 'base', numeric: true })
+    );
+    $('#customer').replaceChildren(...customerOptions.map(item => {
+      const option = new Option(customerLabel(item.name, item.selectionCount), item.customerId);
+      option.dataset.name = item.name;
+      return option;
+    }));
+    if (result.customers.length) $('#customer').value = result.customers[0].customerId;
+    $('#customer').disabled = !result.customers.length;
+    message(result.customers.length ? '' : 'No quotation customers are assigned to your account.');
+    if (result.customers.length) {
+      await refresh();
+      void loadSelectionCounts();
+    }
+  } catch (error) { message(error.message, true); }
+}
+
+$('#customer').onchange = () => { unlockedEas.clear(); message(); refresh(); };
+
+function hideChangedQuote(tr) {
+  if (!tr || busy || current?.canPublish === false) return;
+  const row = current?.rows.find(item => item.id === tr.dataset.row);
+  const next = row && drafts[entryKey(row)];
+  if (row?.published?.enabled && next && next.value !== row.published.priceEa) {
+    tr.querySelector('[data-action=toggle]').click();
+  }
+}
+
+content.addEventListener('change', event => {
+  const price = event.target.closest('[data-mode=EA]');
+  if (price) hideChangedQuote(price.closest('[data-row]'));
+});
+
+content.addEventListener('compositionend', event => {
+  if (event.target.id === 'quote-find') findQuoteRow(event.target);
+});
+
+const quotationEditFields = '[data-mode=EA], [data-calc=GP]';
+content.addEventListener('focusin', event => {
+  if (event.target.matches(quotationEditFields) && !event.target.readOnly) event.target.dataset.replaceOnInput = '';
+});
+
+for (const type of ['focusout', 'input']) {
+  content.addEventListener(type, event => delete event.target.dataset.replaceOnInput);
+}
+
+content.addEventListener('beforeinput', event => {
+  if (!event.target.readOnly && event.target.dataset.replaceOnInput !== undefined && event.inputType.startsWith('insert')) {
+    event.target.value = '';
+  }
+});
+
+content.addEventListener('keydown', event => {
+  const field = event.target.closest(quotationEditFields);
+  if (!field || field.disabled || event.altKey || event.ctrlKey || event.metaKey) return;
+  const tr = field.closest('[data-row]');
+  const movesRow = ['ArrowUp', 'ArrowDown'].includes(event.key);
+  if (field.dataset.mode === 'EA' && !field.readOnly && field.value && (event.key === 'Enter' || movesRow)) {
+    field.value = fixed(roundCents(Number(field.value)));
+  }
+  if (event.key === 'Enter' && field.dataset.mode === 'EA') {
+    event.preventDefault();
+    if (!field.readOnly) hideChangedQuote(tr);
+    return;
+  }
+  if (event.key === 'Enter' && field.dataset.calc) {
+    event.preventDefault();
+    if (busy) return;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    return;
+  }
+  if (!movesRow) return;
+  event.preventDefault();
+  const adjacent = event.key === 'ArrowUp' ? tr.previousElementSibling : tr.nextElementSibling;
+  const target = adjacent?.querySelector(field.dataset.calc ? '[data-calc=GP]' : '[data-mode=EA]');
+  if (target && !target.disabled) target.focus();
+});
+
+content.addEventListener('click', async event => {
+  const button = event.target.closest('button');
+  if (!current?.canEdit || !button || button.disabled || busy) return;
+  const row = current.rows.find(item => item.id === button.closest('[data-row]')?.dataset.row);
+  const action = button.dataset.action;
+  if (action === 'unlock-ea' && row?.published?.enabled && eaLocked(row)) {
+    unlockedEas.set(entryKey(row), row.revision);
+    const tr = button.closest('[data-row]');
+    const input = tr.querySelector('[data-mode=EA]');
+    input.readOnly = false;
+    input.focus();
+    refreshEaLock(row, tr, sellingPrice(row));
+    const target = calculatorInput(row);
+    updateCalculatorApply(row, tr, sellingPrice(row), target ? calculatorPrice(row, target) : null);
+    return;
+  }
+  if (action === 'apply' && row && !eaLocked(row)) {
+    const input = calculatorInput(row);
+    const price = input && calculatorPrice(row, input);
+    if (price) {
+      const tr = button.closest('[data-row]');
+      editPrice(row, tr, { mode: 'EA', value: price.priceEa }, true);
+      hideChangedQuote(tr);
+    }
+    return;
+  }
+  if (!row && button.id !== 'catch-cost') return;
+  if (['publish', 'toggle', 'resume'].includes(action)) {
+    if (current.canPublish !== false && !publishingRows.has(row.id)) await publishQuoteRow(row, action);
+    return;
+  }
+  if (button.id === 'catch-cost') { await confirmCostRead(customerId(), true); return; }
+  if (publishingRows.size) return;
+  const context = customerId();
+  busy = true;
+  button.disabled = true;
+  $('#customer').disabled = true;
+  message();
+  try {
+    if (action === 'draft') {
+      await saveDraft(row, context);
+      message('Draft saved.');
+    }
+  } catch (error) { message(error.message, true); }
+  finally {
+    busy = false;
+    $('#customer').disabled = false;
+    if (context === customerId()) await refresh();
+  }
+});
+
+function rememberCosts() { writeStorage('cost-reads:' + staffId, [...costAttempts.entries()]); }
+function costButtonState() {
+  const button = $('#catch-cost');
+  if (!button || !current) return;
+  const running = costAttempts.has(customerId());
+  button.disabled = running || publishingRows.size > 0 || !current.canEdit || !current.rows.length;
+  button.textContent = running ? 'Refreshing cost…' : 'Catch Cost';
+}
+function paintCostReferences(updates, context) {
+  if (!current || current.customer.customerId !== context || customerId() !== context) return;
+  const costs = new Map(updates.map(row => [row.id, row]));
+  for (const row of current.rows) {
+    const cost = costs.get(row.id);
+    if (!cost) continue;
+    if (cost.costAt && row.costAt && cost.costAt < row.costAt) continue;
+    // Never overwrite a price, revision, publication receipt or another row's edit.
+    for (const name of ['costMyr', 'costAt', 'costDetails', 'costError']) {
+      if (Object.prototype.hasOwnProperty.call(cost, name)) row[name] = cost[name];
+    }
+  }
+  for (const tr of content.querySelectorAll('tr[data-row]')) {
+    const row = current.rows.find(item => item.id === tr.dataset.row);
+    if (!row || !costs.has(row.id)) continue;
+    const fragment = document.createElement('template');
+    fragment.innerHTML = '<table><tbody>' + quoteRow(row, 1) + '</tbody></table>';
+    const fresh = fragment.content.querySelector('tr');
+    for (const index of [6, 7, 8, 9]) tr.cells[index].innerHTML = fresh.cells[index].innerHTML;
+    tr.querySelector('[data-profit]').innerHTML = profit(sellingPrice(row));
+    const target = calculatorInput(row), suggestion = target ? calculatorPrice(row, target) : null;
+    tr.querySelector('[data-calculated-selling]').value = suggestion ? fixed(suggestion.priceEa) : '0.00';
+    updateCalculatorApply(row, tr, sellingPrice(row), suggestion);
+    if (!publishingRows.has(row.id) && !row.pending) {
+      const toggle = tr.querySelector('[data-action=toggle]');
+      toggle.disabled = current.canPublish === false || !current.canEdit || (!row.published?.enabled && !Number.isFinite(sellingPrice(row)?.gp));
+    }
+  }
+  const latest = current.rows.reduce((at, row) => row.costAt > at ? row.costAt : at, '');
+  const label = content.querySelector('[data-cost-refresh]');
+  if (label) label.textContent = 'Last Cost Refresh  ' + (quoteDate(latest, true) || '—');
+  const risk = riskCount();
+  $('#quote-risk-count').textContent = risk;
+  $('#quote-risk-count').classList.toggle('gp-risk', Boolean(risk));
+}
+async function confirmCostRead(context, start = false) {
+  if (costReaders.has(context) || !current || !staffId) return;
+  let packet = costAttempts.get(context);
+  if (!packet) {
+    if (!start) return;
+    packet = { requestId: requestId() };
+    costAttempts.set(context, packet); rememberCosts();
+  }
+  costReaders.add(context);
+  costButtonState();
+  let first = start, delay = 1500;
+  try {
+    while (costAttempts.get(context) === packet && current && current.customer.customerId === context) {
+      if (customerId() === context) message(first ? 'Refreshing cost references…' : 'Confirming cost refresh automatically. You can continue editing.');
+      let result;
+      try { result = await api(first ? 'cost' : 'cost-status', packet, context); }
+      catch {
+        if (!current) return;
+        result = { pending: true };
+      }
+      first = false;
+      if (!result.pending) {
+        let updates = result.rows;
+        if (!updates) {
+          const refreshed = await api('quotes', undefined, context);
+          if (refreshed.staffId !== staffId || refreshed.customer?.customerId !== context) throw Error('Cost reference scope changed.');
+          updates = refreshed.rows;
+        }
+        paintCostReferences(updates, context);
+        costAttempts.delete(context); rememberCosts();
+        if (customerId() === context) {
+          const success = result.updated + result.unchanged;
+          message(`Catch Cost: ${result.updated} updated · ${result.unchanged} unchanged · ${result.failed} unavailable.`,
+            result.failed > 0 && success === 0, result.failed > 0 && success > 0);
+        }
+        return;
+      }
+      // Cost capture is now a source read with zero CMS writes. If its temporary
+      // result was evicted, repeating that same read cannot alter prices/orders.
+      first = result.missing === true;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay = Math.min(15000, delay * 1.5);
+    }
+  } catch {
+    if (customerId() === context) message('Cost confirmation will continue automatically. Your quotations are retained.');
+    setTimeout(() => confirmCostRead(context), 15000);
+  } finally {
+    costReaders.delete(context);
+    costButtonState();
+  }
+}
+
+
+function repaintPublicationRow(row, workspace) {
+  if (current !== workspace) return;
+  const index = quoteWindow?.rows.indexOf(row) ?? -1;
+  if (index !== -1) {
+    const tr = [...quoteWindow.body.querySelectorAll('tr[data-row]')].find(item => item.dataset.row === row.id);
+    if (tr) tr.outerHTML = quoteRow(row, index + 1);
+  }
+  const quoted = workspace.rows.filter(item => item.published?.enabled).length;
+  $('#quoted-count').textContent = quoted;
+  $('#awaiting-quote-count').textContent = workspace.rows.length - quoted;
+  const risk = riskCount();
+  $('#quote-risk-count').textContent = risk;
+  $('#quote-risk-count').classList.toggle('gp-risk', Boolean(risk));
+  $('#customer').disabled = publishingRows.size > 0;
+  costButtonState();
+}
+
+function readPublicationRows(context) {
+  if (!publicationRead) {
+    publicationRead = api('quotes', undefined, context).finally(() => { publicationRead = null; });
+  }
+  return publicationRead;
+}
+
+async function publishQuoteRow(row, action) {
+  const workspace = current;
+  const context = customerId();
+  const rowKey = key(row.id);
+  let packet = currentPublicationAttempt(row);
+  publicationIndicators.set(rowKey, packet?.enabled ?? (action === 'publish' || !row.published?.enabled));
+  if (publicationIndicators.get(rowKey)) unlockedEas.delete(entryKey(row));
+  publishingRows.add(row.id);
+  repaintPublicationRow(row, workspace);
+  try {
+    if (!packet) {
+      if (action === 'resume') throw Error('Reload the customer to see the current quotation.');
+      const enabled = action === 'publish' || !row.published?.enabled;
+      const revision = enabled ? await saveDraft(row, context, true) : row.revision;
+      packet = { selectionId: row.id, enabled, revision, requestId: requestId(), selectionEpoch: row.selectionEpoch || '' };
+      publicationAttempts.set(rowKey, packet);
+      rememberPublications();
+    }
+    const result = await api('publish', packet, context);
+    if (current !== workspace) return;
+    if (result.pending) {
+      row.pending = true;
+      message(result.message || 'Confirming the quotation.');
+      return;
+    }
+    if (!Number.isSafeInteger(result.revision)) throw Error('The quotation could not be confirmed.');
+    const matchingRow = response => response?.customer?.customerId === context && response.staffId === staffId
+      ? response.rows?.find(item => item.id === row.id && item.revision >= result.revision) : null;
+    // A shared read may have started before a second product finished publishing.
+    const latest = matchingRow(await readPublicationRows(context)) || matchingRow(await readPublicationRows(context));
+    if (current !== workspace) return;
+    if (!latest || latest.pending) throw Error('The quotation could not be confirmed. Check its status.');
+    Object.assign(row, latest);
+    if (drafts[entryKey(row)] && !dirty(row)) { delete drafts[entryKey(row)]; remember(); }
+    publicationAttempts.delete(rowKey);
+    rememberPublications();
+    message(row.published?.enabled ? 'Quotation is visible to this customer.' : 'Quotation hidden. Existing orders retain their prices.');
+  } catch (error) {
+    publicationIndicators.delete(rowKey);
+    if (current === workspace) message(error.message, true);
+  } finally {
+    if (!row.pending) publicationIndicators.delete(rowKey);
+    publishingRows.delete(row.id);
+    repaintPublicationRow(row, workspace);
+  }
+}
+
+setTimeout(initialize, 0);
+
+function draftPrice(row, input = drafts[entryKey(row)] || row.draft, roundEa = value => Number(value.toFixed(6))) {
+  if (!input) return null;
+  const value = input.value;
+  const rate = current.customer.rateToMyr;
+  const hasPack = Number.isSafeInteger(row.ea) && row.ea > 0;
+  const hasFx = Number.isFinite(rate) && rate > 0;
+  const hasCost = Number.isFinite(row.costMyr) && row.costMyr > 0;
+  if ((input.mode === 'GP' && (!hasPack || !hasFx || !hasCost || value >= 100)) ||
+      (input.mode === 'CTN' && !hasPack) || !Number.isFinite(value)) return null;
+  let ea = input.mode === 'GP' ? row.costMyr / (1 - value / 100) / rate / row.ea : input.mode === 'CTN' ? value / row.ea : value;
+  if (!Number.isFinite(ea) || ea <= 0) return null;
+  ea = roundEa(ea);
+  if (!(ea > 0)) return null;
+  const rawCtn = hasPack ? ea * row.ea : null;
+  const ctn = Number.isFinite(rawCtn) && rawCtn > 0 ? Number(rawCtn.toFixed(6)) : null;
+  const revenue = ctn && hasFx ? ctn * rate : null;
+  const profitMyr = Number.isFinite(revenue) && revenue > 0 && hasCost ? revenue - row.costMyr : null;
+  return { mode: input.mode, value, priceEa: ea, priceCtn: ctn, profitMyr,
+    gp: profitMyr === null ? null : profitMyr / revenue * 100 };
+}
+const fixed = number => Number.isFinite(number) ? number.toFixed(2) : '—';
+const inputValue = number => Number.isFinite(number) ? number : '';
+function calculatorInput(row) {
+  return calculator.get(entryKey(row)) || (row.draft?.mode === 'GP' ? row.draft : null);
+}
+function labeledValue(label, value, tone = '') {
+  return `<div class="quote-value"><span class="quote-unit">${label}</span><span class="${tone}">${value}</span></div>`;
+}
+const optionalMoney = number => Number.isFinite(number) ? fixed(number) : '';
+function quotationAmount(value, unit, valueAttribute = '') {
+  return `<div class="quote-value quote-value-suffix"><span${valueAttribute}>${optionalMoney(value)}</span><span class="quote-unit">${unit}</span></div>`;
+}
+function quotationDiscount(label, value, percentage) {
+  return `<div class="quote-value"><span class="quote-unit">${label}.</span><span>${optionalMoney(value)}</span><span>${percentage && Number.isFinite(value) ? '%' : ''}</span></div>`;
+}
+function gpTone(gp) {
+  if (!Number.isFinite(gp)) return '';
+  const margin = Number(gp.toFixed(2));
+  return margin < 8 ? 'gp-risk' : margin > 8 ? 'gp-healthy' : '';
+}
+function profit(price) {
+  if (!Number.isFinite(price?.gp)) return '';
+  return labeledValue('GP', fixed(price.gp) + '%', gpTone(price.gp)) +
+    labeledValue('CTN', fixed(price.profitMyr));
+}
+function riskCount() {
+  return current.rows.filter(row => gpTone(sellingPrice(row)?.gp) === 'gp-risk').length;
+}
+function quoteDate(value, withTime = false) {
+  if (!value || !Number.isFinite(Date.parse(value))) return '';
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kuala_Lumpur', day: '2-digit', month: '2-digit', year: '2-digit',
+    ...(withTime ? { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' } : {})
+  }).formatToParts(new Date(value));
+  const { day, month, year, hour, minute } = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${day}-${month}-${year}${withTime ? ` ${hour}:${minute}` : ''}`;
+}
+function dirty(row) {
+  const input = drafts[entryKey(row)];
+  return Boolean(input && (!row.draft || input.mode !== row.draft.mode || input.value !== row.draft.value));
+}
+function quoteChanged(row) {
+  const price = sellingPrice(row);
+  return Boolean(price && (!row.published || price.priceEa !== row.published.priceEa || price.priceCtn !== row.published.priceCtn));
+}
+function eaLockIcon(locked) {
+  return '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="'+(locked?'M7 9V6a3 3 0 0 1 6 0v3':'M7 9V6a3 3 0 0 1 5.5-1.6')+'"/></svg>';
+}
+function refreshEaLock(row, tr, price) {
+  const control = tr.querySelector('[data-action=unlock-ea]');
+  const locked = eaLocked(row);
+  control.hidden = !(Number(price?.priceEa) > 0);
+  control.disabled = !locked || !current.canEdit || row.pending || busy;
+  control.setAttribute('aria-label', locked ? 'Unlock unit price' : 'Unit price unlocked');
+  control.title = locked ? 'Unlock unit price' : 'Unit price unlocked';
+  control.innerHTML = eaLockIcon(locked);
+}
+function quoteRow(row, number) {
+  const price = sellingPrice(row);
+  const visible = Boolean(row.published?.enabled);
+  const publishing = publishingRows.has(row.id);
+  const switchOn = publishing || row.pending ? publicationIndicators.get(key(row.id)) ?? visible : visible;
+  const disabled = row.pending || publishing || busy || !current.canEdit;
+  const lockedEa = eaLocked(row);
+  const target = calculatorInput(row);
+  const suggestion = target ? calculatorPrice(row, target) : null;
+  const details = row.costDetails || {};
+  const previous = row.lastSale;
+  const previousCurrency = previous?.currency !== current.customer.preferredCurrency ? escapeHtml(previous?.currency) + ' ' : '';
+  const image = productImage(row.imageUrl);
+  const desc = escapeHtml(row.name);
+  const previousPurchase = row.lastPurchase;
+  const note = typeof details.remark === 'string' ? details.remark.trim() : '';
+  const noteLines = note ? note.split(/\r?\n|\r/).slice(0, 3) : ['—'];
+  return `<tr aria-rowindex="${number + 1}" data-row="${escapeHtml(row.id)}" class="${dirty(row) ? 'row-dirty' : ''}">
+    <td class="row-number">${String(number).padStart(3, '0')}</td>
+    <td class="image-cell">${image}</td>
+    <td class="desc-cell"><span class="barcode">${escapeHtml(row.barcode)}</span><div class="product-name" title="${desc}">${desc}</div><span class="packing">${escapeHtml(row.packing)}</span></td>
+    <td class="previous-sp quotation-history"><span class="mobile-label">History</span>
+      <div title="Last invoiced selling price per carton${previous?.siDate ? ' · ' + escapeHtml(quoteDate(previous.siDate)) : ''}"><span data-previous-sp>${previous ? previousCurrency + fixed(previous.priceCtn) : '—'}</span> <small>SP</small></div>
+      <div title="Last confirmed purchase net cost in MYR per carton"><span data-previous-nc>${Number.isFinite(previousPurchase?.netCostMyrCtn) ? fixed(previousPurchase.netCostMyrCtn) : '—'}</span> <small>NC</small></div></td>
+    <td><span class="mobile-label">Selling price · ${current.customer.preferredCurrency}</span><div class="quote-value quote-value-suffix quote-ea"><button type="button" class="quote-ea-lock" data-action="unlock-ea" aria-label="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" title="${lockedEa ? 'Unlock unit price' : 'Unit price unlocked'}" ${Number(price?.priceEa) > 0 ? '' : 'hidden'} ${disabled || !lockedEa ? 'disabled' : ''}>${eaLockIcon(lockedEa)}</button><input aria-label="Unit price for ${desc}" data-mode="EA" type="number" step="any" placeholder="0.00" value="${price ? fixed(price.priceEa) : ''}" ${disabled ? 'disabled' : lockedEa ? 'readonly' : ''}><span class="quote-unit">EA</span></div>${quotationAmount(price?.priceCtn, 'CT', ' data-carton')}</td>
+    <td><span class="mobile-label">Profit</span><span data-profit>${profit(price)}</span></td>
+    <td><span class="mobile-label">List cost</span>${quotationAmount(details.lpEa, 'EA')}${quotationAmount(details.lpCtn, 'CT')}</td>
+    <td class="disc-cell"><span class="mobile-label">Discount</span>${quotationDiscount(1, details.disc1, true)}${quotationDiscount(2, details.disc2, true)}${quotationDiscount(3, details.disc3, false)}</td>
+    <td class="cost-cell"><span class="mobile-label">Net cost per CTN</span><b class="${details.priceStale === true && Number.isFinite(row.costMyr) ? 'stale-cost' : ''}"${details.priceStale === true ? ' title="Point Base price needs verification"' : ''}>${fixed(row.costMyr)}</b><small class="${row.costError ? 'warning' : ''}" title="${escapeHtml(row.costError || row.costAt || '')}">${row.costError ? 'Check cost' : row.costAt ? '' : 'Awaiting cost'}</small></td>
+    <td class="remark-cell"><span class="mobile-label">Remark</span><div class="remark-lines" title="${escapeHtml(note)}">${noteLines.map(line => `<span>${escapeHtml(line) || '&nbsp;'}</span>`).join('')}</div></td>
+    <td><span class="mobile-label">View Quote</span><div class="quote-actions"><button role="switch" aria-label="Show quote for ${desc}" aria-checked="${switchOn}" class="switch" data-action="toggle" ${disabled || current.canPublish === false || (!visible && !Number.isFinite(price?.gp)) ? 'disabled' : ''}></button><span class="quote-label" aria-live="polite">${publishing ? 'Publishing…' : row.pending ? 'Confirming…' : visible ? quoteDate(row.published.publishedAt) : ''}</span></div>
+    <div class="quote-actions quote-edits">${quoteResumeButton(row)}<button hidden class="update" data-action="draft" ${disabled || !dirty(row) || !price ? 'disabled' : ''}>Save draft</button>${visible ? `<button hidden class="update primary" data-action="publish" ${disabled || current.canPublish === false || !quoteChanged(row) ? 'disabled' : ''}>Update quote</button>` : ''}</div></td>
+    <td class="calc-cell calc-combined"><span class="mobile-label">GP Calculator</span><div class="calc-stack">
+      <label class="calc-margin"><input aria-label="Target margin for ${desc}" data-calc="GP" type="number" step="0.01" placeholder="0.00" value="${Number.isFinite(target?.mode === 'GP' ? target.value : suggestion?.gp) ? fixed(target?.mode === 'GP' ? target.value : suggestion.gp) : ''}" ${disabled ? 'disabled' : ''}><span aria-hidden="true">% GP</span></label>
+      <div class="calc-target"><output class="calc-selling" aria-label="Target unit price for ${desc}" data-calculated-selling>${suggestion ? fixed(suggestion.priceEa) : '0.00'}</output><small>SP</small></div>
+      <button type="button" class="update primary" data-action="apply" aria-label="${calculatorMatchesPrice(price, suggestion) ? 'Calculator price applied to' : 'Apply calculator for'} ${desc}" ${calculatorMatchesPrice(price, suggestion) ? 'data-applied' : ''} ${disabled || lockedEa || !suggestion || calculatorMatchesPrice(price, suggestion) ? 'disabled' : ''}><span class="calc-apply-label">Apply</span><svg class="calc-applied-check" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 12c2 .4 3.6 1.8 5 4 2.3-4.7 5.9-8 11-10.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div></td>
+  </tr>`;
+}
+function renderQuotes(scrollPosition) {
+  const rows = quoteRows();
+  const currency = current.customer.preferredCurrency;
+  const quoted = current.rows.filter(row => row.published?.enabled).length;
+  const risk = riskCount();
+  const latestCost = current.rows.reduce((latest, row) => Date.parse(row.costAt) > Date.parse(latest) ||
+    (!latest && Number.isFinite(Date.parse(row.costAt))) ? row.costAt : latest, '');
+  const customerName = escapeHtml(current.customer.fullName || current.customer.name || $('#customer').selectedOptions[0]?.textContent || '');
+  content.innerHTML = `<div class="toolbar quote-summary"><div>
+    <div class="quote-customer"><h2>${customerName}</h2><span class="currency">${currency}</span></div>
+    <div class="toolbar-meta"><span class="muted">Current FX &nbsp; 1 ${currency} = MYR ${format(current.customer.rateToMyr)}</span><span class="muted" data-cost-refresh>Last Cost Refresh &nbsp; ${quoteDate(latestCost, true) || '—'}</span><button class="primary" id="catch-cost" ${busy || !current.canEdit || !current.rows.length ? 'disabled' : ''}>${busy ? 'Working…' : 'Catch Cost'}</button></div>
+    </div><dl class="quote-counts"><div><dt>Total Selected</dt><dd>${current.rows.length}</dd></div><div><dt>Quoted</dt><dd id="quoted-count">${quoted}</dd></div><div><dt>Awaiting Quote</dt><dd id="awaiting-quote-count">${current.rows.length - quoted}</dd></div><div><dt>High-Risk Quotes</dt><dd id="quote-risk-count" class="${risk ? 'gp-risk' : ''}">${risk}</dd></div></dl>
+    <div class="quote-find"><label for="quote-find">Find product</label>
+      <div class="quote-find-field"><input id="quote-find" type="search" placeholder="Product name or barcode" autocomplete="off" aria-describedby="quote-find-result"${rows.length ? '' : ' disabled'}>
+      <button type="button" id="quote-find-clear" aria-label="Clear product search" hidden>×</button></div>
+      <span class="quote-find-result" id="quote-find-result" role="status"></span>
+    </div></div>` + (rows.length ? `
+    <div class="table-wrap quote-grid" tabindex="0" role="region" aria-label="Quotation products"><table aria-rowcount="${rows.length + 1}"><colgroup>${[40, 60, '', 87, 93, 87, 79, 74, 76, 200, 68, 120].map(width => `<col${width ? ` style="width:${width}px"` : ''}>`).join('')}</colgroup>
+    <thead><tr><th>Row</th><th>Image</th><th>Descriptions</th><th class="quote-left">History</th><th class="quote-right">Selling Price</th><th class="quote-left">Profit</th><th class="quote-right">List Cost</th><th>Discount</th><th class="quote-right">Net Cost</th><th>Remark</th><th>View Quote</th><th class="calc-cell calc-group">GP Calculator</th></tr></thead>
+    <tbody>${initialQuoteRows(rows)}</tbody></table></div>` :
+    `<div class="empty">${current.rows.length ? 'No matching products.' : 'Products selected in Catalogue appear here.'}</div>`);
+  mountQuoteRows(rows, scrollPosition);
+}
+async function saveDraft(row, context, keepLocal = false) {
+  const draftKey = entryKey(row);
+  const input = drafts[draftKey];
+  if (!input || !dirty(row)) return row.revision;
+  const savedInput = JSON.stringify(input);
+  const result = await api('draft', { selectionId: row.id, input, revision: row.revision, requestId: requestId(), selectionEpoch: row.selectionEpoch || '' }, context);
+  if (!keepLocal && JSON.stringify(drafts[draftKey]) === savedInput) { delete drafts[draftKey]; remember(); }
+  return result.revision;
+}
+function editPrice(row, tr, next, updateEa = false) {
+  if (eaLocked(row)) return;
+  drafts[entryKey(row)] = next;
+  if (row.draft && next.mode === row.draft.mode && next.value === row.draft.value) delete drafts[entryKey(row)];
+  remember();
+  const price = sellingPrice(row);
+  if (updateEa) tr.querySelector('[data-mode=EA]').value = price ? fixed(price.priceEa) : '';
+  refreshEaLock(row, tr, price);
+  tr.querySelector('[data-carton]').textContent = optionalMoney(price?.priceCtn);
+  const target = calculatorInput(row);
+  updateCalculatorApply(row, tr, price, target ? calculatorPrice(row, target) : null);
+  tr.querySelector('[data-profit]').innerHTML = profit(price);
+  const risk = riskCount();
+  const count = $('#quote-risk-count');
+  count.textContent = risk;
+  count.classList.toggle('gp-risk', Boolean(risk));
+  tr.classList.toggle('row-dirty', dirty(row));
+  tr.querySelector('[data-action=draft]').disabled = !dirty(row) || !price;
+  tr.querySelector('[data-action=toggle]').disabled = current.canPublish === false || !row.published?.enabled && !Number.isFinite(price?.gp);
+  const update = tr.querySelector('[data-action=publish]');
+  if (update) update.disabled = current.canPublish === false || !quoteChanged(row);
+}
+content.addEventListener('input', event => {
+  if (event.target.id === 'quote-find') {
+    $('#quote-find-clear').hidden = !event.target.value;
+    if (!event.isComposing) findQuoteRow(event.target);
+    return;
+  }
+  const input = event.target.closest('[data-mode], [data-calc]');
+  if (!input || input.disabled || input.readOnly || busy) return;
+  const tr = input.closest('[data-row]');
+  const row = current.rows.find(row => row.id === tr.dataset.row);
+  const value = input.value === '' ? null : Number(input.value);
+  if (input.dataset.mode) {
+    editPrice(row, tr, { mode: 'EA', value: value === null ? null : roundCents(value) });
+    return;
+  }
+  const next = { mode: input.dataset.calc, value };
+  calculator.set(entryKey(row), next);
+  const price = calculatorPrice(row, next);
+  const other = tr.querySelector('[data-calculated-selling]');
+  const calculated = price?.priceEa;
+  other.value = Number.isFinite(calculated) ? fixed(calculated) : '0.00';
+  updateCalculatorApply(row, tr, sellingPrice(row), price);
+});
+content.addEventListener('click', event => {
+  if (event.target.id !== 'quote-find-clear') return;
+  const input = $('#quote-find');
+  input.value = '';
+  event.target.hidden = true;
+  findQuoteRow(input);
+  input.focus();
+});
+</script>
+</body>
+</html>
