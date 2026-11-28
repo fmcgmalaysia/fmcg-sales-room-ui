@@ -1,0 +1,178 @@
+(function(){'use strict';
+const accountEnglish=!!document.querySelector('nav[aria-label="Account navigation"]');
+const stockCopy=(english,bilingual)=>accountEnglish?english:bilingual;
+const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const kinds={INTERNAL_DAMAGE:stockCopy("Internal damage",'Internal damage 内部损坏'),WRONG_ITEM:stockCopy("Wrong item",'Wrong item 错货'),SHORT_EXPIRY:stockCopy("Short expiry",'Short expiry 保质期不足')},owners={ADMIN:stockCopy("Super Admin",'Super Admin 最高管理员'),PURCHASE:stockCopy("Purchase",'Purchase 采购'),ACCOUNT:stockCopy("Account",'Account 财务'),WAREHOUSE:stockCopy("Warehouse",'Warehouse 仓库')};
+const actions={QUARANTINE:stockCopy("Report stock issue",'Report stock issue 登记库存异常'),DECIDE:stockCopy("Supplier solution",'Supplier solution 供应商处理方案'),RETURN:stockCopy("Record return",'Record return 登记退货'),REPLACEMENT:stockCopy("Receive replacement",'Receive replacement 签收换货'),DISPOSE:stockCopy("Confirm disposal",'Confirm disposal 确认处置'),APPROVE_VARIANCE:stockCopy("Approve unrecovered amount",'Approve unrecovered amount 批准未追回金额'),APPROVE_RELEASE:stockCopy("Approve quarantine release",'Approve quarantine release 批准解除隔离'),CLOSE:stockCopy("Finance verification",'Finance verification 财务结案核对')};
+const money=value=>(Number(value||0)/100).toFixed(2),qty=value=>Number(value||0),companyValue=()=>document.getElementById('companySelect')?.value||document.getElementById('company')?.value||'NCT';
+function stamp(value){if(!value)return '';const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(value)).map(part=>[part.type,part.value]));return parts.day+'-'+parts.month+'-'+parts.year+' '+parts.hour+':'+parts.minute;}
+const workspace=document.getElementById('warehouseStockIssues');
+const button=workspace?document.querySelector('[data-view="issues"]'):document.createElement('button');
+const menuLabel=workspace?'Stock Issues':stockCopy('Stock Take','Stock Issues 库存异常');
+if(!workspace){button.className='stock-entry';button.type='button';document.querySelector('nav').appendChild(button);}
+button.textContent=menuLabel;
+const dialog=workspace||document.createElement('dialog');dialog.className=workspace?'stock-issue-workspace':'stock-dialog';dialog.id=workspace?'warehouseStockIssues':'stockExceptions';if(!workspace)document.body.appendChild(dialog);
+let company='',data=null,pending=null,busy=false,readId='',timer,changed=false,form=null;
+function shell(body,footer=''){
+ const top=workspace?'<h2>Stock Issues 库存异常</h2><div class="stock-body">':stockCopy("<header><strong>Stock Take</strong><button data-close aria-label=\"Close stock issues\">×</button></header><div class=\"stock-body\">",'<header><strong>Stock Issues 库存异常</strong><button data-close aria-label="Close stock issues">×</button></header><div class="stock-body">');
+ const closeButton=workspace?'':stockCopy('<button data-close>Close</button>','<button data-close>Close 关闭</button>');
+ dialog.innerHTML=top+body+'<p id="stockError" role="alert"></p></div>'+((footer||closeButton)?'<footer>'+footer+closeButton+'</footer>':'');
+ dialog.querySelectorAll('[data-close]').forEach(el=>el.onclick=close);
+}
+function error(value){dialog.querySelector('#stockError').textContent=value;}
+function close(){if(busy||pending){error(stockCopy("Save is not confirmed. Retry the same save first.",'保存尚未确认，请先重试同一次保存。'));return;}if(workspace){list();return;}dialog.close();if(changed){changed=false;document.getElementById('refresh')?.click();}}
+dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
+dialog.addEventListener('input',event=>{const field=event.target;if(field.name==='cents'&&field.type!=='hidden')field.dataset.moneyUnset=field.value.trim()?'0':'1';});
+dialog.addEventListener('focusout',event=>{const field=event.target;if(field.type==='hidden'||field.disabled||field.readOnly||!(field.name==='cents'||field.hasAttribute('data-cn')||field.hasAttribute('data-refund')))return;const raw=field.value.trim();if(!raw)field.value='0.00';else if(/^\d{1,10}(\.\d{1,2})?$/.test(raw))field.value=Number(raw).toFixed(2);});
+function read(){readId=crypto.randomUUID();parent.postMessage({type:'STOCK_READ_REQUEST',company,requestId:readId},'*');clearTimeout(timer);timer=setTimeout(()=>{error(stockCopy("Read is not confirmed. Please retry.",'读取尚未确认，请重试。'));dialog.querySelector('[data-reload]')?.removeAttribute('disabled');},30000);}
+function open(){if(busy||pending||document.querySelector('dialog[open]'))return;if(workspace&&form){error('Save or go back before refreshing. 请先保存或返回列表。');return;}company=companyValue();data=null;form=null;shell(stockCopy("<p>Loading…</p><button data-reload>Retry</button>",'<p>Loading 正在读取库存异常…</p><button data-reload>Retry 重试</button>'));dialog.querySelector('[data-reload]').onclick=read;if(!workspace)dialog.showModal();read();}
+if(!workspace)button.onclick=open;
+const awaitingDisposal=item=>item.resolution?.financeApproval?.outcome==='LOSS'&&item.resolution.financeApproval.goodsStatus==='PRESENT'&&!item.resolution.disposal;
+const pendingCase=item=>item.status!=='RESOLVED'||awaitingDisposal(item);
+function stockTakeMonth(){const date=new Date(Date.now()+8*60*60*1000),last=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0));if(date.getUTCDate()!==last.getUTCDate())date.setUTCDate(0);return date.toISOString().slice(0,7);}
+function list(){form=null;if(!workspace)dialog.style.width='800px';const open=data.cases.filter(pendingCase);button.innerHTML=menuLabel+(open.length?'<span class="stock-count">'+open.length+'</span>':'');
+ const countButton=workspace&&data.stockCounts?.canReport?'<button data-count-report>Report count gain 登记盘盈</button>':'';
+ shell('<div class="stock-tools">'+(data.permissions.report?stockCopy("<button data-report class=\"primary\">Report issue</button>",'<button data-report class="primary">Report issue 登记异常</button>'):'')+countButton+stockCopy("<button data-reload>Refresh</button><select id=\"stockFilter\" aria-label=\"Stock case status\"><option value=\"OPEN\">Open</option><option value=\"ALL\">All</option></select></div><div id=\"stockRows\"></div>",'<button data-reload>Refresh 刷新</button><select id="stockFilter" aria-label="Stock case status"><option value="OPEN">Open 未解决</option><option value="ALL">All 全部记录</option></select></div><div id="stockRows"></div>')+((workspace||accountEnglish)&&data.stockCounts?'<div id="stockCountRows"></div>':''));
+ dialog.querySelector('[data-report]')?.addEventListener('click',()=>edit('QUARANTINE'));
+ dialog.querySelector('[data-count-report]')?.addEventListener('click',()=>editCount());
+ dialog.querySelector('[data-reload]').onclick=read;dialog.querySelector('#stockFilter').onchange=()=>{rows();countRows();};rows();countRows();
+}
+
+function countRows() {
+ const panel=dialog.querySelector('#stockCountRows');
+ if(!panel)return;
+ const {reports,canConfirm}=data.stockCounts;
+ const visible=reports.filter(row=>dialog.querySelector('#stockFilter').value==='ALL'||!row.confirmed);
+ if(!visible.length){panel.replaceChildren();return;}
+ panel.innerHTML='<h3>'+stockCopy('Stock count gains','Stock count gains 盘盈记录')+'</h3><table><thead><tr><th>'+stockCopy('Source','Source 来源')+'</th><th>'+stockCopy('Count','Count 盘点')+'</th><th>'+stockCopy('Status','Status 状态')+'</th></tr></thead><tbody>'+visible.map(row=>{
+  const status=row.confirmed?stockCopy('Confirmed','Confirmed 已确认'):accountEnglish&&row.unitCost===null?'Cost review required':stockCopy('Awaiting Finance','Awaiting Finance 待财务确认');
+  const action=canConfirm&&accountEnglish&&!row.confirmed&&row.unitCost>0?'<button data-count-confirm="'+esc(row.id)+'">Review gain</button>':'';
+  const audit=row.confirmed?row.confirmedAt+' · '+row.confirmedBy:row.reason;
+  return '<tr><td>'+esc(row.barcode)+'<small>'+esc(row.po)+' · '+esc(row.reference)+'</small></td><td>'+row.onHand+' → '+row.counted+' CTN <small>+'+row.quantity+' CTN</small></td><td>'+esc(status)+'<small>'+esc(audit)+'</small>'+action+'</td></tr>';
+ }).join('')+'</tbody></table>';
+ panel.querySelectorAll('[data-count-confirm]').forEach(control=>control.onclick=()=>editCount(reports.find(row=>row.id===control.dataset.countConfirm)));
+}
+
+function editCount(report) {
+ form=report?{action:'CONFIRM_COUNT_GAIN',id:report.id}:{action:'REPORT_COUNT_GAIN'};
+ const title=report?'Confirm stock count gain':stockCopy('Report stock count gain','Report stock count gain 登记盘盈');
+ let fields;
+ if(report){
+  fields='<p class="wide stock-note">'+esc(report.barcode)+' · '+esc(report.po)+' · '+esc(report.reference)+'<br>'+report.onHand+' → '+report.counted+' CTN<br>MYR '+money(Math.round(report.unitCost*report.quantity*100))+'</p>';
+ }else{
+  fields=select(stockCopy('Supplier batch','Supplier batch 采购批次'),'sourceTaskId',[['',stockCopy('Select verified batch','Select verified batch 请选择已核实批次')],...data.stockCounts.sources.map(row=>[row.id,row.barcode+' · '+row.name+' · '+row.po])]);
+  fields+='<label>'+stockCopy('Recorded on hand','Recorded on hand 帐面库存')+'</label><output id="stock-count-on-hand">—</output>';
+  fields+='<label for="stock-counted">'+stockCopy('Physical count (CTN)','Physical count 实盘箱数')+'</label><input id="stock-counted" name="counted" type="number" min="1" step="1" required>';
+  fields+=field(stockCopy('Count reference','Count reference 盘点单号'),'reference');
+ }
+ fields+='<label for="stock-reason">'+stockCopy('Note','Note 备注')+'</label><textarea id="stock-reason" name="reason" maxlength="2000" required></textarea>';
+ shell('<b>'+esc(title)+'</b><form id="stockForm" class="stock-fields">'+fields+'</form>',
+  '<button data-back>'+stockCopy('Back','Back 返回')+'</button><button data-save class="primary">'+(report?'Confirm gain':stockCopy('Report gain','Report gain 提交盘盈'))+'</button>');
+ dialog.querySelector('[data-back]').onclick=list;
+ dialog.querySelector('[data-save]').onclick=save;
+ dialog.querySelector('#stockForm').onsubmit=event=>{event.preventDefault();save();};
+ const source=dialog.querySelector('[name=sourceTaskId]');
+ if(source){
+  source.required=true;
+  source.onchange=()=>{
+   const batch=data.stockCounts.sources.find(row=>row.id===source.value);
+   dialog.querySelector('#stock-count-on-hand').textContent=batch?batch.onHand+' CTN':'—';
+   dialog.querySelector('[name=counted]').min=String((batch?.onHand??0)+1);
+  };
+ }
+}
+function rows(){const items=data.cases.filter(item=>dialog.querySelector('#stockFilter').value==='ALL'||pendingCase(item));dialog.querySelector('#stockRows').innerHTML=stockCopy("<table><thead><tr><th>Barcode · Item</th><th>Supplier · P.O.</th><th>Issue</th><th>Owner</th><th>Entry</th></tr></thead><tbody>",'<table><thead><tr><th>Barcode · Item 产品</th><th>Supplier · P.O. 供应商</th><th>Issue 异常</th><th>Owner 责任部门</th><th>Entry 处理</th></tr></thead><tbody>')+items.map(item=>'<tr><td>'+esc(item.source.barcode)+'<b style="display:block">'+esc(item.source.name)+'</b><small>'+esc(item.source.packing)+'</small></td><td>'+esc(item.source.supplierName)+'<small>'+esc(item.source.po)+'</small></td><td><span class="'+(awaitingDisposal(item)?'stock-orange':item.status==='RESOLVED'?'stock-green':'stock-red')+'">'+item.quantity+' CTN · '+esc(kinds[item.kind])+'</span><small>'+stamp(item.at)+'<br>by '+esc(item.by)+'</small></td><td>'+esc(awaitingDisposal(item)?stockCopy('Warehouse · awaiting disposal','Warehouse 货仓待处置'):item.status==='RESOLVED'?stockCopy("Resolved",'Resolved 已核对'):owners[item.owner]||item.owner)+'<small>'+(item.status==='RESOLVED'?'':stockCopy("Affects available stock and financial closure",'影响：销售可用数量、财务结案'))+'</small></td><td><button data-case="'+esc(item.id)+stockCopy("\">Open</button></td></tr>",'">Open 打开</button></td></tr>')).join('')+(items.length?'':stockCopy("<tr><td colspan=\"5\">No pending stock issues</td></tr>",'<tr><td colspan="5">No pending stock issues 暂无库存异常</td></tr>'))+'</tbody></table>';dialog.querySelectorAll('[data-case]').forEach(el=>el.onclick=()=>caseView(el.dataset.case));}
+function identity(item){return '<div class="stock-identity">'+esc(item.source.barcode)+'<b>'+esc(item.source.name)+'</b>'+esc(item.source.packing)+'<small>'+esc(item.source.supplierName)+' · '+esc(item.source.po)+'</small></div>';}
+function caseView(id){const item=data.cases.find(item=>item.id===id),state=item.resolution||{},choices=[];if(item.status!=='RESOLVED'){
+ if(data.permissions.decide&&item.kind!=='INTERNAL_DAMAGE'&&!state.adminApproval&&!state.returns?.length&&!state.replacements?.length)choices.push('DECIDE');
+ if(data.permissions.approve){if(!state.adminApproval&&!state.returns?.length&&!state.replacements?.length){choices.push('APPROVE_RELEASE');}if(item.kind!=='INTERNAL_DAMAGE')choices.push('APPROVE_VARIANCE');}
+ if(data.permissions.report&&state.decision&&!state.adminApproval){if(state.decision.disposition==='RETURN')choices.push('RETURN');if(state.decision.value==='REPLACE')choices.push('REPLACEMENT');}
+ if(data.permissions.close)choices.push('CLOSE');}
+ if(data.permissions.report&&awaitingDisposal(item))choices.push('DISPOSE');
+ const entries=[{title:stockCopy("Reported",'Reported 登记'),reason:item.reason,at:item.at,by:item.by},state.decision&&{title:stockCopy("Supplier decision ·",'Supplier decision 采购决定 · ')+state.decision.value,...state.decision},state.adminApproval&&{title:stockCopy("Admin approval",'Admin approval 管理员批准'),...state.adminApproval},state.varianceApproval&&{title:stockCopy("Variance approval",'Variance approval 差额批准'),...state.varianceApproval},...(state.returns||[]).map(row=>({title:stockCopy("Returned ",'Returned 退回 ')+row.quantity+' CTN',...row})),...(state.replacements||[]).map(row=>({title:stockCopy("Replacement ",'Replacement 换货 ')+row.quantity+' CTN',...row})),state.financeApproval&&{title:stockCopy("Finance checked",'Finance checked 财务核对'),...state.financeApproval},state.disposal&&{title:stockCopy('Disposal confirmed','Disposal confirmed 已处置'),...state.disposal}].filter(Boolean);
+ shell(identity(item)+'<p class="stock-note">'+item.quantity+' CTN · '+esc(kinds[item.kind])+stockCopy("<br>Responsible",'<br>Responsible 责任：')+esc(awaitingDisposal(item)?stockCopy('Warehouse · awaiting disposal','Warehouse 货仓待处置'):item.status==='RESOLVED'?stockCopy("Resolved",'Resolved 已核对'):owners[item.owner]||item.owner)+'</p><div class="stock-tools" style="flex-wrap:wrap">'+choices.map(action=>'<button data-action="'+action+'">'+esc(action==='CLOSE'&&!state.adminApproval&&(!state.decision||state.decision.value==='PENDING')?stockCopy('Month-end Stock Take','Month-end Stock Take 月底盘点'):actions[action])+'</button>').join('')+'</div><div class="stock-history">'+entries.map(entry=>'<p><b>'+esc(entry.title)+'</b><small>'+stamp(entry.at)+' · by '+esc(entry.by)+'</small>'+esc(entry.reason||'')+(entry.stockTakeConfirmed?'<small>'+esc(entry.period)+' · '+entry.quantity+' CTN'+(accountEnglish&&Number.isSafeInteger(entry.cents)?' · MYR '+money(entry.cents):'')+' · '+esc(entry.goodsStatus==='PRESENT'?stockCopy('Awaiting disposal','Awaiting disposal 待处置'):stockCopy('Disposed','Disposed 已处置'))+'</small>':'')+'</p>').join('')+'</div>',stockCopy("<button data-back>Back</button>",'<button data-back>Back 返回</button>'));dialog.querySelector('[data-back]').onclick=list;dialog.querySelectorAll('[data-action]').forEach(el=>el.onclick=()=>edit(el.dataset.action,item));}
+const field=(label,name,type='text',value='')=>'<label for="stock-'+name+'">'+label+'</label><input id="stock-'+name+'" name="'+name+'" type="'+type+'" value="'+esc(name==='cents'&&!value?'0.00':value)+'" '+(name==='cents'&&!value?'data-money-unset="1" ':'')+(type==='number'?'min="0" step="0.01"':'')+' required>';
+const select=(label,name,options)=>'<label for="stock-'+name+'">'+label+'</label><select id="stock-'+name+'" name="'+name+'">'+options.map(([value,title])=>'<option value="'+esc(value)+'">'+esc(title)+'</option>').join('')+'</select>';
+function allocations(item){const finance=item.finance,others=(finance.stockCases||[]).filter(value=>value.id!==item.id).map(value=>value.resolution?.financeApproval).filter(Boolean).concat(finance.quantityClaims||[]);return stockCopy("<p class=\"wide stock-note\">Allocate amounts to this case. CN and refunds cannot be reused.</p>",'<p class="wide stock-note">填写本宗异常分配金额；相同 CN 退款不得重复使用。</p>')+finance.documents.map(doc=>{const confirmed=finance.amounts.find(row=>row.fileId===doc.fileId&&row.sha256===doc.sha256),used=others.flatMap(row=>row.cnAllocations||[]).filter(row=>row.fileId===doc.fileId).reduce((sum,row)=>sum+row.cents,0);return confirmed?'<label>CN '+esc(doc.number)+stockCopy("<small>Available RM ",'<small>Available 可用 RM ')+money(confirmed.cents-used)+'</small></label><input type="number" min="0" step="0.01" value="0.00" data-cn="'+esc(doc.fileId)+'">':'';}).join('')+finance.refunds.map(payment=>{const used=others.flatMap(row=>row.refundAllocations||[]).filter(row=>row.paymentId===payment.id).reduce((sum,row)=>sum+row.cents,0);return stockCopy("<label>Refund ",'<label>Refund 已收退款 ')+esc(payment.reference)+stockCopy("<small>Available RM",'<small>Available 可用 RM ')+money(payment.cents-used)+'</small></label><input type="number" min="0" step="0.01" value="0.00" data-refund="'+esc(payment.id)+'">';}).join('');}
+function edit(action,item){form={action,id:item?.id};if(!workspace)dialog.style.width='560px';let fields='';const state=item?.resolution||{};
+ if(action==='QUARANTINE')fields=select(stockCopy("Supplier line",'Supplier line 采购行'),'sourceTaskId',data.sources.filter(row=>row.availablePhysical>0).map(row=>[row.id,row.barcode+' · '+row.po+' · '+row.supplierName]))+select(stockCopy("Issue",'Issue 问题'),'kind',Object.entries(kinds))+field(stockCopy("Affected CTN",'Affected CTN 箱数'),'quantity','number')+stockCopy("<p class=\"wide stock-note\">Record issues found after receiving. Quarantined cartons cannot be dispatched. Original receipts remain.</p>",'<p class="wide stock-note">本功能登记收货后发现的问题。隔离箱数不可发给客户；原始签收记录保留。</p>');
+ if(action==='DECIDE')fields=select(stockCopy("Solution",'Solution 处理方式'),'decision',[['PENDING',stockCopy("Awaiting supplier",'Awaiting supplier 等供应商回复')],['REFUND',stockCopy("CN + Refund",'CN + Refund CN及退款')],['CREDIT',stockCopy("CN + Next purchase",'CN + Next purchase CN下次扣账')],['REPLACE',stockCopy("Replacement",'Replacement 补货换货')]])+select(stockCopy("Goods",'Goods 原货处理'),'disposition',[['RETURN',stockCopy("Return to supplier",'Return to supplier 退给供应商')],['SUPPLIER_NO_RETURN',stockCopy("Supplier does not require return",'Supplier does not require return 供应商无需退回')]])+field(stockCopy("Supplier reference",'Supplier reference 回复依据'),'supplierReference')+field(stockCopy("Replacement date",'Replacement date 换货日期'),'expectedDate','date');
+ if(['RETURN','REPLACEMENT'].includes(action))fields=field(stockCopy("This movement",'This movement 本次箱数'),'quantity','number')+field(stockCopy("Reference",'Reference 单号'),'reference')+(action==='REPLACEMENT'?stockCopy("<label for=\"stock-acceptedGood\">Goods inspected</label><input id=\"stock-acceptedGood\" name=\"acceptedGood\" type=\"checkbox\">",'<label for="stock-acceptedGood">Goods inspected 验收合格</label><input id="stock-acceptedGood" name="acceptedGood" type="checkbox">'):'');
+ if(action==='APPROVE_VARIANCE')fields=field(stockCopy("Amount MYR",'Amount MYR 金额'),'cents','number');
+ if(action==='DISPOSE')fields='<p class="wide stock-note">'+item.quantity+' CTN · '+stockCopy('Written off; confirm physical disposal only.','已结损；仅确认实物处置。')+'</p><input name="quantity" type="hidden" value="'+item.quantity+'">'+field(stockCopy('Disposal reference','Disposal reference 处置依据'),'reference');
+ if(action==='APPROVE_RELEASE')fields=stockCopy("<p class=\"wide stock-note\">For an incorrect quarantine entry only. Another Finance employee must verify before stock is released.</p>",'<p class="wide stock-note">仅限原隔离登记有误。财务由另一员工核对后才恢复可用库存。</p>');
+ if(action==='CLOSE'){
+  const outcome=state.adminApproval?.outcome||(state.decision?.value==='REPLACE'?'REPLACED':state.decision?.value&&state.decision.value!=='PENDING'?state.decision.value:'LOSS');
+  fields=stockCopy("<p class=\"wide stock-note\">Outcome",'<p class="wide stock-note">Outcome 核对结果：')+esc(({LOSS:stockCopy("Inventory loss",'Inventory loss 库存损耗'),RELEASED:stockCopy("Release quarantine",'Release quarantine 解除隔离'),REFUND:stockCopy("Refund received",'Refund received 已收到退款'),CREDIT:stockCopy("Supplier credit",'Supplier credit 下次扣账'),REPLACED:stockCopy("Replacement complete",'Replacement complete 换货完成')})[outcome]||stockCopy("Awaiting Purchase or Admin",'等待采购或管理员处理'))+'</p><input name="outcome" type="hidden" value="'+esc(outcome||'')+'">';
+  if(outcome==='LOSS')fields+='<p class="wide stock-note">'+item.quantity+' CTN · MYR '+(Number.isSafeInteger(item.referenceCostCents)?money(item.referenceCostCents):'Cost review required')+'</p><input name="cents" type="hidden" value="'+(Number.isSafeInteger(item.referenceCostCents)?money(item.referenceCostCents):'')+'">'+field(stockCopy('Stock Take month','Stock Take month 盘点月份'),'period','month',stockTakeMonth())+select(stockCopy('Goods','Goods 实物'),'goodsStatus',[['PRESENT',stockCopy('Still in warehouse','Still in warehouse 仍在仓库')],['DISPOSED',stockCopy('Disposal verified','Disposal verified 已核实处置')]])+'<label for="stock-stockTakeConfirmed">'+stockCopy('Month-end count verified','Month-end count verified 已核对月底盘点')+'</label><input id="stock-stockTakeConfirmed" name="stockTakeConfirmed" type="checkbox" required>';
+  if(['REFUND','CREDIT'].includes(outcome))fields+=field(stockCopy("Actual MYR",'Actual MYR 实际金额'),'cents','number');
+  if(['REFUND','CREDIT'].includes(outcome))fields+=allocations(item);
+  if(outcome==='REPLACED')fields+=stockCopy("<label for=\"stock-noExtraCharge\">No extra charge</label><input id=\"stock-noExtraCharge\" name=\"noExtraCharge\" type=\"checkbox\">",'<label for="stock-noExtraCharge">No extra charge 无额外费用</label><input id="stock-noExtraCharge" name="noExtraCharge" type="checkbox">');
+ }
+ fields+=stockCopy("<label for=\"stock-reason\">Note</label><textarea id=\"stock-reason\" name=\"reason\" maxlength=\"2000\" required></textarea>",'<label for="stock-reason">Note 内部处理记录</label><textarea id="stock-reason" name="reason" maxlength="2000" required></textarea>');
+ shell((item?identity(item):'')+'<b>'+esc(actions[action])+'</b><form id="stockForm" class="stock-fields" style="margin-top:12px">'+fields+'</form>',stockCopy("<button data-back>Back</button><button data-save class=\"primary\">Save</button>",'<button data-back>Back 返回</button><button data-save class="primary">Save 保存</button>'));dialog.querySelector('[data-back]').onclick=()=>item?caseView(item.id):list();dialog.querySelector('[data-save]').onclick=save;dialog.querySelector('#stockForm').onsubmit=event=>{event.preventDefault();save();};
+ if(action==='DECIDE'){
+  const decision=dialog.querySelector('[name=decision]');
+  const refresh=()=>{for(const name of ['disposition','supplierReference','expectedDate']){const field=dialog.querySelector('[name='+name+']'),visible=name==='expectedDate'?decision.value==='REPLACE':decision.value!=='PENDING';field.hidden=!visible;field.disabled=!visible;field.required=visible;dialog.querySelector('label[for="stock-'+name+'"]').hidden=!visible;}};
+  decision.onchange=refresh;refresh();
+ }
+ if(action==='CLOSE'&&dialog.querySelector('[name=outcome]')?.value==='LOSS'){dialog.querySelector('[name=reason]').value=item.reason;dialog.querySelector('[data-save]').textContent=stockCopy('Record loss','Record loss 确认结损');if(!Number.isSafeInteger(item.referenceCostCents))dialog.querySelector('[data-save]').disabled=true;}
+ const quantityField=dialog.querySelector('[name=quantity]');if(quantityField){quantityField.min='1';quantityField.step='1';}
+}
+function lock(value){busy=value;dialog.querySelectorAll('input,select,textarea').forEach(el=>el.disabled=value||!!pending);dialog.querySelectorAll('[data-close],[data-back]').forEach(el=>el.disabled=value||!!pending);const save=dialog.querySelector('[data-save]');if(save){save.disabled=value;save.textContent=value?stockCopy("Saving…",'Saving 保存中…'):pending?stockCopy("Retry Save",'Retry Save 重试保存'):stockCopy("Save",'Save 保存');}}
+let stockRecovery=null;
+const stockCheckDelays=[5000,15000,45000];
+function stockSaved(){
+ clearTimeout(stockRecovery?.timer);stockRecovery=null;pending=null;lock(false);changed=true;
+ shell(stockCopy('<p>Saved. Loading current stock…</p><button data-reload>Retry</button>','<p>Saved 已保存。正在读取最新库存…</p><button data-reload>Retry 重试</button>'));
+ dialog.querySelector('[data-reload]').onclick=read;read();
+}
+function continueStockCheck(){
+ const state=stockRecovery;if(!state||pending!==state.original)return;
+ clearTimeout(state.timer);state.id=null;
+ if(state.count>stockCheckDelays.length){stockRecovery=null;lock(false);error(stockCopy('Save remains unconfirmed. Your input is retained.','保存仍未确认，已保留输入。'));return;}
+ if(!document.hidden&&navigator.onLine!==false)state.timer=setTimeout(checkStockReceipt,stockCheckDelays[state.count-1]);
+}
+function checkStockReceipt(){
+ const state=stockRecovery;if(!state||pending!==state.original||state.id||document.hidden||navigator.onLine===false)return;
+ clearTimeout(state.timer);state.id=crypto.randomUUID();state.count++;
+ state.timer=setTimeout(continueStockCheck,20000);
+ const {company,requestId,input}=pending;
+ parent.postMessage({type:'STOCK_SAVE_STATUS_REQUEST',company,requestId:state.id,saveRequestId:requestId,caseId:input.id||''},'*');
+}
+function recoverStockSave(original){if(pending!==original||stockRecovery)return;clearTimeout(timer);stockRecovery={original,id:null,timer:null,count:0};lock(true);error(stockCopy('Confirming the original save. Your input is retained.','正在确认原保存，已保留输入。'));checkStockReceipt();}
+window.addEventListener('online',checkStockReceipt);
+document.addEventListener('visibilitychange',checkStockReceipt);
+function save(){if(busy)return;if(!pending){const node=dialog.querySelector('#stockForm');if(!node.reportValidity())return;if(node.querySelector('[name="cents"][data-money-unset="1"]')){error(stockCopy('Enter the actual amount.','请输入实际金额。'));return;}const values=Object.fromEntries(new FormData(node));values.reason=values.reason.trim();if(!values.reason){error(stockCopy("Enter an internal note.",'请填写内部处理记录。'));return;}const input={action:form.action,...values,version:form.action==='QUARANTINE'?data.version:data.resolutionVersion,...(form.id?{id:form.id}:{})};if('quantity'in input)input.quantity=qty(input.quantity);if('cents'in input)input.cents=Math.round(Number(input.cents)*100);if('acceptedGood'in input)input.acceptedGood=true;if('noExtraCharge'in input)input.noExtraCharge=true;if('stockTakeConfirmed'in input)input.stockTakeConfirmed=true;
+ if(form.action==='REPORT_COUNT_GAIN'){
+  const batch=data.stockCounts.sources.find(row=>row.id===values.sourceTaskId);
+  if(!batch){error(stockCopy('Select the verified batch.','请选择已核实批次。'));return;}
+  input.onHand=batch.onHand;input.counted=Number(values.counted);
+ }
+ if(form.action==='CONFIRM_COUNT_GAIN')input.reportId=form.id;
+ if(['REFUND','CREDIT'].includes(input.outcome)){input.cnAllocations=[...node.querySelectorAll('[data-cn]')].filter(el=>Number(el.value)>0).map(el=>({fileId:el.dataset.cn,cents:Math.round(Number(el.value)*100)}));input.refundAllocations=[...node.querySelectorAll('[data-refund]')].filter(el=>Number(el.value)>0).map(el=>({paymentId:el.dataset.refund,cents:Math.round(Number(el.value)*100)}));}
+ pending={type:'STOCK_SAVE_REQUEST',company,requestId:crypto.randomUUID(),input};}
+ error('');lock(true);const original=pending;clearTimeout(timer);timer=setTimeout(()=>recoverStockSave(original),30000);parent.postMessage(original,'*');
+}
+window.addEventListener('message',event=>{if(event.source!==parent)return;const message=event.data||{};
+ if(message.ok&&message.company===companyValue()&&['PURCHASE_WORKSPACE_RESULT','ACCOUNT_ORDERS_RESULT','WAREHOUSE_ORDERS_RESULT'].includes(message.type)){
+  const result=message.workspace||message.result||{},items=[...(result.tasks||[]).flatMap(row=>row.warehouse?.stock?.cases||[]),...(result.orders||[]).flatMap(row=>row.stockCases||[])],count=new Set(items.filter(pendingCase).map(item=>item.id)).size;
+  button.innerHTML=menuLabel+(count?'<span class="stock-count">'+count+'</span>':'');
+ }
+ if(message.company!==company)return;
+ if(message.type==='STOCK_READ_RESULT'&&message.requestId===readId){clearTimeout(timer);if(!message.ok||!message.result?.cases){error(message.error||stockCopy("Read failed. Please retry.",'读取失败，请重试。'));return;}data=message.result;list();}
+ if(message.type==='STOCK_SAVE_STATUS_RESULT'&&stockRecovery?.id&&stockRecovery.id===message.requestId){
+  const result=message.result;
+  if(message.ok&&result?.ok===true&&pending&&result.company===pending.company&&result.requestId===pending.requestId)stockSaved();
+  else continueStockCheck();return;
+ }
+ if(message.type==='STOCK_SAVE_RESULT'&&message.requestId===pending?.requestId){
+  clearTimeout(timer);
+  if(message.ok&&message.result?.ok){stockSaved();return;}
+  if(message.result?.retryable!==false){recoverStockSave(pending);return;}
+  clearTimeout(stockRecovery?.timer);stockRecovery=null;pending=null;lock(false);error(message.result.error||message.error||stockCopy('Save could not be completed.','保存未完成。'));
+ }
+});
+window.masterStockExceptions={open,isBusy:()=>busy||Boolean(pending),hasDraft:()=>Boolean(workspace&&form)};
+(document.getElementById('companySelect')||document.getElementById('company'))?.addEventListener('change',()=>{button.textContent=menuLabel;});
+})();

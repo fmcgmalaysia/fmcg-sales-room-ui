@@ -2,6 +2,7 @@ import { operationId, createOperationJournal } from 'backend/purchaseOperationJo
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readStockResolutions } from 'backend/stockExceptionState.js';
 import { physicalOutflowQuantity, physicalOutflowVersion } from 'backend/physicalOutflow.js';
+import { readStockCountGains } from 'backend/stockCountGainState.js';
 const text=value=>String(value??'').trim();
 const quantity=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 export const STOCK_EXCEPTION_ACTION='STOCK_EXCEPTION_REPORTED';
@@ -22,14 +23,18 @@ export function readStockExceptions(activity){
 }
 export function stockPosition(sourceTaskId,received,activity){
  const cases=readStockExceptions(activity).filter(row=>row.sourceTaskId===sourceTaskId);
+ const gains=readStockCountGains(activity).filter(row=>row.sourceTaskId===sourceTaskId&&row.approval);
+ const countGain=gains.reduce((sum,row)=>sum+row.quantity,0);
  const excluded=cases.filter(row=>row.resolution?.financeApproval?.outcome!=='RELEASED').reduce((sum,row)=>sum+row.quantity,0);
  const replacementReceived=cases.reduce((sum,row)=>sum+(row.resolution?.replacements||[]).reduce((n,entry)=>n+entry.quantity,0),0);
  const held=cases.filter(row=>row.status!=='RESOLVED').reduce((sum,row)=>sum+row.quantity-(row.resolution?.returns||[]).reduce((n,entry)=>n+entry.quantity,0),0);
  const shipped=physicalOutflowQuantity(activity,{sourceTaskId});
- if(!Number.isSafeInteger(received)||received<0||excluded+shipped>received+replacementReceived)throw Error('Stock exception exceeds unshipped physical stock.');
- return {received,held,excluded,replacementReceived,shipped,usableReceived:received-excluded+replacementReceived,availablePhysical:received-excluded+replacementReceived-shipped,cases};
+ const usableReceived=received-excluded+replacementReceived+countGain;
+ if(!Number.isSafeInteger(received)||received<0||!Number.isSafeInteger(usableReceived)||shipped>usableReceived)throw Error('Stock exception exceeds unshipped physical stock.');
+ return {received,held,excluded,replacementReceived,shipped,usableReceived,availablePhysical:usableReceived-shipped,cases,
+  ...(countGain?{countGain,gainCompanies:[...new Set(gains.map(row=>row.company))]}:{})};
 }
-export function stockExceptionVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.warehouse?.accepted]),readStockExceptions(context.activity),readCustomerShipments(context.activity),physicalOutflowVersion(context.activity));}
+export function stockExceptionVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.warehouse?.accepted]),readStockExceptions(context.activity),readCustomerShipments(context.activity),physicalOutflowVersion(context.activity),...(context.activity.some(row=>row.action==='STOCK_COUNT_GAIN_CONFIRMED')?[readStockCountGains(context.activity).filter(row=>row.approval)]:[]));}
 export function createStockExceptionOperations({store,names,readContext,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{

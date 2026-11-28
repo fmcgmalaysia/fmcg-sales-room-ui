@@ -37,6 +37,7 @@ export function projectStockCard(context) {
     const physical = projectPhysicalStock(stock);
     const issues = [...physical.issues];
     if (stock.cases.some(row => row.company !== context.company)) throw Error('Stock exception company mismatch.');
+    if (stock.gainCompanies?.some(company => company !== context.company)) throw Error('Stock count gain company mismatch.');
     const allocation = allocations.find(row => row.sourceTaskId === source.id);
     const claims = new Map((allocation?.targets || []).map(row => [row.taskId, row.quantity]));
     const ownerId = source.customerDemandTaskId || source.id;
